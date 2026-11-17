@@ -117,3 +117,16 @@ application fee must equal what was reserved or the event is refused (`payment_m
 Known gaps (documented, not hidden): disputes are debited from the connected account by Stripe (Athleit is not liable) and flagged/audited here, with
 refunds blocked while disputed; `refund_application_fee` semantics and the account configuration need a test-mode check
 (`scripts/payments-integration.mjs`); any staff member can publish an event (decision pending).
+
+## Part C: UI
+
+Web: `/pay` (parents: Due / Receipts, multi-select checkout, Stripe Payment Element initialised with the connected account), `/teams/[id]/payments` and
+`/clubs/[id]/payments` (staff: payouts status, new request with live fee preview, collection ring and per-family list, remind, export CSV, waive, paid
+offline, refund, cancel), `/payments/connect/return|refresh` (Stripe onboarding return), Home cards (staff outstanding bar, parent amount due).
+Mobile: the **Pay** tab (guardians: pay with PaymentSheet and receipts; staff: payouts, new request, collection, remind, waive, paid cash).
+
+Rules the UI follows: it never sends or computes a charge amount (only request ids; the review sheet shows `payer_checkout_quote`); after Stripe
+confirms it shows **Processing** until the webhook marks the payment paid, then the receipt (closing the app is safe: the status resolves later and a
+receipt notification arrives); all amounts are mono with spoken labels; Stripe's UI is themed from the semantic tokens.
+Notifications (category `payments`, deep links to the exact request or event): new request, reminder (staff, once per request per 24 h), due in 3 days
+and overdue (hourly cron, once each), receipt, refund; to staff: payment received, needs refund, dispute opened, payout action required.

@@ -105,3 +105,20 @@ Needs a real device with push set up ([notifications.md](notifications.md)); not
 5. **Result.** Enter a result: "Final score 3–2" to families and staff.
 6. **Reminder.** Leave a child without an RSVP for an event that starts in under 24 hours; within 15 minutes the guardian gets "RSVP needed: …", once. Answer, and no further reminder.
 7. **Calendar.** More > Calendar link: create, copy, paste into iOS Settings > Calendar > Accounts > Add Subscribed Calendar (or Google Calendar > From URL). Events appear at the right local time; cancel one and it shows as cancelled after the next refresh; reset the link and the old subscription stops updating.
+
+## Payments: PaymentSheet and Apple Pay (Phase 4)
+
+Needs an EAS **development build** on a real device (PaymentSheet does not run in Expo Go) and Stripe TEST keys: `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+in `apps/mobile/.env.local`, the `stripe-webhook` function deployed with its Connect endpoint registered, and a team whose test Stripe account has
+finished onboarding. Apple Pay additionally needs the merchant ID `merchant.com.athleit.app` created in the Apple developer account and the Stripe
+Apple Pay certificate step (the iOS simulator can show the sheet but cannot complete an Apple Pay payment).
+
+1. **Pay list.** As a parent, Pay shows "Amount due" in large mono, one card per request, and a lime "Pay $…" pill. Deselect one request: the total follows.
+2. **Review.** Tap Pay: "Confirm payment" lists each item, any Athleit charge and Service fee, and the Total. Nothing here comes from the phone: change nothing and compare with the web.
+3. **Card.** Continue to payment: the PaymentSheet opens in the app's colours (try dark mode). Pay with `4242 4242 4242 4242`: "Processing", then the receipt with an `RCP-` id once the webhook lands.
+4. **Close mid-payment.** Pay, then kill the app while "Processing". Reopen: the request shows paid (or unpaid if it failed); the receipt appears in Receipts and a notification arrives.
+5. **Decline and 3DS.** `4000 0000 0000 9995` shows "Payment didn't go through… not charged" with Try again. `4000 0025 0000 3155` opens the bank authentication; failing it shows the same friendly state.
+6. **Apple Pay / Google Pay.** On a device with a wallet card, the sheet offers it; completing it behaves like step 3.
+7. **Household.** Another guardian in the same household pays first: your Pay list shows the request as paid and the retry says it can't be paid.
+8. **Staff.** As a team admin: Pay tab > Payouts "Set up payouts" opens Stripe in the in-app browser and returns; "New payment request" sends to the roster; "Send reminder" works once per 24 h; a coach sees status but no setup button.
+9. **Accessibility.** VoiceOver reads "Jersey fee, $45.00, due Nov 30, Unpaid" on each request and "45 dollars" for amounts; tap targets are 44pt or larger.
