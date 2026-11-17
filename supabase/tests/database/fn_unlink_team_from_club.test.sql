@@ -32,6 +32,6 @@ select lives_ok($$ select public.unlink_team_from_club('a1000000-0000-0000-0000-
 reset role; select set_config('request.jwt.claims', '{"sub":"a1111111-1111-1111-1111-111111111111","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.unlink_team_from_club('a1000000-0000-0000-0000-00000000000a') $$, '42501', null, 'a guardian cannot unlink');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'team.affiliation_change'), 3, 'each change is audited (superuser relink included)');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'team.affiliation_change'), 3, 'each change is audited (superuser relink included)');
 select * from finish();
 rollback;

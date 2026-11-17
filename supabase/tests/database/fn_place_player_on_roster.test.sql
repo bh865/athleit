@@ -50,6 +50,6 @@ select lives_ok($$ select public.place_player_on_roster('a1000000-0000-0000-0000
 select throws_ok($$ select public.place_player_on_roster('a1000000-0000-0000-0000-00000000000a', '92000000-0000-0000-0000-000000000002', 100::smallint) $$, '23514', null, 'jersey numbers above 99 are rejected');
 select is((select count(*)::int from public.get_guardian_contacts('91000000-0000-0000-0000-000000000001')), 1, 'once rostered, staff can read the guardian contact');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'roster.place'), 4, 'placements are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'roster.place'), 4, 'placements are audited');
 select * from finish();
 rollback;

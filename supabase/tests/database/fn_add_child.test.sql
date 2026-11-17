@@ -34,8 +34,8 @@ reset role; select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-
 select lives_ok($$ select public.add_child('11000000-0000-0000-0000-000000000001', 'Cy', 'Adams', '2014-05-05') $$, 'a guardian can add a child to their own household by id');
 select is((select count(*)::int from public.players), 2, 'family A sees only their own children (Ava and Cy)');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'player.add_child'), 3, 'adding children is audited');
-select is((select count(*)::int from public.audit_log where action = 'household.create'), 1, 'automatic household creation is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'player.add_child'), 3, 'adding children is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'household.create'), 1, 'automatic household creation is audited');
 -- The player role requires a linked, 13+ player profile.
 insert into public.clubs (id, name, slug) values ('c1000000-0000-0000-0000-000000000001', 'Riverside', 'riverside');
 insert into public.teams (id, name, sport, season_label) values ('a1000000-0000-0000-0000-000000000001', 'T', 'soccer', 's');

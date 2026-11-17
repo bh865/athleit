@@ -37,6 +37,6 @@ select is((select profile_id from public.players where id = '91000000-0000-0000-
 select throws_ok($$ select public.decide_player_login_claim('b2000000-0000-0000-0000-000000000002', true) $$, 'P0001', 'request_not_pending', 'cannot decide twice');
 select throws_ok($$ select public.decide_player_login_claim('b3000000-0000-0000-0000-000000000003', true) $$, '23514', 'player_under_13', 'an under-13 player cannot be linked even by approval');
 reset role;
-select is((select count(*)::int from public.audit_log where action in ('player.claim_login_approve', 'player.claim_login_decline')), 2, 'decisions are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action in ('player.claim_login_approve', 'player.claim_login_decline')), 2, 'decisions are audited');
 select * from finish();
 rollback;

@@ -20,7 +20,7 @@ select throws_ok($$ select public.create_club('Bad', 'Not A Slug!') $$, '23514',
 select throws_ok($$ select public.create_club('   ', 'valid-slug') $$, '23514', null, 'blank name is rejected');
 
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'club.create'), 1, 'creation is audited');
-select is((select actor_id::text from public.audit_log where action = 'club.create'), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'audit records the actor');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'club.create'), 1, 'creation is audited');
+select is((select actor_id::text from public.audit_log where created_at = now() and action = 'club.create'), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'audit records the actor');
 select * from finish();
 rollback;

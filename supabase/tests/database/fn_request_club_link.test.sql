@@ -35,6 +35,6 @@ select throws_ok($$ select public.request_club_link('a1000000-0000-0000-0000-000
 reset role; select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.request_club_link('a1000000-0000-0000-0000-000000000001', '99999999-9999-9999-9999-999999999999') $$, 'P0001', 'club_not_found', 'unknown club is rejected');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'club_link.request'), 1, 'the request is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'club_link.request'), 1, 'the request is audited');
 select * from finish();
 rollback;

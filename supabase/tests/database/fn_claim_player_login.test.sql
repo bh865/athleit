@@ -38,6 +38,6 @@ select is((select count(*)::int from public.player_login_claims where status = '
 select throws_ok($$ select public.claim_player_login('91000000-0000-0000-0000-000000000001') $$, 'P0001', 'player_already_linked', 'an already-linked player cannot be claimed again');
 reset role;
 select is((select login_invite_email from public.players where id = '91000000-0000-0000-0000-000000000001'), null, 'the invite email is cleared once used');
-select is((select count(*)::int from public.audit_log where action like 'player.claim_login%'), 3, 'claims are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action like 'player.claim_login%'), 3, 'claims are audited');
 select * from finish();
 rollback;

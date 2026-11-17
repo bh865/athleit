@@ -42,6 +42,6 @@ select is((select count(*)::int from public.teams), 1, 'club admin now reads the
 select is_empty($$ update public.teams set name = 'Club edit' returning 1 $$, 'club admin still cannot edit the linked team');
 reset role;
 select is((select status::text from public.team_club_link_requests where id = 'b2000000-0000-0000-0000-000000000002'), 'declined', 'declined status is recorded');
-select is((select count(*)::int from public.audit_log where action in ('club_link.approve', 'club_link.decline', 'team.affiliation_change')), 3, 'approval, decline and the affiliation change are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action in ('club_link.approve', 'club_link.decline', 'team.affiliation_change')), 3, 'approval, decline and the affiliation change are audited');
 select * from finish();
 rollback;

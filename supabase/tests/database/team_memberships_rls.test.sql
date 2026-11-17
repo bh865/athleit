@@ -47,7 +47,7 @@ select is_empty($$ delete from public.team_memberships where team_id = 'a1000000
 reset role; select set_config('request.jwt.claims', '{"sub":"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee","role":"authenticated"}', true); set local role authenticated;
 select is_empty($$ select 1 from public.team_memberships $$, 'a club admin has no membership read access');
 reset role;
-select ok((select count(*) from public.audit_log where team_id = 'a1000000-0000-0000-0000-000000000001' and action like 'team_memberships.%') >= 5, 'role changes and removals are audited');
-select is((select before ->> 'role' from public.audit_log where action = 'team_memberships.update' and (before ->> 'id')::uuid = 'f0000000-0000-0000-0000-00000000000b' order by id limit 1), 'coach', 'audit stores before image');
+select ok((select count(*) from public.audit_log where created_at = now() and team_id = 'a1000000-0000-0000-0000-000000000001' and action like 'team_memberships.%') >= 5, 'role changes and removals are audited');
+select is((select before ->> 'role' from public.audit_log where created_at = now() and action = 'team_memberships.update' and (before ->> 'id')::uuid = 'f0000000-0000-0000-0000-00000000000b' order by id limit 1), 'coach', 'audit stores before image');
 select * from finish();
 rollback;

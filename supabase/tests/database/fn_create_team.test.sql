@@ -36,6 +36,6 @@ select is((select status::text from public.team_club_link_requests where team_id
 select throws_ok($$ select public.create_team('Ghost', 'soccer', 'Fall', '99999999-9999-9999-9999-999999999999') $$, 'P0001', 'club_not_found', 'unknown club is rejected');
 select is((select count(*)::int from public.teams where name = 'Ghost'), 0, 'a failed create leaves no team behind');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'team.create'), 2, 'team creation is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'team.create'), 2, 'team creation is audited');
 select * from finish();
 rollback;

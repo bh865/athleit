@@ -42,7 +42,7 @@ select throws_ok($$ select * from public.create_invite(null, 'c1000000-0000-0000
 reset role; select set_config('request.jwt.claims', '{"sub":"a6666666-6666-6666-6666-666666666666","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select * from public.create_invite(null, 'c1000000-0000-0000-0000-000000000001', 'manager') $$, '42501', null, 'a non-admin cannot invite to a club');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'invite.create'), 5, 'invite creation is audited');
-select is((select count(*)::int from public.audit_log where after::text ~ '[0-9a-f]{64}'), 0, 'tokens never appear in the audit log');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'invite.create'), 5, 'invite creation is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and after::text ~ '[0-9a-f]{64}'), 0, 'tokens never appear in the audit log');
 select * from finish();
 rollback;

@@ -48,8 +48,8 @@ select throws_ok($$ select * from public.accept_invite((select token from t wher
 reset role;
 select is((select use_count from public.invites where id = (select invite_id from t where k = 'multi')), 2, 'use_count tracks acceptances (failed attempts do not count)');
 select is((select use_count from public.invites where id = (select invite_id from t where k = 'expired')), 0, 'an expired invite is never consumed');
-select is((select count(*)::int from public.audit_log where action = 'invite.accept'), 3, 'acceptances are audited');
-select is((select count(*)::int from public.audit_log where action = 'team_memberships.insert' and after ->> 'role' = 'coach'), 2, 'the membership grant is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'invite.accept'), 3, 'acceptances are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'team_memberships.insert' and after ->> 'role' = 'coach'), 2, 'the membership grant is audited');
 reset role; select set_config('request.jwt.claims', '{"sub":"a5555555-5555-5555-5555-555555555555","role":"authenticated"}', true); set local role authenticated;
 create temp table tc as select token, invite_id from public.create_invite(null, 'c1000000-0000-0000-0000-000000000001', 'manager');
 reset role; select set_config('request.jwt.claims', '{"sub":"a3333333-3333-3333-3333-333333333333","role":"authenticated"}', true); set local role authenticated;
@@ -62,6 +62,6 @@ select lives_ok($$ select public.revoke_invite((select invite_id from t where k 
 select lives_ok($$ select public.revoke_invite((select invite_id from t where k = 'multi')) $$, 'revoking twice is harmless');
 reset role;
 select ok((select revoked_at is not null from public.invites where id = (select invite_id from t where k = 'multi')), 'revoked_at is set');
-select is((select count(*)::int from public.audit_log where action = 'invite.revoke'), 3, 'revocations are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'invite.revoke'), 3, 'revocations are audited');
 select * from finish();
 rollback;

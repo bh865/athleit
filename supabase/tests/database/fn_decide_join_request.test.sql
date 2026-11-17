@@ -52,6 +52,6 @@ reset role; select set_config('request.jwt.claims', '{"sub":"a2222222-2222-2222-
 select is((select count(*)::int from public.teams), 1, 'after approval the parent can read the team');
 select is((select count(*)::int from public.get_team_roster('a1000000-0000-0000-0000-00000000000a')), 0, 'and the (empty) roster via the limited function');
 reset role;
-select is((select count(*)::int from public.audit_log where action in ('join_request.approve', 'join_request.decline')), 3, 'decisions are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action in ('join_request.approve', 'join_request.decline')), 3, 'decisions are audited');
 select * from finish();
 rollback;

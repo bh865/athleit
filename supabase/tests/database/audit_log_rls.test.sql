@@ -15,9 +15,9 @@ insert into public.club_memberships (id, club_id, profile_id, role) values
 update public.club_memberships set role = 'admin' where id = 'e0000000-0000-0000-0000-00000000000b';
 insert into public.audit_log (action, target_type, club_id) values ('other.club', 'clubs', 'c2000000-0000-0000-0000-000000000002');
 
-select is((select count(*)::int from public.audit_log where club_id = 'c1000000-0000-0000-0000-000000000001'), 3, 'two inserts and one update were audited');
-select is((select before ->> 'role' from public.audit_log where action = 'club_memberships.update'), 'manager', 'update audit stores the before image');
-select is((select after ->> 'role' from public.audit_log where action = 'club_memberships.update'), 'admin', 'update audit stores the after image');
+select is((select count(*)::int from public.audit_log where created_at = now() and club_id = 'c1000000-0000-0000-0000-000000000001'), 3, 'two inserts and one update were audited');
+select is((select before ->> 'role' from public.audit_log where created_at = now() and action = 'club_memberships.update'), 'manager', 'update audit stores the before image');
+select is((select after ->> 'role' from public.audit_log where created_at = now() and action = 'club_memberships.update'), 'admin', 'update audit stores the after image');
 
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);

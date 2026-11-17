@@ -45,6 +45,6 @@ select throws_ok($$ select public.request_to_join('TEAMA00001') $$, 'P0001', 'al
 reset role; select set_config('request.jwt.claims', '{"sub":"a5555555-5555-5555-5555-555555555555","role":"authenticated"}', true); set local role authenticated;
 select lives_ok($$ select public.request_to_join('TEAMA00001', null, '93000000-0000-0000-0000-000000000003') $$, 'a 13+ player can request for themself');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'join_request.create'), 3, 'requests are audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'join_request.create'), 3, 'requests are audited');
 select * from finish();
 rollback;

@@ -34,8 +34,8 @@ select is_empty($$ select * from public.get_team_members('a1000000-0000-0000-000
 reset role;
 insert into public.audit_log (action, target_type, team_id) values ('x.team1', 'teams', 'a1000000-0000-0000-0000-000000000001'), ('x.team2', 'teams', 'a2000000-0000-0000-0000-000000000002');
 reset role; select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}', true); set local role authenticated;
-select is((select count(*)::int from public.audit_log where action like 'x.%'), 1, 'team admin reads only their own team''s audit rows');
+select is((select count(*)::int from public.audit_log where created_at = now() and action like 'x.%'), 1, 'team admin reads only their own team''s audit rows');
 reset role; select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}', true); set local role authenticated;
-select is((select count(*)::int from public.audit_log where team_id = 'a1000000-0000-0000-0000-000000000001'), 0, 'a coach cannot read the audit log');
+select is((select count(*)::int from public.audit_log where created_at = now() and team_id = 'a1000000-0000-0000-0000-000000000001'), 0, 'a coach cannot read the audit log');
 select * from finish();
 rollback;

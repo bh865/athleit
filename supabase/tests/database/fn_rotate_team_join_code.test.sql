@@ -31,6 +31,6 @@ select matches((select join_code from public.teams where id = 'a1000000-0000-000
 reset role; select set_config('request.jwt.claims', '{"sub":"a5555555-5555-5555-5555-555555555555","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.request_to_join('LINKED0001') $$, 'P0001', 'team_not_found', 'the old code no longer works');
 reset role;
-select is((select count(*)::int from public.audit_log where action = 'team.rotate_join_code'), 1, 'rotation is audited');
+select is((select count(*)::int from public.audit_log where created_at = now() and action = 'team.rotate_join_code'), 1, 'rotation is audited');
 select * from finish();
 rollback;
