@@ -14,7 +14,7 @@ import { BackLink } from './kit';
 import { ErrorNotice, Loading } from './app-screen-states';
 
 /** Screens that show the brand header (the rest are detail screens with a back button). */
-const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/family', '/notifications']);
+const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/notifications']);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
@@ -36,20 +36,26 @@ export function AppScreen({ children }: { children: ReactNode }) {
     ...(hasTeam
       ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
       : []),
+    ...(hasFamily || contexts.some((c) => c.kind === 'team' || c.kind === 'club')
+      ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem]
+      : []),
     ...(hasFamily ? [{ key: 'family', label: 'Family', icon: 'house-line' } as TabItem] : []),
     { key: 'more', label: 'More', icon: 'dots-three-circle' },
   ];
+  const showTabs = tabs.length > 5 ? tabs.filter((t) => t.key !== 'family') : tabs;
   const active = more
     ? 'more'
     : pathname.startsWith('/schedule') || pathname.startsWith('/events')
       ? 'schedule'
       : pathname.startsWith('/messages')
         ? 'messages'
-        : pathname.startsWith('/family')
-          ? 'family'
-          : pathname === '/'
-            ? 'home'
-            : null;
+        : pathname.startsWith('/pay')
+          ? 'pay'
+          : pathname.startsWith('/family')
+            ? 'family'
+            : pathname === '/'
+              ? 'home'
+              : null;
 
   return (
     <Backdrop>
@@ -78,7 +84,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
         </ScrollView>
       </SafeAreaView>
       <TabBar
-        items={tabs}
+        items={showTabs}
         active={active}
         onSelect={(key) => {
           if (key === 'more') setMore(true);
@@ -90,12 +96,24 @@ export function AppScreen({ children }: { children: ReactNode }) {
                   ? '/schedule'
                   : key === 'messages'
                     ? '/messages'
-                    : '/family',
+                    : key === 'pay'
+                      ? '/pay'
+                      : '/family',
             );
         }}
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">
         <Text variant="heading">More</Text>
+        {hasFamily ? (
+          <Button
+            title="Family"
+            variant="secondary"
+            onPress={() => {
+              setMore(false);
+              router.push('/family' as never);
+            }}
+          />
+        ) : null}
         <Button
           title="Alerts"
           variant="secondary"
