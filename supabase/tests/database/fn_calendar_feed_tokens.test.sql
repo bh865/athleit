@@ -90,7 +90,7 @@ reset role; select set_config('request.jwt.claims', '{"sub":"a3333333-3333-3333-
 select is((select count(*)::int from (select id from public.calendar_feed_tokens) x), 0, 'users never see each other''s tokens');
 select lives_ok($$ select public.revoke_calendar_feed_token() $$, 'revoking with no live token is harmless');
 reset role;
-select is((select count(*)::int from public.audit_log where action like 'calendar_feed.%'), 5, 'create / rotate / revoke are audited (without the token)');
-select is((select count(*)::int from public.audit_log where after::text like '%' || (select t from pg_temp.tok) || '%'), 0, 'the token never appears in the audit log');
+select is((select count(*)::int from public.audit_log where action like 'calendar_feed.%' and created_at = now()), 5, 'create / rotate / revoke are audited (without the token)');
+select is((select count(*)::int from public.audit_log where created_at = now() and after::text like '%' || (select t from pg_temp.tok) || '%'), 0, 'the token never appears in the audit log');
 select * from finish();
 rollback;
