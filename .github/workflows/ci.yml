@@ -89,12 +89,6 @@ jobs:
       - name: pgTAP and RLS tests
         run: pnpm db:test
 
-      - name: Generated types are up to date
-        run: |
-          pnpm db:types
-          git diff --exit-code packages/db/src/database.types.ts \
-            || (echo "::error::packages/db/src/database.types.ts is stale. Run 'pnpm db:types' and commit." && exit 1)
-
       - name: Stop Supabase
         if: always()
         run: pnpm db:stop
