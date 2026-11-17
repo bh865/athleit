@@ -278,12 +278,9 @@ describe('webhook processing', () => {
     expect(store.ledgerEvent.mock.invocationCallOrder[0]).toBeLessThan(
       store.paymentSucceeded.mock.invocationCallOrder[0],
     );
-    expect(store.paymentSucceeded).toHaveBeenCalledWith({
-      pi: 'pi_A',
-      paymentId: PID,
-      charge: 'ch_A',
-      stripeFee: 170,
-    });
+    expect(store.paymentSucceeded).toHaveBeenCalledWith(
+      expect.objectContaining({ pi: 'pi_A', paymentId: PID, charge: 'ch_A', stripeFee: 170 }),
+    );
     expect(store.finishEvent).toHaveBeenCalledWith('evt_1');
     // the ledger payload is minimal: no metadata, no card or personal data
     expect(store.ledgerEvent.mock.calls[0][0].payload).toEqual({
@@ -325,12 +322,9 @@ describe('webhook processing', () => {
     const s = fakeStripe({});
     const { raw, header } = await signed(succeeded);
     await processWebhook(raw, header, { secrets: [SECRET], store, stripe: s as any, log: quiet });
-    expect(store.paymentSucceeded).toHaveBeenCalledWith({
-      pi: 'pi_A',
-      paymentId: PID,
-      charge: 'ch_A',
-      stripeFee: null,
-    });
+    expect(store.paymentSucceeded).toHaveBeenCalledWith(
+      expect.objectContaining({ pi: 'pi_A', paymentId: PID, charge: 'ch_A', stripeFee: null }),
+    );
   });
   it('a failing handler answers 500 so Stripe retries, and records the error', async () => {
     const store = fakeStore({
@@ -853,7 +847,7 @@ describe('reconcile-payments (mocked Stripe)', () => {
         canceled_payments: [{ id: 'p3', pi: 'pi_cancel_me' }],
         missing_fee: [{ id: 'p4', pi: 'pi_nofee' }],
         accounts: ['acct_1'],
-        stuck_events: ['evt_stuck'],
+        stuck_events: [{ id: 'evt_stuck', account: null }],
       })),
     });
     const s = fakeStripe({
@@ -996,5 +990,139 @@ describe('logging and export hygiene', () => {
     expect(row).toContain(`"'=cmd|x"`);
     expect(row).toContain('"47.64"');
     expect(csv).not.toMatch(/card_number|pan|cvc/i);
+  });
+});
+
+describe('review hardening', () => {
+  const evt = (over: object = {}) => ({
+    id: 'evt_h',
+    type: 'payment_intent.succeeded',
+    livemode: false,
+    created: Math.floor(Date.now() / 1000),
+    data: {
+      object: {
+        id: 'pi_H',
+        status: 'succeeded',
+        amount: 4500,
+        currency: 'usd',
+        application_fee_amount: 161,
+        transfer_data: { destination: 'acct_X' },
+        latest_charge: 'ch_H',
+        metadata: { athleit_payment_id: PID },
+      },
+    },
+    ...over,
+  });
+  const stripe = () =>
+    fakeStripe({ '/v1/charges/ch_H': { balance_transaction: { fee_details: [] } } });
+
+  it('passes amount, currency, destination and application fee so the database can refuse a mismatch', async () => {
+    const store = fakeStore();
+    await handleStripeEvent(evt(), { store, stripe: stripe() as any });
+    expect(store.paymentSucceeded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 4500,
+        currency: 'usd',
+        destination: 'acct_X',
+        applicationFee: 161,
+      }),
+    );
+  });
+  it('a mismatch is refused, recorded as final, never retried, and applies nothing', async () => {
+    const store = fakeStore({
+      paymentSucceeded: vi.fn(async () => {
+        throw new Error('payment_mismatch');
+      }),
+    });
+    const { raw, header } = await signed(evt());
+    const r = await processWebhook(raw, header, {
+      secrets: [SECRET],
+      store,
+      stripe: stripe() as any,
+      log: quiet,
+    });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ refused: 'payment_mismatch' });
+    expect(store.finishEvent).toHaveBeenCalledWith('evt_h', 'payment_mismatch', true);
+  });
+  it('payment events scoped to a connected account are ignored', async () => {
+    const store = fakeStore();
+    expect(
+      await handleStripeEvent(evt({ account: 'acct_other' }), { store, stripe: stripe() as any }),
+    ).toBe('ignored');
+    expect(store.paymentSucceeded).not.toHaveBeenCalled();
+  });
+  it('an unknown payment that is not ours (no athleit metadata) is acknowledged, not retried for an hour', async () => {
+    const store = fakeStore({ paymentSucceeded: vi.fn(async () => 'unknown_payment') });
+    const e = evt();
+    (e.data.object as any).metadata = {};
+    const { raw, header } = await signed(e);
+    const r = await processWebhook(raw, header, {
+      secrets: [SECRET],
+      store,
+      stripe: stripe() as any,
+      log: quiet,
+    });
+    expect(r.status).toBe(200);
+  });
+  it('refund events carry our refund id from metadata so the reserved row is adopted, not duplicated', async () => {
+    const store = fakeStore();
+    const s = fakeStripe({
+      '/v1/refunds': {
+        data: [
+          { id: 're_1', amount: 1000, status: 'succeeded', metadata: { athleit_refund_id: 'abc' } },
+        ],
+      },
+    });
+    await handleStripeEvent(
+      { type: 'charge.refunded', data: { object: { id: 'ch_A', payment_intent: 'pi_A' } } },
+      { store, stripe: s as any },
+    );
+    expect(store.refundEvent.mock.calls[0][0].refunds[0]).toEqual({
+      id: 're_1',
+      amount: 1000,
+      status: 'succeeded',
+      ref: 'abc',
+    });
+  });
+  it('a refund Stripe accepted is never marked failed, even if recording its id fails', async () => {
+    const store = fakeStore({
+      attachRefund: vi.fn(async () => {
+        throw new Error('db_blip');
+      }),
+    });
+    const s = fakeStripe({ 'POST /v1/refunds': { id: 're_ok', status: 'pending' } });
+    const plan = {
+      payment_id: PID,
+      stripe_payment_intent_id: 'pi_A',
+      stripe_account_id: 'acct_X',
+      refunds: [{ refund_id: 'r1', amount_cents: 500, refund_application_fee: false }],
+    };
+    const out = await refundPayment(
+      { paymentId: PID },
+      { store, stripe: s as any, log: quiet, prepare: async () => plan },
+    );
+    expect(out).toHaveLength(1);
+    expect(store.failRefund).not.toHaveBeenCalled();
+  });
+  it('reconcile re-fetches Connect-scoped events as that account and counts failures', async () => {
+    const store = fakeStore({
+      reconcileCandidates: vi.fn(async () => ({
+        open_payments: [],
+        canceled_payments: [],
+        missing_fee: [],
+        accounts: [],
+        stuck_events: [{ id: 'evt_c', account: 'acct_c' }],
+      })),
+    });
+    const s = fakeStripe({
+      '/v1/events/evt_c': () => {
+        throw new Error('stripe_invalid_request_error');
+      },
+    });
+    const out = await reconcile({ store, stripe: s as any, log: quiet });
+    expect(s.get).toHaveBeenCalledWith('/v1/events/evt_c', undefined, 'acct_c');
+    expect(store.finishEvent).toHaveBeenCalledWith('evt_c', 'refetch_failed');
+    expect(out.errors).toBe(1);
   });
 });

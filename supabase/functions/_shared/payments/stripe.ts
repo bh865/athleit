@@ -45,6 +45,7 @@ export interface StripeConfig {
 export interface RequestOptions {
   idempotencyKey?: string;
   query?: Record<string, unknown>;
+  stripeAccount?: string;
 }
 
 export type StripeObject = Record<string, any>;
@@ -68,6 +69,7 @@ export class StripeApi {
     const headers: Record<string, string> = { authorization: `Bearer ${this.key}` };
     if (this.version) headers['stripe-version'] = this.version;
     if (opts.idempotencyKey) headers['idempotency-key'] = opts.idempotencyKey;
+    if (opts.stripeAccount) headers['stripe-account'] = opts.stripeAccount;
     let url = `https://api.stripe.com${path}`;
     let body: string | undefined;
     if (method === 'GET') {
@@ -91,8 +93,8 @@ export class StripeApi {
     }
     return json;
   }
-  get(path: string, query?: Record<string, unknown>) {
-    return this.request('GET', path, query ?? {});
+  get(path: string, query?: Record<string, unknown>, stripeAccount?: string) {
+    return this.request('GET', path, query ?? {}, { stripeAccount });
   }
   post(path: string, params: Record<string, unknown>, idempotencyKey?: string) {
     return this.request('POST', path, params, { idempotencyKey });

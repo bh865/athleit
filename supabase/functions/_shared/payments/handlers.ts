@@ -48,6 +48,10 @@ export async function applyPaymentIntent(pi: StripeObject, d: HandlerDeps): Prom
       paymentId,
       charge,
       stripeFee: fee,
+      amount: pi.amount,
+      currency: pi.currency,
+      destination: idOf(pi.transfer_data?.destination),
+      applicationFee: pi.application_fee_amount ?? null,
     })) as Outcome;
   }
   if (status === 'processing')
@@ -68,6 +72,10 @@ async function applyRefunds(charge: StripeObject, d: HandlerDeps): Promise<Outco
     id: r.id as string,
     amount: Number(r.amount),
     status: String(r.status),
+    ref:
+      typeof r.metadata?.athleit_refund_id === 'string'
+        ? (r.metadata.athleit_refund_id as string)
+        : undefined,
   }));
   return (await d.store.refundEvent({
     pi,
@@ -79,6 +87,8 @@ async function applyRefunds(charge: StripeObject, d: HandlerDeps): Promise<Outco
 
 export async function handleStripeEvent(event: StripeObject, d: HandlerDeps): Promise<Outcome> {
   const obj = (event.data?.object ?? {}) as StripeObject;
+  // Payments are platform-account objects. A payment event scoped to a CONNECTED account is not ours to act on.
+  if (event.account && /^(payment_intent|charge)\./.test(String(event.type))) return 'ignored';
   switch (event.type) {
     case 'payment_intent.succeeded':
     case 'payment_intent.processing':

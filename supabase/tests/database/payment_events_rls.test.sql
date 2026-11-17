@@ -77,13 +77,13 @@ select is((select count(*)::int from public.payment_events), 3, 'a team admin to
 reset role; select pg_temp.login('a5555555-5555-5555-5555-555555555555');
 select is((select string_agg(title, ',') from public.payment_events), 'Club dues', 'a club admin sees only events their club issued, not linked teams'' events');
 reset role; select pg_temp.login('a2222222-2222-2222-2222-222222222222');
-select is((select string_agg(title, ',' order by title) from public.payment_events), 'Club dues,Jersey fee,Tournament fee', 'a parent reads the events they were billed for (not drafts, not other teams)');
+select is((select count(*)::int from public.payment_events), 0, 'payers read no payment_events rows directly (they use household_payments)');
 reset role; select pg_temp.login('a3333333-3333-3333-3333-333333333333');
-select is((select string_agg(title, ',' order by title) from public.payment_events), 'Club dues,Jersey fee', 'another parent sees only theirs');
+select is((select count(*)::int from public.payment_events), 0, 'payers read no payment_events rows directly (they use household_payments)');
 reset role; select pg_temp.login('a7777777-7777-7777-7777-777777777777');
-select is((select string_agg(title, ',') from public.payment_events), 'Jersey fee', 'a 13+ player reads the event of their own request');
+select is((select count(*)::int from public.payment_events), 0, 'payers read no payment_events rows directly (they use household_payments)');
 reset role; select pg_temp.login('a4444444-4444-4444-4444-444444444444');
-select is((select string_agg(title, ',') from public.payment_events), 'Camp fee', 'a parent on another team sees only their own team''s event');
+select is((select count(*)::int from public.payment_events), 0, 'payers read no payment_events rows directly (they use household_payments)');
 reset role; select pg_temp.login('a9999999-9999-9999-9999-999999999999');
 select is((select count(*)::int from public.payment_events), 0, 'an unrelated user sees nothing');
 reset role; select pg_temp.login('a6666666-6666-6666-6666-666666666666');

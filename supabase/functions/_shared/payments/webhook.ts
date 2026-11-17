@@ -52,7 +52,9 @@ export async function processWebhook(
     const outcome = await handleStripeEvent(event, d);
     if (outcome === 'unknown_payment') {
       const age = now - Number(event.created ?? 0) * 1000;
-      const giveUp = age > (d.giveUpAfterMs ?? 3_600_000);
+      // Only objects carrying OUR payment id can be a payment we have not recorded yet; anything else is not ours.
+      const ours = typeof obj?.metadata?.athleit_payment_id === 'string';
+      const giveUp = !ours || age > (d.giveUpAfterMs ?? 3_600_000);
       await d.store.finishEvent(event.id, 'unknown_payment', giveUp);
       d.log('warn', 'webhook.unknown_payment', { id: event.id, type: event.type, giveUp });
       return giveUp
@@ -63,9 +65,14 @@ export async function processWebhook(
     d.log('info', 'webhook.handled', { id: event.id, type: event.type, outcome });
     return { status: 200, body: { received: true, outcome } };
   } catch (e) {
-    await d.store
-      .finishEvent(event.id, String((e as Error).message ?? 'handler_error'))
-      .catch(() => {});
+    const msg = String((e as Error).message ?? 'handler_error');
+    if (msg.includes('payment_mismatch')) {
+      // Stripe's amount/destination disagrees with what we reserved: never apply it, never retry it; a human looks.
+      await d.store.finishEvent(event.id, 'payment_mismatch', true).catch(() => {});
+      d.log('error', 'webhook.payment_mismatch', { id: event.id, type: event.type });
+      return { status: 200, body: { received: true, refused: 'payment_mismatch' } };
+    }
+    await d.store.finishEvent(event.id, msg).catch(() => {});
     d.log('error', 'webhook.handler_failed', {
       id: event.id,
       type: event.type,

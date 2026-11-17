@@ -23,6 +23,10 @@ export interface Store {
     paymentId?: string;
     charge?: string;
     stripeFee?: number | null;
+    amount?: number;
+    currency?: string;
+    destination?: string;
+    applicationFee?: number | null;
   }): Promise<string>;
   paymentStatus(a: {
     pi: string;
@@ -31,7 +35,7 @@ export interface Store {
   }): Promise<string>;
   refundEvent(a: {
     pi: string;
-    refunds: { id: string; amount: number; status: string }[];
+    refunds: { id: string; amount: number; status: string; ref?: string }[];
     paymentId?: string;
     charge?: string;
   }): Promise<string>;
@@ -84,7 +88,7 @@ export interface Candidates {
   canceled_payments: { id: string; pi: string }[];
   missing_fee: { id: string; pi: string }[];
   accounts: string[];
-  stuck_events: string[];
+  stuck_events: { id: string; account: string | null }[];
 }
 
 function check<T>(r: { data: T; error: { message?: string; code?: string } | null }): T {
@@ -108,6 +112,10 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
         p_payment_id: a.paymentId ?? null,
         p_charge: a.charge ?? null,
         p_stripe_fee: a.stripeFee ?? null,
+        p_amount: a.amount ?? null,
+        p_currency: a.currency ?? null,
+        p_destination: a.destination ?? null,
+        p_application_fee: a.applicationFee ?? null,
       }),
     paymentStatus: (a) =>
       call('svc_payment_status', {
@@ -167,14 +175,12 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
       return r.data ? { stripeAccountId: r.data.stripe_account_id } : null;
     },
     async insertConnectedAccount(o, sid, createdBy) {
-      const r = await db
-        .from('connected_accounts')
-        .insert({
-          team_id: o.teamId ?? null,
-          club_id: o.clubId ?? null,
-          stripe_account_id: sid,
-          created_by: createdBy,
-        });
+      const r = await db.from('connected_accounts').insert({
+        team_id: o.teamId ?? null,
+        club_id: o.clubId ?? null,
+        stripe_account_id: sid,
+        created_by: createdBy,
+      });
       if (r.error) throw new Error(r.error.message ?? 'db_error');
     },
   };

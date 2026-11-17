@@ -72,14 +72,24 @@ export async function reconcile(d: ReconcileDeps) {
       out.accounts++;
     });
 
-  for (const id of c.stuck_events)
-    await guard('event', async () => {
-      const ev = await d.stripe.get(`/v1/events/${id}`);
-      if (ev.livemode) return;
+  for (const e of c.stuck_events) {
+    try {
+      const ev = await d.stripe.get(`/v1/events/${e.id}`, undefined, e.account ?? undefined);
+      if (ev.livemode) continue;
       const outcome = await handleStripeEvent(ev, d);
-      if (outcome !== 'unknown_payment') await d.store.finishEvent(id);
+      if (outcome !== 'unknown_payment') await d.store.finishEvent(e.id);
+      else await d.store.finishEvent(e.id, 'unknown_payment');
       out.events++;
-    });
+    } catch (err) {
+      out.errors++;
+      // Count the failure so a permanently unfetchable event cannot starve the queue forever.
+      await d.store.finishEvent(e.id, 'refetch_failed').catch(() => {});
+      d.log('error', 'reconcile.item_failed', {
+        label: 'event',
+        error: String((err as Error).message).slice(0, 80),
+      });
+    }
+  }
 
   await d.store.cleanupRateLimits().catch(() => {});
   d.log('info', 'reconcile.done', out);

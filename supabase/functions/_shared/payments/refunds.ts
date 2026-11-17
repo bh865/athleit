@@ -29,10 +29,11 @@ export async function refundPayment(
   const plan = await d.prepare(a);
   const results: { refundId: string; amountCents: number; status: string }[] = [];
   for (const r of plan.refunds) {
+    let sr;
     try {
       // reverse_transfer: the team gives back its share. The application fee is returned only when the policy
       // refunds the Athleit charge. Stripe never returns its own processing fee.
-      const s = await d.stripe.post(
+      sr = await d.stripe.post(
         '/v1/refunds',
         {
           payment_intent: plan.stripe_payment_intent_id,
@@ -43,13 +44,18 @@ export async function refundPayment(
         },
         `athleit:rf:${r.refund_id}`,
       );
-      await d.store.attachRefund(r.refund_id, s.id, s.status === 'failed' ? 'failed' : 'pending');
-      results.push({ refundId: r.refund_id, amountCents: r.amount_cents, status: s.status });
     } catch (e) {
       await d.store.failRefund(r.refund_id).catch(() => {});
       d.log('error', 'refund.stripe_failed', { refundId: r.refund_id });
       throw e;
     }
+    // Stripe accepted it: from here on never mark it failed. The webhook adopts the row by metadata even if this fails.
+    await d.store
+      .attachRefund(r.refund_id, sr.id, sr.status === 'failed' ? 'failed' : 'pending')
+      .catch(() => {
+        d.log('warn', 'refund.attach_deferred', { refundId: r.refund_id });
+      });
+    results.push({ refundId: r.refund_id, amountCents: r.amount_cents, status: sr.status });
   }
   return results;
 }
