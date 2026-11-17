@@ -9,6 +9,7 @@ export class StripeError extends Error {
     public type: string,
     public code: string | null,
     message: string,
+    public param: string | null = null,
   ) {
     super(message);
   }
@@ -89,6 +90,8 @@ export class StripeApi {
         String(e.type ?? 'api_error'),
         e.code ? String(e.code) : null,
         `stripe_${e.type ?? 'error'}`,
+        // The offending field NAME (e.g. controller[fees][payer]) is safe to keep; the message is not.
+        typeof e.param === 'string' ? e.param.slice(0, 80) : null,
       );
     }
     return json;

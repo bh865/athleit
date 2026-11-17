@@ -84,7 +84,12 @@ export function userFunction<T>(
       // Safe diagnostics only: Stripe's error type/code/status (never its message, which can echo request values) or our own error id.
       const detail =
         e instanceof StripeError
-          ? { stripe_type: e.type, stripe_code: e.code, stripe_status: e.status }
+          ? {
+              stripe_type: e.type,
+              stripe_code: e.code,
+              stripe_status: e.status,
+              stripe_param: e.param,
+            }
           : { reason: String((e as Error)?.message ?? e).slice(0, 60) };
       log(m.status >= 500 ? 'error' : 'warn', 'request_failed', { code: m.code, ...detail });
       return json({ error: m.code }, m.status, cors);
