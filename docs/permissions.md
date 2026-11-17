@@ -41,6 +41,11 @@ without write access. **Guardian** = member of a household (independent of any t
 | Claim a player login (13+ only)                  |   any signed-in user; auto-approves only on a confirmed matching email   |                 |        |                |                      |                     |              |
 | Approve / decline a player login claim           |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
 | Read audit trail                                 |                                 ✓ (team)                                 |        –        |   –    |       –        |          –           |      ✓ (club)       |      –       |      –      |
+| Invite another guardian into a household         |                                    –                                     |        –        |   –    |       –        |          ✓           |          –          |      –       |      –      |
+| Rotate the team join code                        |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| End a club affiliation (unlink)                  |                                    ✓                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
+| Upload / replace a child's photo                 |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
+| View a child's photo                             |                               ✓ (rostered)                               |  ✓ (rostered)   |   –    |    own only    |          ✓           |    ✓ (rostered)     |      –       |      –      |
 | Create a club / create a team                    |                any signed-in user (creator becomes admin)                |                 |        |                |                      |                     |              |
 
 Club members' own rows: club admin reads all memberships in their club and may change roles
@@ -65,6 +70,17 @@ edit a linked team unless they also hold a team role.
 `request_to_join`, `decide_join_request`, `add_child`, `place_player_on_roster`,
 `request_club_link`, `decide_club_link`, `find_club`, `claim_player_login`,
 `decide_player_login_claim`, `get_team_roster`, `get_team_members`, `get_guardian_contacts`.
+UI read helpers (no new tables): `get_join_requests`, `get_link_requests`, `get_player_login_claims`, `preview_invite`.
 Policy helpers live in the unexposed `private` schema: `is_team_member`, `has_team_role`,
 `is_team_staff`, `can_view_team_roster`, `is_club_admin`, `is_club_member`,
 `is_household_guardian`, `is_guardian_of`, `is_player_self`, `can_see_player`.
+
+## How the apps use this
+
+`packages/core/src/capabilities.ts` is the code form of the matrix above (`can(context, capability)`),
+used to hide controls a user cannot use. It never grants anything: the database decides.
+A unit test per role in `packages/core/src/context.test.ts` keeps the two aligned.
+
+Notes on interpretation: a **club manager** only reads the club; a **club admin** reads the linked
+team's roster (names, jersey, status) but not guardian contacts and cannot edit; a **player (13+)**
+sees the limited roster and only their own player row and photo.

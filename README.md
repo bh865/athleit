@@ -60,6 +60,7 @@ Both apps have a design smoke test that renders every primitive (Button, TextFie
 | `pnpm lint`                    | ESLint across the workspace                                               |
 | `pnpm typecheck`               | `tsc --noEmit` across the workspace                                       |
 | `pnpm test`                    | Vitest unit tests (`core`, `tokens`)                                      |
+| `pnpm e2e`                     | Playwright end-to-end tests (web) against the project in `.env.local`     |
 | `pnpm format` / `format:check` | Prettier write / check                                                    |
 | `pnpm db:types`                | Regenerate `packages/db/src/database.types.ts` from the local DB          |
 | `pnpm db:test`                 | RLS-test guard, then pgTAP tests against the linked project (rolled back) |
@@ -125,6 +126,13 @@ Until then the buttons show Supabase's "provider is not enabled" error. Email/pa
 
 - **Unit (Vitest):** `pnpm test`. Includes the WCAG AA contrast assertions for every token pair.
 - **Database (pgTAP):** `pnpm db:test`. See [supabase/README.md](supabase/README.md) for how to write an RLS test for a new table.
+
+### End-to-end tests
+
+`pnpm e2e` builds the web app, starts it, and runs `apps/web/e2e` with several isolated browser sessions against the project in
+`apps/web/.env.local` (use a **dev or test project only**). Tests create `e2e-*@example.test` users. Set
+`E2E_SUPABASE_SERVICE_ROLE_KEY` in your shell (never in a file that ships) and the run deletes them afterwards; without it,
+run `bash scripts/e2e-cleanup.sh`. Mobile flows: [docs/mobile-manual-tests.md](docs/mobile-manual-tests.md).
 
 ## Branching and CI
 

@@ -17,6 +17,7 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/not_affiliated/, 'This team is not linked to a club.'],
   [/request_not_pending/, 'That request was already decided.'],
   [/player_under_13/, 'Children under 13 cannot have their own login.'],
+  [/player_not_found/, 'That player could not be found. Check the link you were given.'],
   [/player_already_linked/, 'This player already has a login.'],
   [/player_not_eligible/, 'Approve this child’s join request before adding them to the roster.'],
   [

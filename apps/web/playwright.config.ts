@@ -17,9 +17,10 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `pnpm dev --port ${PORT}`,
+    // A production build is closer to what ships and doesn't collide with a running `next dev`.
+    command: `pnpm build && pnpm start --port ${PORT}`,
     url: `http://localhost:${PORT}/sign-in`,
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: 300_000,
   },
 });
