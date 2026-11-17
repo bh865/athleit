@@ -1,7 +1,7 @@
 # Supabase
 
-Local backend for Athleit: Postgres, Auth, Realtime, Storage and Edge Functions,
-run by the Supabase CLI (needs Docker or a compatible container runtime).
+Backend for Athleit: Postgres, Auth, Realtime, Storage and Edge Functions on a hosted project,
+managed through the Supabase CLI (no local stack).
 
 ```
 supabase/
@@ -56,7 +56,7 @@ file proving it. This is enforced twice:
    authenticated user cannot (reads return zero rows; writes affect zero rows or raise
    `42501`), and `anon` cannot. Use `throws_ok(sql, '42501')` when the privilege is
    revoked, `is_empty(...)` when RLS filters rows out.
-5. Run `pnpm db:reset && pnpm db:test`.
+5. Push the migration (`pnpm db:push:dry`, then `pnpm db:push`) and run `pnpm db:test`. Tests run against the linked hosted project, one rolled-back transaction per file.
 
 Once membership-based permissions land in Phase 1, add a test per role (owner, manager,
 member, non-member) for each table, not just owner vs. stranger.

@@ -4,3 +4,4 @@ export * from './env';
 export * from './forms';
 export * from './schemas/auth';
 export * from './schemas/profile';
+export * from './schemas/teams';

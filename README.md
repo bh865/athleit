@@ -61,10 +61,9 @@ Both apps have a design smoke test that renders every primitive (Button, TextFie
 | `pnpm typecheck`               | `tsc --noEmit` across the workspace                                       |
 | `pnpm test`                    | Vitest unit tests (`core`, `tokens`)                                      |
 | `pnpm format` / `format:check` | Prettier write / check                                                    |
-| `pnpm db:start` / `db:stop`    | Start / stop the local Supabase stack                                     |
-| `pnpm db:reset`                | Re-create the local DB from migrations + `seed.sql`                       |
 | `pnpm db:types`                | Regenerate `packages/db/src/database.types.ts` from the local DB          |
-| `pnpm db:test`                 | RLS-test guard, then pgTAP tests (`supabase test db`)                     |
+| `pnpm db:test`                 | RLS-test guard, then pgTAP tests against the linked project (rolled back) |
+| `pnpm db:push:dry` / `db:push` | Show / apply pending migrations to the linked project                     |
 | `pnpm supabase <args>`         | Run the pinned Supabase CLI, e.g. `pnpm supabase migration new add_teams` |
 
 ## Repo map
@@ -135,7 +134,7 @@ Until then the buttons show Supabase's "provider is not enabled" error. Email/pa
 
 ## Conventions
 
-1. **Membership-based permissions (Phase 1).** Access is granted through membership rows (a user's role in a club/team), never through ad-hoc per-table owner columns or client-side checks. Phase 1 introduces the membership tables and a single set of helper functions that every RLS policy calls. Until then `profiles` is own-row only.
+1. **Membership-based permissions.** Access is granted through membership rows (`team_memberships`, `club_memberships`, `household_members`), never through owner columns or client-side checks. Every RLS policy calls the `private.*` helper functions. The role/capability table in [docs/permissions.md](docs/permissions.md) is the source of truth.
 2. **No table ships without RLS tests.** Every table in `public` has RLS enabled and a `supabase/tests/database/<table>_rls.test.sql` proving who can and cannot read/write each row. `pnpm db:test` and CI fail otherwise.
 3. **Vertical-slice delivery.** A feature ships on web **and** mobile together (schema + RLS + tests + both UIs), not layer by layer or platform by platform.
 4. **Stripe webhooks are the source of truth for payments.** Never mark anything paid because a client says so or a redirect returned. Payment state changes only from verified Stripe webhook events handled server-side (idempotently); the UI reads that state.
