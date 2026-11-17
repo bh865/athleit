@@ -33,6 +33,11 @@ messages insert ──trigger──▶ private.notify_new_message ──▶ priv
 - **Observability**: team admins call `get_notification_failures(team_id)` (failed and skipped rows with the error code,
   no bodies). In SQL: `select status, last_error, count(*) from notification_outbox where channel in ('push','email') group by 1, 2;`
 
+## Schedule notifications
+
+Schedule changes use the same pipeline (category `schedule`); the rules and batching are in [scheduling.md](scheduling.md#notifications-part-c).
+The push body comes from `payload.body` ("12 practices added"); rows without one fall back to the change label.
+
 ## Deep links
 
 Notification data carries a path (`/messages/<thread>` or `/events/<event>`). Web: the service worker focuses or opens

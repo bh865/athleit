@@ -222,4 +222,57 @@ test.describe.serial('scheduling', () => {
       'W 3-2',
     );
   });
+
+  test('the calendar feed serves a parseable ICS, and rotate / turn off revoke the old link', async () => {
+    await parentA.goto('/schedule');
+    await parentA.getByRole('button', { name: 'Calendar link' }).click();
+    await parentA.getByTestId('create-feed').click();
+    const url = (await parentA.getByTestId('feed-url').textContent())?.trim() ?? '';
+    expect(url).toMatch(/\/functions\/v1\/calendar-feed\/[0-9a-f]{64}\.ics$/);
+
+    const res = await parentA.request.get(url);
+    expect(res.status()).toBe(200);
+    expect(res.headers()['content-type']).toContain('text/calendar');
+    const ics = await res.text();
+    expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
+    // The child's team events, with stable UIDs, local times in the event's zone, and cancelled events marked.
+    expect(ics).toContain('SUMMARY:Game vs. Hawks');
+    expect(ics).toMatch(/DTSTART;TZID=[A-Za-z_/]+:\d{8}T\d{6}/);
+    expect(ics).toContain('BEGIN:VTIMEZONE');
+    expect(ics).toContain('STATUS:CANCELLED');
+    expect(ics).not.toMatch(/Ava|Adams|Ben|Brown/);
+    // The link itself is the credential: a wrong token and a missing token are 404.
+    expect((await parentA.request.get(url.replace(/[0-9a-f]{64}/, '0'.repeat(64)))).status()).toBe(
+      404,
+    );
+
+    await parentA.getByRole('button', { name: 'Reset link' }).click();
+    await expect(parentA.getByTestId('feed-url')).not.toHaveText(url);
+    const rotated = (await parentA.getByTestId('feed-url').textContent())?.trim() ?? '';
+    expect(rotated).not.toBe(url);
+    expect((await parentA.request.get(url)).status()).toBe(404);
+    expect((await parentA.request.get(rotated)).status()).toBe(200);
+
+    await parentA.getByRole('button', { name: 'Turn off' }).click();
+    await expect(parentA.getByText('Calendar link turned off')).toBeVisible();
+    expect((await parentA.request.get(rotated)).status()).toBe(404);
+  });
+});
+
+/**
+ * A notification tap opens /events/<id>. Signed out, the proxy sends the visitor to sign-in with the
+ * path in `next`; after signing in they land on that exact event page.
+ */
+test('a schedule notification link survives sign-in', async ({ browser }) => {
+  const { page } = await newSession(browser);
+  const path = '/events/11111111-1111-4111-8111-111111111111';
+  await page.goto(path);
+  await expect(page).toHaveURL(
+    new RegExp(`/sign-in\\?next=${encodeURIComponent(path).replace(/%/g, '%')}`),
+  );
+  await signUp(page, 'sc-link', 'Lee Link', path);
+  await expect(page).toHaveURL(new RegExp(`${path}$`));
+  await expect(page.getByTestId('event-page')).toBeVisible();
+  await expect(page.getByText('Event not found')).toBeVisible();
+  await cleanup();
 });

@@ -35,6 +35,9 @@ export interface NotificationPayload {
   event_id?: string;
   team_id?: string;
   change?: string;
+  /** Ready-to-show body for schedule notifications ("12 practices added"); never contains a child's name. */
+  body?: string;
+  count?: number;
   thread_type?: string;
 }
 
@@ -89,7 +92,10 @@ export interface EmailMessage {
 export interface Transports {
   configured: { expo: boolean; webPush: boolean; email: boolean };
   expo(messages: ExpoMessage[]): Promise<ExpoTicket[]>;
-  webPush(device: Device, body: { title: string; body: string; url: string }): Promise<WebPushResult>;
+  webPush(
+    device: Device,
+    body: { title: string; body: string; url: string },
+  ): Promise<WebPushResult>;
   email(msg: EmailMessage): Promise<{ ok: boolean; status: number }>;
 }
 
@@ -116,7 +122,11 @@ export function buildContent(row: OutboxRow): { title: string; body: string; url
       location_changed: 'Location changed',
       cancelled: 'Event cancelled',
     };
-    return { title: p.title || 'Schedule update', body: change[p.change ?? ''] ?? 'Schedule update', url };
+    return {
+      title: p.title || 'Schedule update',
+      body: p.body || change[p.change ?? ''] || 'Schedule update',
+      url,
+    };
   }
   const title = p.title || p.sender_name || 'New message';
   const generic = row.category === 'announcements' ? 'New announcement' : 'New message';
@@ -124,7 +134,11 @@ export function buildContent(row: OutboxRow): { title: string; body: string; url
   return { title, body: showText ? p.preview! : generic, url };
 }
 
-export function toExpoMessage(device: Device, c: { title: string; body: string; url: string }, row: OutboxRow): ExpoMessage {
+export function toExpoMessage(
+  device: Device,
+  c: { title: string; body: string; url: string },
+  row: OutboxRow,
+): ExpoMessage {
   return {
     to: device.token,
     title: c.title,
@@ -141,7 +155,8 @@ export function toExpoMessage(device: Device, c: { title: string; body: string; 
 }
 
 /** Exponential backoff with a cap: 30s, 2m, 8m, 30m, then give up (MAX_ATTEMPTS). */
-export const backoffMs = (attempts: number) => Math.min(30 * 60_000, 30_000 * 4 ** Math.max(0, attempts - 1));
+export const backoffMs = (attempts: number) =>
+  Math.min(30 * 60_000, 30_000 * 4 ** Math.max(0, attempts - 1));
 
 /** The device is open on this very thread right now: do not buzz it. */
 export function isViewingThread(device: Device, row: OutboxRow, now: Date): boolean {
@@ -155,7 +170,12 @@ export function isViewingThread(device: Device, row: OutboxRow, now: Date): bool
 
 // Delivery ----------------------------------------------------------------------------------------
 
-async function deliverPush(row: OutboxRow, store: Store, tr: Transports, now: Date): Promise<Finish> {
+async function deliverPush(
+  row: OutboxRow,
+  store: Store,
+  tr: Transports,
+  now: Date,
+): Promise<Finish> {
   const all = await store.devices(row.profile_id);
   if (all.length === 0) return { status: 'skipped', reason: 'no_active_device' };
   const devices = all.filter((d) => !isViewingThread(d, row, now));
@@ -212,8 +232,14 @@ async function deliverEmail(row: OutboxRow, store: Store, tr: Transports): Promi
   const to = await store.emailFor(row.profile_id);
   if (!to) return { status: 'skipped', reason: 'no_email' };
   const c = buildContent(row);
-  const r = await tr.email({ to, subject: c.title, text: `${c.body}\n\nOpen: {{APP_URL}}${c.url}` });
-  return r.ok ? { status: 'sent' } : { status: 'failed', error: `email_http_${r.status}`, retryAt: null };
+  const r = await tr.email({
+    to,
+    subject: c.title,
+    text: `${c.body}\n\nOpen: {{APP_URL}}${c.url}`,
+  });
+  return r.ok
+    ? { status: 'sent' }
+    : { status: 'failed', error: `email_http_${r.status}`, retryAt: null };
 }
 
 /** Deliver one claimed row and record exactly one outcome. */
@@ -221,7 +247,10 @@ export async function processRow(row: OutboxRow, store: Store, tr: Transports, n
   const attempts = row.attempts + 1;
   let result: Finish;
   try {
-    result = row.channel === 'push' ? await deliverPush(row, store, tr, now) : await deliverEmail(row, store, tr);
+    result =
+      row.channel === 'push'
+        ? await deliverPush(row, store, tr, now)
+        : await deliverEmail(row, store, tr);
   } catch (e) {
     result = { status: 'failed', error: e instanceof Error ? e.name : 'error', retryAt: null };
   }
@@ -236,7 +265,11 @@ export async function processRow(row: OutboxRow, store: Store, tr: Transports, n
 }
 
 /** Claim and deliver until the queue is drained (bounded). */
-export async function processBatch(store: Store, tr: Transports, opts: { batch?: number; maxRows?: number; now?: () => Date } = {}) {
+export async function processBatch(
+  store: Store,
+  tr: Transports,
+  opts: { batch?: number; maxRows?: number; now?: () => Date } = {},
+) {
   const batch = opts.batch ?? 50;
   const maxRows = opts.maxRows ?? 500;
   const counts = { sent: 0, skipped: 0, failed: 0 };

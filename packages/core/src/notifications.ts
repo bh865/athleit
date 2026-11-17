@@ -6,6 +6,7 @@ export interface InAppPayload {
   thread_id?: string;
   event_id?: string;
   change?: string;
+  body?: string;
   sensitive?: boolean;
 }
 
@@ -20,7 +21,12 @@ const CHANGE_LABEL: Record<string, string> = {
 export function notificationSummary(
   category: string,
   p: InAppPayload,
-): { title: string; detail: string; icon: 'calendar-blank' | 'megaphone' | 'chat-circle'; href: string } {
+): {
+  title: string;
+  detail: string;
+  icon: 'calendar-blank' | 'megaphone' | 'chat-circle';
+  href: string;
+} {
   const href = p.thread_id
     ? `/messages/${p.thread_id}`
     : p.event_id
@@ -29,7 +35,7 @@ export function notificationSummary(
   if (category === 'schedule') {
     return {
       title: p.title || 'Schedule update',
-      detail: CHANGE_LABEL[p.change ?? ''] ?? 'Schedule update',
+      detail: p.body || CHANGE_LABEL[p.change ?? ''] || 'Schedule update',
       icon: 'calendar-blank',
       href,
     };

@@ -42,6 +42,36 @@ const device = (over: Partial<Device> = {}): Device => ({
   ...over,
 });
 
+describe('buildContent for schedule notifications', () => {
+  it('shows the batched body ("12 practices added") and links to the first event', () => {
+    const c = buildContent(
+      row({
+        id: 's1',
+        category: 'schedule',
+        payload: {
+          kind: 'schedule',
+          change: 'created',
+          event_id: 'ev1',
+          title: 'Skills',
+          body: '12 practices added',
+          count: 12,
+        },
+      }),
+    );
+    expect(c).toEqual({ title: 'Skills', body: '12 practices added', url: '/events/ev1' });
+  });
+  it('falls back to the change label for older rows without a body', () => {
+    const c = buildContent(
+      row({
+        id: 's2',
+        category: 'schedule',
+        payload: { kind: 'schedule', change: 'cancelled', event_id: 'ev2', title: 'Practice' },
+      }),
+    );
+    expect(c.body).toBe('Event cancelled');
+  });
+});
+
 describe('buildContent (lock-screen content)', () => {
   it('shows only the title and a generic body for sensitive threads, even with a preview', () => {
     const c = buildContent(
@@ -158,7 +188,7 @@ class MemStore implements Store {
 describe('processBatch against a mock Expo endpoint', () => {
   let server: Server;
   let url = '';
-  let received: { to: string; body: string; title: string }[] = [];
+  let received: { to: string; body: string; title: string; data?: { url?: string } }[] = [];
   let respond: (to: string) => object = () => ({ status: 'ok', id: 'x' });
 
   beforeAll(async () => {
@@ -166,7 +196,7 @@ describe('processBatch against a mock Expo endpoint', () => {
       let data = '';
       req.on('data', (c) => (data += c));
       req.on('end', () => {
-        const msgs = JSON.parse(data) as { to: string; body: string; title: string }[];
+        const msgs = JSON.parse(data) as typeof received;
         received.push(...msgs);
         res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify({ data: msgs.map((m) => respond(m.to)) }));
@@ -217,6 +247,49 @@ describe('processBatch against a mock Expo endpoint', () => {
     // Running again delivers nothing new: rows are never re-sent.
     await processBatch(store, transports(), { now: () => NOW });
     expect(received).toHaveLength(2);
+  });
+
+  it('a 12-practice series is ONE batched push per eligible recipient, none for the editor or a muted user', async () => {
+    // fn_schedule_notifications.test.sql proves the database writes exactly these rows for create_event
+    // with a 12-occurrence series: one per recipient with a device and push on, none for the editor
+    // (coach) and none for a user who turned schedule notifications off (ben).
+    const payload = {
+      kind: 'schedule' as const,
+      change: 'created',
+      event_id: 'ev-first',
+      team_id: 'team-a',
+      title: 'Skills',
+      body: '12 practices added',
+      count: 12,
+    };
+    const mkSchedule = (id: string, profile: string) =>
+      mk(id, profile, { category: 'schedule', payload });
+    const store = new MemStore(
+      [mkSchedule('s-admin', 'admin'), mkSchedule('s-ava', 'ava'), mkSchedule('s-teen', 'teen')],
+      {
+        admin: [device({ id: 'da', token: 'ExponentPushToken[admin]' })],
+        ava: [device({ id: 'dv', token: 'ExponentPushToken[ava]' })],
+        teen: [device({ id: 'dt', token: 'ExponentPushToken[teen]' })],
+        coach: [device({ id: 'dc', token: 'ExponentPushToken[coach]' })],
+        ben: [device({ id: 'db', token: 'ExponentPushToken[ben]' })],
+      },
+    );
+    const counts = await processBatch(store, transports(), { now: () => NOW });
+    expect(counts).toEqual({ sent: 3, skipped: 0, failed: 0 });
+    expect(received).toHaveLength(3);
+    expect(received.map((m) => m.to).sort()).toEqual([
+      'ExponentPushToken[admin]',
+      'ExponentPushToken[ava]',
+      'ExponentPushToken[teen]',
+    ]);
+    for (const m of received) {
+      expect(m.title).toBe('Skills');
+      expect(m.body).toBe('12 practices added');
+      expect(m.data?.url).toBe('/events/ev-first');
+    }
+    // Not 12 pushes per person, and a second pass sends nothing more.
+    await processBatch(store, transports(), { now: () => NOW });
+    expect(received).toHaveLength(3);
   });
 
   it('sends one push per device and none to a device viewing the thread', async () => {

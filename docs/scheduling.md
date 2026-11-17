@@ -148,3 +148,46 @@ Schedule (week and month on web; Upcoming and Past on mobile), event drawer / pa
 RSVPs live and everyone sees "Updated" when `revision` changes. Date formatting and DST are unit-tested in
 `packages/core/src/schedule-time.test.ts`; end-to-end in `apps/web/e2e/scheduling.spec.ts`.
 Range helpers added for the calendar views: `team_schedule_range`, `household_schedule_range` (at most 100 days) and `get_event`.
+
+## Notifications (Part C)
+
+`private.notify_schedule` is called by `create_event`, `update_event`, `cancel_event` and `record_game_result`. It writes
+through the Phase 3 `private.enqueue_notification` (category `schedule`), so preferences, quiet hours, device-or-email routing
+and delivery are exactly the messaging ones ([notifications.md](notifications.md)).
+
+- **Recipients:** staff of the team, guardians of **active** rostered players, and the login of a rostered 13+ player. Never the
+  person who made the change. Club admins, parents of other teams and guardians of inactive players get nothing.
+- **What notifies:** a new event; a change to **time or place** (the changes that bump `events.revision`; title, notes, opponent
+  and arrive-early edits are silent); a cancellation; a result. A time and place change in one edit is one notification.
+- **Batching:** one notification per recipient per call, however many events it touched: "12 practices added", "12 practices
+  rescheduled", "10 practices cancelled". Dedupe keys are per change (`sch:<change>:<series or batch>:<profile>`), so a retry is a
+  no-op. A result is keyed by its score: saving the same score again is silent, a correction notifies again.
+- **Body** is built in the database (`payload.body`, `payload.count`) and never contains a child's name; the push and the alerts
+  list show it as is. The deep link is `/events/<first affected event>` on web and mobile.
+- **Muted users:** a user with schedule push and email off gets no push or email, but keeps the in-app feed row (the same
+  behaviour as messages).
+- **RSVP reminders:** pg_cron job `schedule-rsvp-reminders` runs every 15 minutes (`private.send_rsvp_reminders`). A guardian with
+  a child who has not answered an event starting within 24 hours gets ONE reminder per event ("RSVP needed: Sat, Nov 21 · 10:00 AM",
+  no child name); cancelled and past events are skipped; the dedupe key makes re-runs no-ops.
+
+## Calendar feed
+
+`https://<project>.supabase.co/functions/v1/calendar-feed/<token>.ics` (Edge Function `calendar-feed`, `verify_jwt = false`
+because calendar apps cannot send a JWT; the token is the credential).
+
+- The token is 64 hex characters, created by `create_calendar_feed_token()` and shown once; only its SHA-256 is stored.
+  `rotate_calendar_feed_token()` and `revoke_calendar_feed_token()` kill the old link at once. Unknown, revoked and malformed
+  tokens all return the same 404. The token is never logged (the function logs error codes only).
+- Rate limits: 60 requests a minute per IP and 20 per token, per function instance (best effort), with `Retry-After`. Responses
+  carry an ETag (304 on `If-None-Match`), `Cache-Control: private, max-age=300` and `Referrer-Policy: no-referrer`.
+- Contents: `calendar_feed_events(profile)` (service role only): events from every team the person is on (staff, or guardian of /
+  the 13+ login of an actively rostered player), from 30 days back to 365 days ahead, at most 2000. No RSVP data and no player names.
+- RFC 5545: CRLF, 75-octet folding, TEXT escaping; `UID:event-<id>@athleit` (stable); `DTSTAMP` and `LAST-MODIFIED` from `updated_at`
+  (so the output only changes when an event does); `SEQUENCE` = `revision - 1`; `STATUS:CANCELLED` with the reason in the
+  description (cancelled events stay in the feed); `DTSTART;TZID=<event zone>` with a generated `VTIMEZONE` carrying the real
+  transitions, so a 5:30 PM practice stays 5:30 PM across DST in the client. Zones the runtime does not know fall back to UTC.
+  Occurrences are materialized rows, so there is no `RRULE`.
+- Tests: `packages/core/src/ics.test.ts` parses the output back; `calendar-feed.test.ts` covers the handler (404s, ETag, rate
+  limits, token never logged); `fn_calendar_feed_events` and `fn_calendar_feed_tokens` cover the database side; the e2e test
+  hits the deployed function. Subscribe by pasting the link into Apple Calendar (File > New Calendar Subscription) or Google
+  Calendar (Other calendars > From URL).

@@ -3,7 +3,11 @@ import type { EmailMessage, ExpoMessage, ExpoTicket } from './deliver.ts';
 type Fetch = typeof fetch;
 
 /** Expo push service. `url` is overridable so tests can point at a mock endpoint. */
-export function expoTransport(opts: { url?: string; accessToken?: string | undefined; fetch?: Fetch }) {
+export function expoTransport(opts: {
+  url?: string;
+  accessToken?: string | undefined;
+  fetch?: Fetch;
+}) {
   const f = opts.fetch ?? fetch;
   const url = opts.url ?? 'https://exp.host/--/api/v2/push/send';
   return async (messages: ExpoMessage[]): Promise<ExpoTicket[]> => {
@@ -24,7 +28,13 @@ export function expoTransport(opts: { url?: string; accessToken?: string | undef
 }
 
 /** Resend transactional email (https://resend.com/docs/api-reference/emails/send-email). */
-export function resendTransport(opts: { apiKey: string; from: string; appUrl: string; url?: string; fetch?: Fetch }) {
+export function resendTransport(opts: {
+  apiKey: string;
+  from: string;
+  appUrl: string;
+  url?: string;
+  fetch?: Fetch;
+}) {
   const f = opts.fetch ?? fetch;
   return async (msg: EmailMessage): Promise<{ ok: boolean; status: number }> => {
     const res = await f(opts.url ?? 'https://api.resend.com/emails', {

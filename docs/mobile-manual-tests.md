@@ -93,3 +93,15 @@ Not yet run on a simulator in this branch (the iOS bundle compiles with `expo ex
 8. **Time zones.** Set the phone to a different zone than the team's; the event shows the team's time with "Your time: …".
 9. **Accessibility.** VoiceOver reads each event card (type, title, date, place, cancelled), the RSVP status line, and the counts. Reduce Motion and Reduce Transparency on: sheets and the tab bar stay legible. Tap targets are 44pt or larger.
 10. **Calendar link.** More > Schedule > Calendar link: create, copy, reset, turn off.
+
+## Schedule notifications and the calendar feed (Phase 2, Part C)
+
+Needs a real device with push set up ([notifications.md](notifications.md)); not run on a device in this branch.
+
+1. **Batched.** As a coach, add a weekly practice with 6 events. A parent's phone receives ONE push, "6 practices added", and tapping it opens the first practice (also from a cold start and when signed out: sign in, land on the event).
+2. **The editor and muted users.** The coach's own phone gets nothing. A parent who turned off Schedule in Alerts settings gets no push.
+3. **Time change.** Move one practice by an hour: "Time changed: …". Rename another: no push at all. Change a whole series to 6:00 PM: one push, "6 practices rescheduled".
+4. **Cancel.** Cancel one occurrence with a reason: "Cancelled: <reason>". The event stays on the schedule, struck through.
+5. **Result.** Enter a result: "Final score 3–2" to families and staff.
+6. **Reminder.** Leave a child without an RSVP for an event that starts in under 24 hours; within 15 minutes the guardian gets "RSVP needed: …", once. Answer, and no further reminder.
+7. **Calendar.** More > Calendar link: create, copy, paste into iOS Settings > Calendar > Accounts > Add Subscribed Calendar (or Google Calendar > From URL). Events appear at the right local time; cancel one and it shows as cancelled after the next refresh; reset the link and the old subscription stops updating.

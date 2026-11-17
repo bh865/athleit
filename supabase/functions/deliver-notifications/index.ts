@@ -88,11 +88,16 @@ const transports: Transports = {
       },
     });
     const res = await fetch(endpoint, { method: 'POST', headers, body });
-    return { ok: res.status === 201 || res.status === 200, gone: res.status === 404 || res.status === 410, status: res.status };
+    return {
+      ok: res.status === 201 || res.status === 200,
+      gone: res.status === 404 || res.status === 410,
+      status: res.status,
+    };
   },
-  email: resendKey && from
-    ? resendTransport({ apiKey: resendKey, from, appUrl })
-    : async () => ({ ok: false, status: 0 }),
+  email:
+    resendKey && from
+      ? resendTransport({ apiKey: resendKey, from, appUrl })
+      : async () => ({ ok: false, status: 0 }),
 };
 
 Deno.serve(async () => {
@@ -100,7 +105,9 @@ Deno.serve(async () => {
     const counts = await processBatch(store, transports);
     // Counts only: never rows, tokens, addresses or message text.
     console.log(JSON.stringify({ delivered: counts }));
-    return new Response(JSON.stringify(counts), { headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify(counts), {
+      headers: { 'content-type': 'application/json' },
+    });
   } catch (e) {
     console.error('deliver_failed', e instanceof Error ? e.message : 'error');
     return new Response(JSON.stringify({ error: 'deliver_failed' }), { status: 500 });
