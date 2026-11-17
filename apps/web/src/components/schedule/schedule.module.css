@@ -393,3 +393,20 @@
     padding: var(--space-3) var(--space-4);
   }
 }
+
+/* Design gallery fixtures */
+.demoDrawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: var(--size-schedule-drawer-width);
+}
+.demoForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: calc(var(--size-sidebar-width) * 2);
+}
+.demoRows {
+  max-width: calc(var(--size-sidebar-width) * 3);
+}

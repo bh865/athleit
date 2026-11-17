@@ -62,7 +62,34 @@ Mobile mirrors the web screens: the Messages tab (lime count badge via `TabItem.
 
 Not built yet: thread info screen (members, mute, leave), moderation review queue UI.
 
+## Phase 2: scheduling (composed from existing tokens and components)
+
+The system specifies Schedule (mobile list, web list with a 400 glass drawer), Event detail and the Home "Next up" card; those are
+built as drawn (date block, "time · location", type chip, mono counts, 64px lime Going pill, surface-2 Can't go pill, check-circle /
+x-circle / clock list). Everything below is NOT in the system yet; each is composed from existing tokens and components.
+
+| Screen / component                                                  | Composed from                                                                                                               | Notes                                                                                                                 |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Month grid (web)                                                    | Surface cells, `radius.md`, lime "today" pill, surface-alt event chips                                                      | New `MonthGrid`; up to 3 events per day then "+N more"; cancelled events struck through                               |
+| Week view (web)                                                     | Day headings + the Schedule rows                                                                                            | Month/Week segmented control as drawn; prev/next/Today controls are IconButton + ghost Button                         |
+| New / edit event sheet                                              | Sheet, SegmentedControl (type, repeat, ends, home/away), TextField, Select, Chip (weekdays, "save for next time"), TextArea | **New `TextArea`** primitive (web), styled like TextField. Mobile uses Choice chips and typed date/time fields        |
+| Series scope picker                                                 | SegmentedControl ("This event / This and following / All events")                                                           | Shown only for series events, in the edit and cancel flows                                                            |
+| Cancel flow                                                         | Sheet (modal level), TextArea, Button                                                                                       | Reason required; cancelled events stay listed, struck through, with the reason                                        |
+| Game result sheet                                                   | Sheet, SegmentedControl (final / by period), TextField mono, Text                                                           | Shaped by the sport: half / quarter / period / inning / set; sets show "sets won"; ties message only where disallowed |
+| Result and record display                                           | Mono chip on the row ("W 3-2"), title line in the drawer                                                                    | `team_record` is available but has no screen yet                                                                      |
+| Per-child RSVP                                                      | Chips (mobile child chips) or labelled groups (web), Going / Can't go pills, quiet "Maybe" ghost button                     | A status line ("Maya: Going") is announced to screen readers                                                          |
+| "Updated" / cancelled banners                                       | Notice-style box (`warnSoft`, `badSoft`)                                                                                    | Shown on the event when its revision changes or it is cancelled                                                       |
+| Places and opponents manager                                        | Sheet, ListGroup, ListRow, IconButton (trash), TextField                                                                    | Saved locations and opponents per team                                                                                |
+| Calendar link settings                                              | Sheet, mono token text, Button (copy / reset / turn off)                                                                    | Link shown once; only a hash is stored                                                                                |
+| Schedule tab (mobile), Schedule nav item (web), Team "Schedule" tab | Existing TabBar / Sidebar / team tabs                                                                                       | New icons: `map-pin`, `link`, `arrow-clockwise`, `repeat`, `question`                                                 |
+
+New component tokens (`packages/tokens/src/components.ts`, `schedule`): `dateBlockWeb` 64, `dateBlockMobile` 48, `drawerWidth` 400,
+`rsvpButton` 52, `rsvpButtonLg` 64, `calendarCellMinHeight` 96, `calendarDot` 6, `avatarSmall` 32. The first four come from the
+Web and Mobile Schedule screens; the calendar sizes are additions.
+
+Gallery and baselines: three new sections ("Schedule · rows and month", "Schedule · event detail", "Schedule · flows") in light
+and dark under `apps/web/visual/`. The visual project now runs in `America/New_York` so fixtures do not depend on the machine.
+
 ## Still not in the system, and not built
 
-Schedule, Event detail and RSVP, Alerts, Messages, Pay and the related states. They are Phase 3+; their components (Sheet, Toast,
-ListRow, Chip, EmptyState and friends) already exist and are in the gallery.
+Alerts, Pay and the related states (Phases 4 and 5), a team record screen, and staff-set RSVPs in the UI.

@@ -23,7 +23,12 @@ export default defineConfig({
     {
       name: 'visual',
       testDir: './visual',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        // Fixed zone so schedule fixtures render the same on every machine.
+        timezoneId: 'America/New_York',
+      },
     },
   ],
   webServer: {

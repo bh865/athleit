@@ -78,3 +78,18 @@ Setup: two accounts on the same team (for example a coach and a parent; join the
 6. **Preferences.** Turn "Messages by push" off: no push. Turn on previews in an adult-only group: the push shows text; in a group with a player under 18 it never does.
 7. **Sign out this device** (Settings or More, Sign out): the device disappears from the list and stops receiving.
 8. **In-app.** With the app open on another screen, a new message shows a glass toast and a new row at the top of Alerts on a lime circle.
+
+## Scheduling (Phase 2)
+
+Not yet run on a simulator in this branch (the iOS bundle compiles with `expo export`); run these before release.
+
+1. **Staff create.** As a coach, open Schedule, tap New event, add a Game (title, today's date, a start time later today, an opponent, "New place…" for the location). It appears under Upcoming. Add a weekly practice on two weekdays with 6 events; the toast says "6 practices added".
+2. **Parent RSVP per child.** Sign in as a parent with two children on one team. Home shows "Next up" with child chips; choose a child, tap Going, see "Name: Going". Switch chip, tap Can't go. Open the event from the card and confirm both statuses.
+3. **Offline / failure.** Turn on airplane mode and tap Going; the choice reverts with an error and Retry. Turn it off and tap Retry.
+4. **Counts live.** Keep the coach's event detail open on a second device; a parent's RSVP changes the counts and the player list without a refresh.
+5. **Privacy.** A second family's event screen shows counts only, no names.
+6. **Cancel.** Coach opens a series event, Cancel event, picks "This and following", enters a reason. Parents still see the events, struck through, with the reason; Going and Can't go are gone.
+7. **Result.** After a game starts, coach taps Enter result: final score, then "By half/quarter/inning/set". A tie is refused for basketball and volleyball.
+8. **Time zones.** Set the phone to a different zone than the team's; the event shows the team's time with "Your time: …".
+9. **Accessibility.** VoiceOver reads each event card (type, title, date, place, cancelled), the RSVP status line, and the counts. Reduce Motion and Reduce Transparency on: sheets and the tab bar stay legible. Tap targets are 44pt or larger.
+10. **Calendar link.** More > Schedule > Calendar link: create, copy, reset, turn off.

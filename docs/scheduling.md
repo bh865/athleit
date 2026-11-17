@@ -139,3 +139,12 @@ returns null for unknown, malformed or revoked tokens.
 - A result can only be entered once the game has started.
 - Location and opponent deletes use `NO ACTION` foreign keys: an in-use one cannot be deleted
   alone, but deleting a whole team still cascades.
+
+## Screens (web and mobile)
+
+Schedule (week and month on web; Upcoming and Past on mobile), event drawer / page / screen (also the deep-link target
+`/events/<id>`), RSVP per child, new / edit / cancel / result flows (edit is web only for now), saved places and opponents
+(web), calendar link settings. Realtime: the event view subscribes to `rsvps` and `events` for that event, so staff counts follow
+RSVPs live and everyone sees "Updated" when `revision` changes. Date formatting and DST are unit-tested in
+`packages/core/src/schedule-time.test.ts`; end-to-end in `apps/web/e2e/scheduling.spec.ts`.
+Range helpers added for the calendar views: `team_schedule_range`, `household_schedule_range` (at most 100 days) and `get_event`.

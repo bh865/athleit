@@ -34,6 +34,7 @@ import { CalendarFeed } from './calendar-feed';
 import { EventDetail } from './event-detail';
 import { EventForm } from './event-form';
 import { EventRow } from './event-row';
+import { MonthGrid } from './month-grid';
 import { fromHouseholdRows, fromTeamRows, type ScheduleItem } from './items';
 import { PlacesManager } from './places-manager';
 import styles from './schedule.module.css';
@@ -43,7 +44,6 @@ export type ScheduleScope =
   { kind: 'team'; teamId: string; sport: Sport; canManage: boolean } | { kind: 'household' };
 
 type ViewMode = 'week' | 'month';
-const WEEKDAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const dayHeading = (key: string) => {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
@@ -192,51 +192,16 @@ export function ScheduleView({
 
       <LoadState loading={res.loading && !res.data} error={res.error} onRetry={res.reload}>
         {mode === 'month' ? (
-          <div className={styles.month} role="grid" aria-label={rangeLabel}>
-            {WEEKDAY_HEADS.map((d) => (
-              <div key={d} className={styles.monthHead} role="columnheader">
-                {d}
-              </div>
-            ))}
-            {days.map((k) => {
-              const items = dayItems(k);
-              const outside = k.slice(0, 7) !== `${y}-${String(m).padStart(2, '0')}`;
-              return (
-                <div
-                  key={k}
-                  role="gridcell"
-                  className={[
-                    styles.cell,
-                    outside ? styles.cellOutside : '',
-                    k === today ? styles.cellToday : '',
-                    k === pickedDay ? styles.cellSelected : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => setPickedDay(k)}
-                >
-                  <span className={styles.cellDay}>{Number(k.slice(8))}</span>
-                  {items.slice(0, 3).map((it) => (
-                    <button
-                      key={it.id}
-                      type="button"
-                      className={`${styles.cellEvent} ${it.status === 'cancelled' ? styles.cellEventCancelled : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        select(it.id);
-                      }}
-                      aria-label={`${it.title}${it.status === 'cancelled' ? ', cancelled' : ''}`}
-                    >
-                      {it.title}
-                    </button>
-                  ))}
-                  {items.length > 3 ? (
-                    <span className={styles.cellMore}>+{items.length - 3} more</span>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
+          <MonthGrid
+            year={y}
+            month={m}
+            label={rangeLabel}
+            today={today}
+            pickedDay={pickedDay}
+            itemsByDay={grouped}
+            onPickDay={setPickedDay}
+            onSelect={select}
+          />
         ) : null}
 
         {emptyWeek ? (
