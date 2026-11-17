@@ -548,6 +548,9 @@ export async function getAttachmentUrl(client: Client, path: string): Promise<Re
   return error || !data ? fail(error) : ok(data.signedUrl);
 }
 
+/** Realtime channels are keyed by name; give each subscription its own so two components never share one. */
+const uniqueSuffix = () => Math.random().toString(36).slice(2, 10);
+
 export interface ThreadSubscription {
   /** Broadcast a typing event on the private thread channel. */
   sendTyping: () => void;
@@ -574,7 +577,7 @@ export function subscribeToThread(
 ): ThreadSubscription {
   const filter = `thread_id=eq.${threadId}`;
   const rows = client
-    .channel(`rows:${threadId}`)
+    .channel(`rows:${threadId}:${uniqueSuffix()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter }, (p) => {
       const id = (p.new as { id?: string }).id;
       if (id) handlers.onMessage(id);
@@ -609,7 +612,7 @@ export function subscribeToThread(
 /** Live unread / new-notification feed for the signed-in user (in-app outbox rows). */
 export function subscribeToNotifications(client: Client, userId: string, onChange: () => void) {
   const ch = client
-    .channel(`notifications:${userId}`)
+    .channel(`notifications:${userId}:${uniqueSuffix()}`)
     .on(
       'postgres_changes',
       {
