@@ -82,7 +82,7 @@ insert into public.messages (thread_id, sender_profile_id, body) values ('710000
 select is((select count(*)::int from public.notification_outbox where channel='in_app' and category='announcements'), 6, 'announcements reach every other active team member');
 select is((select count(*)::int from public.notification_outbox where profile_id='aa000000-0000-0000-0000-000000000001' ), 0, 'not the sender');
 select is((select count(*)::int from public.notification_outbox where profile_id='dd000000-0000-0000-0000-000000000002'  ), 0, 'not another team');
-select is((select count(*)::int from public.notification_outbox where profile_id='cc000000-0000-0000-0000-000000000001' and category='announcements'), 1, 'players get announcements');
+select is((select count(*)::int from public.notification_outbox where profile_id='cc000000-0000-0000-0000-000000000001' and category='announcements' and channel='in_app'), 1, 'players get announcements');
 select is((select count(*)::int from public.notification_outbox where category='messages'), 0, 'announcements use their own category');
 delete from public.notification_outbox;
 insert into public.thread_participants (thread_id, profile_id, role) values ('71000000-0000-0000-0000-00000000000b','cc000000-0000-0000-0000-000000000001','member');
