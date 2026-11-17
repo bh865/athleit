@@ -20,7 +20,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:types": "bash scripts/db-types.sh",
-    "db:test": "supabase test db"
+    "db:test": "bash scripts/check-rls-tests.sh && supabase test db"
   },
   "devDependencies": {
     "@athleit/config": "workspace:*",
