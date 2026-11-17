@@ -1,118 +1,137 @@
-import { brand, type StatusColor, type ThemeColors } from './colors';
-import { cssRgba } from './contrast';
-import { contrastPairs } from './contrast-pairs';
 import { contrastRatio } from './contrast';
-import { glassMaterials, type GlassLevel } from './glass';
-import { radii, spacing } from './layout';
-import { themes, type Theme } from './themes';
-import { fontFamily, fontSize, fontWeight } from './typography';
+import { contrastPairs } from './contrast-pairs';
+import { componentTokens } from './components';
+import { glassLevels } from './glass';
+import { fontFamily, fontWeight, radius, space } from './primitives';
+import { semanticColorNames } from './semantic';
+import { themeDefinitions, resolveTheme, type Theme } from './themes';
+import { textStyles } from './typography';
 
 const kebab = (s: string) => s.replace(/([A-Z])/g, '-$1').toLowerCase();
 const decl = (name: string, value: string | number) => `  --${name}: ${value};`;
-const levels: GlassLevel[] = ['bar', 'sheet', 'modal'];
 
-function colorVars(c: ThemeColors): string[] {
-  const out: string[] = [];
-  for (const [key, value] of Object.entries(c)) {
-    if (typeof value === 'string') {
-      out.push(decl(`color-${kebab(key)}`, value));
-    } else {
-      const s = value as StatusColor;
-      for (const [part, v] of Object.entries(s)) out.push(decl(`color-${key}-${kebab(part)}`, v));
-    }
+function flatten(prefix: string, obj: Record<string, unknown>, out: string[]) {
+  for (const [k, v] of Object.entries(obj)) {
+    const name = `${prefix}-${kebab(k)}`;
+    if (typeof v === 'number') out.push(decl(name, `${v}px`));
+    else if (v && typeof v === 'object') flatten(name, v as Record<string, unknown>, out);
   }
+}
+
+function sharedVars(): string[] {
+  const out: string[] = [
+    decl('font-sans', `${fontFamily.sans}, ${fontFamily.sansFallback}`),
+    decl('font-mono', `"${fontFamily.mono}", ${fontFamily.monoFallback}`),
+  ];
+  for (const [k, v] of Object.entries(space)) out.push(decl(`space-${k}`, `${v}px`));
+  for (const [k, v] of Object.entries(radius)) out.push(decl(`radius-${k}`, `${v}px`));
+  for (const [k, t] of Object.entries(textStyles)) {
+    const n = `text-${kebab(k)}`;
+    out.push(
+      decl(`${n}-size`, `${t.size}px`),
+      decl(`${n}-leading`, `${t.lineHeight}px`),
+      decl(`${n}-weight`, fontWeight[t.weight]),
+      decl(`${n}-tracking`, `${t.letterSpacing}em`),
+      decl(`${n}-family`, `var(--font-${t.family})`),
+      decl(`${n}-transform`, t.uppercase ? 'uppercase' : 'none'),
+    );
+  }
+  for (const level of glassLevels) {
+    // Geometry is theme-independent; the filter is a variable so reduced transparency can null it.
+    const g = themeDefinitionsFirst().glass[level];
+    out.push(
+      decl(`glass-${level}-blur`, `${g.blur}px`),
+      decl(
+        `glass-${level}-filter`,
+        `blur(${g.blur}px) saturate(${Math.round(g.saturation * 100)}%)`,
+      ),
+    );
+  }
+  flatten('size', componentTokens as unknown as Record<string, unknown>, out);
   return out;
 }
 
-function glassVars(theme: Theme): string[] {
-  const out: string[] = [];
-  for (const level of levels) {
+const themes = (): [string, Theme][] =>
+  Object.entries(themeDefinitions).map(([name, def]) => [name, resolveTheme(name, def)]);
+const themeDefinitionsFirst = () => themes()[0]![1];
+
+function themeVars(theme: Theme): string[] {
+  const out: string[] = [decl('color-scheme-name', theme.scheme)];
+  for (const k of semanticColorNames) out.push(decl(`color-${kebab(k)}`, theme.color[k]));
+  for (const level of glassLevels) {
     const g = theme.glass[level];
-    out.push(decl(`glass-${level}-tint`, cssRgba(g.tint.color, g.tint.opacity)));
     out.push(
-      decl(`glass-${level}-border`, cssRgba(g.borderHighlight.color, g.borderHighlight.opacity)),
+      decl(`glass-${level}-tint`, g.tint),
+      decl(`glass-${level}-border`, g.border),
+      decl(`glass-${level}-highlight`, g.highlight),
+      decl(
+        `glass-${level}-shadow`,
+        g.shadow
+          ? `inset 0 1px 0 ${g.highlight}, 0 ${g.shadow.y}px ${g.shadow.blur}px ${g.shadowColor}`
+          : `inset 0 1px 0 ${g.highlight}`,
+      ),
+    );
+  }
+  const blobs = theme.blobs.map(
+    (b) => `radial-gradient(circle at ${b.x}% ${b.y}%, ${b.color}, transparent ${b.stop}%)`,
+  );
+  out.push(decl('backdrop-blobs', blobs.join(', ')));
+  return out.filter((l) => !l.includes('color-scheme-name'));
+}
+
+const block = (selector: string, theme: Theme, indent = '') =>
+  [
+    `${indent}${selector} {`,
+    `${indent}  color-scheme: ${theme.scheme};`,
+    ...themeVars(theme).map((l) => indent + l),
+    `${indent}}`,
+  ].join('\n');
+
+function reducedGlassVars(indent = '  '): string[] {
+  const out: string[] = [];
+  for (const level of glassLevels) {
+    out.push(
+      `${indent}--glass-${level}-tint: var(--color-surface);`,
+      `${indent}--glass-${level}-filter: none;`,
+      `${indent}--glass-${level}-shadow: none;`,
     );
   }
   return out;
-}
-
-/** Declarations that switch every glass level to a solid, un-blurred surface. */
-function reducedGlassVars(): string[] {
-  const out: string[] = [];
-  for (const level of levels) {
-    out.push(decl(`glass-${level}-tint`, 'var(--color-surface)'));
-    out.push(decl(`glass-${level}-filter`, 'none'));
-  }
-  return out;
-}
-
-function themeBlock(selector: string, theme: Theme): string {
-  return [
-    `${selector} {`,
-    `  color-scheme: ${theme.name};`,
-    ...colorVars(theme.color),
-    ...glassVars(theme),
-    '}',
-  ].join('\n');
 }
 
 /** The full contents of packages/tokens/theme.css (generated; do not edit by hand). */
 export function buildThemeCss(): string {
-  const shared: string[] = [
-    decl('font-sans', `${fontFamily.sans}, ${fontFamily.sansFallback}`),
-    decl('font-mono', `"${fontFamily.mono}", ${fontFamily.monoFallback}`),
-  ];
-  for (const [k, w] of Object.entries(fontWeight)) shared.push(decl(`weight-${k}`, w));
-  for (const [k, [size, line]] of Object.entries(fontSize)) {
-    shared.push(decl(`text-${k}-size`, `${size}px`), decl(`text-${k}-leading`, `${line}px`));
-  }
-  for (const [k, v] of Object.entries(spacing))
-    shared.push(decl(`space-${String(k).replace('.', '_')}`, `${v}px`));
-  for (const [k, v] of Object.entries(radii)) shared.push(decl(`radius-${k}`, `${v}px`));
-  for (const level of levels) {
-    const m = glassMaterials[level];
-    shared.push(
-      decl(`glass-${level}-blur`, `${m.blur}px`),
-      decl(
-        `glass-${level}-filter`,
-        `blur(${m.blur}px) saturate(${Math.round(m.saturation * 100)}%)`,
-      ),
-    );
-  }
-  shared.push(
-    decl('brand-charcoal', brand.charcoal),
-    decl('brand-lime', brand.lime),
-    decl('brand-ice', brand.ice),
-  );
-
-  return [
+  const list = themes();
+  const [firstName, first] = list[0]!;
+  const osDark = list.find(([, t]) => t.scheme === 'dark');
+  const parts: string[] = [
     '/* GENERATED by packages/tokens/scripts/build-css.ts. Do not edit by hand. */',
-    '/* Theme selection: [data-theme="light|dark"] on <html>; no attribute = follow the OS. */',
+    '/* Theme selection: [data-theme="<name>"] on <html>; no attribute = follow the OS. */',
     '',
-    `:root {\n${shared.join('\n')}\n}`,
+    `:root {\n${sharedVars().join('\n')}\n}`,
     '',
-    themeBlock(':root,\n:root[data-theme="light"]', themes.light),
-    '',
-    themeBlock(':root[data-theme="dark"]', themes.dark),
-    '',
-    `@media (prefers-color-scheme: dark) {\n${themeBlock('  :root:not([data-theme])', themes.dark)
-      .split('\n')
-      .map((l, i) => (i === 0 ? l : `  ${l}`))
-      .join('\n')}\n}`,
+    block(`:root,\n:root[data-theme="${firstName}"]`, first),
+  ];
+  for (const [name, t] of list.slice(1)) parts.push('', block(`:root[data-theme="${name}"]`, t));
+  if (osDark)
+    parts.push(
+      '',
+      `@media (prefers-color-scheme: dark) {\n${block(':root:not([data-theme])', osDark[1], '  ')}\n}`,
+    );
+  parts.push(
     '',
     '/* Reduced transparency: OS preference, or the app-level override. `:root:root` raises',
     '   specificity above the theme blocks so the solid fallback always wins. */',
-    `@media (prefers-reduced-transparency: reduce) {\n  :root:root {\n${reducedGlassVars()
-      .map((l) => `  ${l}`)
-      .join('\n')}\n  }\n}`,
+    `@media (prefers-reduced-transparency: reduce) {\n  :root:root {\n${reducedGlassVars('    ').join('\n')}\n  }\n}`,
     `:root:root[data-reduce-transparency="true"] {\n${reducedGlassVars().join('\n')}\n}`,
     '',
-  ].join('\n');
+  );
+  return parts.join('\n');
 }
 
 /** Markdown documentation of every contrast pair, with computed ratios. */
 export function buildContrastDoc(): string {
-  const rows = (theme: 'light' | 'dark') =>
+  const rows = (theme: string) =>
     contrastPairs()
       .filter((p) => p.theme === theme)
       .map((p) => {
@@ -130,20 +149,19 @@ UI component boundaries, focus rings and indicators need 3:1 (WCAG 1.4.11).
 
 Rules that follow from these numbers:
 
-- **Electric lime (\`#CCFF33\`) is a fill, not a text colour, on light surfaces** (1.2:1 on white).
-  Light mode uses \`accentInk\` (dark olive) for accent-coloured text, icons and indicators; lime
-  carries \`onAccent\` charcoal text. In dark mode lime works as text and indicator too.
-- \`textMuted\` is for secondary copy on solid surfaces. Do not place it on glass over arbitrary imagery.
-- Glass rows use the worst-case backdrop (white behind dark glass, black behind light glass),
-  so primary text stays AA no matter what scrolls underneath.
-- Decorative \`border\` is exempt from 3:1; use \`borderStrong\` for anything that identifies a control.
+- **Electric lime (\`#CCFF33\`) is a fill, never text.** It carries \`accentInk\` (charcoal). Text and icons
+  that need emphasis use \`ink\`; "selected" fills use \`bubbleOwn\` (charcoal in light, lime in dark).
+- \`muted\` is for secondary copy on solid surfaces. **Do not place \`muted\` text on glass**: glass is
+  translucent, so its contrast depends on what scrolls beneath it. Primary \`ink\` on glass is asserted
+  against the app background and its blobs.
+- Status colours (\`ok\`, \`warn\`, \`bad\`) are text/icon/dot colours; \`*Soft\` is their tinted background.
 
-## Light theme
+## light theme
 
 ${header}
 ${rows('light')}
 
-## Dark theme
+## dark theme
 
 ${header}
 ${rows('dark')}
