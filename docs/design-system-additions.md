@@ -32,7 +32,64 @@ Screenshots: web light/dark in [`docs/design-audit/after/`](design-audit/after/)
 - **Theme control** (`ThemeToggle`): a segmented control (lime selected pill) for Light / Dark / System.
 - **Backdrop** (mobile) and **body background** (web): the blob recipe from the system, applied to the app background.
 
+## Messaging (Phase 3, web and mobile)
+
+Composed from existing tokens and components. New component tokens (`componentTokens.bubble.maxWidthWeb/Mobile` and `componentTokens.chat.*`: list width 340, header 76/112, composer 56/52, send button 40, thread avatar 44/52, reaction chip 24, typing dot 8, unread dot 10) and icons (`paperclip`, `arrow-up`, `arrow-down`, `megaphone`, `info`, `thumbs-up`, `heart`, `smiley`, `confetti`, `hands-clapping`, `star`, `arrow-bend-up-left`, `flag`, `file-pdf`, `bell-slash`, `eye-slash`, `prohibit`, `trash`, `pencil`, `shield-check`) were added through the token layers and the Icon wrappers.
+
+| Screen / component                                            | Composed from                                                                                                            | Notes                                                                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Announcement post                                             | Surface card, `Label` kicker "ANNOUNCEMENT", caption author, time and (staff only) read count                            | Calm: no bubble, no composer for non-staff ("Only coaches and managers can post here.")                 |
+| Reply-to quote inside a bubble                                | Left rule in `currentcolor`, caption text, two-line clamp                                                                | Quote inherits the bubble's ink so it works on both bubble fills                                        |
+| Image attachment and PDF chip                                 | Radius-md image in the bubble; surface-alt chip with `file-pdf` icon                                                     | Signed URLs, 1h; images are never full-width of the thread                                              |
+| New-message flow                                              | Card, `SegmentedControl` (Direct / Group / Announcement), `Chip` people picker, `TextField`, plain-language safety notes | Parents and teens only see Direct; the database still decides and its answer is shown in friendly words |
+| Message actions (hover or focus on web; long-press on mobile) | Row of 44px ghost icon buttons: five reactions, reply, report or delete, and "Remove for everyone" for staff             | Revealed on hover and on keyboard focus                                                                 |
+| Removed-message placeholder                                   | `surface-alt` bubble, muted italic "Removed by staff" / "Message deleted"                                                |                                                                                                         |
+| Failed-send state                                             | Bubble at 60% opacity while sending; "Failed to send · Retry · Discard" in the meta line                                 |                                                                                                         |
+| New-messages pill                                             | Glass sheet pill with `arrow-down`                                                                                       | Appears when messages arrive while scrolled up                                                          |
+| Typing indicator                                              | Three muted dots in a `bubbleOther` bubble with the tail corner                                                          | Supabase Broadcast on a private channel                                                                 |
+| Report sheet                                                  | Glass `Sheet`, `TextField`, primary Button                                                                               |                                                                                                         |
+
+Mobile mirrors the web screens: the Messages tab (lime count badge via `TabItem.badge`), a full-screen conversation without the tab bar, long-press actions in a glass `Sheet`, and an offline send queue (Sending, then Failed with Retry and Discard).
+
+## Notifications (Phase 3, Part C)
+
+| Screen / component                  | Composed from                                                                                                                                                                      | Notes                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Alerts (in-app notification centre) | The system's "alerts" list: 44px icon circle, bold title, muted detail, caption time; recent items on lime circles                                                                 | "Mark all read" secondary button; Settings link top-right                                                  |
+| Notification settings               | Cards with a category x channel switch grid, `TextField` times, timezone `Select` (web) or device timezone (mobile), preview switch, device list with ghost "Sign out this device" | The switch is a native checkbox styled with `bubbleOwn` (charcoal in light, lime in dark), not lime-filled |
+| In-app toast                        | Existing glass sheet pill with the `bell` fill icon (neutral tone)                                                                                                                 | Not shown for the thread you are viewing                                                                   |
+| Sidebar "Alerts" item               | Existing sidebar item with the `bell` icon                                                                                                                                         |                                                                                                            |
+
+Not built yet: thread info screen (members, mute, leave), moderation review queue UI.
+
+## Phase 2: scheduling (composed from existing tokens and components)
+
+The system specifies Schedule (mobile list, web list with a 400 glass drawer), Event detail and the Home "Next up" card; those are
+built as drawn (date block, "time · location", type chip, mono counts, 64px lime Going pill, surface-2 Can't go pill, check-circle /
+x-circle / clock list). Everything below is NOT in the system yet; each is composed from existing tokens and components.
+
+| Screen / component                                                  | Composed from                                                                                                               | Notes                                                                                                                 |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Month grid (web)                                                    | Surface cells, `radius.md`, lime "today" pill, surface-alt event chips                                                      | New `MonthGrid`; up to 3 events per day then "+N more"; cancelled events struck through                               |
+| Week view (web)                                                     | Day headings + the Schedule rows                                                                                            | Month/Week segmented control as drawn; prev/next/Today controls are IconButton + ghost Button                         |
+| New / edit event sheet                                              | Sheet, SegmentedControl (type, repeat, ends, home/away), TextField, Select, Chip (weekdays, "save for next time"), TextArea | **New `TextArea`** primitive (web), styled like TextField. Mobile uses Choice chips and typed date/time fields        |
+| Series scope picker                                                 | SegmentedControl ("This event / This and following / All events")                                                           | Shown only for series events, in the edit and cancel flows                                                            |
+| Cancel flow                                                         | Sheet (modal level), TextArea, Button                                                                                       | Reason required; cancelled events stay listed, struck through, with the reason                                        |
+| Game result sheet                                                   | Sheet, SegmentedControl (final / by period), TextField mono, Text                                                           | Shaped by the sport: half / quarter / period / inning / set; sets show "sets won"; ties message only where disallowed |
+| Result and record display                                           | Mono chip on the row ("W 3-2"), title line in the drawer                                                                    | `team_record` is available but has no screen yet                                                                      |
+| Per-child RSVP                                                      | Chips (mobile child chips) or labelled groups (web), Going / Can't go pills, quiet "Maybe" ghost button                     | A status line ("Maya: Going") is announced to screen readers                                                          |
+| "Updated" / cancelled banners                                       | Notice-style box (`warnSoft`, `badSoft`)                                                                                    | Shown on the event when its revision changes or it is cancelled                                                       |
+| Places and opponents manager                                        | Sheet, ListGroup, ListRow, IconButton (trash), TextField                                                                    | Saved locations and opponents per team                                                                                |
+| Calendar link settings                                              | Sheet, mono token text, Button (copy / reset / turn off)                                                                    | Link shown once; only a hash is stored                                                                                |
+| Schedule tab (mobile), Schedule nav item (web), Team "Schedule" tab | Existing TabBar / Sidebar / team tabs                                                                                       | New icons: `map-pin`, `link`, `arrow-clockwise`, `repeat`, `question`                                                 |
+
+New component tokens (`packages/tokens/src/components.ts`, `schedule`): `dateBlockWeb` 64, `dateBlockMobile` 48, `drawerWidth` 400,
+`rsvpButton` 52, `rsvpButtonLg` 64, `calendarCellMinHeight` 96, `calendarDot` 6, `avatarSmall` 32. The first four come from the
+Web and Mobile Schedule screens; the calendar sizes are additions.
+
+Gallery and baselines: three new sections ("Schedule · rows and month", "Schedule · event detail", "Schedule · flows") in light
+and dark under `apps/web/visual/`. The visual project now runs in `America/New_York` so fixtures do not depend on the machine.
+
 ## Still not in the system, and not built
 
-Schedule, Event detail and RSVP, Alerts, Messages, Pay and the related states. They are Phase 3+; their components (Sheet, Toast,
-ListRow, Chip, EmptyState and friends) already exist and are in the gallery.
+Alerts, Pay and the related states (Phases 4 and 5), a team record screen, and staff-set RSVPs in the UI.

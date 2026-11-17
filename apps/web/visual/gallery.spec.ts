@@ -25,6 +25,9 @@ for (const theme of ['light', 'dark'] as const) {
         'Chips, badges, status',
         'List rows and card',
         'States',
+        'Schedule · rows and month',
+        'Schedule · event detail',
+        'Schedule · flows',
         'Sidebar · sheet · toast',
       ]) {
         await expect(panel.getByRole('region', { name })).toHaveScreenshot(

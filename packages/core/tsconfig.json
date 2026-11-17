@@ -1,4 +1,5 @@
 {
   "extends": "@athleit/config/tsconfig.react.json",
+  "compilerOptions": { "allowImportingTsExtensions": true },
   "include": ["src", "scripts", "*.ts", "*.mjs"]
 }

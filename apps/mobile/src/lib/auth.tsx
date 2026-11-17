@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, use, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { revokeThisDevice } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 export interface AuthResult {
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       async signOut() {
+        await revokeThisDevice().catch(() => undefined);
         await supabase.auth.signOut();
       },
     }),

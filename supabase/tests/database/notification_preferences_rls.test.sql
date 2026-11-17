@@ -1,0 +1,26 @@
+-- public.notification_preferences RLS and seeding
+begin;
+create extension if not exists pgtap with schema extensions;
+select * from no_plan();
+insert into auth.users (id, email) values ('11111111-1111-1111-1111-111111111111','u1@example.test'),('22222222-2222-2222-2222-222222222222','u2@example.test');
+select is((select count(*)::int from public.notification_preferences where profile_id='11111111-1111-1111-1111-111111111111'), 6, 'new profiles are seeded with push and email defaults');
+select is((select count(*)::int from public.notification_preferences where profile_id='11111111-1111-1111-1111-111111111111' and enabled and quiet_hours_start is null and not include_preview), 6, 'defaults: enabled, no quiet hours, no previews');
+select is((select count(*)::int from public.notification_preferences where channel='sms_reserved' or category='payments_reserved'), 0, 'reserved channels/categories are not seeded');
+set local role anon; select set_config('request.jwt.claims', '{"role":"anon"}', true);
+select throws_ok($$ select 1 from public.notification_preferences $$, '42501', null, 'anonymous has no access');
+reset role; select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true); set local role authenticated;
+select is((select count(*)::int from public.notification_preferences), 6, 'a user reads only their own');
+select lives_ok($$ update public.notification_preferences set enabled=false where channel='push' and category='messages' $$, 'a user changes their own preference');
+select lives_ok($$ update public.notification_preferences set quiet_hours_start='21:00', quiet_hours_end='07:00', timezone='America/New_York' where channel='push' $$, 'quiet hours with timezone');
+select throws_ok($$ update public.notification_preferences set quiet_hours_start='21:00' where channel='email' $$, '23514', null, 'quiet hours need both ends');
+select throws_ok($$ update public.notification_preferences set timezone='Mars/Base' where channel='push' $$, '23514', 'invalid_timezone', 'unknown timezone refused');
+select throws_ok($$ insert into public.notification_preferences (profile_id, channel, category) values ('11111111-1111-1111-1111-111111111111','sms_reserved','messages') $$, '42501', null, 'SMS cannot be enabled');
+select throws_ok($$ insert into public.notification_preferences (profile_id, channel, category) values ('11111111-1111-1111-1111-111111111111','push','payments_reserved') $$, '42501', null, 'payments category cannot be enabled yet');
+select throws_ok($$ update public.notification_preferences set profile_id='22222222-2222-2222-2222-222222222222' $$, '42501', null, 'cannot reassign a row');
+select throws_ok($$ delete from public.notification_preferences $$, '42501', null, 'cannot delete preferences');
+reset role; select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true); set local role authenticated;
+select is((select count(*)::int from public.notification_preferences where profile_id<>'22222222-2222-2222-2222-222222222222'), 0, 'cannot read others');
+select is_empty($$ update public.notification_preferences set enabled=false where profile_id='11111111-1111-1111-1111-111111111111' returning 1 $$, 'cannot update others');
+reset role;
+select * from finish();
+rollback;

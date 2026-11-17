@@ -11,6 +11,7 @@ import { RequestsSection } from '@/components/team/requests';
 import { RosterSection } from '@/components/team/roster';
 import { SettingsSection } from '@/components/team/settings';
 import { TeamProvider, useTeam } from '@/components/team/team-context';
+import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Text } from '@/components/ui';
 
 type Section = 'roster' | 'requests' | 'invites' | 'members' | 'settings';
@@ -37,6 +38,7 @@ function TeamBody() {
         </Text>
         {!caps.has('roster.edit') && caps.has('roster.viewFull') && <Badge>Read only</Badge>}
       </View>
+      {caps.has('schedule.view') ? <NextUpCard /> : null}
       <Segmented value={current} options={tabs} onChange={setSection} />
       {current === 'roster' && <RosterSection />}
       {current === 'requests' && <RequestsSection />}

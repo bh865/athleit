@@ -50,3 +50,58 @@ Run in light, dark and with _Reduce Transparency_ on (Settings → Accessibility
    loading shows skeleton rows; errors show an icon, message and _Try again_.
 5. **Contrast on glass**: `ink` text is readable over blobs; no muted text sits on glass.
 6. **Targets**: every control is at least 44pt; VoiceOver reads tab names ("Home", "Family", "More") and selected state.
+
+## Messaging (two devices or two simulators)
+
+Setup: two accounts on the same team (for example a coach and a parent; join the parent with a parent invite link). Sign in on device A as the coach and device B as the parent. Both apps need `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `apps/mobile/.env.local`.
+
+1. **Thread list.** A: Messages tab, plus button, Group, name "Game day", pick the parent, Start conversation. B: Messages tab shows "Game day" with a member count; empty state "No messages yet" shows before the first thread.
+2. **Live exchange.** A sends "Practice moved". B (conversation open) sees it appear with no refresh; B replies. A sees the reply. The own bubble shows "Delivered", then "Read" once B has it open.
+3. **Typing and unread.** A types: B sees three dots. B goes back to the list; A sends: B's row shows the unread dot and the Messages tab shows a lime count badge. Opening the thread clears both.
+4. **Scrolled up pill.** Send 40 messages from A, scroll B up, send one more: B shows the glass "New messages" pill; tapping it jumps to the newest message.
+5. **Pagination.** On B scroll to the top: earlier messages load ("Loading earlier messages…") with no duplicates.
+6. **Actions.** B long-presses A's message: react (chip appears on both devices), reply (quote appears in the bubble), report (sheet, "Report sent"). A long-presses B's message: "Remove for everyone"; B sees "Removed by staff".
+7. **Attachments.** B taps the paperclip, picks a photo, sends: A sees the image; the file is in the private `message-attachments` bucket (not publicly reachable).
+8. **Announcements.** A: Messages, plus, Announcement, title, create, post. B sees the card post with the "ANNOUNCEMENT" kicker and no composer ("Only coaches and managers can post here.").
+9. **Offline queue.** On B turn on airplane mode, send two messages: they show "Sending". Force-quit and reopen the app while offline, open the thread: both are still there as "Sending". Turn airplane mode off: both deliver once, in order, with no duplicates; A receives them.
+10. **Reconnect.** With B offline, A sends 3 messages. Turn B online: the missed messages appear once each.
+11. **Failure.** As the parent, try to send in an archived thread (staff archive it first): the bubble shows "Failed to send", Retry and Discard.
+12. **Accessibility.** VoiceOver reads a bubble as "You, 4:14 PM, read: …"; every control is at least 44pt; Reduce Motion and Reduce Transparency (glass becomes solid) are honoured.
+
+## Notifications (real device; needs the Expo/EAS project id and credentials, see docs/notifications.md)
+
+1. **Register.** Sign in, More, Alerts, Settings, "Turn on push on this phone", allow notifications. "Your devices" lists the phone ("this phone").
+2. **Push arrives.** From a second account send a message in a shared group: a push shows the thread title and "New message" (no text unless previews are on and no minor is in the thread). Tap it with the app closed: the app opens that exact thread (signed out: sign in, then it opens).
+3. **Active thread.** With the conversation open on the phone, send from the other account: no banner or push for that thread; leave the thread and send again: it arrives.
+4. **Mute.** Mute the conversation (bell in its header): no push; the thread still shows unread.
+5. **Quiet hours.** Set quiet hours to include now, send: nothing arrives; the notification appears when the window ends.
+6. **Preferences.** Turn "Messages by push" off: no push. Turn on previews in an adult-only group: the push shows text; in a group with a player under 18 it never does.
+7. **Sign out this device** (Settings or More, Sign out): the device disappears from the list and stops receiving.
+8. **In-app.** With the app open on another screen, a new message shows a glass toast and a new row at the top of Alerts on a lime circle.
+
+## Scheduling (Phase 2)
+
+Not yet run on a simulator in this branch (the iOS bundle compiles with `expo export`); run these before release.
+
+1. **Staff create.** As a coach, open Schedule, tap New event, add a Game (title, today's date, a start time later today, an opponent, "New place…" for the location). It appears under Upcoming. Add a weekly practice on two weekdays with 6 events; the toast says "6 practices added".
+2. **Parent RSVP per child.** Sign in as a parent with two children on one team. Home shows "Next up" with child chips; choose a child, tap Going, see "Name: Going". Switch chip, tap Can't go. Open the event from the card and confirm both statuses.
+3. **Offline / failure.** Turn on airplane mode and tap Going; the choice reverts with an error and Retry. Turn it off and tap Retry.
+4. **Counts live.** Keep the coach's event detail open on a second device; a parent's RSVP changes the counts and the player list without a refresh.
+5. **Privacy.** A second family's event screen shows counts only, no names.
+6. **Cancel.** Coach opens a series event, Cancel event, picks "This and following", enters a reason. Parents still see the events, struck through, with the reason; Going and Can't go are gone.
+7. **Result.** After a game starts, coach taps Enter result: final score, then "By half/quarter/inning/set". A tie is refused for basketball and volleyball.
+8. **Time zones.** Set the phone to a different zone than the team's; the event shows the team's time with "Your time: …".
+9. **Accessibility.** VoiceOver reads each event card (type, title, date, place, cancelled), the RSVP status line, and the counts. Reduce Motion and Reduce Transparency on: sheets and the tab bar stay legible. Tap targets are 44pt or larger.
+10. **Calendar link.** More > Schedule > Calendar link: create, copy, reset, turn off.
+
+## Schedule notifications and the calendar feed (Phase 2, Part C)
+
+Needs a real device with push set up ([notifications.md](notifications.md)); not run on a device in this branch.
+
+1. **Batched.** As a coach, add a weekly practice with 6 events. A parent's phone receives ONE push, "6 practices added", and tapping it opens the first practice (also from a cold start and when signed out: sign in, land on the event).
+2. **The editor and muted users.** The coach's own phone gets nothing. A parent who turned off Schedule in Alerts settings gets no push.
+3. **Time change.** Move one practice by an hour: "Time changed: …". Rename another: no push at all. Change a whole series to 6:00 PM: one push, "6 practices rescheduled".
+4. **Cancel.** Cancel one occurrence with a reason: "Cancelled: <reason>". The event stays on the schedule, struck through.
+5. **Result.** Enter a result: "Final score 3–2" to families and staff.
+6. **Reminder.** Leave a child without an RSVP for an event that starts in under 24 hours; within 15 minutes the guardian gets "RSVP needed: …", once. Answer, and no further reminder.
+7. **Calendar.** More > Calendar link: create, copy, paste into iOS Settings > Calendar > Accounts > Add Subscribed Calendar (or Google Calendar > From URL). Events appear at the right local time; cancel one and it shows as cancelled after the next refresh; reset the link and the old subscription stops updating.

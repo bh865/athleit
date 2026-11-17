@@ -36,6 +36,14 @@ import {
 } from '@/components/ui';
 
 import styles from './gallery.module.css';
+import {
+  CancelledDetailDemo,
+  FamilyDetailDemo,
+  FlowPartsDemo,
+  MonthDemo,
+  ScheduleRowsDemo,
+  StaffDetailDemo,
+} from './schedule-gallery';
 
 const TYPE_SAMPLES: [TextVariant, string][] = [
   ['display', 'Display 44/800'],
@@ -291,6 +299,20 @@ function ThemePanel({ name }: { name: string }) {
         </div>
       </Section>
 
+      <Section title="Schedule · rows and month">
+        <ScheduleRowsDemo />
+        <MonthDemo />
+      </Section>
+      <Section title="Schedule · event detail">
+        <div className={styles.row}>
+          <FamilyDetailDemo />
+          <StaffDetailDemo />
+          <CancelledDetailDemo />
+        </div>
+      </Section>
+      <Section title="Schedule · flows">
+        <FlowPartsDemo />
+      </Section>
       <Section title="Sidebar · sheet · toast">
         <div className={styles.navDemo}>
           <Glass level="bar" className={styles.sidebarDemo}>

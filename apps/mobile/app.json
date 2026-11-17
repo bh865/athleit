@@ -45,6 +45,12 @@
         {
           "photosPermission": "Athleit uses your photos so you can add a picture of your child."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "messages"
+        }
       ]
     ]
   }

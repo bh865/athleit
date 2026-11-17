@@ -8,6 +8,7 @@ import { View } from 'react-native';
 import { AppScreen } from '@/components/app/app-screen';
 import { InvitePanel } from '@/components/app/invite-panel';
 import { Badge, FormMessage, H1, H2, ListItem, LoadState, Notice } from '@/components/app/kit';
+import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Button, Card, ListGroup, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { supabase } from '@/lib/supabase';
@@ -31,6 +32,7 @@ export default function FamilyScreen() {
 
   return (
     <AppScreen>
+      <NextUpCard />
       <H1>{family?.title ?? 'Your family'}</H1>
       <Notice>
         Children under 13 never have their own login. A parent or guardian manages everything for

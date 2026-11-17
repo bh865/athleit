@@ -9,6 +9,7 @@ import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
 import { InvitePanel } from '@/components/app/invite-panel';
 import { FormMessage, LoadState } from '@/components/app/states';
+import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Avatar, Badge, Button, Card, Icon } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
@@ -31,6 +32,7 @@ export default function FamilyPage() {
 
   return (
     <>
+      <NextUpCard />
       <div className={`${styles.row} ${styles.between}`}>
         <h1 className={styles.title}>{family?.title ?? 'Your family'}</h1>
         <Link href="/family/children/new" className={styles.link}>

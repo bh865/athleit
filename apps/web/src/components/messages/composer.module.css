@@ -1,0 +1,97 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+.pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-chat-composer-height-web);
+  padding: 0 var(--space-2) 0 var(--space-2);
+  border-radius: var(--radius-xl);
+}
+.clip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--size-min-target);
+  height: var(--size-min-target);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: calc(var(--size-chat-composer-height-web) * 3);
+  padding: var(--space-3) 0;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+}
+.input:focus-visible {
+  outline: 0;
+}
+.pill:focus-within {
+  outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+}
+.send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--size-chat-send-button);
+  height: var(--size-chat-send-button);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  cursor: pointer;
+}
+.send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.reply,
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fileName {
+  max-width: calc(var(--size-chat-thread-list-width) / 2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.error {
+  color: var(--color-bad);
+}

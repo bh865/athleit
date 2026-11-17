@@ -51,3 +51,46 @@ export const ROLE_LABELS: Record<string, string> = {
   player: 'Player',
   guardian: 'Guardian',
 };
+
+// Phase 3: messaging and notifications. Values mirror the database constraints.
+export const THREAD_TYPES = ['announcement', 'group', 'direct'] as const;
+export type ThreadType = (typeof THREAD_TYPES)[number];
+export const THREAD_PARTICIPANT_ROLES = ['owner', 'member', 'read_only'] as const;
+export type ThreadParticipantRole = (typeof THREAD_PARTICIPANT_ROLES)[number];
+
+export const MAX_MESSAGE_LENGTH = 4000;
+export const MAX_THREAD_TITLE_LENGTH = 100;
+export const MAX_REPORT_REASON_LENGTH = 500;
+/** In-database rate limit: messages per user per rolling minute. */
+export const MESSAGE_RATE_LIMIT_PER_MINUTE = 30;
+export const MAX_ATTACHMENTS_PER_MESSAGE = 5;
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const ATTACHMENT_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+] as const;
+export type AttachmentMimeType = (typeof ATTACHMENT_MIME_TYPES)[number];
+export const MESSAGE_ATTACHMENTS_BUCKET = 'message-attachments';
+
+/** Fixed reaction set (stored as keys; the apps render them as icons). */
+export const REACTIONS = ['thumbs_up', 'heart', 'laugh', 'celebrate', 'clap', 'wow'] as const;
+export type Reaction = (typeof REACTIONS)[number];
+
+export const REPORT_STATUSES = ['open', 'actioned', 'dismissed'] as const;
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+
+/** Settable channels/categories; the *_reserved values exist in the database but are not implemented. */
+export const NOTIFICATION_CHANNELS = ['push', 'email'] as const;
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
+export const NOTIFICATION_CATEGORIES = ['messages', 'announcements', 'schedule'] as const;
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+export const PUSH_PLATFORMS = ['ios', 'android', 'web'] as const;
+export type PushPlatform = (typeof PUSH_PLATFORMS)[number];
+export const OUTBOX_STATUSES = ['pending', 'sending', 'sent', 'failed', 'skipped'] as const;
+export type OutboxStatus = (typeof OUTBOX_STATUSES)[number];
+
+/** Realtime private-channel topic for typing indicators and presence in a thread. */
+export const threadChannelTopic = (threadId: string) => `thread:${threadId}`;
