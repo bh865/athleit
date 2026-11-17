@@ -14,7 +14,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 status=0
 
-for f in supabase/tests/database/*.test.sql; do
+for f in supabase/tests/database/*${1:-}*.test.sql; do
   name="$(basename "$f" .test.sql)"
   python3 - "$f" "$tmp/$name.sql" <<'PY'
 import re, sys

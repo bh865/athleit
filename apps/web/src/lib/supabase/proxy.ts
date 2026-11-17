@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 
 /** Routes reachable without a session. Everything else requires sign-in. */
-const PUBLIC_PATHS = ['/sign-in', '/sign-up', '/auth', '/smoke'];
+const PUBLIC_PATHS = ['/sign-in', '/sign-up', '/auth', '/smoke', '/.well-known'];
 const AUTH_ONLY_GUEST_PATHS = ['/sign-in', '/sign-up'];
 
 const matches = (pathname: string, bases: string[]) =>
@@ -33,10 +33,10 @@ export async function updateSession(request: NextRequest) {
   const signedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
 
-  const redirectTo = (path: string) => {
+  const redirectTo = (path: string, next?: string) => {
     const url = request.nextUrl.clone();
     url.pathname = path;
-    url.search = '';
+    url.search = next ? `?next=${encodeURIComponent(next)}` : '';
     const redirect = NextResponse.redirect(url);
     // Keep any refreshed session cookies on the redirect response.
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
@@ -48,7 +48,12 @@ export async function updateSession(request: NextRequest) {
     return redirect;
   };
 
-  if (!signedIn && !matches(pathname, PUBLIC_PATHS)) return redirectTo('/sign-in');
-  if (signedIn && matches(pathname, AUTH_ONLY_GUEST_PATHS)) return redirectTo('/');
+  if (!signedIn && !matches(pathname, PUBLIC_PATHS)) {
+    // Remember where they were going (e.g. an invite link) so sign-in can return them there.
+    return redirectTo('/sign-in', pathname === '/' ? undefined : pathname + request.nextUrl.search);
+  }
+  if (signedIn && matches(pathname, AUTH_ONLY_GUEST_PATHS)) {
+    return redirectTo('/', undefined);
+  }
   return response;
 }

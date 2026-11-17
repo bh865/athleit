@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@athleit/core": "workspace:*",
@@ -15,17 +16,21 @@
     "@athleit/tokens": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
     "next": "16.4.6",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@athleit/config": "workspace:*",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "~19.3.0",
     "@types/react-dom": "~19.3.0",
     "eslint": "^9.39.0",
     "eslint-config-next": "16.4.6",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "@supabase/supabase-js": "^2.119.0"
   }
 }

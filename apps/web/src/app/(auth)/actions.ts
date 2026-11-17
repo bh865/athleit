@@ -10,6 +10,7 @@ import {
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { safeNext } from '@/lib/safe-next';
 import { createClient } from '@/lib/supabase/server';
 
 export interface AuthFormState {
@@ -43,7 +44,7 @@ export async function signIn(_prev: AuthFormState, formData: FormData): Promise<
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message, values: { email: raw.email } };
 
-  redirect('/');
+  redirect(safeNext(text(formData, 'next')));
 }
 
 export async function signUp(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -70,7 +71,7 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
 
   // Local stack auto-confirms, so there is a session. With email confirmation on
   // (hosted projects), there isn't one yet.
-  if (data.session) redirect('/');
+  if (data.session) redirect(safeNext(text(formData, 'next')));
   return { message: 'Check your email to confirm your account, then sign in.', values };
 }
 

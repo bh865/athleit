@@ -65,9 +65,15 @@ jobs:
           CI: '1'
 
   database:
-    name: Supabase migrations and pgTAP (RLS) tests
+    name: Database tests (hosted test project, optional)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Needs a DEDICATED test project; never point this at a project with real data.
+    # Secrets: SUPABASE_ACCESS_TOKEN, SUPABASE_TEST_PROJECT_REF, SUPABASE_TEST_DB_PASSWORD.
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      TEST_PROJECT_REF: ${{ secrets.SUPABASE_TEST_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_TEST_DB_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
 
@@ -80,15 +86,69 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Start local Supabase
-        run: pnpm db:start
+      - name: Every table has an RLS test file
+        run: bash scripts/check-rls-tests.sh
 
-      - name: Reset database (apply migrations and seed)
-        run: pnpm db:reset
+      - name: Check for test-project credentials
+        id: gate
+        run: |
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$TEST_PROJECT_REF" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping database tests: SUPABASE_ACCESS_TOKEN and SUPABASE_TEST_PROJECT_REF are not configured."
+          fi
 
-      - name: pgTAP and RLS tests
-        run: pnpm db:test
+      - name: Link the test project
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm supabase link --project-ref "$TEST_PROJECT_REF"
 
-      - name: Stop Supabase
-        if: always()
-        run: pnpm db:stop
+      - name: Apply migrations to the test project
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm supabase db push --remote --yes
+
+      - name: pgTAP tests (each file rolls back)
+        if: steps.gate.outputs.run == 'true'
+        run: bash scripts/db-test-remote.sh
+
+  e2e:
+    name: Playwright e2e (hosted test project, optional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Same dedicated test project as the database job. Skipped when it is not configured.
+    env:
+      TEST_PROJECT_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      TEST_PROJECT_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+      E2E_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check for test-project credentials
+        id: gate
+        run: |
+          if [ -n "$TEST_PROJECT_URL" ] && [ -n "$TEST_PROJECT_ANON_KEY" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping e2e: SUPABASE_TEST_URL and SUPABASE_TEST_ANON_KEY are not configured."
+          fi
+
+      - name: Install Chromium
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm --filter @athleit/web exec playwright install --with-deps chromium
+
+      - name: Run Playwright
+        if: steps.gate.outputs.run == 'true'
+        run: pnpm --filter @athleit/web e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}

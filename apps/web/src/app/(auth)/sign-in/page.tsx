@@ -1,13 +1,15 @@
 import Link from 'next/link';
 
+import { safeNext } from '@/lib/safe-next';
+
 import { AuthForm } from '@/components/auth/auth-form';
 
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   return (
     <>
       <h2 style={{ marginBottom: 'var(--space-5)' }}>Sign in</h2>
@@ -19,7 +21,7 @@ export default async function SignInPage({
           {error}
         </p>
       )}
-      <AuthForm mode="sign-in" />
+      <AuthForm mode="sign-in" next={safeNext(next) === '/' ? undefined : safeNext(next)} />
       {process.env.NODE_ENV !== 'production' && (
         <p
           style={{

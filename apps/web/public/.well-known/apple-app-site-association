@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.athleit.app"],
+        "components": [{ "/": "/invite/*", "comment": "Invite links open the app" }, { "/": "/claim/*" }]
+      }
+    ]
+  }
+}

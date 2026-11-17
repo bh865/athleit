@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./web": "./src/web.ts",
-    "./mobile": "./src/mobile.ts"
+    "./mobile": "./src/mobile.ts",
+    "./api": "./src/api.ts"
   },
   "scripts": {
     "lint": "eslint .",

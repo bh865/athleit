@@ -60,11 +60,11 @@ Both apps have a design smoke test that renders every primitive (Button, TextFie
 | `pnpm lint`                    | ESLint across the workspace                                               |
 | `pnpm typecheck`               | `tsc --noEmit` across the workspace                                       |
 | `pnpm test`                    | Vitest unit tests (`core`, `tokens`)                                      |
+| `pnpm e2e`                     | Playwright end-to-end tests (web) against the project in `.env.local`     |
 | `pnpm format` / `format:check` | Prettier write / check                                                    |
-| `pnpm db:start` / `db:stop`    | Start / stop the local Supabase stack                                     |
-| `pnpm db:reset`                | Re-create the local DB from migrations + `seed.sql`                       |
 | `pnpm db:types`                | Regenerate `packages/db/src/database.types.ts` from the local DB          |
-| `pnpm db:test`                 | RLS-test guard, then pgTAP tests (`supabase test db`)                     |
+| `pnpm db:test`                 | RLS-test guard, then pgTAP tests against the linked project (rolled back) |
+| `pnpm db:push:dry` / `db:push` | Show / apply pending migrations to the linked project                     |
 | `pnpm supabase <args>`         | Run the pinned Supabase CLI, e.g. `pnpm supabase migration new add_teams` |
 
 ## Repo map
@@ -127,6 +127,13 @@ Until then the buttons show Supabase's "provider is not enabled" error. Email/pa
 - **Unit (Vitest):** `pnpm test`. Includes the WCAG AA contrast assertions for every token pair.
 - **Database (pgTAP):** `pnpm db:test`. See [supabase/README.md](supabase/README.md) for how to write an RLS test for a new table.
 
+### End-to-end tests
+
+`pnpm e2e` builds the web app, starts it, and runs `apps/web/e2e` with several isolated browser sessions against the project in
+`apps/web/.env.local` (use a **dev or test project only**). Tests create `e2e-*@example.test` users. Set
+`E2E_SUPABASE_SERVICE_ROLE_KEY` in your shell (never in a file that ships) and the run deletes them afterwards; without it,
+run `bash scripts/e2e-cleanup.sh`. Mobile flows: [docs/mobile-manual-tests.md](docs/mobile-manual-tests.md).
+
 ## Branching and CI
 
 - All work happens on short-lived working branches cut from **`dev`** (e.g. `feat/teams-roster`) and is merged back into `dev`.
@@ -135,7 +142,7 @@ Until then the buttons show Supabase's "provider is not enabled" error. Email/pa
 
 ## Conventions
 
-1. **Membership-based permissions (Phase 1).** Access is granted through membership rows (a user's role in a club/team), never through ad-hoc per-table owner columns or client-side checks. Phase 1 introduces the membership tables and a single set of helper functions that every RLS policy calls. Until then `profiles` is own-row only.
+1. **Membership-based permissions.** Access is granted through membership rows (`team_memberships`, `club_memberships`, `household_members`), never through owner columns or client-side checks. Every RLS policy calls the `private.*` helper functions. The role/capability table in [docs/permissions.md](docs/permissions.md) is the source of truth.
 2. **No table ships without RLS tests.** Every table in `public` has RLS enabled and a `supabase/tests/database/<table>_rls.test.sql` proving who can and cannot read/write each row. `pnpm db:test` and CI fail otherwise.
 3. **Vertical-slice delivery.** A feature ships on web **and** mobile together (schema + RLS + tests + both UIs), not layer by layer or platform by platform.
 4. **Stripe webhooks are the source of truth for payments.** Never mark anything paid because a client says so or a redirect returned. Payment state changes only from verified Stripe webhook events handled server-side (idempotently); the UI reads that state.
