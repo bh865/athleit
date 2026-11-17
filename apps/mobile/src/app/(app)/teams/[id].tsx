@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
-import { BackLink, Badge, H1, Segmented } from '@/components/app/kit';
+import { Badge, H1, Segmented } from '@/components/app/kit';
 import { InvitesSection } from '@/components/team/invites';
 import { MembersSection } from '@/components/team/members';
 import { RequestsSection } from '@/components/team/requests';
@@ -53,7 +53,6 @@ export default function TeamScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
     <AppScreen>
-      <BackLink label="Back" />
       <TeamProvider teamId={id}>
         <TeamBody />
       </TeamProvider>

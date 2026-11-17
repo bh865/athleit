@@ -60,6 +60,7 @@ import {
   Repeat,
   Question,
   ShieldCheck,
+  CaretDown,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react';
 
@@ -123,6 +124,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   repeat: Repeat,
   question: Question,
   'shield-check': ShieldCheck,
+  'caret-down': CaretDown,
 };
 
 export type IconSizeName = 'sm' | 'md' | 'lg' | 'xl';

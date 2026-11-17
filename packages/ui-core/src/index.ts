@@ -63,6 +63,7 @@ export const iconNames = [
   'arrow-clockwise',
   'repeat',
   'question',
+  'caret-down',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 

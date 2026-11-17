@@ -6,11 +6,11 @@ import { View } from 'react-native';
 import {
   Avatar,
   Badge,
-  Button,
   Chip,
   EmptyState,
   ErrorState,
   Heading,
+  IconButton,
   ListRow,
   LoadingSkeleton,
   Text,
@@ -182,15 +182,16 @@ export function LoadState({
   return <>{children}</>;
 }
 
-/** Back link for stack screens. */
+/** Round glass back button for detail screens (design system: 44px glass circle, caret-left). */
 export function BackLink({ label = 'Back' }: { label?: string }) {
   const router = useRouter();
   return (
-    <Button
-      title={label}
-      icon="caret-left"
-      variant="ghost"
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-    />
+    <View style={{ alignSelf: 'flex-start' }}>
+      <IconButton
+        icon="caret-left"
+        label={label}
+        onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+      />
+    </View>
   );
 }

@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Icon, Sheet, Text, useTheme } from '@/components/ui';
+import { initialsOf } from '@athleit/ui-core';
+
+import { Glass, Icon, Sheet, Text, useTheme } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 
 const ADD: Record<AddRoleAction, { label: string; href: string }> = {
@@ -34,26 +36,46 @@ export function ContextSwitcher() {
         accessibilityRole="button"
         accessibilityLabel={`Switch role. Current: ${active ? `${active.title}, ${active.subtitle}` : 'none'}`}
         onPress={() => setOpen(true)}
-        style={{
-          flex: 1,
-          minHeight: componentTokens.button.height,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: space[2],
-          paddingHorizontal: space[3],
-          borderRadius: radius.sm,
-          backgroundColor: c.surfaceAlt,
-        }}
+        style={{ flexShrink: 1 }}
       >
-        <View style={{ flex: 1 }}>
-          <Text variant="caption" numberOfLines={1}>
-            {active?.title ?? 'Get started'}
-          </Text>
-          <Text variant="caption" muted numberOfLines={1}>
-            {active?.subtitle ?? 'Choose a role'}
-          </Text>
-        </View>
-        <Icon name="caret-up-down" />
+        {/* Glass pill per the design: lime initials circle, name, role, caret. */}
+        <Glass
+          level="bar"
+          cornerRadius={radius.lg}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space[2],
+            minHeight: componentTokens.minTarget,
+            paddingVertical: space[1],
+            paddingLeft: space[1],
+            paddingRight: space[3],
+          }}
+        >
+          <View
+            style={{
+              width: componentTokens.avatar.sm,
+              height: componentTokens.avatar.sm,
+              borderRadius: radius.pill,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: c.accent,
+            }}
+          >
+            <Text variant="bodyBold" style={{ color: c.accentInk }}>
+              {initialsOf(active?.title ?? 'Athleit')}
+            </Text>
+          </View>
+          <View style={{ flexShrink: 1 }}>
+            <Text variant="bodyBold" numberOfLines={1}>
+              {active?.title ?? 'Get started'}
+            </Text>
+            <Text variant="caption" muted numberOfLines={1}>
+              {active?.subtitle ?? 'Choose a role'}
+            </Text>
+          </View>
+          <Icon name="caret-down" size="sm" />
+        </Glass>
       </Pressable>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Switch role">
