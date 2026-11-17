@@ -354,6 +354,60 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          notes?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           created_at: string
@@ -698,6 +752,48 @@ export type Database = {
           },
         ]
       }
+      opponents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opponents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opponents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_login_claims: {
         Row: {
           created_at: string
@@ -871,6 +967,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sport_configs: {
+        Row: {
+          default_period_count: number
+          default_period_minutes: number | null
+          period_type: string
+          positions: string[]
+          scoring_label: string
+          sport: Database["public"]["Enums"]["sport"]
+          ties_allowed: boolean
+        }
+        Insert: {
+          default_period_count: number
+          default_period_minutes?: number | null
+          period_type: string
+          positions?: string[]
+          scoring_label: string
+          sport: Database["public"]["Enums"]["sport"]
+          ties_allowed: boolean
+        }
+        Update: {
+          default_period_count?: number
+          default_period_minutes?: number | null
+          period_type?: string
+          positions?: string[]
+          scoring_label?: string
+          sport?: Database["public"]["Enums"]["sport"]
+          ties_allowed?: boolean
+        }
+        Relationships: []
       }
       team_club_link_requests: {
         Row: {
@@ -1346,6 +1472,27 @@ export type Database = {
           team_player_id: string
         }[]
       }
+      get_thread_list: {
+        Args: { p_team_id: string }
+        Returns: {
+          archived_at: string
+          last_body: string
+          last_created_at: string
+          last_deleted: boolean
+          last_hidden: boolean
+          last_message_at: string
+          last_message_id: string
+          last_sender_id: string
+          last_sender_name: string
+          member_count: number
+          muted_until: string
+          other_name: string
+          thread_id: string
+          title: string
+          type: string
+          unread_count: number
+        }[]
+      }
       get_thread_members: {
         Args: { p_thread_id: string }
         Returns: {
@@ -1355,6 +1502,7 @@ export type Database = {
           role: string
         }[]
       }
+      get_unread_total: { Args: never; Returns: number }
       hide_message: {
         Args: { p_message_id: string; p_reason?: string }
         Returns: undefined
