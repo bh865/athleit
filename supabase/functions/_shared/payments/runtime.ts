@@ -3,7 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 import { corsHeaders, json, mapError } from './http.ts';
 import { makeLogger, type Logger } from './log.ts';
 import { supabaseStore, type Store } from './store.ts';
-import { StripeApi } from './stripe.ts';
+import { StripeApi, StripeError } from './stripe.ts';
 
 export const env = (k: string) => Deno.env.get(k) || undefined;
 
@@ -81,7 +81,12 @@ export function userFunction<T>(
       return res;
     } catch (e) {
       const m = mapError(e);
-      log(m.status >= 500 ? 'error' : 'warn', 'request_failed', { code: m.code });
+      // Safe diagnostics only: Stripe's error type/code/status (never its message, which can echo request values) or our own error id.
+      const detail =
+        e instanceof StripeError
+          ? { stripe_type: e.type, stripe_code: e.code, stripe_status: e.status }
+          : { reason: String((e as Error)?.message ?? e).slice(0, 60) };
+      log(m.status >= 500 ? 'error' : 'warn', 'request_failed', { code: m.code, ...detail });
       return json({ error: m.code }, m.status, cors);
     }
   });

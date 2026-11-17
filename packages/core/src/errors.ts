@@ -38,6 +38,10 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/refund_exceeds_payment|nothing_to_refund/, 'There is nothing more to refund on this payment.'],
   [/not_refundable/, 'This payment can’t be refunded.'],
   [/invalid_amount/, 'Enter a valid amount.'],
+  [
+    /stripe_not_configured/,
+    'Payments aren’t set up on the server yet (Stripe key missing or invalid).',
+  ],
   [/payment_provider_error/, 'Payments are unavailable right now. Please try again shortly.'],
   [/mixed_checkout|mixed_household/, 'Those requests have to be paid separately.'],
   [/account_not_ready/, 'This team can’t take payments yet.'],

@@ -53,6 +53,8 @@ export function mapError(err: unknown): { status: number; code: string } {
   for (const [k, v] of Object.entries(DB_ERRORS))
     if (msg.includes(k)) return { status: v[0], code: v[1] };
   if (msg.includes('live_key_refused')) return { status: 500, code: 'live_key_refused' };
+  if (msg.includes('stripe_key_missing') || msg.includes('stripe_key_invalid'))
+    return { status: 500, code: 'stripe_not_configured' };
   if (err instanceof StripeError || msg.startsWith('stripe_'))
     return { status: 502, code: 'payment_provider_error' };
   return { status: 500, code: 'internal_error' };
