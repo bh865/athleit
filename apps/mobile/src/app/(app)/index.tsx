@@ -5,8 +5,9 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
-import { H1, Notice } from '@/components/app/kit';
-import { Button, Card, Text } from '@/components/ui';
+import { H1, ListItem } from '@/components/app/kit';
+import { NextUpCard } from '@/components/schedule/next-up-card';
+import { Button, Card, ListGroup, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { kv, PENDING_INVITE_KEY } from '@/lib/kv';
 
@@ -23,9 +24,19 @@ const LABEL = {
   'join-team': 'Join a team with a code',
 } as const;
 
-/** Resumes a pending invite, then opens the last-used context (or onboards a new user). */
+/** "Good evening" style greeting from the local hour. */
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+};
+
+/**
+ * Home (design system): greeting, Next up, and your places. Resumes a pending invite first.
+ * It never redirects into a team or family page: those are one tap away below, and the role
+ * switcher in the header still jumps straight to them.
+ */
 export default function HomeScreen() {
-  const { active, displayName, addActions, status } = useApp();
+  const { contexts, displayName, addActions, status } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -40,19 +51,40 @@ export default function HomeScreen() {
             ? `/claim/${token.slice(9)}`
             : `/invite/${token}`) as never,
         );
-      } else if (active) {
-        router.replace(contextPath(active) as never);
       }
     });
     return () => {
       live = false;
     };
-  }, [status, active, router]);
+  }, [status, router]);
 
   return (
     <AppScreen>
-      {active ? (
-        <Notice>Opening {active.title}…</Notice>
+      {contexts.length > 0 ? (
+        <>
+          <H1>
+            {greeting()}
+            {displayName ? `,\n${displayName.split(' ')[0]}` : ''}
+          </H1>
+          <NextUpCard />
+          <View style={{ gap: space[3] }}>
+            <Text variant="label" muted>
+              YOUR PLACES
+            </Text>
+            <ListGroup>
+              {contexts.map((c) => (
+                <ListItem
+                  key={c.key}
+                  title={c.title}
+                  subtitle={c.subtitle}
+                  avatarName={c.title}
+                  onPress={() => router.push(contextPath(c) as never)}
+                  testID={`place-${c.kind}`}
+                />
+              ))}
+            </ListGroup>
+          </View>
+        </>
       ) : (
         <Card style={{ gap: space[4] }}>
           <H1>Welcome{displayName ? `, ${displayName}` : ''}</H1>
