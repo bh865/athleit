@@ -32,6 +32,7 @@ import {
   Text,
   TextField,
   ThemeToggle,
+  useTheme,
 } from '@/components/ui';
 
 import styles from './gallery.module.css';
@@ -319,8 +320,17 @@ function ThemePanel({ name }: { name: string }) {
 }
 
 export function Gallery() {
+  const { reduceTransparency, setReduceTransparency } = useTheme();
   return (
     <main className={styles.page}>
+      <label className={styles.row}>
+        <input
+          type="checkbox"
+          checked={reduceTransparency}
+          onChange={(e) => setReduceTransparency(e.target.checked)}
+        />
+        <Text variant="caption">Reduce transparency (solid fallback)</Text>
+      </label>
       {Object.keys(themeDefinitions).map((n) => (
         <ThemePanel key={n} name={n} />
       ))}

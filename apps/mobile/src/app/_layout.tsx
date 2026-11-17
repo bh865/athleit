@@ -6,7 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from '@/components/ui';
+import { ThemeProvider, ToastProvider } from '@/components/ui';
 import '@/env'; // validate EXPO_PUBLIC_* at startup
 import { AppProvider } from '@/lib/app-provider';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -42,8 +42,8 @@ function Routes() {
       {/* Invite and player-login links work in either state: signed-out users are asked to sign in first. */}
       <Stack.Screen name="invite/[token]" />
       <Stack.Screen name="claim/[playerId]" />
-      {/* Dev-only design smoke test, reachable in either state. */}
-      <Stack.Screen name="smoke" />
+      {/* Dev-only design gallery, reachable in either state. */}
+      <Stack.Screen name="design" />
     </Stack>
   );
 }
@@ -55,7 +55,9 @@ export default function RootLayout() {
         <AuthProvider>
           <AppProvider>
             <StatusBar style="auto" />
-            <Routes />
+            <ToastProvider>
+              <Routes />
+            </ToastProvider>
           </AppProvider>
         </AuthProvider>
       </ThemeProvider>

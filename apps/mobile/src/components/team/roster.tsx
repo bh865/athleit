@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { Badge, Choice, FormMessage, H2, ListItem, LoadState } from '@/components/app/kit';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, ListGroup, Text, TextField } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
@@ -67,15 +67,16 @@ export function RosterSection() {
         emptyText="No players on the roster yet."
         onRetry={roster.reload}
       >
-        <View style={{ gap: space[2] }} testID="roster-limited">
+        <ListGroup testID="roster-limited">
           {rows.map((r) => (
             <ListItem
               key={r.team_player_id}
+              avatarName={r.first_name}
               title={`${r.jersey_number != null ? `#${r.jersey_number}  ` : ''}${r.first_name}`}
               subtitle={r.position ?? undefined}
             />
           ))}
-        </View>
+        </ListGroup>
       </LoadState>
     );
   }
@@ -100,10 +101,11 @@ export function RosterSection() {
         emptyText="No players on the roster yet. Approve a join request, then add the child here."
         onRetry={roster.reload}
       >
-        <View style={{ gap: space[2] }} testID="roster-list">
+        <ListGroup testID="roster-list">
           {rows.map((r) => (
             <View key={r.team_player_id} style={{ gap: space[2] }}>
               <ListItem
+                avatarName={`${r.first_name} ${r.last_name}`}
                 title={`${r.jersey_number != null ? `#${r.jersey_number}  ` : ''}${r.first_name} ${r.last_name}`}
                 subtitle={r.position ?? undefined}
                 right={
@@ -126,7 +128,7 @@ export function RosterSection() {
               )}
             </View>
           ))}
-        </View>
+        </ListGroup>
       </LoadState>
     </View>
   );

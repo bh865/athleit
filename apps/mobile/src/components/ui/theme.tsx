@@ -100,3 +100,13 @@ export function useTheme() {
   if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>');
   return ctx;
 }
+
+/** Force a specific theme for a subtree (used by the design gallery to show light and dark together). */
+export function ThemeScope({ name, children }: { name: string; children: ReactNode }) {
+  const outer = useTheme();
+  const value = useMemo<ThemeContextValue>(
+    () => ({ ...outer, theme: getTheme(name) }),
+    [outer, name],
+  );
+  return <ThemeContext value={value}>{children}</ThemeContext>;
+}

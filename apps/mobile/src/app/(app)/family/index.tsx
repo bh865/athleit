@@ -8,7 +8,7 @@ import { View } from 'react-native';
 import { AppScreen } from '@/components/app/app-screen';
 import { InvitePanel } from '@/components/app/invite-panel';
 import { Badge, FormMessage, H1, H2, ListItem, LoadState, Notice } from '@/components/app/kit';
-import { Button, Card, Text } from '@/components/ui';
+import { Button, Card, ListGroup, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
@@ -46,12 +46,13 @@ export default function FamilyScreen() {
           emptyText="You haven’t added a child yet. You don’t need to join a team first."
           onRetry={children.reload}
         >
-          <View style={{ gap: space[2] }} testID="children-list">
+          <ListGroup testID="children-list">
             {children.data?.map((c) => {
               const teams = c.team_players.filter((tp) => tp.teams);
               return (
                 <ListItem
                   key={c.id}
+                  avatarName={`${c.first_name} ${c.last_name}`}
                   title={`${c.first_name} ${c.last_name}`}
                   subtitle={`${ageOn(c.date_of_birth)} years old${
                     teams.length
@@ -69,7 +70,7 @@ export default function FamilyScreen() {
                 />
               );
             })}
-          </View>
+          </ListGroup>
         </LoadState>
         <Button
           title="Add a child"

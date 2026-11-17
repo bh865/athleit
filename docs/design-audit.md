@@ -227,3 +227,41 @@ None that stops a user. (Everything renders, both themes work, tests pass.)
 ## 10. Components and screens with no system equivalent (so far)
 
 Sign in / sign up; context switcher; child detail with photo upload; join, invite and claim flows; invite panel (QR, code, link); club page; team members, requests, invites and settings; segmented section navigation. All will be composed from system components and listed in `docs/design-system-additions.md` after Stage 3.
+
+---
+
+# Resolution (Stages 2 to 4)
+
+Done on this branch after the go-ahead. All recommendations in section 9 were accepted. Outcomes:
+
+| #   | Decision                                  | What was done                                                                                                                                                                                                              |
+| --- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Missing screens (Schedule, Event, Alerts) | Not built. Components they need exist and are in both galleries. `visual-app.spec.ts` has a note to add them when they ship.                                                                                               |
+| 2   | Navigation                                | Glass sidebar (web, Home and Family) and floating glass tab bar (mobile: Home, Family, More). e2e selectors were not changed; no markup they use moved.                                                                    |
+| 3   | Focus ring                                | 3px outline in `focusRing` (= `bubbleOwn` colours) on every control; inputs use the system's 2px "sent" border.                                                                                                            |
+| 4   | Contrast on glass                         | System tints kept. Tests assert `ink` on glass over the background and each blob; `muted` on glass is banned (documented in `CONTRAST.md`). All pairs pass.                                                                |
+| 5   | Status colours                            | One colour each (`ok`, `warn`, `bad`) plus derived `*Soft` tints (8% light, 14% dark; light warn needed 8% to keep 4.5:1).                                                                                                 |
+| 6   | Accent ink                                | Removed olive `accentInk` text colour. `accentInk` now means "text on accent" (charcoal); emphasis uses `ink` or `bubbleOwn`.                                                                                              |
+| 7   | Spacing / radii                           | Spacing is exactly 4/8/12/16/24/32/48; radii 12/16/20/24/28/pill (24 kept for cards). Old 20/40/64 spacing and 2px steps were not used after migration and were dropped.                                                   |
+| 8   | QR tile                                   | `qrSurface` / `qrInk` tokens (white / black in both themes).                                                                                                                                                               |
+| 9   | Type scale                                | Old size/weight names removed everywhere (no alias layer). Added `monoSm` 12/16 for count badges (not in the system).                                                                                                      |
+| 10  | Mobile screenshots                        | `expo export --platform ios` bundles (same check as CI). Not run in a simulator: `apps/mobile/.env.local` has no `EXPO_PUBLIC` values, and the env check runs at launch. Checklist added to `docs/mobile-manual-tests.md`. |
+| 11  | Fonts                                     | Manrope 800 and IBM Plex Mono 600 added on both platforms.                                                                                                                                                                 |
+
+Final leak status: ESLint and Stylelint report **zero** violations (`pnpm lint`), and CI runs them. Three documented `design-exception` comments remain (QR image resolution, two visually-hidden pixel sizes).
+The crude audit script from Stage 1 still counts token-based uses (e.g. `font-family: var(--font-sans)`), so use lint as the source of truth. Zero colour literals remain outside `packages/tokens`.
+
+Verification: `pnpm lint`, `pnpm typecheck`, `pnpm test` (tokens 95, core 25, ui-core 2) and `pnpm format:check` pass; web production build passes; `expo export --platform ios` passes; `pnpm --filter @athleit/web visual` passes (6 tests, stable on rerun).
+**Not run locally:** the Playwright e2e and `visual-app.spec.ts` (they need the hosted test project, which this task must not touch; CI runs them), and the app on a simulator.
+
+After screenshots are in [`docs/design-audit/after/`](design-audit/after/).
+
+## Remaining deviations and open items
+
+- **Authenticated web screens and mobile were not screenshotted** (no database access / no simulator env). Visual coverage of those screens relies on `visual-app.spec.ts` in CI and the mobile checklist.
+- **Visual baselines were generated on macOS.** The CI job `visual` is `continue-on-error` until baselines are regenerated from a Linux run if fonts render differently.
+- **Glass saturation on mobile:** `expo-blur` has no saturation control, so the 180% saturation is web-only; mobile uses blur intensity plus the token tint.
+- **Glass inner highlight and shadow on mobile** are approximated (hairline highlight view, iOS shadow props; Android shows no shadow).
+- **Phosphor on web** is a client module (`'use client'` on `icon.tsx`) because the package calls `createContext` at import time.
+- **Mobile UX not changed:** the team sections remain a chip row; the roster player panel expands in place (the system shows a side panel). Noted, not restructured.
+- **Roster, members and requests** keep their existing behaviour; they gained avatars and separators only.

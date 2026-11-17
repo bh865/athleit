@@ -15,12 +15,24 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [['list']],
   use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Snapshots are shared across OSes; thresholds in the specs absorb font-rendering differences.
+  snapshotPathTemplate: '{testDir}/{testFileName}-snapshots/{arg}-{projectName}{ext}',
+  projects: [
+    { name: 'chromium', testDir: './e2e', use: { ...devices['Desktop Chrome'] } },
+    // Visual regression of the design gallery and public pages: needs no database.
+    {
+      name: 'visual',
+      testDir: './visual',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
+    },
+  ],
   webServer: {
     // A production build is closer to what ships and doesn't collide with a running `next dev`.
     command: `pnpm build && pnpm start --port ${PORT}`,
     url: `http://localhost:${PORT}/sign-in`,
     reuseExistingServer: true,
+    // Build-time flag that exposes /dev/design in the production build used by the visual tests.
+    env: { NEXT_PUBLIC_DESIGN_GALLERY: '1' },
     timeout: 300_000,
   },
 });

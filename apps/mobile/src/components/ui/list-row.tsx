@@ -1,10 +1,12 @@
 import { componentTokens, space } from '@athleit/tokens';
-import type { ReactNode } from 'react';
+import { createContext, use, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from './icon';
 import { Text } from './text';
 import { useTheme } from './theme';
+
+const GroupContext = createContext(false);
 
 export interface ListRowProps {
   /** Left slot: a 44px Avatar or IconCircle. */
@@ -32,6 +34,7 @@ export function ListRow({
   testID,
 }: ListRowProps) {
   const { theme } = useTheme();
+  const grouped = use(GroupContext);
   const c = theme.color;
   const body = (
     <>
@@ -56,7 +59,7 @@ export function ListRow({
     alignItems: 'center' as const,
     gap: space[3],
     paddingVertical: space[2],
-    borderBottomWidth: last ? 0 : 1,
+    borderBottomWidth: grouped && !last ? 1 : 0,
     borderBottomColor: c.line,
     backgroundColor: selected ? c.surfaceAlt : 'transparent',
   };
@@ -72,10 +75,11 @@ export function ListRow({
 }
 
 /** A column of rows on a surface card, separated by 1px lines. */
-export function ListGroup({ children }: { children: ReactNode }) {
+export function ListGroup({ children, testID }: { children: ReactNode; testID?: string }) {
   const { theme } = useTheme();
   return (
     <View
+      testID={testID}
       style={{
         paddingHorizontal: space[4],
         borderRadius: componentTokens.card.radius,
@@ -86,7 +90,9 @@ export function ListGroup({ children }: { children: ReactNode }) {
       }}
     >
       {/* Rows draw a bottom separator; pull the last one under the card edge. */}
-      <View style={{ marginBottom: -1 }}>{children}</View>
+      <GroupContext value>
+        <View style={{ marginBottom: -1 }}>{children}</View>
+      </GroupContext>
     </View>
   );
 }
