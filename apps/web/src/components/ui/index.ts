@@ -19,6 +19,7 @@ export { Sheet } from './sheet';
 export { EmptyState, ErrorState, LoadingSkeleton } from './states';
 export { StatusDot } from './status-dot';
 export { Heading, Label, Mono, Text, type TextProps } from './text';
+export { TextArea, type TextAreaProps } from './text-area';
 export { TextField, type TextFieldProps } from './text-field';
 export { ThemeProvider, useTheme } from './theme-provider';
 export { ThemeToggle } from './theme-toggle';

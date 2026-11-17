@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./web": "./src/web.ts",
     "./mobile": "./src/mobile.ts",
-    "./api": "./src/api.ts"
+    "./api": "./src/api.ts",
+    "./scheduling": "./src/scheduling-api.ts"
   },
   "scripts": {
     "lint": "eslint .",

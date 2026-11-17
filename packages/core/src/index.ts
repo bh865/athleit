@@ -9,6 +9,7 @@ export * from './schemas/messaging';
 export * from './messaging';
 export * from './notifications';
 export * from './scheduling';
+export * from './schedule-time';
 export * from './schemas/scheduling';
 export * from './capabilities';
 export * from './context';

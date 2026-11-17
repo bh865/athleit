@@ -53,6 +53,11 @@ import {
   Prohibit,
   Trash,
   PencilSimple,
+  MapPin,
+  Link as LinkIcon,
+  ArrowClockwise,
+  Repeat,
+  Question,
   ShieldCheck,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
@@ -113,6 +118,11 @@ const icons: Record<IconName, PhosphorIcon> = {
   prohibit: Prohibit,
   trash: Trash,
   pencil: PencilSimple,
+  'map-pin': MapPin,
+  link: LinkIcon,
+  'arrow-clockwise': ArrowClockwise,
+  repeat: Repeat,
+  question: Question,
   'shield-check': ShieldCheck,
 };
 

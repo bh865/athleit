@@ -58,6 +58,11 @@ export const iconNames = [
   'trash',
   'pencil',
   'shield-check',
+  'map-pin',
+  'link',
+  'arrow-clockwise',
+  'repeat',
+  'question',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 

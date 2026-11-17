@@ -130,6 +130,14 @@
   --size-chat-reaction-height: 24px;
   --size-chat-typing-dot: 8px;
   --size-chat-unread-dot: 10px;
+  --size-schedule-date-block-web: 64px;
+  --size-schedule-date-block-mobile: 48px;
+  --size-schedule-drawer-width: 400px;
+  --size-schedule-rsvp-button: 52px;
+  --size-schedule-rsvp-button-lg: 64px;
+  --size-schedule-calendar-cell-min-height: 96px;
+  --size-schedule-calendar-dot: 6px;
+  --size-schedule-avatar-small: 32px;
   --size-empty-state-icon-circle: 88px;
   --size-skeleton-row-height: 64px;
   --size-sheet-grabber-width: 36px;

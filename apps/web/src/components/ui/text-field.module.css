@@ -48,3 +48,9 @@
 .hint {
   color: var(--color-muted);
 }
+.area {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+  resize: vertical;
+  line-height: var(--text-body-leading);
+}

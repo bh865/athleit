@@ -28,6 +28,18 @@ export const componentTokens = {
     typingDot: 8,
     unreadDot: 10,
   },
+  // Scheduling (Phase 2). Date block and drawer sizes come from the Web/Mobile Schedule screens;
+  // the calendar cell sizes are additions (see docs/design-system-additions.md).
+  schedule: {
+    dateBlockWeb: 64,
+    dateBlockMobile: 48,
+    drawerWidth: 400,
+    rsvpButton: 52,
+    rsvpButtonLg: 64,
+    calendarCellMinHeight: 96,
+    calendarDot: 6,
+    avatarSmall: 32,
+  },
   emptyState: { iconCircle: 88 },
   skeleton: { rowHeight: 64 },
   sheetGrabber: { width: 36, height: 5 },

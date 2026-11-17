@@ -1792,6 +1792,40 @@ export type Database = {
           slug: string
         }[]
       }
+      get_event: {
+        Args: { p_event_id: string }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          game_format: Json
+          home_away: string
+          id: string
+          is_staff: boolean
+          location_address: string
+          location_id: string
+          location_name: string
+          location_text: string
+          notes: string
+          opponent_id: string
+          opponent_name: string
+          our_score: number
+          outcome: string
+          period_scores: Json
+          result_notes: string
+          revision: number
+          series_id: string
+          sport: Database["public"]["Enums"]["sport"]
+          starts_at: string
+          status: string
+          team_id: string
+          team_name: string
+          their_score: number
+          timezone: string
+          title: string
+          type: string
+        }[]
+      }
       get_guardian_contacts: {
         Args: { p_player_id: string }
         Returns: {
@@ -1933,6 +1967,35 @@ export type Database = {
       }
       household_schedule: {
         Args: { p_limit?: number; p_offset?: number; p_when?: string }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          event_id: string
+          home_away: string
+          location_address: string
+          location_name: string
+          location_text: string
+          opponent_name: string
+          our_score: number
+          outcome: string
+          player_first_name: string
+          player_id: string
+          revision: number
+          rsvp_note: string
+          rsvp_status: string
+          starts_at: string
+          status: string
+          team_id: string
+          team_name: string
+          their_score: number
+          timezone: string
+          title: string
+          type: string
+        }[]
+      }
+      household_schedule_range: {
+        Args: { p_from: string; p_to: string }
         Returns: {
           arrive_early_minutes: number
           cancelled_reason: string
@@ -2123,6 +2186,39 @@ export type Database = {
           p_team_id: string
           p_when?: string
         }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          game_format: Json
+          going: number
+          home_away: string
+          id: string
+          location_address: string
+          location_id: string
+          location_name: string
+          location_text: string
+          maybe: number
+          no_reply: number
+          not_going: number
+          notes: string
+          opponent_id: string
+          opponent_name: string
+          our_score: number
+          outcome: string
+          revision: number
+          series_id: string
+          starts_at: string
+          status: string
+          team_id: string
+          their_score: number
+          timezone: string
+          title: string
+          type: string
+        }[]
+      }
+      team_schedule_range: {
+        Args: { p_from: string; p_team_id: string; p_to: string }
         Returns: {
           arrive_early_minutes: number
           cancelled_reason: string

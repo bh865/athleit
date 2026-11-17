@@ -26,7 +26,11 @@ export type Capability =
   | 'club.invite'
   | 'club.unlinkTeam'
   | 'family.manage'
-  | 'family.claimReview';
+  | 'family.claimReview'
+  | 'schedule.view'
+  | 'schedule.manage'
+  | 'schedule.rsvpNames'
+  | 'schedule.rsvpOwn';
 
 const STAFF: Capability[] = [
   'team.view',
@@ -38,6 +42,9 @@ const STAFF: Capability[] = [
   'members.view',
   'invites.createFamily',
   'joinRequests.decide',
+  'schedule.view',
+  'schedule.manage',
+  'schedule.rsvpNames',
 ];
 
 const BY_ROLE: Record<string, Capability[]> = {
@@ -53,11 +60,17 @@ const BY_ROLE: Record<string, Capability[]> = {
   ],
   'team:coach': STAFF,
   'team:manager': STAFF,
-  'team:parent': ['team.view', 'roster.viewLimited'],
-  'team:player': ['team.view', 'roster.viewLimited'],
+  'team:parent': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
+  'team:player': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
   'club:admin': ['club.view', 'club.decideLink', 'club.invite', 'club.unlinkTeam', 'invites.view'],
   'club:manager': ['club.view'],
-  'family:guardian': ['family.manage', 'family.claimReview', 'invites.view'],
+  'family:guardian': [
+    'family.manage',
+    'family.claimReview',
+    'invites.view',
+    'schedule.view',
+    'schedule.rsvpOwn',
+  ],
 };
 
 export function capabilitiesFor(ctx: Pick<AppContext, 'kind' | 'role'>): ReadonlySet<Capability> {
@@ -89,4 +102,5 @@ export const CLUB_ADMIN_TEAM_VIEW: ReadonlySet<Capability> = new Set<Capability>
   'team.view',
   'roster.viewFull',
   'roster.viewLimited',
+  'schedule.view',
 ]);
