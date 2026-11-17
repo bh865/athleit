@@ -42,8 +42,9 @@ estimated_stripe_fee = round(total * stripe_bps / 10000) + stripe_fixed
 For a multi-request checkout the charge is computed **once on the summed base** (flat applies once per payment), then allocated across items by
 largest remainder so items sum exactly to the payment. Initial `fee_config`: Athleit charge 0 / 0 bps, Stripe estimate 2.9% + 30¢ (pricing is a pending decision).
 
-**Variance.** Stripe's actual fee (card type, international) differs from the estimate. `payments` stores both. Under `absorb` the team bears the whole
-variance. Under `pass_on` the team nets `base` only against the estimate; the variance (usually a few cents) is borne by the team, not the payer.
+**Variance.** Stripe's actual fee (card type, international) differs from the estimate. `payments` stores both. Charges are **destination
+charges**, so Athleit pays Stripe's fee and the team's net is fixed by the application fee: `net = total - application_fee`. The team therefore nets the
+estimate exactly and **Athleit bears the variance** (see [payments-architecture.md](payments-architecture.md)).
 
 **Worked example, a $45.00 request** (Stripe estimate 2.9% + 30¢; Athleit charge shown with two settings):
 

@@ -1,0 +1,155 @@
+#!/usr/bin/env node
+// Stripe TEST-MODE integration check for the payment flow's money mechanics. Not part of CI (needs real test keys).
+//
+//   STRIPE_SECRET_KEY=sk_test_... CONNECTED_ACCOUNT=acct_... node scripts/payments-integration.mjs
+//
+// CONNECTED_ACCOUNT must be an Express test account that finished onboarding in test mode (charges_enabled).
+// It exercises exactly what create-payment-intent / refund-payment send: a destination charge with on_behalf_of and an
+// application fee, then verifies amounts, the actual Stripe fee on the balance transaction, a decline, 3D Secure,
+// and a refund with reverse_transfer. Refuses live keys.
+const key = process.env.STRIPE_SECRET_KEY ?? '';
+const acct = process.env.CONNECTED_ACCOUNT ?? '';
+if (/^(sk|rk)_live_/.test(key)) {
+  console.error('Refusing a live key.');
+  process.exit(2);
+}
+if (!/^(sk|rk)_test_/.test(key) || !/^acct_/.test(acct)) {
+  console.error('Set STRIPE_SECRET_KEY (test) and CONNECTED_ACCOUNT.');
+  process.exit(2);
+}
+
+const enc = (o, p = '') =>
+  Object.entries(o).flatMap(([k, v]) =>
+    v && typeof v === 'object'
+      ? enc(v, p ? `${p}[${k}]` : k)
+      : [`${encodeURIComponent(p ? `${p}[${k}]` : k)}=${encodeURIComponent(v)}`],
+  );
+async function api(method, path, params = {}, idem) {
+  const res = await fetch(`https://api.stripe.com${path}`, {
+    method,
+    headers: {
+      authorization: `Bearer ${key}`,
+      ...(method === 'POST' ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
+      ...(idem ? { 'idempotency-key': idem } : {}),
+    },
+    body: method === 'POST' ? enc(params).join('&') : undefined,
+  });
+  const j = await res.json();
+  if (!res.ok) {
+    const e = new Error(`${path}: ${j.error?.code ?? j.error?.type}`);
+    e.stripe = j.error;
+    throw e;
+  }
+  return j;
+}
+let failed = 0;
+const check = (name, ok, extra = '') => {
+  console.log(`${ok ? 'ok  ' : 'FAIL'} ${name} ${extra}`);
+  if (!ok) failed++;
+};
+const run = Date.now();
+
+async function charge(label, pm, total, appFee) {
+  const pi = await api(
+    'POST',
+    '/v1/payment_intents',
+    {
+      amount: total,
+      currency: 'usd',
+      application_fee_amount: appFee,
+      transfer_data: { destination: acct },
+      on_behalf_of: acct,
+      payment_method: pm,
+      confirm: 'true',
+      automatic_payment_methods: { enabled: 'true', allow_redirects: 'never' },
+      description: `integration ${label}`,
+      metadata: { athleit_payment_id: `itest-${run}-${label}` },
+    },
+    `itest:${run}:${label}`,
+  );
+  return pi;
+}
+
+// 1. Visa 4242: $45.00 absorb, application fee = estimated Stripe fee ($1.61) so the team nets ~ $43.39
+const ok = await charge('visa', 'pm_card_visa', 4500, 161);
+check('4242 succeeds', ok.status === 'succeeded', ok.status);
+const ch = await api('GET', `/v1/charges/${ok.latest_charge}`, {
+  'expand[]': 'balance_transaction',
+});
+const stripeFee = (ch.balance_transaction.fee_details ?? [])
+  .filter((d) => d.type === 'stripe_fee')
+  .reduce((a, d) => a + d.amount, 0);
+console.log(
+  '     actual Stripe fee (cents):',
+  stripeFee,
+  '| fee_details:',
+  JSON.stringify(ch.balance_transaction.fee_details),
+);
+const transfer = await api('GET', `/v1/transfers/${ch.transfer}`);
+check(
+  'team receives total - application fee',
+  transfer.amount === 4500 - 161,
+  `transfer=${transfer.amount}`,
+);
+check('on_behalf_of settles to the connected account', ch.on_behalf_of === acct);
+
+// 2. Idempotency: same key, same intent
+const again = await charge('visa', 'pm_card_visa', 4500, 161);
+check('same idempotency key returns the same intent', again.id === ok.id);
+
+// 3. Decline (4000 0000 0000 9995 = insufficient funds)
+try {
+  await charge('decline', 'pm_card_chargeDeclinedInsufficientFunds', 4500, 161);
+  check('decline is declined', false);
+} catch (e) {
+  check(
+    '4000000000009995 is declined',
+    e.stripe?.decline_code === 'insufficient_funds' || e.stripe?.code === 'card_declined',
+    e.stripe?.decline_code,
+  );
+}
+
+// 4. 3D Secure (4000 0025 0000 3155): needs authentication, never succeeds server-side without the customer
+const sca = await charge('3ds', 'pm_card_authenticationRequired', 4500, 161);
+check('3DS card requires action', sca.status === 'requires_action', sca.status);
+await api('POST', `/v1/payment_intents/${sca.id}/cancel`, {}, `itest:${run}:3ds:cancel`);
+
+// 5. Refunds: partial (base only), then the rest with the application fee
+const r1 = await api(
+  'POST',
+  '/v1/refunds',
+  {
+    payment_intent: ok.id,
+    amount: 1000,
+    reverse_transfer: 'true',
+    refund_application_fee: 'false',
+  },
+  `itest:${run}:r1`,
+);
+check('partial refund created', ['succeeded', 'pending'].includes(r1.status), r1.status);
+const r2 = await api(
+  'POST',
+  '/v1/refunds',
+  { payment_intent: ok.id, amount: 3500, reverse_transfer: 'true', refund_application_fee: 'true' },
+  `itest:${run}:r2`,
+);
+check(
+  'rest refunded with the application fee',
+  ['succeeded', 'pending'].includes(r2.status),
+  r2.status,
+);
+const after = await api('GET', `/v1/charges/${ok.latest_charge}`);
+check(
+  'charge fully refunded',
+  after.refunded === true && after.amount_refunded === 4500,
+  `refunded=${after.amount_refunded}`,
+);
+const rev = await api('GET', `/v1/transfers/${ch.transfer}`);
+console.log(
+  '     transfer reversed (cents):',
+  rev.amount_reversed,
+  '(inspect: does the team keep the application-fee share?)',
+);
+
+console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed');
+process.exit(failed ? 1 : 0);
