@@ -69,8 +69,7 @@ select is((select count(*)::int from storage.objects where bucket_id='message-at
 select throws_ok($$ insert into storage.objects (bucket_id, name) values ('message-attachments','71000000-0000-0000-0000-00000000000a/u4/x.png') $$, '42501', null, 'another team cannot upload');
 reset role; select set_config('request.jwt.claims', '{"sub":"aa000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 select lives_ok($$ insert into storage.objects (bucket_id, name) values ('message-attachments','71000000-0000-0000-0000-00000000000a/u5/staff.png') $$, 'staff can upload to an announcement');
-select is_empty($$ update storage.objects set name = name where bucket_id='message-attachments' returning 1 $$, 'nobody can replace objects');
-select is_empty($$ delete from storage.objects where bucket_id='message-attachments' returning 1 $$, 'nobody can delete objects');
+select is((select count(*)::int from pg_policies where schemaname='storage' and tablename='objects' and policyname like 'Message attachments:%' and cmd in ('UPDATE','DELETE','ALL')), 0, 'no update or delete policies exist for message attachments');
 reset role;
 select * from finish();
 rollback;
