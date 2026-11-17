@@ -1,0 +1,8 @@
+{
+  "extends": ["expo/tsconfig.base", "@athleit/config/tsconfig.base.json"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

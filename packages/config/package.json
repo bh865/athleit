@@ -1,0 +1,23 @@
+{
+  "name": "@athleit/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./eslint/base": "./eslint/base.mjs",
+    "./eslint/react": "./eslint/react.mjs",
+    "./prettier": "./prettier.mjs",
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.react.json": "./tsconfig.react.json"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "typescript-eslint": "^8.73.0"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

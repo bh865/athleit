@@ -1,0 +1,23 @@
+{
+  "name": "@athleit/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./theme.css"
+  },
+  "scripts": {
+    "build:css": "tsx scripts/build-css.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@athleit/config": "workspace:*",
+    "eslint": "^9.39.0",
+    "tsx": "^4.23.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

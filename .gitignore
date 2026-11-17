@@ -1,0 +1,25 @@
+node_modules
+.pnpm-store
+.turbo
+.next
+.expo
+dist
+out
+build
+coverage
+*.tsbuildinfo
+next-env.d.ts
+expo-env.d.ts
+
+# env files: only *.example is committed
+.env
+.env.*
+!.env.example
+
+# Supabase local state
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+.DS_Store
+*.log

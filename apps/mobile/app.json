@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Athleit",
+    "slug": "athleit",
+    "scheme": "athleit",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.athleit.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.athleit.app"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
