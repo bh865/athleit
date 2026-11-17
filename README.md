@@ -85,6 +85,20 @@ scripts/      db-types.sh, check-rls-tests.sh
 
 Workspace packages ship TypeScript (and CSS) **source**, with no build step. Web compiles them via `transpilePackages`; Metro compiles them natively.
 
+## Using a hosted Supabase project instead of Docker
+
+The Supabase CLI 3.x targets the **local** stack unless you pass `--remote`. If you can't or don't want to run Docker, develop against a hosted **dev** project:
+
+```bash
+pnpm supabase login
+pnpm supabase link --project-ref <ref>
+pnpm db:push:remote      # apply supabase/migrations
+pnpm db:types:remote     # regenerate packages/db/src/database.types.ts
+pnpm db:test:remote      # pgTAP via scripts/db-test-remote.sh (always rolls back)
+```
+
+In the dashboard: turn off Auth → Email → "Confirm email" (otherwise sign-up returns no session), and add `http://localhost:3000/**`, `athleit://**` and `exp://**` under Auth → URL Configuration. Use the project URL (`https://<ref>.supabase.co`) and publishable key in both `.env.local` files. Only point this at a disposable dev project; CI still tests against a throwaway local stack.
+
 ## Environment variables
 
 Env vars are validated with Zod at startup (`apps/web/src/env.ts`, `apps/mobile/src/env.ts`); a missing or malformed value fails immediately with the variable name. `.env*` files are git-ignored except `.env.example`. Never commit secrets.

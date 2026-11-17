@@ -6,7 +6,8 @@ cd "$(dirname "$0")/.."
 out="packages/db/src/database.types.ts"
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
-pnpm exec supabase gen types typescript > "$tmp"
+# Local stack by default; pass --remote to read the linked hosted project instead.
+pnpm exec supabase gen types typescript "$@" > "$tmp"
 mv "$tmp" "$out"
 pnpm exec prettier --write "$out" > /dev/null
 echo "Wrote $out"
