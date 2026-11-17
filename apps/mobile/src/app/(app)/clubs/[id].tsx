@@ -6,7 +6,7 @@ import {
   getLinkRequests,
   unlinkTeamFromClub,
 } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -60,15 +60,15 @@ export default function ClubScreen() {
       >
         {club.data && (
           <>
-            <View style={{ gap: spacing[1] }}>
+            <View style={{ gap: space[1] }}>
               <H1>{club.data.name}</H1>
-              <Text muted mono>
+              <Text variant="mono" muted>
                 {club.data.slug}
               </Text>
             </View>
             <FormMessage error={error} />
             {admin && (
-              <View style={{ gap: spacing[3] }}>
+              <View style={{ gap: space[3] }}>
                 <H2>Team requests</H2>
                 <LoadState
                   loading={links.loading}
@@ -77,9 +77,9 @@ export default function ClubScreen() {
                   emptyText="No teams are waiting for approval."
                   onRetry={links.reload}
                 >
-                  <View style={{ gap: spacing[3] }} testID="link-requests">
+                  <View style={{ gap: space[3] }} testID="link-requests">
                     {pending.map((l) => (
-                      <Card key={l.id} style={{ gap: spacing[2] }}>
+                      <Card key={l.id} style={{ gap: space[2] }}>
                         <ListItem
                           title={l.team_name}
                           subtitle={`${l.sport} · ${l.season_label} · asked by ${l.requested_by_name}`}
@@ -96,7 +96,7 @@ export default function ClubScreen() {
                 </LoadState>
               </View>
             )}
-            <View style={{ gap: spacing[3] }}>
+            <View style={{ gap: space[3] }}>
               <H2>Teams</H2>
               <LoadState
                 loading={teams.loading}
@@ -106,7 +106,7 @@ export default function ClubScreen() {
                 onRetry={teams.reload}
               >
                 {teams.data?.map((t) => (
-                  <View key={t.id} style={{ gap: spacing[1] }}>
+                  <View key={t.id} style={{ gap: space[1] }}>
                     <ListItem
                       title={t.name}
                       subtitle={`${t.sport} · ${t.season_label}`}
@@ -125,7 +125,7 @@ export default function ClubScreen() {
               </LoadState>
             </View>
             {caps.has('club.invite') && (
-              <Card style={{ gap: spacing[3] }}>
+              <Card style={{ gap: space[3] }}>
                 <H2>Invite club staff</H2>
                 <InvitePanel
                   target={{ clubId: id }}

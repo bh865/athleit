@@ -99,22 +99,16 @@ export default function ChildPage() {
             <Card className={styles.row}>
               {photo.data ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photo.data}
-                  alt={`${c.first_name}’s photo`}
-                  width={96}
-                  height={96}
-                  style={{ borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
-                />
+                <img src={photo.data} alt={`${c.first_name}’s photo`} className={styles.photo} />
               ) : null}
-              <div className={styles.stack} style={{ gap: 'var(--space-1)' }}>
-                <label className={styles.link} style={{ cursor: 'pointer' }}>
+              <div className={`${styles.stack} ${styles.tight}`}>
+                <label className={`${styles.link} ${styles.clickable}`}>
                   {c.photo_path ? 'Change photo' : 'Add a photo (optional)'}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     data-testid="photo-input"
-                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+                    className={styles.visuallyHidden}
                     onChange={(e) => void onPhoto(e.target.files?.[0])}
                   />
                 </label>

@@ -1,5 +1,5 @@
 import { contextPath } from '@athleit/core';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { View } from 'react-native';
@@ -54,10 +54,10 @@ export default function HomeScreen() {
       {active ? (
         <Notice>Opening {active.title}…</Notice>
       ) : (
-        <Card style={{ gap: spacing[4] }}>
+        <Card style={{ gap: space[4] }}>
           <H1>Welcome{displayName ? `, ${displayName}` : ''}</H1>
           <Text muted>How will you use Athleit? You can add more roles any time.</Text>
-          <View style={{ gap: spacing[3] }}>
+          <View style={{ gap: space[3] }}>
             {addActions.map((a, i) => (
               <Button
                 key={a}

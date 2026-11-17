@@ -5,14 +5,14 @@ import {
   type FieldErrors,
   type OAuthProvider,
 } from '@athleit/core';
-import { spacing } from '@athleit/tokens';
+import { radius, space } from '@athleit/tokens';
 import { Link } from 'expo-router';
-import { AppleLogo, GoogleLogo } from 'phosphor-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button, Text, TextField, useTheme } from '@/components/ui';
 import { useAuth, type AuthResult } from '@/lib/auth';
+import { fontFace } from '@/lib/fonts';
 
 type Field = 'displayName' | 'email' | 'password';
 
@@ -56,8 +56,8 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const provider = (p: OAuthProvider) => run(() => auth.signInWithProvider(p));
 
   return (
-    <View style={{ gap: spacing[5] }}>
-      <View style={{ gap: spacing[4] }}>
+    <View style={{ gap: space[6] }}>
+      <View style={{ gap: space[4] }}>
         {isSignUp && (
           <TextField
             label="Your name"
@@ -94,16 +94,16 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         {result.error ? (
           <View
             accessibilityRole="alert"
-            style={{ padding: spacing[3], borderRadius: 12, backgroundColor: c.danger.bg }}
+            style={{ padding: space[3], borderRadius: radius.sm, backgroundColor: c.badSoft }}
           >
-            <Text size="sm" style={{ color: c.danger.text }}>
+            <Text variant="caption" style={{ color: c.bad }}>
               {result.error}
             </Text>
           </View>
         ) : null}
         {result.message ? (
-          <View style={{ padding: spacing[3], borderRadius: 12, backgroundColor: c.success.bg }}>
-            <Text size="sm" style={{ color: c.success.text }}>
+          <View style={{ padding: space[3], borderRadius: radius.sm, backgroundColor: c.okSoft }}>
+            <Text variant="caption" style={{ color: c.ok }}>
               {result.message}
             </Text>
           </View>
@@ -111,33 +111,33 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         <Button title={isSignUp ? 'Create account' : 'Sign in'} loading={busy} onPress={submit} />
       </View>
 
-      <Text size="sm" muted style={{ textAlign: 'center' }}>
+      <Text variant="caption" muted style={{ textAlign: 'center' }}>
         or
       </Text>
 
       {/* Google/Apple need real credentials in supabase/config.toml (see README). */}
-      <View style={{ gap: spacing[3] }}>
+      <View style={{ gap: space[3] }}>
         <Button
           title="Continue with Google"
           variant="secondary"
           disabled={busy}
-          icon={<GoogleLogo size={20} weight="bold" color={c.text} />}
+          icon="google-logo"
           onPress={() => provider('google')}
         />
         <Button
           title="Continue with Apple"
           variant="secondary"
           disabled={busy}
-          icon={<AppleLogo size={20} weight="fill" color={c.text} />}
+          icon="apple-logo"
           onPress={() => provider('apple')}
         />
       </View>
 
-      <Text size="sm" muted style={{ textAlign: 'center' }}>
+      <Text variant="caption" muted style={{ textAlign: 'center' }}>
         {isSignUp ? 'Already have an account? ' : 'New here? '}
         <Link
           href={isSignUp ? '/sign-in' : '/sign-up'}
-          style={{ color: c.text, fontFamily: 'Manrope_600SemiBold' }}
+          style={{ color: c.ink, fontFamily: fontFace.sans.bold }}
         >
           {isSignUp ? 'Sign in' : 'Create an account'}
         </Link>

@@ -15,6 +15,7 @@
     "@athleit/core": "workspace:*",
     "@athleit/db": "workspace:*",
     "@athleit/tokens": "workspace:*",
+    "@athleit/ui-core": "workspace:*",
     "@expo-google-fonts/ibm-plex-mono": "^0.4.2",
     "@expo-google-fonts/manrope": "^0.4.3",
     "expo": "~58.0.26",

@@ -1,11 +1,10 @@
 'use client';
 
-import { AppleLogo, GoogleLogo } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useActionState } from 'react';
 
 import { signIn, signInWithProvider, signUp, type AuthFormState } from '@/app/(auth)/actions';
-import { Button, TextField } from '@/components/ui';
+import { Button, Icon, TextField } from '@/components/ui';
 
 import styles from './auth-form.module.css';
 
@@ -74,12 +73,12 @@ export function AuthForm({
       <div className={styles.providers}>
         <form action={signInWithProvider.bind(null, 'google')}>
           <Button type="submit" variant="secondary" fullWidth>
-            <GoogleLogo size={20} weight="bold" aria-hidden /> Continue with Google
+            <Icon name="google-logo" /> Continue with Google
           </Button>
         </form>
         <form action={signInWithProvider.bind(null, 'apple')}>
           <Button type="submit" variant="secondary" fullWidth>
-            <AppleLogo size={20} weight="fill" aria-hidden /> Continue with Apple
+            <Icon name="apple-logo" weight="fill" /> Continue with Apple
           </Button>
         </form>
       </div>

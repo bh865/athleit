@@ -1,0 +1,38 @@
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  font-weight: var(--text-label-weight);
+  font-size: var(--text-caption-size);
+}
+.sm {
+  width: var(--size-avatar-sm);
+  height: var(--size-avatar-sm);
+  font-size: var(--text-label-size);
+}
+.md {
+  width: var(--size-avatar-md);
+  height: var(--size-avatar-md);
+}
+.lg {
+  width: var(--size-avatar-lg);
+  height: var(--size-avatar-lg);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-display-weight);
+}
+.slot1 {
+  background: var(--color-avatar1);
+  color: var(--color-avatar1-ink);
+}
+.slot2 {
+  background: var(--color-avatar2);
+  color: var(--color-avatar2-ink);
+}
+.slot3 {
+  background: var(--color-avatar3);
+  color: var(--color-avatar3-ink);
+}

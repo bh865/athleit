@@ -1,6 +1,6 @@
 import { addChildSchema, fieldErrors, friendlyError, type FieldErrors } from '@athleit/core';
 import { addChild } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -39,7 +39,7 @@ export default function AddChildScreen() {
 
   return (
     <AppScreen>
-      <Card style={{ gap: spacing[4] }}>
+      <Card style={{ gap: space[4] }}>
         <H1>Add a child</H1>
         <Notice>
           You don’t need to join a team first. Children under 13 never have their own login; you

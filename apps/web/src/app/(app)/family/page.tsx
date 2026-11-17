@@ -2,7 +2,6 @@
 
 import { ageOn, can, canHaveOwnLogin, friendlyError } from '@athleit/core';
 import { decidePlayerLoginClaim, getPlayerLoginClaims, listChildren } from '@athleit/db/api';
-import { Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -10,7 +9,7 @@ import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
 import { InvitePanel } from '@/components/app/invite-panel';
 import { FormMessage, LoadState } from '@/components/app/states';
-import { Badge, Button, Card } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Icon } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -35,7 +34,7 @@ export default function FamilyPage() {
       <div className={`${styles.row} ${styles.between}`}>
         <h1 className={styles.title}>{family?.title ?? 'Your family'}</h1>
         <Link href="/family/children/new" className={styles.link}>
-          <Plus size={20} aria-hidden /> Add a child
+          <Icon name="plus" /> Add a child
         </Link>
       </div>
 
@@ -66,6 +65,7 @@ export default function FamilyPage() {
               return (
                 <li key={c.id}>
                   <Link href={`/family/children/${c.id}`} className={styles.item}>
+                    <Avatar name={`${c.first_name} ${c.last_name}`} />
                     <div className={styles.grow}>
                       <strong>
                         {c.first_name} {c.last_name}

@@ -1,6 +1,6 @@
 import { createClubSchema, fieldErrors, friendlyError, type FieldErrors } from '@athleit/core';
 import { createClub } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -46,7 +46,7 @@ export default function NewClubScreen() {
 
   return (
     <AppScreen>
-      <Card style={{ gap: spacing[4] }}>
+      <Card style={{ gap: space[4] }}>
         <H1>Create a club</H1>
         <Text muted>A club groups teams. Teams ask to join it and you approve each one.</Text>
         <TextField

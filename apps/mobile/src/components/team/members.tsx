@@ -1,6 +1,6 @@
 import { friendlyError, TEAM_ROLES } from '@athleit/core';
 import { getTeamMembers, removeMember, setMemberRole } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -39,7 +39,7 @@ export function MembersSection() {
   if (!caps.has('members.view')) return <Notice>Only team staff can see members.</Notice>;
   const manage = caps.has('members.manage');
   return (
-    <View style={{ gap: spacing[3] }}>
+    <View style={{ gap: space[3] }}>
       <H2>Members</H2>
       <FormMessage error={error} />
       <LoadState
@@ -49,7 +49,7 @@ export function MembersSection() {
         onRetry={list.reload}
       >
         {list.data?.map((m) => (
-          <Card key={m.membership_id} style={{ gap: spacing[3] }}>
+          <Card key={m.membership_id} style={{ gap: space[3] }}>
             <ListItem
               title={`${m.display_name}${m.profile_id === userId ? ' (you)' : ''}`}
               right={manage ? undefined : <Badge>{m.role}</Badge>}

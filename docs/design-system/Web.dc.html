@@ -1,0 +1,935 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet
+        ><link rel="preconnect" href="https://fonts.googleapis.com" /><link
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        /><link
+          rel="stylesheet"
+          href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+        /><link
+          rel="stylesheet"
+          href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"
+        /><style>
+          body {
+            margin: 0;
+          }
+          a {
+            color: inherit;
+          }
+          a:hover {
+            opacity: 0.7;
+          }
+        </style></helmet
+      >
+      <div
+        style="position:relative;width:1440px;height:900px;overflow:hidden;font-family:Manrope,sans-serif;color:{{ t.ink }};background:radial-gradient(circle at 12% 88%,{{ t.blob1 }},transparent 38%),radial-gradient(circle at 85% 8%,{{ t.blob2 }},transparent 45%),radial-gradient(circle at 60% 100%,{{ t.blob2 }},transparent 40%),{{ t.bg }}"
+      >
+        <div
+          style="position:absolute;left:16px;top:16px;bottom:16px;width:248px;border-radius:28px;background:{{ t.glass }};backdrop-filter:blur(24px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};padding:16px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box"
+        >
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px 14px">
+            <svg
+              width="30"
+              height="30"
+              viewBox="12 24.5 67 67"
+              role="img"
+              aria-label="Athleit"
+              style="display: block; flex: none"
+            >
+              <circle
+                cx="42"
+                cy="58"
+                r="20"
+                fill="none"
+                stroke="{{ t.sent }}"
+                stroke-width="14"
+              ></circle>
+              <rect x="62" y="31" width="14" height="54" rx="7" fill="{{ t.sent }}"></rect></svg
+            ><span
+              style="font-size: 24px; font-weight: 800; letter-spacing: -0.035em; line-height: 1"
+              >athleit</span
+            >
+          </div>
+          <div
+            style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:20px;background:{{ t.sf2 }};margin-bottom:16px"
+          >
+            <div
+              style="
+                width: 40px;
+                height: 40px;
+                border-radius: 14px;
+                background: #ccff33;
+                color: #272a2b;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+              "
+            >
+              F
+            </div>
+            <div style="flex: 1; line-height: 1.25">
+              <div style="font-weight: 700; font-size: 15px">U12 Falcons</div>
+              <div style="font-size:13px;color:{{ t.mute }};font-weight:500">Coach</div>
+            </div>
+            <i class="ph ph-caret-up-down" style="font-size:18px;color:{{ t.mute }}"></i>
+          </div>
+          <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"
+            ><div
+              style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-radius:24px;background:{{ n.bg }};color:{{ n.fg }};font-weight:700;font-size:15px"
+            >
+              <i class="{{ n.cls }}" style="font-size: 22px"></i
+              ><span style="flex: 1">{{ n.l }}</span
+              ><sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"
+                ><span
+                  style="
+                    font-family: 'IBM Plex Mono', monospace;
+                    font-size: 12px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    border-radius: 10px;
+                    padding: 2px 8px;
+                  "
+                  >{{ n.badge }}</span
+                ></sc-if
+              >
+            </div></sc-for
+          >
+          <div style="flex: 1"></div>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px">
+            <div
+              style="
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: #272a2b;
+                color: #f3f7f9;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 14px;
+              "
+            >
+              DM
+            </div>
+            <div style="line-height: 1.25">
+              <div style="font-weight: 700; font-size: 14px">Dana Morris</div>
+              <div style="font-size:12px;color:{{ t.mute }};font-weight:500">Staff · Parent</div>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ f.home }}" hint-placeholder-val="{{ true }}"
+          ><div
+            style="
+              position: absolute;
+              left: 296px;
+              right: 48px;
+              top: 40px;
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            "
+          >
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <div>
+                <div style="font-size: 36px; font-weight: 800; letter-spacing: -0.02em">
+                  Good evening, Dana
+                </div>
+                <div style="color:{{ t.mute }};font-size:16px;font-weight:500;margin-top:4px">
+                  Tuesday, November 17
+                </div>
+              </div>
+              <div
+                style="
+                  height: 52px;
+                  padding: 0 28px;
+                  border-radius: 26px;
+                  background: #ccff33;
+                  color: #272a2b;
+                  font-weight: 800;
+                  font-size: 16px;
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                "
+              >
+                <i class="ph ph-plus" style="font-size: 20px"></i>New event
+              </div>
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:28px;padding:32px;display:flex;align-items:center;justify-content:space-between;border:1px solid {{ t.line }}"
+            >
+              <div>
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }}">
+                  NEXT UP · SATURDAY
+                </div>
+                <div
+                  style="font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0"
+                >
+                  Game vs. Hawks
+                </div>
+                <div
+                  style="font-size:16px;color:{{ t.mute }};font-weight:500;display:flex;gap:20px"
+                >
+                  <span>10:00 AM</span><span>Field 3, Riverside Park</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 36px; margin-left: auto; margin-right: 40px">
+                <sc-for list="{{ rsvp }}" as="r" hint-placeholder-count="3"
+                  ><div>
+                    <div
+                      style="
+                        font-family: 'IBM Plex Mono', monospace;
+                        font-size: 44px;
+                        font-weight: 500;
+                      "
+                    >
+                      {{ r.v }}
+                    </div>
+                    <div style="font-size:14px;color:{{ t.mute }};font-weight:600">{{ r.l }}</div>
+                  </div></sc-for
+                >
+              </div>
+              <div
+                style="position:relative;width:300px;height:176px;border-radius:20px;overflow:hidden;background:{{ t.sf2 }};flex:none"
+              >
+                <div
+                  style="position:absolute;left:-20px;top:70px;width:200px;height:120px;border-radius:40px;background:{{ t.park }};transform:rotate(-8deg)"
+                ></div>
+                <div
+                  style="position:absolute;right:-30px;top:-30px;width:130px;height:90px;border-radius:50px;background:{{ t.water }};transform:rotate(18deg)"
+                ></div>
+                <div
+                  style="position:absolute;left:0;right:0;top:56px;height:12px;background:{{ t.sf }};transform:rotate(-6deg)"
+                ></div>
+                <div
+                  style="position:absolute;left:0;right:0;top:128px;height:8px;background:{{ t.sf }};transform:rotate(4deg)"
+                ></div>
+                <div
+                  style="position:absolute;top:0;bottom:0;left:92px;width:10px;background:{{ t.sf }};transform:rotate(12deg)"
+                ></div>
+                <div
+                  style="position:absolute;top:0;bottom:0;left:214px;width:8px;background:{{ t.sf }};transform:rotate(-5deg)"
+                ></div>
+                <div
+                  style="
+                    position: absolute;
+                    left: 118px;
+                    top: 64px;
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    background: #ccff33;
+                    color: #272a2b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 0 0 8px rgba(204, 255, 51, 0.35);
+                  "
+                >
+                  <i class="ph-fill ph-map-pin" style="font-size: 24px"></i>
+                </div>
+                <div
+                  style="position:absolute;left:10px;right:10px;bottom:10px;height:36px;border-radius:18px;background:{{ t.glass2 }};backdrop-filter:blur(24px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:13px;font-weight:700"
+                >
+                  <span>Field 3</span
+                  ><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500"
+                    >12 min</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+              <div
+                style="background:{{ t.sf }};border-radius:28px;padding:24px;border:1px solid {{ t.line }};display:flex;flex-direction:column;gap:16px"
+              >
+                <div style="font-weight: 800; font-size: 18px">Messages</div>
+                <sc-for list="{{ threads3 }}" as="m" hint-placeholder-count="3"
+                  ><div style="display: flex; gap: 12px; align-items: center">
+                    <div
+                      style="width:40px;height:40px;border-radius:50%;background:{{ t.sf2 }};display:flex;align-items:center;justify-content:center"
+                    >
+                      <i class="ph ph-{{ m.ic }}" style="font-size: 20px"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0">
+                      <div style="font-weight: 700; font-size: 15px">{{ m.n }}</div>
+                      <div
+                        style="font-size:13px;color:{{ t.mute }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                      >
+                        {{ m.p }}
+                      </div>
+                    </div>
+                    <div
+                      style="width:10px;height:10px;border-radius:50%;background:{{ t.sent }}"
+                    ></div></div
+                ></sc-for>
+              </div>
+              <div
+                style="background:{{ t.sf }};border-radius:28px;padding:24px;border:1px solid {{ t.line }};display:flex;flex-direction:column;gap:8px"
+              >
+                <div style="font-weight: 800; font-size: 18px">Payments</div>
+                <div
+                  style="
+                    font-family: 'IBM Plex Mono', monospace;
+                    font-size: 36px;
+                    font-weight: 500;
+                    margin-top: 8px;
+                  "
+                >
+                  $1,240.00
+                </div>
+                <div style="font-size:14px;color:{{ t.mute }};font-weight:500">
+                  outstanding from 6 families
+                </div>
+                <div style="height:8px;border-radius:4px;background:{{ t.sf2 }};margin-top:12px">
+                  <div style="width:66%;height:8px;border-radius:4px;background:{{ t.sent }}"></div>
+                </div>
+                <div
+                  style="font-size:13px;color:{{ t.mute }};font-weight:600;font-family:'IBM Plex Mono',monospace"
+                >
+                  $2,360.00 of $3,600.00 collected
+                </div>
+              </div>
+              <div
+                style="background:{{ t.sf }};border-radius:28px;padding:24px;border:1px solid {{ t.line }};display:flex;flex-direction:column;gap:8px"
+              >
+                <div style="font-weight: 800; font-size: 18px">Roster</div>
+                <div style="font-size: 36px; font-weight: 800; margin-top: 8px">18 players</div>
+                <div style="font-size:14px;color:{{ t.mute }};font-weight:500">
+                  16 active · 2 pending
+                </div>
+                <div style="display: flex; margin-top: 12px">
+                  <sc-for list="{{ players5 }}" as="p" hint-placeholder-count="5"
+                    ><div
+                      style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};border:2px solid {{ t.sf }};margin-right:-8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
+                    >
+                      {{ p.i }}
+                    </div></sc-for
+                  >
+                </div>
+              </div>
+            </div>
+          </div></sc-if
+        >
+
+        <sc-if value="{{ f.schedule }}" hint-placeholder-val="{{ false }}"
+          ><div
+            style="
+              position: absolute;
+              left: 296px;
+              right: 448px;
+              top: 40px;
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            "
+          >
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <div style="font-size: 36px; font-weight: 800; letter-spacing: -0.02em">Schedule</div>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <div
+                  style="display:flex;padding:4px;border-radius:22px;background:{{ t.sf2 }};font-weight:700;font-size:14px"
+                >
+                  <div style="padding:8px 18px;border-radius:18px;color:{{ t.mute }}">Month</div>
+                  <div style="padding:8px 18px;border-radius:18px;background:{{ t.sf }}">Week</div>
+                </div>
+                <div
+                  style="
+                    height: 44px;
+                    padding: 0 22px;
+                    border-radius: 22px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  "
+                >
+                  <i class="ph ph-plus"></i>New event
+                </div>
+              </div>
+            </div>
+            <sc-for list="{{ events }}" as="e" hint-placeholder-count="4"
+              ><div
+                style="display:flex;align-items:center;gap:20px;padding:20px 24px;border-radius:24px;background:{{ e.bg }};border:1px solid {{ t.line }}"
+              >
+                <div style="width: 64px; text-align: center; line-height: 1.2">
+                  <div style="font-size:12px;font-weight:700;color:{{ t.mute }}">{{ e.dw }}</div>
+                  <div style="font-size: 28px; font-weight: 800">{{ e.dn }}</div>
+                </div>
+                <div style="flex: 1">
+                  <div style="font-size: 17px; font-weight: 700">{{ e.t }}</div>
+                  <div style="font-size:14px;color:{{ t.mute }};font-weight:500;margin-top:2px">
+                    {{ e.tm }} · {{ e.loc }}
+                  </div>
+                </div>
+                <div
+                  style="font-size:13px;font-weight:700;padding:6px 14px;border-radius:14px;background:{{ t.sf2 }}"
+                >
+                  {{ e.tag }}
+                </div>
+              </div></sc-for
+            >
+          </div>
+          <div
+            style="position:absolute;right:16px;top:16px;bottom:16px;width:400px;border-radius:28px;background:{{ t.glass2 }};backdrop-filter:blur(40px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }},0 12px 40px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px"
+          >
+            <div style="display:flex;justify-content:space-between;color:{{ t.mute }}">
+              <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em">GAME</span
+              ><i class="ph ph-x" style="font-size: 20px"></i>
+            </div>
+            <div>
+              <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em">
+                Game vs. Hawks
+              </div>
+              <div style="font-size:15px;color:{{ t.mute }};font-weight:500;margin-top:4px">
+                Sat, Nov 21 · 10:00 AM · Field 3
+              </div>
+            </div>
+            <div style="display: flex; gap: 28px">
+              <sc-for list="{{ rsvp }}" as="r" hint-placeholder-count="3"
+                ><div>
+                  <div
+                    style="
+                      font-family: 'IBM Plex Mono', monospace;
+                      font-size: 28px;
+                      font-weight: 500;
+                    "
+                  >
+                    {{ r.v }}
+                  </div>
+                  <div style="font-size:13px;color:{{ t.mute }};font-weight:600">{{ r.l }}</div>
+                </div></sc-for
+              >
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:20px;padding:8px 16px;display:flex;flex-direction:column;overflow:hidden"
+            >
+              <sc-for list="{{ rsvpList }}" as="p" hint-placeholder-count="6"
+                ><div
+                  style="display:flex;align-items:center;gap:12px;height:52px;border-bottom:1px solid {{ t.line }}"
+                >
+                  <div
+                    style="width:32px;height:32px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px"
+                  >
+                    {{ p.i }}
+                  </div>
+                  <div style="flex: 1; font-weight: 600; font-size: 15px">{{ p.n }}</div>
+                  <i
+                    class="ph-fill ph-{{ p.ic }}"
+                    style="font-size:22px;color:{{ p.col }}"
+                  ></i></div
+              ></sc-for>
+            </div></div
+        ></sc-if>
+
+        <sc-if value="{{ f.roster }}" hint-placeholder-val="{{ false }}"
+          ><div
+            style="
+              position: absolute;
+              left: 296px;
+              right: 448px;
+              top: 40px;
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            "
+          >
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <div style="font-size: 36px; font-weight: 800; letter-spacing: -0.02em">Roster</div>
+              <div
+                style="
+                  height: 44px;
+                  padding: 0 22px;
+                  border-radius: 22px;
+                  background: #ccff33;
+                  color: #272a2b;
+                  font-weight: 800;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <i class="ph ph-plus"></i>Add player
+              </div>
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:28px;border:1px solid {{ t.line }};padding:8px 12px"
+            >
+              <div
+                style="display:grid;grid-template-columns:2.2fr 1.1fr 2.4fr 1fr;gap:12px;padding:14px 16px;font-size:12px;font-weight:700;letter-spacing:.06em;color:{{ t.mute }}"
+              >
+                <span>PLAYER</span><span>POSITION</span><span>GUARDIAN</span><span>STATUS</span>
+              </div>
+              <sc-for list="{{ players }}" as="p" hint-placeholder-count="8"
+                ><div
+                  style="display:grid;grid-template-columns:2.2fr 1.1fr 2.4fr 1fr;gap:12px;align-items:center;padding:12px 16px;border-radius:20px;background:{{ p.rowbg }}"
+                >
+                  <div style="display: flex; align-items: center; gap: 12px">
+                    <div
+                      style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
+                    >
+                      {{ p.i }}
+                    </div>
+                    <span style="font-weight: 700; font-size: 15px">{{ p.n }}</span>
+                  </div>
+                  <span style="font-size: 14px; font-weight: 500">{{ p.pos }}</span
+                  ><span style="font-size:14px;color:{{ t.mute }};font-weight:500">{{ p.g }}</span
+                  ><span
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                      font-size: 14px;
+                      font-weight: 600;
+                    "
+                    ><span
+                      style="width:8px;height:8px;border-radius:50%;background:{{ p.dot }}"
+                    ></span
+                    >{{ p.s }}</span
+                  >
+                </div></sc-for
+              >
+            </div>
+          </div>
+          <div
+            style="position:absolute;right:16px;top:16px;bottom:16px;width:400px;border-radius:28px;background:{{ t.glass2 }};backdrop-filter:blur(40px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }},0 12px 40px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px;align-items:flex-start"
+          >
+            <div style="display:flex;justify-content:flex-end;width:100%;color:{{ t.mute }}">
+              <i class="ph ph-x" style="font-size: 20px"></i>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px">
+              <div
+                style="
+                  width: 72px;
+                  height: 72px;
+                  border-radius: 50%;
+                  background: #ccff33;
+                  color: #272a2b;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 800;
+                  font-size: 24px;
+                "
+              >
+                MR
+              </div>
+              <div>
+                <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em">
+                  Maya Reyes
+                </div>
+                <div
+                  style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:{{ t.mute }}"
+                >
+                  #7 · ID PL-20418
+                </div>
+              </div>
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:20px;padding:8px 20px;width:100%;box-sizing:border-box"
+            >
+              <div
+                style="display:flex;justify-content:space-between;height:52px;align-items:center;border-bottom:1px solid {{ t.line }}"
+              >
+                <span style="color:{{ t.mute }};font-weight:600;font-size:14px">Position</span
+                ><span style="font-weight: 700">Midfield</span>
+              </div>
+              <div
+                style="display:flex;justify-content:space-between;height:52px;align-items:center;border-bottom:1px solid {{ t.line }}"
+              >
+                <span style="color:{{ t.mute }};font-weight:600;font-size:14px">Guardian</span
+                ><span style="font-weight: 700">Ana Reyes</span>
+              </div>
+              <div
+                style="display:flex;justify-content:space-between;height:52px;align-items:center;border-bottom:1px solid {{ t.line }}"
+              >
+                <span style="color:{{ t.mute }};font-weight:600;font-size:14px">Phone</span
+                ><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500"
+                  >(555) 014-2290</span
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  height: 52px;
+                  align-items: center;
+                "
+              >
+                <span style="color:{{ t.mute }};font-weight:600;font-size:14px">Status</span
+                ><span style="font-weight: 700; display: flex; align-items: center; gap: 8px"
+                  ><span style="width:8px;height:8px;border-radius:50%;background:{{ t.ok }}"></span
+                  >Active</span
+                >
+              </div>
+            </div>
+            <div
+              style="height:48px;padding:0 24px;border-radius:24px;background:{{ t.sf2 }};font-weight:700;display:flex;align-items:center;gap:10px"
+            >
+              <i class="ph ph-chat-circle" style="font-size: 20px"></i>Message guardian
+            </div>
+          </div></sc-if
+        >
+
+        <sc-if value="{{ f.messages }}" hint-placeholder-val="{{ false }}"
+          ><div
+            style="
+              position: absolute;
+              left: 296px;
+              right: 32px;
+              top: 32px;
+              bottom: 32px;
+              display: flex;
+              gap: 16px;
+            "
+          >
+            <div
+              style="width:340px;background:{{ t.sf }};border-radius:28px;border:1px solid {{ t.line }};padding:20px 12px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box"
+            >
+              <div
+                style="
+                  font-size: 28px;
+                  font-weight: 800;
+                  letter-spacing: -0.02em;
+                  padding: 0 12px 12px;
+                "
+              >
+                Messages
+              </div>
+              <sc-for list="{{ threads }}" as="m" hint-placeholder-count="5"
+                ><div
+                  style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:20px;background:{{ m.bg }}"
+                >
+                  <div
+                    style="width:44px;height:44px;border-radius:50%;background:{{ m.abg }};color:{{ m.afg }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px"
+                  >
+                    <i class="ph ph-{{ m.ic }}" style="font-size: 22px"></i>
+                  </div>
+                  <div style="flex: 1; min-width: 0">
+                    <div style="display: flex; justify-content: space-between">
+                      <span style="font-weight: 700; font-size: 15px">{{ m.n }}</span
+                      ><span style="font-size:12px;color:{{ t.mute }};font-weight:600"
+                        >{{ m.tm }}</span
+                      >
+                    </div>
+                    <div
+                      style="font-size:13px;color:{{ t.mute }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px"
+                    >
+                      {{ m.p }}
+                    </div>
+                  </div>
+                </div></sc-for
+              >
+            </div>
+            <div
+              style="flex:1;background:{{ t.sf }};border-radius:28px;border:1px solid {{ t.line }};position:relative;overflow:hidden"
+            >
+              <div
+                style="position:absolute;left:0;right:0;top:0;height:76px;background:{{ t.glass }};backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid {{ t.gb }};z-index:2;display:flex;align-items:center;padding:0 28px;gap:14px"
+              >
+                <div style="flex: 1">
+                  <div style="font-weight: 800; font-size: 17px">Falcons Parents</div>
+                  <div style="font-size:13px;color:{{ t.mute }};font-weight:500">24 members</div>
+                </div>
+                <i class="ph ph-info" style="font-size:24px;color:{{ t.mute }}"></i>
+              </div>
+              <div
+                style="
+                  position: absolute;
+                  left: 0;
+                  right: 0;
+                  top: 76px;
+                  bottom: 96px;
+                  padding: 20px 32px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 6px;
+                  overflow: hidden;
+                "
+              >
+                <div
+                  style="text-align:center;font-size:12px;font-weight:700;color:{{ t.mute }};margin-bottom:8px"
+                >
+                  Today 4:12 PM
+                </div>
+                <sc-for list="{{ msgs }}" as="b" hint-placeholder-count="5"
+                  ><div
+                    style="display:flex;flex-direction:column;align-items:{{ b.al }};margin-top:{{ b.mt }}"
+                  >
+                    <div
+                      style="font-size:12px;font-weight:700;color:{{ t.mute }};margin:0 12px 2px;display:{{ b.who }}"
+                    >
+                      {{ b.name }}
+                    </div>
+                    <div
+                      style="max-width:420px;padding:10px 16px;border-radius:{{ b.r }};background:{{ b.bg }};color:{{ b.fg }};font-size:15px;font-weight:500;line-height:1.4"
+                    >
+                      {{ b.txt }}
+                    </div>
+                    <div
+                      style="font-size:11px;color:{{ t.mute }};font-weight:600;margin:3px 12px 0;display:{{ b.meta }}"
+                    >
+                      {{ b.tm }}
+                    </div>
+                  </div></sc-for
+                >
+                <div
+                  style="display:flex;gap:5px;padding:14px 16px;border-radius:20px 20px 20px 6px;background:{{ t.sf2 }};width:max-content;margin-top:8px"
+                >
+                  <div style="width:8px;height:8px;border-radius:50%;background:{{ t.mute }}"></div>
+                  <div
+                    style="width:8px;height:8px;border-radius:50%;background:{{ t.mute }};opacity:.65"
+                  ></div>
+                  <div
+                    style="width:8px;height:8px;border-radius:50%;background:{{ t.mute }};opacity:.35"
+                  ></div>
+                </div>
+              </div>
+              <div
+                style="position:absolute;left:20px;right:20px;bottom:20px;height:56px;border-radius:28px;background:{{ t.glass2 }};backdrop-filter:blur(40px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};display:flex;align-items:center;padding:0 8px 0 20px;gap:14px;z-index:2"
+              >
+                <i class="ph ph-paperclip" style="font-size:22px;color:{{ t.mute }}"></i
+                ><span style="flex:1;color:{{ t.mute }};font-size:15px;font-weight:500"
+                  >Message</span
+                >
+                <div
+                  style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: #ccff33;
+                    color: #272a2b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <i class="ph-fill ph-arrow-up" style="font-size: 20px"></i>
+                </div>
+              </div>
+            </div></div
+        ></sc-if>
+
+        <sc-if value="{{ f.payments }}" hint-placeholder-val="{{ false }}"
+          ><div
+            style="
+              position: absolute;
+              left: 296px;
+              right: 48px;
+              top: 40px;
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            "
+          >
+            <div style="font-size: 36px; font-weight: 800; letter-spacing: -0.02em">Payments</div>
+            <div style="display: flex; gap: 24px; align-items: flex-start">
+              <div
+                style="width:380px;background:{{ t.sf }};border-radius:28px;border:1px solid {{ t.line }};padding:28px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box"
+              >
+                <div style="font-weight: 800; font-size: 20px">New payment request</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:{{ t.mute }};margin-bottom:6px">
+                    Title
+                  </div>
+                  <div
+                    style="height:48px;border-radius:16px;background:{{ t.sf2 }};display:flex;align-items:center;padding:0 16px;font-weight:600"
+                  >
+                    Tournament fee
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:{{ t.mute }};margin-bottom:6px">
+                    Amount
+                  </div>
+                  <div
+                    style="height:48px;border-radius:16px;background:{{ t.sf2 }};display:flex;align-items:center;padding:0 16px;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:18px"
+                  >
+                    $ 45.00
+                  </div>
+                </div>
+                <div style="display: flex; gap: 12px">
+                  <div style="flex: 1">
+                    <div
+                      style="font-size:13px;font-weight:700;color:{{ t.mute }};margin-bottom:6px"
+                    >
+                      Due date
+                    </div>
+                    <div
+                      style="height:48px;border-radius:16px;background:{{ t.sf2 }};display:flex;align-items:center;padding:0 16px;font-weight:600"
+                    >
+                      Dec 5
+                    </div>
+                  </div>
+                  <div style="flex: 1">
+                    <div
+                      style="font-size:13px;font-weight:700;color:{{ t.mute }};margin-bottom:6px"
+                    >
+                      For
+                    </div>
+                    <div
+                      style="height:48px;border-radius:16px;background:{{ t.sf2 }};display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-weight:600"
+                    >
+                      All families<i class="ph ph-caret-down"></i>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style="
+                    height: 52px;
+                    border-radius: 26px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-top: 6px;
+                  "
+                >
+                  Send request
+                </div>
+              </div>
+              <div
+                style="flex:1;background:{{ t.sf }};border-radius:28px;border:1px solid {{ t.line }};padding:28px;display:flex;flex-direction:column;gap:20px"
+              >
+                <div style="display: flex; align-items: center; gap: 28px">
+                  <div style="position: relative; width: 140px; height: 140px">
+                    <svg
+                      width="140"
+                      height="140"
+                      viewBox="0 0 140 140"
+                      style="transform: rotate(-90deg)"
+                    >
+                      <circle
+                        cx="70"
+                        cy="70"
+                        r="58"
+                        fill="none"
+                        stroke="{{ t.sf2 }}"
+                        stroke-width="14"
+                      ></circle>
+                      <circle
+                        cx="70"
+                        cy="70"
+                        r="58"
+                        fill="none"
+                        stroke="{{ t.sent }}"
+                        stroke-width="14"
+                        stroke-linecap="round"
+                        stroke-dasharray="240 365"
+                      ></circle>
+                    </svg>
+                    <div
+                      style="
+                        position: absolute;
+                        inset: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-family: 'IBM Plex Mono', monospace;
+                        font-size: 28px;
+                        font-weight: 500;
+                      "
+                    >
+                      66%
+                    </div>
+                  </div>
+                  <div style="flex: 1">
+                    <div style="font-weight: 800; font-size: 20px">Tournament fee</div>
+                    <div
+                      style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:{{ t.mute }};margin-top:4px"
+                    >
+                      $2,360.00 of $3,600.00 · due Dec 5
+                    </div>
+                  </div>
+                  <div
+                    style="height:44px;padding:0 22px;border-radius:22px;background:{{ t.sf2 }};font-weight:700;display:flex;align-items:center;gap:8px"
+                  >
+                    <i class="ph ph-bell-ringing"></i>Send reminder
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column">
+                  <sc-for list="{{ families }}" as="p" hint-placeholder-count="7"
+                    ><div
+                      style="display:flex;align-items:center;gap:14px;height:56px;border-top:1px solid {{ t.line }}"
+                    >
+                      <div
+                        style="width:36px;height:36px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px"
+                      >
+                        {{ p.i }}
+                      </div>
+                      <div style="flex: 1; font-weight: 700">{{ p.n }}</div>
+                      <div
+                        style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:{{ t.mute }}"
+                      >
+                        {{ p.amt }}
+                      </div>
+                      <div
+                        style="
+                          width: 84px;
+                          display: flex;
+                          align-items: center;
+                          gap: 8px;
+                          font-weight: 600;
+                          font-size: 14px;
+                        "
+                      >
+                        <span
+                          style="width:8px;height:8px;border-radius:50%;background:{{ p.dot }}"
+                        ></span
+                        >{{ p.s }}
+                      </div>
+                    </div></sc-for
+                  >
+                </div>
+              </div>
+            </div>
+          </div></sc-if
+        >
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"$preview":{"width":1440,"height":900},"screen":{"editor":"enum","options":["home","schedule","roster","messages","payments"],"default":"home","tsType":"string"},"dark":{"editor":"boolean","default":false,"tsType":"boolean"}}'
+    >
+      class Component extends DCLogic {
+        renderVals() {
+          const d = !!this.props.dark, s = this.props.screen || 'home';
+          const t = { bg: d?'#17191A':'#F3F8FB', sf: d?'#242728':'#FFFFFF', sf2: d?'#2F3334':'#EAF3F8', ink: d?'#F3F7F9':'#272A2B', mute: d?'#A9B3B8':'#586266', line: d?'rgba(255,255,255,.08)':'rgba(39,42,43,.08)', glass: d?'rgba(44,48,50,.55)':'rgba(255,255,255,.55)', glass2: d?'rgba(40,44,46,.72)':'rgba(255,255,255,.74)', gb: d?'rgba(255,255,255,.14)':'rgba(255,255,255,.9)', hl: d?'rgba(255,255,255,.16)':'rgba(255,255,255,.95)', blob1: d?'rgba(204,255,51,.13)':'rgba(204,255,51,.42)', blob2: d?'rgba(110,160,190,.22)':'#CFE5F1', park: d?'rgba(204,255,51,.14)':'rgba(204,255,51,.4)', water: d?'rgba(110,160,190,.3)':'#CFE5F1', sent: d?'#CCFF33':'#272A2B', sentInk: d?'#272A2B':'#F3F7F9', ok: d?'#8FE3A8':'#1F7A3E', bad: d?'#FF9A8A':'#B3261E', warn: d?'#FFD27A':'#9A6200' };
+          const names = [['home','Home','house'],['schedule','Schedule','calendar-blank'],['roster','Roster','users-three'],['messages','Messages','chat-circle'],['payments','Payments','credit-card'],['family','Family','house-line']];
+          const nav = names.map(([k,l,i]) => { const a = k===s; return { l, cls: (a?'ph-fill':'ph')+' ph-'+i, bg: a?'#CCFF33':'transparent', fg: a?'#272A2B':t.ink, badge: k==='messages'?'3':'' }; });
+          const A = [['#CCFF33','#272A2B'],['#E1EFF6','#272A2B'],['#3A3F41','#F3F7F9']];
+          const av = (i,x) => ({ i, bg: A[x%3][0], fg: A[x%3][1] });
+          const P = [['MR','Maya Reyes','Midfield','Ana Reyes · (555) 014-2290','Active'],['JT','Jonah Tran','Goalkeeper','Linh Tran · (555) 019-7731','Active'],['SO','Sofia Okafor','Defense','Chidi Okafor · (555) 011-4408','Active'],['EB','Eli Brooks','Forward','Marcus Brooks · (555) 013-9920','Pending'],['LP','Lucas Park','Defense','Soo Park · (555) 018-2204','Active'],['ZK','Zara Khan','Forward','Imran Khan · (555) 016-5532','Injured'],['NW','Noah Wells','Midfield','Tess Wells · (555) 012-3317','Active']];
+          const dots = { Active: t.ok, Pending: t.warn, Injured: t.bad };
+          const players = P.map((p,x) => ({ ...av(p[0],x), n:p[1], pos:p[2], g:p[3], s:p[4], dot:dots[p[4]], rowbg: x===0?t.sf2:'transparent' }));
+          const rsvpList = P.map((p,x) => { const st = [0,0,0,2,0,1,2][x]; return { ...av(p[0],x), n:p[1], ic:['check-circle','x-circle','clock'][st], col:[t.ok,t.bad,t.mute][st] }; });
+          const E = [['TUE','17','Practice','5:30 PM','Field 2','Practice'],['SAT','21','Game vs. Hawks','10:00 AM','Field 3','Game'],['TUE','24','Practice','5:30 PM','Field 2','Practice'],['SAT','28','Team picnic','12:00 PM','Pavilion','Event'],['SAT','5','Game at Comets','9:00 AM','Away','Game']];
+          const events = E.map((e,x) => ({ dw:e[0], dn:e[1], t:e[2], tm:e[3], loc:e[4], tag:e[5], bg: x===1?t.sf2:t.sf }));
+          const TH = [['Falcons Parents','Sam: I can bring oranges','2m','users-three',1],['Announcements','Practice moved to 5:30 PM','1h','megaphone',0],['Coach Dana','See you Saturday!','3h','user',0],['Jonah’s Family','Thanks for the ride','Mon','house-line',0],['Tournament Carpool','Priya: 2 seats left','Sun','car',0]];
+          const threads = TH.map(x => ({ n:x[0], p:x[1], tm:x[2], ic:x[3], bg: x[4]?t.sf2:'transparent', abg: x[0]==='Announcements'?'#CCFF33':t.sf2, afg: x[0]==='Announcements'?'#272A2B':t.ink }));
+          const M = [['in','Sam','Can someone bring oranges Saturday?','4:12 PM'],['in','Sam','I can do snacks too','4:12 PM'],['out','','I’ll bring oranges!','4:14 PM','Read'],['in','Priya','Great, thank you both','4:15 PM'],['out','','Kickoff is 10:00 AM sharp, arrive by 9:30','4:16 PM','Delivered']];
+          const msgs = M.map((m,x) => { const o = m[0]==='out', nx = M[x+1], last = !nx || nx[0]!==m[0], first = x===0 || M[x-1][0]!==m[0]; return { al:o?'flex-end':'flex-start', mt:first?'10px':'0', who:(!o&&first)?'block':'none', name:m[1], txt:m[2], tm: o?m[3]+' · '+m[4]:m[3], meta:last?'block':'none', bg:o?t.sent:t.sf2, fg:o?t.sentInk:t.ink, r:o?(last?'20px 20px 6px 20px':'20px'):(last?'20px 20px 20px 6px':'20px') }; });
+          const F = [['Reyes','$45.00','Paid'],['Tran','$45.00','Paid'],['Okafor','$45.00','Unpaid'],['Brooks','$45.00','Unpaid'],['Park','$45.00','Paid'],['Khan','$45.00','Unpaid'],['Wells','$45.00','Paid']];
+          const families = F.map((f,x) => ({ ...av(f[0].slice(0,2).toUpperCase(),x), n:f[0]+' family', amt:f[1], s:f[2], dot:f[2]==='Paid'?t.ok:t.warn }));
+          const fl = {}; ['home','schedule','roster','messages','payments'].forEach(k => fl[k] = k===s);
+          return { t, nav, f: fl, players, players5: players.slice(0,5), rsvp:[{v:'11',l:'Going'},{v:'2',l:'Can’t go'},{v:'5',l:'No reply'}], rsvpList, events, threads, threads3: TH.slice(0,3).map(x=>({n:x[0],p:x[1],ic:x[3]})), msgs, families };
+        }
+      }
+    </script>
+  </body>
+</html>

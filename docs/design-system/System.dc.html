@@ -1,0 +1,620 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="./support.js"></script>
+  </head>
+  <body>
+    <x-dc>
+      <helmet
+        ><link rel="preconnect" href="https://fonts.googleapis.com" /><link
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        /><link
+          rel="stylesheet"
+          href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+        /><link
+          rel="stylesheet"
+          href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css"
+        /><style>
+          body {
+            margin: 0;
+          }
+          a {
+            color: inherit;
+          }
+          a:hover {
+            opacity: 0.7;
+          }
+        </style></helmet
+      >
+      <div
+        style="width:1440px;box-sizing:border-box;padding:56px;font-family:Manrope,sans-serif;color:{{ t.ink }};background:{{ t.bg }};display:flex;flex-direction:column;gap:56px"
+      >
+        <div style="display: flex; justify-content: space-between; align-items: flex-end">
+          <div>
+            <div style="display: flex; align-items: center; gap: 16px">
+              <svg
+                width="64"
+                height="64"
+                viewBox="12 24.5 67 67"
+                role="img"
+                aria-label="Athleit"
+                style="display: block; flex: none"
+              >
+                <circle
+                  cx="42"
+                  cy="58"
+                  r="20"
+                  fill="none"
+                  stroke="{{ t.sent }}"
+                  stroke-width="14"
+                ></circle>
+                <rect x="62" y="31" width="14" height="54" rx="7" fill="{{ t.sent }}"></rect>
+              </svg>
+              <div
+                style="font-size: 56px; font-weight: 800; letter-spacing: -0.035em; line-height: 1"
+              >
+                athleit
+              </div>
+            </div>
+            <div style="font-size:18px;color:{{ t.mute }};font-weight:500;margin-top:4px">
+              Design system · {{ mode }}
+            </div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:{{ t.mute }}">
+            Manrope · IBM Plex Mono · Phosphor
+          </div>
+        </div>
+
+        <div>
+          <div
+            style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+          >
+            LOGO
+          </div>
+          <div style="display: flex; gap: 12px; margin-bottom: 40px">
+            <div
+              style="width:160px;height:120px;border-radius:20px;background:#F3F8FB;border:1px solid {{ t.line }};display:flex;align-items:center;justify-content:center"
+            >
+              <svg
+                width="64"
+                height="64"
+                viewBox="12 24.5 67 67"
+                role="img"
+                aria-label="Athleit mark on light"
+                style="display: block"
+              >
+                <circle
+                  cx="42"
+                  cy="58"
+                  r="20"
+                  fill="none"
+                  stroke="#272A2B"
+                  stroke-width="14"
+                ></circle>
+                <rect x="62" y="31" width="14" height="54" rx="7" fill="#272A2B"></rect>
+              </svg>
+            </div>
+            <div
+              style="width:160px;height:120px;border-radius:20px;background:#17191A;border:1px solid {{ t.line }};display:flex;align-items:center;justify-content:center"
+            >
+              <svg
+                width="64"
+                height="64"
+                viewBox="12 24.5 67 67"
+                role="img"
+                aria-label="Athleit mark on dark"
+                style="display: block"
+              >
+                <circle
+                  cx="42"
+                  cy="58"
+                  r="20"
+                  fill="none"
+                  stroke="#CCFF33"
+                  stroke-width="14"
+                ></circle>
+                <rect x="62" y="31" width="14" height="54" rx="7" fill="#CCFF33"></rect>
+              </svg>
+            </div>
+            <div
+              style="width:160px;height:120px;border-radius:20px;background:{{ t.sf2 }};display:flex;align-items:center;justify-content:center"
+            >
+              <div
+                style="
+                  width: 84px;
+                  height: 84px;
+                  border-radius: 22px;
+                  background: #ccff33;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <svg
+                  width="54"
+                  height="54"
+                  viewBox="12 24.5 67 67"
+                  role="img"
+                  aria-label="Athleit app icon"
+                  style="display: block"
+                >
+                  <circle
+                    cx="42"
+                    cy="58"
+                    r="20"
+                    fill="none"
+                    stroke="#272A2B"
+                    stroke-width="14"
+                  ></circle>
+                  <rect x="62" y="31" width="14" height="54" rx="7" fill="#272A2B"></rect>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div
+            style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+          >
+            COLOR
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px">
+            <sc-for list="{{ colors }}" as="c" hint-placeholder-count="8"
+              ><div>
+                <div
+                  style="height:88px;border-radius:20px;background:{{ c.v }};border:1px solid {{ t.line }};display:flex;align-items:flex-end;padding:10px;box-sizing:border-box"
+                ></div>
+                <div style="font-weight: 700; font-size: 14px; margin-top: 8px">{{ c.n }}</div>
+                <div
+                  style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.mute }}"
+                >
+                  {{ c.h }}
+                </div>
+              </div></sc-for
+            >
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 56px">
+          <div>
+            <div
+              style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+            >
+              TYPE
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px">
+              <sc-for list="{{ types }}" as="x" hint-placeholder-count="7"
+                ><div style="display: flex; align-items: baseline; gap: 20px">
+                  <div
+                    style="width:120px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.mute }}"
+                  >
+                    {{ x.n }}
+                  </div>
+                  <div
+                    style="font-size:{{ x.s }}px;font-weight:{{ x.w }};letter-spacing:{{ x.ls }};font-family:{{ x.f }};line-height:1.1"
+                  >
+                    {{ x.t }}
+                  </div>
+                </div></sc-for
+              >
+            </div>
+          </div>
+          <div>
+            <div
+              style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+            >
+              SPACING · RADII
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 14px">
+              <sc-for list="{{ space }}" as="s" hint-placeholder-count="7"
+                ><div style="text-align: center">
+                  <div
+                    style="width:{{ s.v }}px;height:{{ s.v }}px;background:{{ t.sent }};border-radius:4px;margin:0 auto 6px"
+                  ></div>
+                  <div
+                    style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.mute }}"
+                  >
+                    {{ s.v }}
+                  </div>
+                </div></sc-for
+              >
+            </div>
+            <div style="display: flex; gap: 14px; margin-top: 28px">
+              <sc-for list="{{ radii }}" as="r" hint-placeholder-count="5"
+                ><div style="text-align: center">
+                  <div
+                    style="width:64px;height:64px;background:{{ t.sf }};border:1px solid {{ t.line }};border-radius:{{ r.v }}px"
+                  ></div>
+                  <div
+                    style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ t.mute }};margin-top:6px"
+                  >
+                    {{ r.n }}
+                  </div>
+                </div></sc-for
+              >
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+          >
+            LIQUID GLASS · 3 LEVELS
+          </div>
+          <div
+            style="border-radius:32px;padding:40px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;background:radial-gradient(circle at 15% 20%,{{ t.blob1 }},transparent 40%),radial-gradient(circle at 80% 80%,{{ t.blob2 }},transparent 50%),radial-gradient(circle at 50% 10%,{{ t.blob2 }},transparent 40%),{{ t.sf2 }}"
+          >
+            <div
+              style="border-radius:28px;padding:24px;height:170px;box-sizing:border-box;background:{{ t.glass }};backdrop-filter:blur(24px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }}"
+            >
+              <div style="font-weight: 800; font-size: 18px">Bar</div>
+              <div
+                style="font-size:13px;color:{{ t.ink }};line-height:1.6;margin-top:8px;font-family:'IBM Plex Mono',monospace"
+              >
+                Sidebar, tab bar, toolbar<br />blur 24 · sat 180%<br />tint {{ gl.a }} · border 1px
+                {{ gl.b }}<br />inner highlight 1px top
+              </div>
+            </div>
+            <div
+              style="border-radius:28px;padding:24px;height:170px;box-sizing:border-box;background:{{ t.glass2 }};backdrop-filter:blur(40px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }},0 12px 40px rgba(0,0,0,.08)"
+            >
+              <div style="font-weight: 800; font-size: 18px">Sheet</div>
+              <div
+                style="
+                  font-size: 13px;
+                  line-height: 1.6;
+                  margin-top: 8px;
+                  font-family: 'IBM Plex Mono', monospace;
+                "
+              >
+                Drawer, popover, composer<br />blur 40 · sat 180%<br />tint {{ gl.c }}<br />shadow 0
+                12 40 / 8%
+              </div>
+            </div>
+            <div
+              style="border-radius:28px;padding:24px;height:170px;box-sizing:border-box;background:{{ t.glass3 }};backdrop-filter:blur(60px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }},0 20px 60px rgba(0,0,0,.14)"
+            >
+              <div style="font-weight: 800; font-size: 18px">Modal</div>
+              <div
+                style="
+                  font-size: 13px;
+                  line-height: 1.6;
+                  margin-top: 8px;
+                  font-family: 'IBM Plex Mono', monospace;
+                "
+              >
+                Confirm, dialog, pay sheet<br />blur 60 · sat 180%<br />tint {{ gl.d }}<br />shadow
+                0 20 60 / 14%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            style="font-size:13px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }};margin-bottom:16px"
+          >
+            COMPONENTS
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+            <div
+              style="background:{{ t.sf }};border-radius:28px;padding:28px;display:flex;flex-direction:column;gap:16px;border:1px solid {{ t.line }}"
+            >
+              <div style="font-weight: 800">Buttons</div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                <div
+                  style="
+                    height: 48px;
+                    padding: 0 24px;
+                    border-radius: 24px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                  "
+                >
+                  Primary
+                </div>
+                <div
+                  style="height:48px;padding:0 24px;border-radius:24px;background:{{ t.sf2 }};font-weight:700;display:flex;align-items:center"
+                >
+                  Secondary
+                </div>
+                <div
+                  style="height:48px;padding:0 24px;border-radius:24px;font-weight:700;display:flex;align-items:center;border:1px solid {{ t.line }}"
+                >
+                  Ghost
+                </div>
+                <div
+                  style="width:48px;height:48px;border-radius:24px;background:{{ t.glass }};backdrop-filter:blur(24px);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};display:flex;align-items:center;justify-content:center"
+                >
+                  <i class="ph ph-bell" style="font-size: 22px"></i>
+                </div>
+              </div>
+              <div style="font-weight: 800; margin-top: 8px">Inputs</div>
+              <div
+                style="height:52px;border-radius:18px;background:{{ t.sf2 }};display:flex;align-items:center;padding:0 16px;font-weight:600"
+              >
+                Tournament fee
+              </div>
+              <div
+                style="height:52px;border-radius:18px;background:{{ t.sf2 }};border:2px solid {{ t.sent }};display:flex;align-items:center;padding:0 16px;font-family:'IBM Plex Mono',monospace"
+              >
+                $ 45.00
+              </div>
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:28px;padding:28px;display:flex;flex-direction:column;gap:16px;border:1px solid {{ t.line }}"
+            >
+              <div style="font-weight: 800">Chips and badges</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <span
+                  style="padding:7px 14px;border-radius:16px;background:{{ t.sent }};color:{{ t.sentInk }};font-weight:700;font-size:13px"
+                  >Selected</span
+                ><span
+                  style="padding:7px 14px;border-radius:16px;background:{{ t.sf2 }};font-weight:700;font-size:13px"
+                  >Falcons U12</span
+                ><span
+                  style="
+                    padding: 7px 14px;
+                    border-radius: 16px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    font-weight: 700;
+                    font-size: 13px;
+                    font-family: 'IBM Plex Mono', monospace;
+                  "
+                  >3</span
+                >
+              </div>
+              <div style="display: flex; gap: 16px; font-size: 14px; font-weight: 600">
+                <span style="display: flex; gap: 6px; align-items: center"
+                  ><span style="width:8px;height:8px;border-radius:50%;background:{{ t.ok }}"></span
+                  >Paid</span
+                ><span style="display: flex; gap: 6px; align-items: center"
+                  ><span
+                    style="width:8px;height:8px;border-radius:50%;background:{{ t.warn }}"
+                  ></span
+                  >Pending</span
+                ><span style="display: flex; gap: 6px; align-items: center"
+                  ><span
+                    style="width:8px;height:8px;border-radius:50%;background:{{ t.bad }}"
+                  ></span
+                  >Overdue</span
+                >
+              </div>
+              <div style="font-weight: 800; margin-top: 8px">Avatars</div>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <div
+                  style="
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 50%;
+                    background: #ccff33;
+                    color: #272a2b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 800;
+                  "
+                >
+                  MR
+                </div>
+                <div
+                  style="
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 50%;
+                    background: #e1eff6;
+                    color: #272a2b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    font-size: 14px;
+                  "
+                >
+                  JT
+                </div>
+                <div
+                  style="
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background: #3a3f41;
+                    color: #f3f7f9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    font-size: 12px;
+                  "
+                >
+                  SO
+                </div>
+              </div>
+              <div style="font-weight: 800; margin-top: 8px">Icons · regular / fill active</div>
+              <div style="display: flex; gap: 16px; font-size: 28px">
+                <i class="ph ph-house"></i><i class="ph-fill ph-calendar-blank"></i
+                ><i class="ph ph-chat-circle"></i><i class="ph ph-credit-card"></i
+                ><i class="ph ph-users-three"></i>
+              </div>
+            </div>
+            <div
+              style="background:{{ t.sf }};border-radius:28px;padding:28px;display:flex;flex-direction:column;gap:16px;border:1px solid {{ t.line }}"
+            >
+              <div style="font-weight: 800">List row and card</div>
+              <div
+                style="display:flex;align-items:center;gap:14px;height:64px;border-bottom:1px solid {{ t.line }}"
+              >
+                <div
+                  style="width:44px;height:44px;border-radius:50%;background:{{ t.sf2 }};display:flex;align-items:center;justify-content:center"
+                >
+                  <i class="ph ph-credit-card" style="font-size: 22px"></i>
+                </div>
+                <div style="flex: 1">
+                  <div style="font-weight: 700">Jersey fee</div>
+                  <div style="font-size:13px;color:{{ t.mute }}">Maya · due Nov 30</div>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace">$45.00</div>
+              </div>
+              <div style="background:{{ t.sf2 }};border-radius:24px;padding:20px">
+                <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:{{ t.mute }}">
+                  NEXT UP
+                </div>
+                <div style="font-size: 22px; font-weight: 800">Game vs. Hawks</div>
+              </div>
+              <div style="font-weight: 800; margin-top: 4px">Toast</div>
+              <div
+                style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:26px;background:{{ t.glass2 }};backdrop-filter:blur(40px);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};width:max-content;font-weight:700"
+              >
+                <i class="ph-fill ph-check-circle" style="font-size:22px;color:{{ t.ok }}"></i
+                >Reminder sent
+              </div>
+            </div>
+            <div
+              style="grid-column:span 3;border-radius:32px;padding:32px;display:grid;grid-template-columns:260px 1fr 280px 280px;gap:28px;align-items:center;background:radial-gradient(circle at 10% 90%,{{ t.blob1 }},transparent 40%),radial-gradient(circle at 90% 10%,{{ t.blob2 }},transparent 50%),{{ t.sf2 }}"
+            >
+              <div
+                style="border-radius:28px;padding:14px;background:{{ t.glass }};backdrop-filter:blur(24px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};display:flex;flex-direction:column;gap:4px"
+              >
+                <div
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    height: 44px;
+                    padding: 0 14px;
+                    border-radius: 22px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    font-weight: 700;
+                  "
+                >
+                  <i class="ph-fill ph-house" style="font-size: 20px"></i>Home
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    height: 44px;
+                    padding: 0 14px;
+                    font-weight: 700;
+                  "
+                >
+                  <i class="ph ph-calendar-blank" style="font-size: 20px"></i>Schedule
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 12px;
+                    align-items: center;
+                    height: 44px;
+                    padding: 0 14px;
+                    font-weight: 700;
+                  "
+                >
+                  <i class="ph ph-chat-circle" style="font-size: 20px"></i>Messages
+                </div>
+              </div>
+              <div
+                style="height:68px;border-radius:34px;background:{{ t.glass }};backdrop-filter:blur(24px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }};display:flex;align-items:center;justify-content:space-around;padding:0 8px"
+              >
+                <div
+                  style="
+                    width: 64px;
+                    height: 54px;
+                    border-radius: 27px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <i class="ph-fill ph-house" style="font-size: 24px"></i
+                  ><span style="font-size: 11px; font-weight: 700">Home</span>
+                </div>
+                <i class="ph ph-calendar-blank" style="font-size: 24px"></i
+                ><i class="ph ph-chat-circle" style="font-size: 24px"></i
+                ><i class="ph ph-credit-card" style="font-size: 24px"></i
+                ><i class="ph ph-dots-three-circle" style="font-size: 24px"></i>
+              </div>
+              <div
+                style="border-radius:32px;padding:20px 24px 24px;background:{{ t.glass3 }};backdrop-filter:blur(60px) saturate(180%);border:1px solid {{ t.gb }};box-shadow:inset 0 1px 0 {{ t.hl }},0 20px 60px rgba(0,0,0,.14)"
+              >
+                <div
+                  style="width:36px;height:5px;border-radius:3px;background:{{ t.mute }};opacity:.5;margin:0 auto 14px"
+                ></div>
+                <div style="font-weight: 800; font-size: 18px">Confirm payment</div>
+                <div
+                  style="
+                    font-family: 'IBM Plex Mono', monospace;
+                    font-size: 28px;
+                    margin: 6px 0 14px;
+                  "
+                >
+                  $45.00
+                </div>
+                <div
+                  style="height:48px;border-radius:24px;background:{{ t.ink }};color:{{ t.bg }};font-weight:800;display:flex;align-items:center;justify-content:center"
+                >
+                  Pay
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 8px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 32px;
+                    background: #ccff33;
+                    color: #272a2b;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <i class="ph ph-check" style="font-size: 30px"></i>
+                </div>
+                <div style="font-weight: 800; font-size: 18px">All caught up</div>
+                <div style="font-size:14px;color:{{ t.mute }};font-weight:500">
+                  Empty state: icon, one line, at most one action.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </x-dc>
+    <script
+      type="text/x-dc"
+      data-dc-script
+      data-props='{"$preview":{"width":1440,"height":1800},"dark":{"editor":"boolean","default":false,"tsType":"boolean"}}'
+    >
+      class Component extends DCLogic {
+        renderVals() {
+          const d = !!this.props.dark;
+          const t = { bg: d?'#17191A':'#F3F8FB', sf: d?'#242728':'#FFFFFF', sf2: d?'#2F3334':'#EAF3F8', ink: d?'#F3F7F9':'#272A2B', mute: d?'#A9B3B8':'#586266', line: d?'rgba(255,255,255,.08)':'rgba(39,42,43,.08)', glass: d?'rgba(44,48,50,.55)':'rgba(255,255,255,.55)', glass2: d?'rgba(40,44,46,.72)':'rgba(255,255,255,.74)', glass3: d?'rgba(36,40,42,.84)':'rgba(255,255,255,.84)', gb: d?'rgba(255,255,255,.14)':'rgba(255,255,255,.9)', hl: d?'rgba(255,255,255,.16)':'rgba(255,255,255,.95)', blob1: d?'rgba(204,255,51,.13)':'rgba(204,255,51,.42)', blob2: d?'rgba(110,160,190,.22)':'#CFE5F1', sent: d?'#CCFF33':'#272A2B', sentInk: d?'#272A2B':'#F3F7F9', ok: d?'#8FE3A8':'#1F7A3E', bad: d?'#FF9A8A':'#B3261E', warn: d?'#FFD27A':'#9A6200' };
+          const colors = [['Charcoal','#272A2B'],['Electric Lime','#CCFF33'],['Ice Blue','#E1EFF6'],['Background',t.bg],['Surface',t.sf],['Surface 2',t.sf2],['Ink',t.ink],['Muted',t.mute]].map(c => ({ n:c[0], v:c[1], h:c[1] }));
+          const mono = "'IBM Plex Mono',monospace", man = 'Manrope,sans-serif';
+          const types = [['Display 44/800',44,800,'-.03em',man,'Game day'],['Title 32/800',32,800,'-.02em',man,'Game vs. Hawks'],['Heading 20/700',20,700,'0',man,'Payment requests'],['Body 16/500',16,500,'0',man,'Saturday 10:00 AM, Field 3'],['Caption 13/600',13,600,'0',man,'Maya · due Nov 30'],['Label 12/700',12,700,'.08em',man,'NEXT UP'],['Mono 28/500',28,500,'0',mono,'$1,240.00 · PR-3317']].map(x => ({ n:x[0], s:x[1], w:x[2], ls:x[3], f:x[4], t:x[5] }));
+          return { t, mode: d?'Dark':'Light', colors, types, space:[4,8,12,16,24,32,48].map(v=>({v})), radii:[['12',12],['16',16],['20',20],['28',28],['pill',32]].map(r=>({n:r[0],v:r[1]})), gl: d?{a:'44,48,50 / 55%',b:'white 14%',c:'72%',d:'84%'}:{a:'255 / 55%',b:'white 90%',c:'74%',d:'84%'} };
+        }
+      }
+    </script>
+  </body>
+</html>

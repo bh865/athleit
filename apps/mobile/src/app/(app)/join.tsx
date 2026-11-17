@@ -1,6 +1,6 @@
 import { friendlyError, joinCodeSchema } from '@athleit/core';
 import { listChildren, requestToJoin } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
@@ -40,7 +40,7 @@ export default function JoinScreen() {
   if (sent) {
     return (
       <AppScreen>
-        <Card style={{ gap: spacing[3] }} testID="join-sent">
+        <Card style={{ gap: space[3] }} testID="join-sent">
           <H1>Request sent</H1>
           <Text>
             The team’s staff will review it. You’ll see the team here once they approve; until then
@@ -53,7 +53,7 @@ export default function JoinScreen() {
 
   return (
     <AppScreen>
-      <Card style={{ gap: spacing[4] }}>
+      <Card style={{ gap: space[4] }}>
         <H1>Join a team</H1>
         <Text muted>
           Enter the team code from your coach. This sends a request; the team’s staff approve it

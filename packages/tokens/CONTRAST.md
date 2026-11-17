@@ -6,81 +6,93 @@ UI component boundaries, focus rings and indicators need 3:1 (WCAG 1.4.11).
 
 Rules that follow from these numbers:
 
-- **Electric lime (`#CCFF33`) is a fill, not a text colour, on light surfaces** (1.2:1 on white).
-  Light mode uses `accentInk` (dark olive) for accent-coloured text, icons and indicators; lime
-  carries `onAccent` charcoal text. In dark mode lime works as text and indicator too.
-- `textMuted` is for secondary copy on solid surfaces. Do not place it on glass over arbitrary imagery.
-- Glass rows use the worst-case backdrop (white behind dark glass, black behind light glass),
-  so primary text stays AA no matter what scrolls underneath.
-- Decorative `border` is exempt from 3:1; use `borderStrong` for anything that identifies a control.
+- **Electric lime (`#CCFF33`) is a fill, never text.** It carries `accentInk` (charcoal). Text and icons
+  that need emphasis use `ink`; "selected" fills use `bubbleOwn` (charcoal in light, lime in dark).
+- `muted` is for secondary copy on solid surfaces. **Do not place `muted` text on glass**: glass is
+  translucent, so its contrast depends on what scrolls beneath it. Primary `ink` on glass is asserted
+  against the app background and its blobs.
+- Status colours (`ok`, `warn`, `bad`) are text/icon/dot colours; `*Soft` is their tinted background.
 
-## Light theme
+## light theme
 
 | Pair | Foreground | Background | Ratio | Required | Result |
 | --- | --- | --- | --- | --- | --- |
-| text on bg | `#272A2B` | `#F3F8FB` | 13.52 | 4.5:1 | pass |
-| textMuted on bg | `#4A5558` | `#F3F8FB` | 7.19 | 4.5:1 | pass |
-| text on surface | `#272A2B` | `#FFFFFF` | 14.46 | 4.5:1 | pass |
-| textMuted on surface | `#4A5558` | `#FFFFFF` | 7.69 | 4.5:1 | pass |
-| text on surfaceMuted | `#272A2B` | `#E1EFF6` | 12.31 | 4.5:1 | pass |
-| textMuted on surfaceMuted | `#4A5558` | `#E1EFF6` | 6.55 | 4.5:1 | pass |
-| onAccent on accent | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
-| onAccent on accentPressed | `#272A2B` | `#B7E62E` | 9.90 | 4.5:1 | pass |
-| accentInk on bg | `#445F00` | `#F3F8FB` | 6.81 | 4.5:1 | pass |
-| accentInk on surface | `#445F00` | `#FFFFFF` | 7.28 | 4.5:1 | pass |
-| success.text on bg | `#17653A` | `#F3F8FB` | 6.63 | 4.5:1 | pass |
-| success.text on surface | `#17653A` | `#FFFFFF` | 7.10 | 4.5:1 | pass |
-| success.text on success.bg | `#17653A` | `#E2F5E9` | 6.24 | 4.5:1 | pass |
-| success.onSolid on success.solid | `#FFFFFF` | `#1F7A45` | 5.35 | 4.5:1 | pass |
-| warning.text on bg | `#7A4800` | `#F3F8FB` | 7.13 | 4.5:1 | pass |
-| warning.text on surface | `#7A4800` | `#FFFFFF` | 7.62 | 4.5:1 | pass |
-| warning.text on warning.bg | `#7A4800` | `#FFF0D2` | 6.77 | 4.5:1 | pass |
-| warning.onSolid on warning.solid | `#272A2B` | `#F2A81D` | 7.16 | 4.5:1 | pass |
-| danger.text on bg | `#B3261E` | `#F3F8FB` | 6.11 | 4.5:1 | pass |
-| danger.text on surface | `#B3261E` | `#FFFFFF` | 6.54 | 4.5:1 | pass |
-| danger.text on danger.bg | `#B3261E` | `#FDE8E6` | 5.56 | 4.5:1 | pass |
-| danger.onSolid on danger.solid | `#FFFFFF` | `#C62828` | 5.62 | 4.5:1 | pass |
-| borderStrong on bg | `#6F8792` | `#F3F8FB` | 3.53 | 3:1 | pass |
-| borderStrong on surface | `#6F8792` | `#FFFFFF` | 3.78 | 3:1 | pass |
-| focusRing on bg | `#272A2B` | `#F3F8FB` | 13.52 | 3:1 | pass |
+| ink on background | `#272A2B` | `#F3F8FB` | 13.52 | 4.5:1 | pass |
+| muted on background | `#586266` | `#F3F8FB` | 5.85 | 4.5:1 | pass |
+| ink on surface | `#272A2B` | `#FFFFFF` | 14.46 | 4.5:1 | pass |
+| muted on surface | `#586266` | `#FFFFFF` | 6.26 | 4.5:1 | pass |
+| ink on surfaceAlt | `#272A2B` | `#EAF3F8` | 12.86 | 4.5:1 | pass |
+| muted on surfaceAlt | `#586266` | `#EAF3F8` | 5.57 | 4.5:1 | pass |
+| accentInk on accent | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
+| accentInk on accentPressed | `#272A2B` | `#B7E62E` | 9.90 | 4.5:1 | pass |
+| bubbleOwnInk on bubbleOwn | `#F3F7F9` | `#272A2B` | 13.42 | 4.5:1 | pass |
+| bubbleOtherInk on bubbleOther | `#272A2B` | `#EAF3F8` | 12.86 | 4.5:1 | pass |
+| avatar1Ink on avatar1 | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
+| avatar2Ink on avatar2 | `#272A2B` | `#E1EFF6` | 12.31 | 4.5:1 | pass |
+| avatar3Ink on avatar3 | `#F3F7F9` | `#3A3F41` | 9.90 | 4.5:1 | pass |
+| ok on background | `#1F7A3E` | `#F3F8FB` | 5.02 | 4.5:1 | pass |
+| ok on surface | `#1F7A3E` | `#FFFFFF` | 5.37 | 4.5:1 | pass |
+| ok on okSoft (over surface) | `#1F7A3E` | `#EDF4F0` | 4.81 | 4.5:1 | pass |
+| warn on background | `#9A6200` | `#F3F8FB` | 4.76 | 4.5:1 | pass |
+| warn on surface | `#9A6200` | `#FFFFFF` | 5.10 | 4.5:1 | pass |
+| warn on warnSoft (over surface) | `#9A6200` | `#F7F2EB` | 4.58 | 4.5:1 | pass |
+| bad on background | `#B3261E` | `#F3F8FB` | 6.11 | 4.5:1 | pass |
+| bad on surface | `#B3261E` | `#FFFFFF` | 6.54 | 4.5:1 | pass |
+| bad on badSoft (over surface) | `#B3261E` | `#F9EEED` | 5.75 | 4.5:1 | pass |
+| focusRing on background | `#272A2B` | `#F3F8FB` | 13.52 | 3:1 | pass |
 | focusRing on surface | `#272A2B` | `#FFFFFF` | 14.46 | 3:1 | pass |
-| accentInk indicator on bg | `#445F00` | `#F3F8FB` | 6.81 | 3:1 | pass |
-| text on bar glass (worst-case backdrop) | `#272A2B` | `#B8B8B8` | 7.29 | 4.5:1 | pass |
-| text on sheet glass (worst-case backdrop) | `#272A2B` | `#D1D1D1` | 9.47 | 4.5:1 | pass |
-| text on modal glass (worst-case backdrop) | `#272A2B` | `#E6E6E6` | 11.59 | 4.5:1 | pass |
+| bubbleOwn fill on background | `#272A2B` | `#F3F8FB` | 13.52 | 3:1 | pass |
+| ink on bar glass over background | `#272A2B` | `#FAFCFD` | 14.05 | 4.5:1 | pass |
+| ink on bar glass over blob 1 | `#272A2B` | `#F2FDD7` | 13.64 | 4.5:1 | pass |
+| ink on bar glass over blob 2 | `#272A2B` | `#E9F3F9` | 12.84 | 4.5:1 | pass |
+| ink on bar glass over blob 3 | `#272A2B` | `#E9F3F9` | 12.84 | 4.5:1 | pass |
+| ink on sheet glass over background | `#272A2B` | `#FCFDFE` | 14.20 | 4.5:1 | pass |
+| ink on sheet glass over blob 1 | `#272A2B` | `#F8FEE8` | 14.00 | 4.5:1 | pass |
+| ink on sheet glass over blob 2 | `#272A2B` | `#F3F8FB` | 13.52 | 4.5:1 | pass |
+| ink on sheet glass over blob 3 | `#272A2B` | `#F3F8FB` | 13.52 | 4.5:1 | pass |
+| ink on modal glass over background | `#272A2B` | `#FDFEFE` | 14.31 | 4.5:1 | pass |
+| ink on modal glass over blob 1 | `#272A2B` | `#FBFEF1` | 14.15 | 4.5:1 | pass |
+| ink on modal glass over blob 2 | `#272A2B` | `#F7FBFD` | 13.89 | 4.5:1 | pass |
+| ink on modal glass over blob 3 | `#272A2B` | `#F7FBFD` | 13.89 | 4.5:1 | pass |
 
-## Dark theme
+## dark theme
 
 | Pair | Foreground | Background | Ratio | Required | Result |
 | --- | --- | --- | --- | --- | --- |
-| text on bg | `#F3F7F9` | `#1B1E1F` | 15.56 | 4.5:1 | pass |
-| textMuted on bg | `#A9B6BB` | `#1B1E1F` | 8.06 | 4.5:1 | pass |
-| text on surface | `#F3F7F9` | `#272A2B` | 13.42 | 4.5:1 | pass |
-| textMuted on surface | `#A9B6BB` | `#272A2B` | 6.95 | 4.5:1 | pass |
-| text on surfaceMuted | `#F3F7F9` | `#333738` | 11.17 | 4.5:1 | pass |
-| textMuted on surfaceMuted | `#A9B6BB` | `#333738` | 5.79 | 4.5:1 | pass |
-| onAccent on accent | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
-| onAccent on accentPressed | `#272A2B` | `#B7E62E` | 9.90 | 4.5:1 | pass |
-| accentInk on bg | `#CCFF33` | `#1B1E1F` | 14.31 | 4.5:1 | pass |
-| accentInk on surface | `#CCFF33` | `#272A2B` | 12.34 | 4.5:1 | pass |
-| success.text on bg | `#6FD392` | `#1B1E1F` | 9.11 | 4.5:1 | pass |
-| success.text on surface | `#6FD392` | `#272A2B` | 7.86 | 4.5:1 | pass |
-| success.text on success.bg | `#6FD392` | `#1C3526` | 7.19 | 4.5:1 | pass |
-| success.onSolid on success.solid | `#1B1E1F` | `#3DBB6E` | 6.81 | 4.5:1 | pass |
-| warning.text on bg | `#F4B84A` | `#1B1E1F` | 9.43 | 4.5:1 | pass |
-| warning.text on surface | `#F4B84A` | `#272A2B` | 8.13 | 4.5:1 | pass |
-| warning.text on warning.bg | `#F4B84A` | `#3A2D12` | 7.55 | 4.5:1 | pass |
-| warning.onSolid on warning.solid | `#1B1E1F` | `#F2A81D` | 8.30 | 4.5:1 | pass |
-| danger.text on bg | `#FF8F86` | `#1B1E1F` | 7.61 | 4.5:1 | pass |
-| danger.text on surface | `#FF8F86` | `#272A2B` | 6.56 | 4.5:1 | pass |
-| danger.text on danger.bg | `#FF8F86` | `#4A2321` | 6.13 | 4.5:1 | pass |
-| danger.onSolid on danger.solid | `#1B1E1F` | `#FF6B60` | 6.01 | 4.5:1 | pass |
-| borderStrong on bg | `#869398` | `#1B1E1F` | 5.30 | 3:1 | pass |
-| borderStrong on surface | `#869398` | `#272A2B` | 4.57 | 3:1 | pass |
-| focusRing on bg | `#CCFF33` | `#1B1E1F` | 14.31 | 3:1 | pass |
-| focusRing on surface | `#CCFF33` | `#272A2B` | 12.34 | 3:1 | pass |
-| accentInk indicator on bg | `#CCFF33` | `#1B1E1F` | 14.31 | 3:1 | pass |
-| accent fill on bg | `#CCFF33` | `#1B1E1F` | 14.31 | 3:1 | pass |
-| text on bar glass (worst-case backdrop) | `#F3F7F9` | `#5B5D5E` | 6.14 | 4.5:1 | pass |
-| text on sheet glass (worst-case backdrop) | `#F3F7F9` | `#525555` | 6.98 | 4.5:1 | pass |
-| text on modal glass (worst-case backdrop) | `#F3F7F9` | `#414444` | 9.13 | 4.5:1 | pass |
+| ink on background | `#F3F7F9` | `#17191A` | 16.37 | 4.5:1 | pass |
+| muted on background | `#A9B3B8` | `#17191A` | 8.26 | 4.5:1 | pass |
+| ink on surface | `#F3F7F9` | `#242728` | 13.96 | 4.5:1 | pass |
+| muted on surface | `#A9B3B8` | `#242728` | 7.04 | 4.5:1 | pass |
+| ink on surfaceAlt | `#F3F7F9` | `#2F3334` | 11.85 | 4.5:1 | pass |
+| muted on surfaceAlt | `#A9B3B8` | `#2F3334` | 5.98 | 4.5:1 | pass |
+| accentInk on accent | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
+| accentInk on accentPressed | `#272A2B` | `#B7E62E` | 9.90 | 4.5:1 | pass |
+| bubbleOwnInk on bubbleOwn | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
+| bubbleOtherInk on bubbleOther | `#F3F7F9` | `#2F3334` | 11.85 | 4.5:1 | pass |
+| avatar1Ink on avatar1 | `#272A2B` | `#CCFF33` | 12.34 | 4.5:1 | pass |
+| avatar2Ink on avatar2 | `#272A2B` | `#E1EFF6` | 12.31 | 4.5:1 | pass |
+| avatar3Ink on avatar3 | `#F3F7F9` | `#3A3F41` | 9.90 | 4.5:1 | pass |
+| ok on background | `#8FE3A8` | `#17191A` | 11.53 | 4.5:1 | pass |
+| ok on surface | `#8FE3A8` | `#242728` | 9.83 | 4.5:1 | pass |
+| ok on okSoft (over surface) | `#8FE3A8` | `#33413A` | 7.01 | 4.5:1 | pass |
+| warn on background | `#FFD27A` | `#17191A` | 12.39 | 4.5:1 | pass |
+| warn on surface | `#FFD27A` | `#242728` | 10.57 | 4.5:1 | pass |
+| warn on warnSoft (over surface) | `#FFD27A` | `#433F33` | 7.39 | 4.5:1 | pass |
+| bad on background | `#FF9A8A` | `#17191A` | 8.60 | 4.5:1 | pass |
+| bad on surface | `#FF9A8A` | `#242728` | 7.34 | 4.5:1 | pass |
+| bad on badSoft (over surface) | `#FF9A8A` | `#433736` | 5.57 | 4.5:1 | pass |
+| focusRing on background | `#CCFF33` | `#17191A` | 15.05 | 3:1 | pass |
+| focusRing on surface | `#CCFF33` | `#242728` | 12.84 | 3:1 | pass |
+| bubbleOwn fill on background | `#CCFF33` | `#17191A` | 15.05 | 3:1 | pass |
+| ink on bar glass over background | `#F3F7F9` | `#232627` | 14.14 | 4.5:1 | pass |
+| ink on bar glass over blob 1 | `#F3F7F9` | `#2D3329` | 12.05 | 4.5:1 | pass |
+| ink on bar glass over blob 2 | `#F3F7F9` | `#2B3337` | 11.94 | 4.5:1 | pass |
+| ink on bar glass over blob 3 | `#F3F7F9` | `#2B3337` | 11.94 | 4.5:1 | pass |
+| ink on sheet glass over background | `#F3F7F9` | `#232728` | 13.99 | 4.5:1 | pass |
+| ink on sheet glass over blob 1 | `#F3F7F9` | `#2A2F29` | 12.68 | 4.5:1 | pass |
+| ink on sheet glass over blob 2 | `#F3F7F9` | `#292F32` | 12.59 | 4.5:1 | pass |
+| ink on sheet glass over blob 3 | `#F3F7F9` | `#292F32` | 12.59 | 4.5:1 | pass |
+| ink on modal glass over background | `#F3F7F9` | `#222627` | 14.17 | 4.5:1 | pass |
+| ink on modal glass over blob 1 | `#F3F7F9` | `#262A28` | 13.49 | 4.5:1 | pass |
+| ink on modal glass over blob 2 | `#F3F7F9` | `#252A2D` | 13.46 | 4.5:1 | pass |
+| ink on modal glass over blob 3 | `#F3F7F9` | `#252A2D` | 13.46 | 4.5:1 | pass |

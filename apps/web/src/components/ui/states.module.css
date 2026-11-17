@@ -1,0 +1,53 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+.circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-empty-state-icon-circle);
+  height: var(--size-empty-state-icon-circle);
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+}
+.bad {
+  color: var(--color-bad);
+}
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.row {
+  display: block;
+  height: var(--size-skeleton-row-height);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-alt),
+    var(--color-line),
+    var(--color-surface-alt)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    animation: none;
+  }
+}

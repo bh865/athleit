@@ -1,0 +1,26 @@
+.group {
+  display: inline-flex;
+  width: fit-content;
+  padding: var(--space-1);
+  gap: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+}
+.option {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-min-target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-label-weight);
+  cursor: pointer;
+}
+.active {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}

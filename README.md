@@ -44,12 +44,12 @@ pnpm dev             # web on http://localhost:3000, Expo dev server for mobile
 
 Sign up on either app with email and password. Local Supabase auto-confirms, so you land on **Home** showing your profile display name. Auth emails (if you turn confirmations on) appear in Mailpit at http://127.0.0.1:54324.
 
-### Smoke-test screens
+### Design gallery
 
-Both apps have a design smoke test that renders every primitive (Button, TextField, Card, GlassBar, glass bar/sheet/modal, status colours, Manrope/IBM Plex Mono) over a vivid backdrop with a Light/Dark/System switch and a "Reduce transparency" toggle:
+Both apps have a dev-only design gallery that mirrors the design system (colours, type, spacing, radii, the three glass levels, every component and state) in light and dark, plus a "Reduce transparency" toggle. It is the visual-regression target:
 
-- Web: http://localhost:3000/smoke
-- Mobile: link at the bottom of the sign-in screen (dev builds), or open `athleit://smoke`
+- Web: http://localhost:3000/dev/design (hidden in production builds unless `NEXT_PUBLIC_DESIGN_GALLERY=1`)
+- Mobile: link at the bottom of the sign-in screen (dev builds), or open `athleit://design`
 
 ## Daily commands
 
@@ -147,6 +147,8 @@ run `bash scripts/e2e-cleanup.sh`. Mobile flows: [docs/mobile-manual-tests.md](d
 3. **Vertical-slice delivery.** A feature ships on web **and** mobile together (schema + RLS + tests + both UIs), not layer by layer or platform by platform.
 4. **Stripe webhooks are the source of truth for payments.** Never mark anything paid because a client says so or a redirect returned. Payment state changes only from verified Stripe webhook events handled server-side (idempotently); the UI reads that state.
 
+5. **Never hardcode design values; use semantic tokens and shared components.** Design changes start in the design system, then the token contract (`packages/tokens/tokens.contract.json`). See [docs/design-system.md](docs/design-system.md). Lint (ESLint + Stylelint) fails CI on colour literals, raw px/radius/spacing/font values, direct Phosphor or blur imports.
+
 ## Decisions
 
 Choices made in Phase 0 where a version, compatibility or tooling decision was needed:
@@ -160,7 +162,7 @@ Choices made in Phase 0 where a version, compatibility or tooling decision was n
 - **No Tailwind / UI library:** primitives are plain CSS Modules on the token CSS variables (web) and `StyleSheet`-style objects on the token TS object (mobile).
 - **Mobile OAuth is browser-based (PKCE)** via `expo-web-browser` for both Google and Apple: one code path, no native modules. Native Sign in with Apple / Google Sign-In (ID-token flow) is the likely follow-up; Apple review expects Sign in with Apple when other social logins exist.
 - **Session storage:** `expo-secure-store` through a small chunking adapter (`packages/core/src/chunked-storage.ts`, unit-tested) because a Supabase session exceeds SecureStore's ~2 KB value guidance.
-- **Glass on Android:** `expo-blur` only blurs a designated target view there, so content behind glass is wrapped in `GlassBackdrop`; without it Android renders the tint only. iOS "Reduce Transparency" is honored automatically; Android has no such setting, so the in-app override (smoke screen toggle, `useTheme().setReduceTransparencyOverride`) is the fallback for low-end devices.
+- **Glass on Android:** `expo-blur` only blurs a designated target view there, so content behind glass is wrapped in `GlassBackdrop`; without it Android renders the tint only. iOS "Reduce Transparency" is honored automatically; Android has no such setting, so the in-app override (`useTheme().setReduceTransparencyOverride`, shown in the gallery) is the fallback for low-end devices.
 - **Profiles are least-privilege on top of RLS:** `anon` has no grants; `authenticated` can `select` and can `update` only `display_name` and `avatar_url`. Signup profile creation is a `SECURITY DEFINER` trigger.
 - **Local auth:** email confirmations off, minimum password 8 characters (`supabase/config.toml`).
 - **`db:types`:** `packages/db/src/database.types.ts` is generated (`pnpm db:types`), written to a temp file first so a failed run never truncates it. The local and hosted generators format output differently, so CI does not diff it: regenerate from the hosted dev project (`pnpm db:types:remote`) after every migration and commit the result.

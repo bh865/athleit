@@ -34,3 +34,19 @@ For links, set `EXPO_PUBLIC_WEB_ORIGIN` (default `https://athleit.app`); shared 
 
 Universal/app links need credentials not in this repo: the Apple team ID in `apps/web/public/.well-known/apple-app-site-association`,
 the release signing SHA-256 in `assetlinks.json`, and a deployed web host matching `associatedDomains` in `apps/mobile/app.json`.
+
+## Design system pass (simulator checklist)
+
+Run in light, dark and with _Reduce Transparency_ on (Settings → Accessibility → Display & Text Size). Compare against
+`docs/design-audit/after/` and `docs/design-system/` (Mobile.dc.html). Open the gallery with `athleit://design`
+(`xcrun simctl openurl booted athleit://design`).
+
+1. **Gallery** shows light then dark: colours, type scale, the three glass levels (bar < sheet < modal in opacity; sheet and
+   modal have a soft shadow), buttons (lime pill with charcoal text in both modes), inputs (52 high, focus = 2px "sent" border),
+   chips, status dots, avatars, list rows with 1px separators, empty/error/skeleton states and the floating tab bar.
+2. **Backdrop**: soft lime and ice-blue blobs are visible behind glass in both themes. With _Reduce Transparency_ glass becomes solid with no blur.
+3. **Tab bar**: floating, 68 high, active item is a lime pill with a filled icon. _More_ opens a glass sheet with the theme control and Sign out.
+4. **Screens** (home, family, add a child, roster, team sections, invites, join, club): rows have 1px separators and avatars for people;
+   loading shows skeleton rows; errors show an icon, message and _Try again_.
+5. **Contrast on glass**: `ink` text is readable over blobs; no muted text sits on glass.
+6. **Targets**: every control is at least 44pt; VoiceOver reads tab names ("Home", "Family", "More") and selected state.

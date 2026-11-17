@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./theme.css": "./theme.css"
+    "./theme.css": "./theme.css",
+    "./primitives": "./src/primitives.ts",
+    "./contract": "./tokens.contract.json"
   },
   "scripts": {
     "build:css": "tsx scripts/build-css.ts",

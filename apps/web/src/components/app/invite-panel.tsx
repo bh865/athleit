@@ -8,11 +8,10 @@ import {
   type InviteTarget,
 } from '@athleit/db/api';
 import { friendlyError } from '@athleit/core';
-import { Copy, QrCode } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { Badge, Button, Select, TextField } from '@/components/ui';
+import { Badge, Button, Icon, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -30,6 +29,7 @@ function Qr({ text }: { text: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
+    // eslint-disable-next-line no-restricted-syntax -- design-exception: raster resolution of the QR image (2x its display size), not a layout value
     QRCode.toDataURL(text, { margin: 1, width: 384 }).then((url) => live && setSrc(url));
     return () => {
       live = false;
@@ -139,7 +139,7 @@ export function InvitePanel({
         <FormMessage error={error} />
         <div>
           <Button type="submit" loading={busy} icon-label="create">
-            <QrCode size={20} aria-hidden /> Create invite link
+            <Icon name="qr-code" /> Create invite link
           </Button>
         </div>
       </form>
@@ -155,7 +155,7 @@ export function InvitePanel({
           </p>
           <div className={styles.row}>
             <Button variant="secondary" onClick={() => void copy(created.url)}>
-              <Copy size={20} aria-hidden /> {copied ? 'Copied' : 'Copy link'}
+              <Icon name="copy" /> {copied ? 'Copied' : 'Copy link'}
             </Button>
           </div>
           <Qr text={created.url} />

@@ -25,10 +25,10 @@ function TeamHeader() {
   ].filter((t) => t.show);
   return (
     <>
-      <div className={styles.stack} style={{ gap: 'var(--space-1)' }}>
+      <div className={`${styles.stack} ${styles.tight}`}>
         <h1 className={styles.title}>{team.name}</h1>
         <p className={styles.muted}>
-          <span style={{ textTransform: 'capitalize' }}>{team.sport}</span> · {team.season_label}
+          <span className={styles.capitalize}>{team.sport}</span> · {team.season_label}
           {!caps.has('roster.edit') && caps.has('roster.viewFull') && (
             <>
               {' '}

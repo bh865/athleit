@@ -13,7 +13,7 @@ import {
   unlinkTeamFromClub,
   updateTeam,
 } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -92,21 +92,21 @@ export function SettingsSection() {
   }
 
   return (
-    <View style={{ gap: spacing[4] }}>
+    <View style={{ gap: space[4] }}>
       {caps.has('team.rotateCode') && (
-        <Card style={{ gap: spacing[3] }}>
+        <Card style={{ gap: space[3] }}>
           <H2>Team code</H2>
           <Text muted>
             Families enter this code to ask to join. A code never grants access by itself; you
             approve each request.
           </Text>
-          <Text size="2xl" mono selectable testID="join-code">
+          <Text variant="monoLg" selectable testID="join-code">
             {code}
           </Text>
           <Button title="Generate a new code" variant="secondary" onPress={() => void rotate()} />
         </Card>
       )}
-      <Card style={{ gap: spacing[3] }}>
+      <Card style={{ gap: space[3] }}>
         <H2>Team details</H2>
         <TextField label="Team name" value={name} onChangeText={setName} error={errors.name} />
         <Choice label="Sport" value={sport} options={SPORT_OPTIONS} onChange={setSport} />
@@ -119,7 +119,7 @@ export function SettingsSection() {
         <FormMessage error={error} success={saved ? 'Saved.' : null} />
         <Button title="Save changes" onPress={() => void save()} />
       </Card>
-      <Card style={{ gap: spacing[3] }}>
+      <Card style={{ gap: space[3] }}>
         <H2>Club</H2>
         {team.club_id ? (
           <>

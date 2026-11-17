@@ -1,0 +1,13 @@
+.heading {
+  margin-bottom: var(--space-4);
+}
+.alert {
+  margin-bottom: var(--space-4);
+  color: var(--color-bad);
+  font-weight: var(--text-caption-weight);
+}
+.devLink {
+  margin-top: var(--space-4);
+  text-align: center;
+  font-size: var(--text-caption-size);
+}

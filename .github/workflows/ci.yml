@@ -64,6 +64,35 @@ jobs:
         env:
           CI: '1'
 
+  visual:
+    name: Visual regression (design gallery, public screens)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Baselines were generated on macOS. If font rendering differs on Linux, regenerate them
+    # (`pnpm --filter @athleit/web visual:update`) from a Linux run and commit; see docs/design-system.md.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @athleit/web exec playwright install --with-deps chromium
+
+      - run: pnpm --filter @athleit/web visual
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: visual-diffs
+          path: apps/web/test-results
+
   database:
     name: Database tests (hosted test project, optional)
     runs-on: ubuntu-latest

@@ -1,0 +1,222 @@
+{
+  "$comment": "Exact design-system values (docs/design-system/). The sync point: change this file and the token data together, then run the tokens tests.",
+  "brand": {
+    "charcoal": "#272A2B",
+    "lime": "#CCFF33",
+    "ice": "#E1EFF6"
+  },
+  "themes": {
+    "light": {
+      "color": {
+        "background": "#F3F8FB",
+        "surface": "#FFFFFF",
+        "surfaceAlt": "#EAF3F8",
+        "ink": "#272A2B",
+        "muted": "#586266",
+        "line": "rgba(39, 42, 43, 0.08)",
+        "accent": "#CCFF33",
+        "accentPressed": "#B7E62E",
+        "accentInk": "#272A2B",
+        "bubbleOwn": "#272A2B",
+        "bubbleOwnInk": "#F3F7F9",
+        "bubbleOther": "#EAF3F8",
+        "bubbleOtherInk": "#272A2B",
+        "ok": "#1F7A3E",
+        "okSoft": "rgba(31, 122, 62, 0.08)",
+        "warn": "#9A6200",
+        "warnSoft": "rgba(154, 98, 0, 0.08)",
+        "bad": "#B3261E",
+        "badSoft": "rgba(179, 38, 30, 0.08)",
+        "focusRing": "#272A2B",
+        "scrim": "rgba(39, 42, 43, 0.48)",
+        "avatar1": "#CCFF33",
+        "avatar1Ink": "#272A2B",
+        "avatar2": "#E1EFF6",
+        "avatar2Ink": "#272A2B",
+        "avatar3": "#3A3F41",
+        "avatar3Ink": "#F3F7F9",
+        "qrSurface": "#FFFFFF",
+        "qrInk": "#000000"
+      },
+      "glass": {
+        "bar": {
+          "tint": "rgba(255, 255, 255, 0.55)",
+          "border": "rgba(255, 255, 255, 0.9)",
+          "highlight": "rgba(255, 255, 255, 0.95)",
+          "blur": 24,
+          "saturation": 1.8,
+          "shadow": null
+        },
+        "sheet": {
+          "tint": "rgba(255, 255, 255, 0.74)",
+          "border": "rgba(255, 255, 255, 0.9)",
+          "highlight": "rgba(255, 255, 255, 0.95)",
+          "blur": 40,
+          "saturation": 1.8,
+          "shadow": {
+            "y": 12,
+            "blur": 40,
+            "alpha": 0.08
+          }
+        },
+        "modal": {
+          "tint": "rgba(255, 255, 255, 0.84)",
+          "border": "rgba(255, 255, 255, 0.9)",
+          "highlight": "rgba(255, 255, 255, 0.95)",
+          "blur": 60,
+          "saturation": 1.8,
+          "shadow": {
+            "y": 20,
+            "blur": 60,
+            "alpha": 0.14
+          }
+        }
+      },
+      "blobs": [
+        {
+          "color": "rgba(204, 255, 51, 0.42)",
+          "x": 15,
+          "y": 20,
+          "stop": 40
+        },
+        {
+          "color": "#CFE5F1",
+          "x": 80,
+          "y": 80,
+          "stop": 50
+        },
+        {
+          "color": "#CFE5F1",
+          "x": 50,
+          "y": 10,
+          "stop": 40
+        }
+      ]
+    },
+    "dark": {
+      "color": {
+        "background": "#17191A",
+        "surface": "#242728",
+        "surfaceAlt": "#2F3334",
+        "ink": "#F3F7F9",
+        "muted": "#A9B3B8",
+        "line": "rgba(255, 255, 255, 0.08)",
+        "accent": "#CCFF33",
+        "accentPressed": "#B7E62E",
+        "accentInk": "#272A2B",
+        "bubbleOwn": "#CCFF33",
+        "bubbleOwnInk": "#272A2B",
+        "bubbleOther": "#2F3334",
+        "bubbleOtherInk": "#F3F7F9",
+        "ok": "#8FE3A8",
+        "okSoft": "rgba(143, 227, 168, 0.14)",
+        "warn": "#FFD27A",
+        "warnSoft": "rgba(255, 210, 122, 0.14)",
+        "bad": "#FF9A8A",
+        "badSoft": "rgba(255, 154, 138, 0.14)",
+        "focusRing": "#CCFF33",
+        "scrim": "rgba(0, 0, 0, 0.64)",
+        "avatar1": "#CCFF33",
+        "avatar1Ink": "#272A2B",
+        "avatar2": "#E1EFF6",
+        "avatar2Ink": "#272A2B",
+        "avatar3": "#3A3F41",
+        "avatar3Ink": "#F3F7F9",
+        "qrSurface": "#FFFFFF",
+        "qrInk": "#000000"
+      },
+      "glass": {
+        "bar": {
+          "tint": "rgba(44, 48, 50, 0.55)",
+          "border": "rgba(255, 255, 255, 0.14)",
+          "highlight": "rgba(255, 255, 255, 0.16)",
+          "blur": 24,
+          "saturation": 1.8,
+          "shadow": null
+        },
+        "sheet": {
+          "tint": "rgba(40, 44, 46, 0.72)",
+          "border": "rgba(255, 255, 255, 0.14)",
+          "highlight": "rgba(255, 255, 255, 0.16)",
+          "blur": 40,
+          "saturation": 1.8,
+          "shadow": {
+            "y": 12,
+            "blur": 40,
+            "alpha": 0.08
+          }
+        },
+        "modal": {
+          "tint": "rgba(36, 40, 42, 0.84)",
+          "border": "rgba(255, 255, 255, 0.14)",
+          "highlight": "rgba(255, 255, 255, 0.16)",
+          "blur": 60,
+          "saturation": 1.8,
+          "shadow": {
+            "y": 20,
+            "blur": 60,
+            "alpha": 0.14
+          }
+        }
+      },
+      "blobs": [
+        {
+          "color": "rgba(204, 255, 51, 0.13)",
+          "x": 15,
+          "y": 20,
+          "stop": 40
+        },
+        {
+          "color": "rgba(110, 160, 190, 0.22)",
+          "x": 80,
+          "y": 80,
+          "stop": 50
+        },
+        {
+          "color": "rgba(110, 160, 190, 0.22)",
+          "x": 50,
+          "y": 10,
+          "stop": 40
+        }
+      ]
+    }
+  },
+  "fonts": {
+    "sans": "Manrope",
+    "mono": "IBM Plex Mono"
+  },
+  "type": {
+    "display": [44, 800, -0.03],
+    "title": [32, 800, -0.02],
+    "heading": [20, 700, 0],
+    "body": [16, 500, 0],
+    "caption": [13, 600, 0],
+    "label": [12, 700, 0.08],
+    "monoLg": [28, 500, 0]
+  },
+  "space": [4, 8, 12, 16, 24, 32, 48],
+  "radius": [12, 16, 20, 24, 28],
+  "pill": 9999,
+  "components": {
+    "input": {
+      "height": 52,
+      "radius": 18
+    },
+    "button": {
+      "height": 48
+    },
+    "tabBar": {
+      "height": 68,
+      "radius": 34
+    },
+    "sidebar": {
+      "width": 248,
+      "radius": 28
+    },
+    "listRow": {
+      "height": 64
+    },
+    "statusDot": 8,
+    "emptyIconCircle": 88
+  }
+}

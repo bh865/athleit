@@ -1,4 +1,4 @@
-import { themes, type Theme, type ThemeMode } from '@athleit/tokens';
+import { getTheme, type Theme, type ThemeMode } from '@athleit/tokens';
 import {
   createContext,
   use,
@@ -17,27 +17,25 @@ const REDUCE_KEY = 'athleit-reduce-transparency';
 
 interface ThemeContextValue {
   theme: Theme;
-  /** The user's choice: light, dark, or follow the system. */
+  /** The user's choice: a theme name, or follow the system. */
   mode: ThemeMode;
   setMode: (mode: ThemeMode) => void;
   /** Effective setting: the OS "Reduce Transparency" preference (iOS) OR the in-app override. */
   reduceTransparency: boolean;
-  /** In-app override that forces solid surfaces (also useful on low-end devices). */
   reduceTransparencyOverride: boolean;
   setReduceTransparencyOverride: (value: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+/** The only place theme choice is made on mobile. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [override, setOverrideState] = useState(false);
   const [osReduce, setOsReduce] = useState(false);
   const systemScheme = useColorScheme();
-  // Resolve from the saved mode directly (don't rely on setColorScheme changing useColorScheme).
-  const scheme = mode === 'system' ? systemScheme : mode;
+  const themeName = mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;
 
-  // Restore saved preferences.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -46,8 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         secureBackend.get(REDUCE_KEY),
       ]);
       if (cancelled) return;
-      if (savedMode === 'light' || savedMode === 'dark' || savedMode === 'system')
-        setModeState(savedMode);
+      if (savedMode) setModeState(savedMode);
       setOverrideState(savedReduce === 'true');
     })().catch(() => {});
     return () => {
@@ -57,9 +54,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Make native chrome (status bar, alerts, system blur tint) follow the chosen mode.
   useEffect(() => {
-    // Not implemented by react-native-web, so guard it for the Expo Web preview.
     if (typeof Appearance.setColorScheme === 'function') {
-      Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
+      const scheme = mode === 'system' ? 'unspecified' : getTheme(mode).scheme;
+      Appearance.setColorScheme(scheme);
     }
   }, [mode]);
 
@@ -86,14 +83,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ThemeContextValue>(
     () => ({
-      theme: themes[scheme === 'dark' ? 'dark' : 'light'],
+      theme: getTheme(themeName),
       mode,
       setMode,
       reduceTransparency: osReduce || override,
       reduceTransparencyOverride: override,
       setReduceTransparencyOverride: setOverride,
     }),
-    [scheme, mode, setMode, osReduce, override, setOverride],
+    [themeName, mode, setMode, osReduce, override, setOverride],
   );
   return <ThemeContext value={value}>{children}</ThemeContext>;
 }
@@ -102,4 +99,14 @@ export function useTheme() {
   const ctx = use(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>');
   return ctx;
+}
+
+/** Force a specific theme for a subtree (used by the design gallery to show light and dark together). */
+export function ThemeScope({ name, children }: { name: string; children: ReactNode }) {
+  const outer = useTheme();
+  const value = useMemo<ThemeContextValue>(
+    () => ({ ...outer, theme: getTheme(name) }),
+    [outer, name],
+  );
+  return <ThemeContext value={value}>{children}</ThemeContext>;
 }

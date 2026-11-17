@@ -1,0 +1,7 @@
+.dot {
+  display: inline-block;
+  flex: none;
+  width: var(--size-status-dot-size);
+  height: var(--size-status-dot-size);
+  border-radius: var(--radius-pill);
+}

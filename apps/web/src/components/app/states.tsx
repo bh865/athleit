@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Button } from '@/components/ui';
+import { EmptyState, ErrorState, LoadingSkeleton } from '@/components/ui';
 
 import styles from './app.module.css';
 
@@ -22,35 +22,9 @@ export function LoadState({
   onRetry?: () => void;
   children: ReactNode;
 }) {
-  if (loading) {
-    return (
-      <p className={styles.muted} role="status" aria-live="polite">
-        Loading…
-      </p>
-    );
-  }
-  if (error) {
-    return (
-      <div className={`${styles.notice} ${styles.error} ${styles.stack}`} role="alert">
-        <span>{error}</span>
-        {onRetry && (
-          <div>
-            <Button variant="secondary" onClick={onRetry}>
-              Try again
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }
-  if (empty) {
-    return (
-      <div className={`${styles.notice} ${styles.stack}`}>
-        <span>{emptyText ?? 'Nothing here yet.'}</span>
-        {emptyAction}
-      </div>
-    );
-  }
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error} onRetry={onRetry} />;
+  if (empty) return <EmptyState title={emptyText ?? 'Nothing here yet.'} action={emptyAction} />;
   return <>{children}</>;
 }
 

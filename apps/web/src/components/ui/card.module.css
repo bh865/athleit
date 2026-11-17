@@ -1,7 +1,7 @@
 .card {
   padding: var(--space-6);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--size-card-radius);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-ink);
 }

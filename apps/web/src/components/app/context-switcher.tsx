@@ -1,9 +1,10 @@
 'use client';
 
 import { contextPath, type AddRoleAction } from '@athleit/core';
-import { CaretUpDown, Check, Plus } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+import { Glass, Icon } from '@/components/ui';
 
 import { useApp } from './app-provider';
 import styles from './context-switcher.module.css';
@@ -52,10 +53,10 @@ export function ContextSwitcher() {
           <span className={styles.title}>{active?.title ?? 'Get started'}</span>
           <span className={styles.subtitle}>{active?.subtitle ?? 'Choose a role'}</span>
         </span>
-        <CaretUpDown size={20} aria-hidden />
+        <Icon name="caret-up-down" />
       </button>
       {open && (
-        <div className={styles.menu} role="menu">
+        <Glass level="sheet" className={styles.menu} role="menu">
           {contexts.map((c) => (
             <button
               key={c.key}
@@ -73,7 +74,7 @@ export function ContextSwitcher() {
                 <span className={styles.title}>{c.title}</span>
                 <span className={styles.subtitle}>{c.subtitle}</span>
               </span>
-              {c.key === active?.key && <Check size={18} weight="bold" aria-hidden />}
+              {c.key === active?.key && <Icon name="check" weight="fill" size="sm" />}
             </button>
           ))}
           <p className={styles.heading}>Add a role</p>
@@ -88,11 +89,11 @@ export function ContextSwitcher() {
                 router.push(ADD_LABEL[a].href);
               }}
             >
-              <Plus size={18} aria-hidden />
+              <Icon name="plus" size="sm" />
               <span className={styles.title}>{ADD_LABEL[a].label}</span>
             </button>
           ))}
-        </div>
+        </Glass>
       )}
     </div>
   );

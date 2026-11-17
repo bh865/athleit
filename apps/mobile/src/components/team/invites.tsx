@@ -1,4 +1,4 @@
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { View } from 'react-native';
 
 import { InvitePanel, type RoleOption } from '@/components/app/invite-panel';
@@ -20,7 +20,7 @@ export function InvitesSection() {
     return <Notice>Only team staff can create invites.</Notice>;
   const roles = caps.has('invites.createStaff') ? [...STAFF, ...FAMILY] : FAMILY;
   return (
-    <View style={{ gap: spacing[3] }}>
+    <View style={{ gap: space[3] }}>
       <H2>Invite people</H2>
       <Text muted>
         {caps.has('invites.createStaff')

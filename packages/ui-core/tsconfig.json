@@ -1,0 +1,4 @@
+{
+  "extends": "@athleit/config/tsconfig.react.json",
+  "include": ["src", "scripts", "*.ts", "*.mjs"]
+}

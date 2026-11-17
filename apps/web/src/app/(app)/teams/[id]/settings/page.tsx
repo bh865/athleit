@@ -107,11 +107,7 @@ export default function SettingsPage() {
             Families enter this code to ask to join. A code never grants access by itself; you
             approve each request.
           </p>
-          <p
-            className={styles.mono}
-            style={{ fontSize: 'var(--text-2xl-size)' }}
-            data-testid="join-code"
-          >
+          <p className={`${styles.mono} ${styles.code}`} data-testid="join-code">
             {code}
           </p>
           <div>

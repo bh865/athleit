@@ -14,12 +14,12 @@ import {
   removeFromRoster,
   updateRosterRow,
 } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { Badge, Choice, FormMessage, H2, ListItem, LoadState } from '@/components/app/kit';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { Button, Card, ListGroup, Text, TextField } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
@@ -67,21 +67,22 @@ export function RosterSection() {
         emptyText="No players on the roster yet."
         onRetry={roster.reload}
       >
-        <View style={{ gap: spacing[2] }} testID="roster-limited">
+        <ListGroup testID="roster-limited">
           {rows.map((r) => (
             <ListItem
               key={r.team_player_id}
+              avatarName={r.first_name}
               title={`${r.jersey_number != null ? `#${r.jersey_number}  ` : ''}${r.first_name}`}
               subtitle={r.position ?? undefined}
             />
           ))}
-        </View>
+        </ListGroup>
       </LoadState>
     );
   }
 
   return (
-    <View style={{ gap: spacing[4] }}>
+    <View style={{ gap: space[4] }}>
       {caps.has('roster.place') && (
         <PlaceForm
           teamId={team.id}
@@ -100,10 +101,11 @@ export function RosterSection() {
         emptyText="No players on the roster yet. Approve a join request, then add the child here."
         onRetry={roster.reload}
       >
-        <View style={{ gap: spacing[2] }} testID="roster-list">
+        <ListGroup testID="roster-list">
           {rows.map((r) => (
-            <View key={r.team_player_id} style={{ gap: spacing[2] }}>
+            <View key={r.team_player_id} style={{ gap: space[2] }}>
               <ListItem
+                avatarName={`${r.first_name} ${r.last_name}`}
                 title={`${r.jersey_number != null ? `#${r.jersey_number}  ` : ''}${r.first_name} ${r.last_name}`}
                 subtitle={r.position ?? undefined}
                 right={
@@ -126,7 +128,7 @@ export function RosterSection() {
               )}
             </View>
           ))}
-        </View>
+        </ListGroup>
       </LoadState>
     </View>
   );
@@ -171,7 +173,7 @@ function PlaceForm({
   }
 
   return (
-    <Card style={{ gap: spacing[3] }} testID="place-form">
+    <Card style={{ gap: space[3] }} testID="place-form">
       <H2>Add an approved child to the roster</H2>
       <Choice label="Child" value={chosen} options={candidates} onChange={setPlayerId} />
       <TextField
@@ -252,15 +254,15 @@ function PlayerPanel({
   }
 
   return (
-    <Card style={{ gap: spacing[3] }} testID="player-panel">
+    <Card style={{ gap: space[3] }} testID="player-panel">
       <LoadState loading={player.loading} error={player.error} onRetry={player.reload}>
-        <Text size="sm" muted>
+        <Text variant="caption" muted>
           {player.data?.first_name} {player.data?.last_name} · born {player.data?.date_of_birth}
         </Text>
       </LoadState>
       {canSeeContacts && (
-        <View style={{ gap: spacing[2] }}>
-          <Text weight="semibold">Guardian contacts</Text>
+        <View style={{ gap: space[2] }}>
+          <Text variant="bodyBold">Guardian contacts</Text>
           <LoadState
             loading={contacts.loading}
             error={contacts.error}
@@ -269,8 +271,8 @@ function PlayerPanel({
             onRetry={contacts.reload}
           >
             {contacts.data?.map((g) => (
-              <View key={g.profile_id} style={{ gap: spacing[1] }}>
-                <Text weight="semibold">{g.display_name}</Text>
+              <View key={g.profile_id} style={{ gap: space[1] }}>
+                <Text variant="bodyBold">{g.display_name}</Text>
                 <Button
                   title={g.email}
                   variant="ghost"
@@ -289,7 +291,7 @@ function PlayerPanel({
         </View>
       )}
       {canEdit && (
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: space[3] }}>
           <TextField
             label="Jersey number"
             keyboardType="number-pad"

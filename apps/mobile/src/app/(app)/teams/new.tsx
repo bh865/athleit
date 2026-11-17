@@ -6,7 +6,7 @@ import {
   type FieldErrors,
 } from '@athleit/core';
 import { createTeam, findClub } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -66,7 +66,7 @@ export default function NewTeamScreen() {
 
   return (
     <AppScreen>
-      <Card style={{ gap: spacing[4] }}>
+      <Card style={{ gap: space[4] }}>
         <H1>Create a team</H1>
         <Text muted>You’ll be the team’s admin. Teams don’t need a club.</Text>
         <TextField label="Team name" value={name} onChangeText={setName} error={errors.name} />
