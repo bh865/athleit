@@ -50,3 +50,20 @@ Run in light, dark and with _Reduce Transparency_ on (Settings → Accessibility
    loading shows skeleton rows; errors show an icon, message and _Try again_.
 5. **Contrast on glass**: `ink` text is readable over blobs; no muted text sits on glass.
 6. **Targets**: every control is at least 44pt; VoiceOver reads tab names ("Home", "Family", "More") and selected state.
+
+## Messaging (two devices or two simulators)
+
+Setup: two accounts on the same team (for example a coach and a parent; join the parent with a parent invite link). Sign in on device A as the coach and device B as the parent. Both apps need `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `apps/mobile/.env.local`.
+
+1. **Thread list.** A: Messages tab, plus button, Group, name "Game day", pick the parent, Start conversation. B: Messages tab shows "Game day" with a member count; empty state "No messages yet" shows before the first thread.
+2. **Live exchange.** A sends "Practice moved". B (conversation open) sees it appear with no refresh; B replies. A sees the reply. The own bubble shows "Delivered", then "Read" once B has it open.
+3. **Typing and unread.** A types: B sees three dots. B goes back to the list; A sends: B's row shows the unread dot and the Messages tab shows a lime count badge. Opening the thread clears both.
+4. **Scrolled up pill.** Send 40 messages from A, scroll B up, send one more: B shows the glass "New messages" pill; tapping it jumps to the newest message.
+5. **Pagination.** On B scroll to the top: earlier messages load ("Loading earlier messages…") with no duplicates.
+6. **Actions.** B long-presses A's message: react (chip appears on both devices), reply (quote appears in the bubble), report (sheet, "Report sent"). A long-presses B's message: "Remove for everyone"; B sees "Removed by staff".
+7. **Attachments.** B taps the paperclip, picks a photo, sends: A sees the image; the file is in the private `message-attachments` bucket (not publicly reachable).
+8. **Announcements.** A: Messages, plus, Announcement, title, create, post. B sees the card post with the "ANNOUNCEMENT" kicker and no composer ("Only coaches and managers can post here.").
+9. **Offline queue.** On B turn on airplane mode, send two messages: they show "Sending". Force-quit and reopen the app while offline, open the thread: both are still there as "Sending". Turn airplane mode off: both deliver once, in order, with no duplicates; A receives them.
+10. **Reconnect.** With B offline, A sends 3 messages. Turn B online: the missed messages appear once each.
+11. **Failure.** As the parent, try to send in an archived thread (staff archive it first): the bubble shows "Failed to send", Retry and Discard.
+12. **Accessibility.** VoiceOver reads a bubble as "You, 4:14 PM, read: …"; every control is at least 44pt; Reduce Motion and Reduce Transparency (glass becomes solid) are honoured.

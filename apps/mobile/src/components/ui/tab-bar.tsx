@@ -3,6 +3,7 @@ import type { IconName } from '@athleit/ui-core';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Badge } from './badge';
 import { Glass } from './glass';
 import { Icon } from './icon';
 import { Text } from './text';
@@ -12,6 +13,8 @@ export interface TabItem {
   key: string;
   label: string;
   icon: IconName;
+  /** Unread count shown as a small lime badge. */
+  badge?: number;
 }
 
 /** Floating glass tab bar: 68 high, radius 34; the active item is a lime pill with a fill icon. */
@@ -56,7 +59,7 @@ export function TabBar({
             <Pressable
               key={i.key}
               accessibilityRole="tab"
-              accessibilityLabel={i.label}
+              accessibilityLabel={i.badge ? `${i.label}, ${i.badge} unread` : i.label}
               accessibilityState={{ selected: on }}
               onPress={() => onSelect(i.key)}
               style={{
@@ -69,6 +72,11 @@ export function TabBar({
               }}
             >
               <Icon name={i.icon} weight={on ? 'fill' : 'regular'} size="lg" color={fg} />
+              {i.badge && i.badge > 0 ? (
+                <View style={{ position: 'absolute', top: 0, right: 0 }}>
+                  <Badge tone="count">{i.badge > 99 ? '99+' : String(i.badge)}</Badge>
+                </View>
+              ) : null}
               {on ? (
                 <Text variant="caption" style={{ color: fg }}>
                   {i.label}

@@ -7,31 +7,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Backdrop, Button, Sheet, TabBar, Text, ThemeToggle, type TabItem } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { useAuth } from '@/lib/auth';
+import { useUnread } from '@/lib/use-unread';
 
 import { ContextSwitcher } from './context-switcher';
 import { ErrorNotice, Loading } from './app-screen-states';
 
 /** Signed-in screen frame: context switcher on top, content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts } = useApp();
+  const { status, contexts, userId } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [more, setMore] = useState(false);
 
   const hasFamily = contexts.some((c) => c.kind === 'family');
+  const hasTeam = contexts.some((c) => c.kind === 'team');
+  const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
+    ...(hasTeam
+      ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
+      : []),
     ...(hasFamily ? [{ key: 'family', label: 'Family', icon: 'house-line' } as TabItem] : []),
     { key: 'more', label: 'More', icon: 'dots-three-circle' },
   ];
   const active = more
     ? 'more'
-    : pathname.startsWith('/family')
-      ? 'family'
-      : pathname === '/'
-        ? 'home'
-        : null;
+    : pathname.startsWith('/messages')
+      ? 'messages'
+      : pathname.startsWith('/family')
+        ? 'family'
+        : pathname === '/'
+          ? 'home'
+          : null;
 
   return (
     <Backdrop>
@@ -56,7 +64,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
         active={active}
         onSelect={(key) => {
           if (key === 'more') setMore(true);
-          else router.replace(key === 'home' ? '/' : '/family');
+          else router.replace(key === 'home' ? '/' : key === 'messages' ? '/messages' : '/family');
         }}
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">

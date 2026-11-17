@@ -32,7 +32,7 @@ Screenshots: web light/dark in [`docs/design-audit/after/`](design-audit/after/)
 - **Theme control** (`ThemeToggle`): a segmented control (lime selected pill) for Light / Dark / System.
 - **Backdrop** (mobile) and **body background** (web): the blob recipe from the system, applied to the app background.
 
-## Messaging (Phase 3, web slice built; mobile slice pending)
+## Messaging (Phase 3, web and mobile)
 
 Composed from existing tokens and components. New component tokens (`componentTokens.bubble.maxWidthWeb/Mobile` and `componentTokens.chat.*`: list width 340, header 76/112, composer 56/52, send button 40, thread avatar 44/52, reaction chip 24, typing dot 8, unread dot 10) and icons (`paperclip`, `arrow-up`, `arrow-down`, `megaphone`, `info`, `thumbs-up`, `heart`, `smiley`, `confetti`, `hands-clapping`, `star`, `arrow-bend-up-left`, `flag`, `file-pdf`, `bell-slash`, `eye-slash`, `prohibit`, `trash`, `pencil`, `shield-check`) were added through the token layers and the Icon wrappers.
 
@@ -49,7 +49,9 @@ Composed from existing tokens and components. New component tokens (`componentTo
 | Typing indicator                                              | Three muted dots in a `bubbleOther` bubble with the tail corner                                                          | Supabase Broadcast on a private channel                                                                 |
 | Report sheet                                                  | Glass `Sheet`, `TextField`, primary Button                                                                               |                                                                                                         |
 
-Not built yet: thread info screen (members, mute, leave), moderation review queue UI, notification preferences, device list and in-app notification centre (Part C), and all mobile screens.
+Mobile mirrors the web screens: the Messages tab (lime count badge via `TabItem.badge`), a full-screen conversation without the tab bar, long-press actions in a glass `Sheet`, and an offline send queue (Sending, then Failed with Retry and Discard).
+
+Not built yet: thread info screen (members, mute, leave), moderation review queue UI, notification preferences, device list and in-app notification centre (Part C).
 
 ## Still not in the system, and not built
 
