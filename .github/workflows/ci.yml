@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Dummy public values so the apps can build; nothing here talks to a real backend.
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-key
+  EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-key
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version comes from "packageManager" in package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm # caches the pnpm store
+
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build web
+        run: pnpm --filter @athleit/web build
+
+      - name: Bundle mobile (catches pnpm/Metro workspace resolution regressions)
+        run: pnpm --filter @athleit/mobile exec expo export --platform ios --output-dir "$RUNNER_TEMP/expo-export"
+        env:
+          CI: '1'
+
+  database:
+    name: Supabase migrations and pgTAP (RLS) tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start local Supabase
+        run: pnpm db:start
+
+      - name: Reset database (apply migrations and seed)
+        run: pnpm db:reset
+
+      - name: pgTAP and RLS tests
+        run: pnpm db:test
+
+      - name: Generated types are up to date
+        run: |
+          pnpm db:types
+          git diff --exit-code packages/db/src/database.types.ts \
+            || (echo "::error::packages/db/src/database.types.ts is stale. Run 'pnpm db:types' and commit." && exit 1)
+
+      - name: Stop Supabase
+        if: always()
+        run: pnpm db:stop
