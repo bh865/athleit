@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import styles from '@/components/app/app.module.css';
 import { TeamProvider, useTeam } from '@/components/app/team-context';
+import { StaffPaymentsCard } from '@/components/payments/home-cards';
 import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Badge } from '@/components/ui';
 
@@ -53,6 +54,9 @@ function TeamHeader() {
         ))}
       </nav>
       {pathname === base && caps.has('schedule.view') ? <NextUpCard /> : null}
+      {pathname === base && caps.has('payments.view') ? (
+        <StaffPaymentsCard owner={{ teamId: team.id }} href={`${base}/payments`} />
+      ) : null}
     </>
   );
 }

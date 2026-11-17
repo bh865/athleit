@@ -28,6 +28,9 @@ for (const theme of ['light', 'dark'] as const) {
         'Schedule · rows and month',
         'Schedule · event detail',
         'Schedule · flows',
+        'Payments · pay and receipt',
+        'Payments · staff',
+        'Payments · states',
         'Sidebar · sheet · toast',
       ]) {
         await expect(panel.getByRole('region', { name })).toHaveScreenshot(
