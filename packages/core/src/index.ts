@@ -8,6 +8,8 @@ export * from './schemas/teams';
 export * from './schemas/messaging';
 export * from './messaging';
 export * from './notifications';
+export * from './scheduling';
+export * from './schemas/scheduling';
 export * from './capabilities';
 export * from './context';
 export * from './errors';
