@@ -408,3 +408,223 @@ export async function getPhotoUrl(client: Client, path: string): Promise<Result<
   const { data, error } = await client.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600);
   return error || !data ? fail({ message: error?.message ?? 'No URL' }) : ok(data.signedUrl);
 }
+
+// Messaging (Phase 3) ----------------------------------------------------------------------------
+export const getThreadList = (client: Client, teamId: string) =>
+  run(client.rpc('get_thread_list', { p_team_id: teamId }), []);
+
+export const getUnreadTotal = (client: Client) => run(client.rpc('get_unread_total'), 0);
+
+export const createThread = (
+  client: Client,
+  input: {
+    teamId: string;
+    type: 'announcement' | 'group' | 'direct';
+    title?: string | null;
+    participantIds?: string[];
+  },
+) =>
+  run(
+    client.rpc('create_thread', {
+      p_team_id: input.teamId,
+      p_type: input.type,
+      p_title: input.title ?? NULL,
+      p_participant_ids: input.participantIds ?? [],
+    }),
+  );
+
+export const getThreadMembers = (client: Client, threadId: string) =>
+  run(client.rpc('get_thread_members', { p_thread_id: threadId }), []);
+
+export const getThread = (client: Client, threadId: string) =>
+  run(client.from('threads').select('*').eq('id', threadId).single());
+
+const MESSAGE_COLUMNS =
+  'id, thread_id, sender_profile_id, body, reply_to_id, created_at, edited_at, deleted_at, hidden_at, message_attachments(id, storage_path, mime_type, size_bytes), message_reactions(profile_id, emoji)';
+
+/** Newest-first page of messages; pass the oldest row you hold as `before` to page upward. */
+export const getMessagesPage = (
+  client: Client,
+  threadId: string,
+  opts: { before?: { createdAt: string; id: string } | null; limit?: number } = {},
+) => {
+  let q = client
+    .from('messages')
+    .select(MESSAGE_COLUMNS)
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(opts.limit ?? 30);
+  if (opts.before) {
+    q = q.or(
+      `created_at.lt.${opts.before.createdAt},and(created_at.eq.${opts.before.createdAt},id.lt.${opts.before.id})`,
+    );
+  }
+  return run(q, []);
+};
+
+export const getMessage = (client: Client, messageId: string) =>
+  run(client.from('messages').select(MESSAGE_COLUMNS).eq('id', messageId).single());
+
+export type MessageRow = Awaited<ReturnType<typeof getMessage>> extends Result<infer R> ? R : never;
+
+export const sendMessage = (
+  client: Client,
+  input: {
+    threadId: string;
+    body: string;
+    replyTo?: string | null;
+    attachments?: { storage_path: string; mime_type: string; size_bytes: number }[];
+  },
+) =>
+  run(
+    client.rpc('send_message', {
+      p_thread_id: input.threadId,
+      p_body: input.body,
+      p_reply_to: input.replyTo ?? NULL,
+      p_attachments: input.attachments ?? [],
+    }),
+  );
+
+export const editMessage = (client: Client, messageId: string, body: string) =>
+  runVoid(client.rpc('edit_message', { p_message_id: messageId, p_body: body }));
+export const deleteMessage = (client: Client, messageId: string) =>
+  runVoid(client.rpc('delete_message', { p_message_id: messageId }));
+export const hideMessage = (client: Client, messageId: string, reason?: string) =>
+  runVoid(client.rpc('hide_message', { p_message_id: messageId, p_reason: reason ?? NULL }));
+export const getHiddenMessage = (client: Client, messageId: string) =>
+  run(client.rpc('get_hidden_message', { p_message_id: messageId }), []);
+export const reportMessage = (client: Client, messageId: string, reason: string) =>
+  run(client.rpc('report_message', { p_message_id: messageId, p_reason: reason }));
+export const reviewReport = (client: Client, reportId: string, status: 'actioned' | 'dismissed') =>
+  runVoid(client.rpc('review_report', { p_report_id: reportId, p_status: status }));
+export const toggleReaction = (client: Client, messageId: string, emoji: string) =>
+  run(client.rpc('toggle_reaction', { p_message_id: messageId, p_emoji: emoji }));
+export const markThreadRead = (client: Client, threadId: string, messageId: string) =>
+  runVoid(client.rpc('mark_thread_read', { p_thread_id: threadId, p_message_id: messageId }));
+export const setThreadMute = (client: Client, threadId: string, until: string | null) =>
+  runVoid(client.rpc('set_thread_mute', { p_thread_id: threadId, p_until: until as string }));
+export const addParticipant = (client: Client, threadId: string, profileId: string) =>
+  runVoid(client.rpc('add_participant', { p_thread_id: threadId, p_profile_id: profileId }));
+export const removeParticipant = (client: Client, threadId: string, profileId: string) =>
+  runVoid(client.rpc('remove_participant', { p_thread_id: threadId, p_profile_id: profileId }));
+
+export const getThreadReads = (client: Client, threadId: string) =>
+  run(
+    client.from('message_reads').select('profile_id, last_read_at').eq('thread_id', threadId),
+    [],
+  );
+
+export const getReportQueue = (client: Client) =>
+  run(
+    client
+      .from('message_reports')
+      .select('id, message_id, reason, status, created_at, reporter_profile_id')
+      .eq('status', 'open')
+      .order('created_at'),
+    [],
+  );
+
+/** Upload to the private attachments bucket. Path: <thread_id>/<uuid>/<filename>. */
+export async function uploadAttachment(
+  client: Client,
+  threadId: string,
+  file: Blob | ArrayBuffer,
+  fileName: string,
+  contentType: string,
+): Promise<Result<string>> {
+  const safe = fileName.replace(/[^\w.\-]+/g, '_').slice(-80) || 'file';
+  const path = `${threadId}/${crypto.randomUUID()}/${safe}`;
+  const { error } = await client.storage
+    .from('message-attachments')
+    .upload(path, file, { contentType, upsert: false });
+  return error ? fail(error) : ok(path);
+}
+
+export async function getAttachmentUrl(client: Client, path: string): Promise<Result<string>> {
+  const { data, error } = await client.storage
+    .from('message-attachments')
+    .createSignedUrl(path, 3600);
+  return error || !data ? fail(error) : ok(data.signedUrl);
+}
+
+export interface ThreadSubscription {
+  /** Broadcast a typing event on the private thread channel. */
+  sendTyping: () => void;
+  unsubscribe: () => void;
+}
+
+/**
+ * Live updates for one open thread. Row changes come from Postgres Changes (Realtime applies
+ * RLS per subscriber, so a non-participant receives nothing); typing uses Broadcast on a PRIVATE
+ * channel authorised by thread membership. `onStatus('SUBSCRIBED')` fires after every
+ * (re)connect so callers can refetch what they missed and merge without duplicates.
+ */
+export function subscribeToThread(
+  client: Client,
+  threadId: string,
+  handlers: {
+    onMessage: (messageId: string) => void;
+    onReaction: () => void;
+    onRead: () => void;
+    onTyping: (profileId: string) => void;
+    onStatus?: (status: string) => void;
+  },
+  myId: string,
+): ThreadSubscription {
+  const filter = `thread_id=eq.${threadId}`;
+  const rows = client
+    .channel(`rows:${threadId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter }, (p) => {
+      const id = (p.new as { id?: string }).id;
+      if (id) handlers.onMessage(id);
+    })
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'message_reactions', filter },
+      () => handlers.onReaction(),
+    )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter }, () =>
+      handlers.onRead(),
+    )
+    .subscribe((s) => handlers.onStatus?.(s));
+  const typing = client
+    .channel(`thread:${threadId}`, { config: { private: true, broadcast: { self: false } } })
+    .on('broadcast', { event: 'typing' }, (m) => {
+      const who = (m.payload as { profile_id?: string }).profile_id;
+      if (who && who !== myId) handlers.onTyping(who);
+    })
+    .subscribe();
+  return {
+    sendTyping: () => {
+      void typing.send({ type: 'broadcast', event: 'typing', payload: { profile_id: myId } });
+    },
+    unsubscribe: () => {
+      void client.removeChannel(rows);
+      void client.removeChannel(typing);
+    },
+  };
+}
+
+/** Live unread / new-notification feed for the signed-in user (in-app outbox rows). */
+export function subscribeToNotifications(client: Client, userId: string, onChange: () => void) {
+  const ch = client
+    .channel(`notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notification_outbox',
+        filter: `profile_id=eq.${userId}`,
+      },
+      () => onChange(),
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'message_reads', filter: `profile_id=eq.${userId}` },
+      () => onChange(),
+    )
+    .subscribe();
+  return () => void client.removeChannel(ch);
+}
