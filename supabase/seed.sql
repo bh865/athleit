@@ -1,0 +1,3 @@
+-- Local development seed data. Intentionally empty for Phase 0:
+-- create users through the app's sign-up screen (the on_auth_user_created
+-- trigger creates their profile). Add fixtures here as later phases need them.
