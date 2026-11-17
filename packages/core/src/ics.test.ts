@@ -73,7 +73,7 @@ const ev = (
 
 describe('text escaping and folding', () => {
   it('escapes backslash, semicolon, comma and newlines', () => {
-    expect(escapeText(String.raw`a,b;c\d`+'\n'+'e')).toBe(String.raw`a\,b\;c\\d`+'\\n'+'e');
+    expect(escapeText(String.raw`a,b;c\d` + '\n' + 'e')).toBe(String.raw`a\,b\;c\\d` + '\\n' + 'e');
   });
   it('folds at 75 octets without splitting a multi-byte character, and unfolds to the original', () => {
     const long = 'SUMMARY:' + 'Équipe ⚽ '.repeat(30);
