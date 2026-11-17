@@ -3,9 +3,13 @@
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { getUnreadTotal, subscribeToNotifications } from '@athleit/db/api';
 
 import { signOut } from '@/app/(auth)/actions';
 import { Badge, Button, Glass, Icon, Logo, ThemeToggle } from '@/components/ui';
+import { getClient } from '@/lib/supabase/browser';
 
 import { useApp } from './app-provider';
 import { ContextSwitcher } from './context-switcher';
@@ -20,11 +24,33 @@ interface NavItem {
 
 /** Glass sidebar: 248 wide on desktop; collapses to a top bar on narrow screens. */
 export function Sidebar() {
-  const { status, contexts, displayName } = useApp();
+  const { status, contexts, displayName, userId } = useApp();
   const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+  const hasTeam = contexts.some((c) => c.kind === 'team');
+
+  // Live unread badge for Messages.
+  useEffect(() => {
+    if (!userId || !hasTeam) return;
+    const client = getClient();
+    const refresh = () =>
+      void getUnreadTotal(client).then((r) => r.data !== null && setUnread(r.data));
+    refresh();
+    return subscribeToNotifications(client, userId, refresh);
+  }, [userId, hasTeam]);
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const items: NavItem[] = [
     { href: '/', label: 'Home', icon: 'house' },
+    ...(hasTeam
+      ? [
+          {
+            href: '/messages',
+            label: 'Messages',
+            icon: 'chat-circle',
+            ...(unread > 0 ? { badge: unread > 99 ? '99+' : String(unread) } : {}),
+          } as NavItem,
+        ]
+      : []),
     ...(hasFamily ? [{ href: '/family', label: 'Family', icon: 'house-line' } as NavItem] : []),
   ];
   const isActive = (href: string) =>

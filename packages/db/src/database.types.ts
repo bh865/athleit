@@ -1438,6 +1438,15 @@ export type Database = {
           team_name: string
         }[]
       }
+      get_messageable_people: {
+        Args: { p_team_id: string }
+        Returns: {
+          display_name: string
+          is_minor: boolean
+          profile_id: string
+          role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
       get_player_login_claims: {
         Args: never
         Returns: {

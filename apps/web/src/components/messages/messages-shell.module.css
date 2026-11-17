@@ -1,0 +1,35 @@
+.shell {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.list {
+  flex: none;
+  width: var(--size-chat-thread-list-width);
+  max-height: calc(100dvh - var(--space-8));
+  overflow-y: auto;
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--size-card-radius);
+  background: var(--color-surface);
+}
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+@media (max-width: 899px) {
+  .shell {
+    flex-direction: column;
+  }
+  .list {
+    width: 100%;
+  }
+  .shell[data-open='true'] .list {
+    display: none;
+  }
+  .shell[data-open='false'] .main {
+    display: none;
+  }
+  .main {
+    width: 100%;
+  }
+}

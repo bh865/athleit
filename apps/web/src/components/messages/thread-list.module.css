@@ -1,0 +1,103 @@
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-button-size);
+  height: var(--size-icon-button-size);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-list-row-height);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.row:hover {
+  background: var(--color-surface-alt);
+}
+.selected {
+  background: var(--color-surface-alt);
+}
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-chat-thread-avatar-web);
+  height: var(--size-chat-thread-avatar-web);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+}
+.selected .avatar {
+  background: var(--color-surface);
+}
+.lime {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+.text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+.title {
+  overflow: hidden;
+  font-weight: var(--text-body-bold-weight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.preview {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: var(--text-caption-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.members {
+  color: var(--color-muted);
+  font-size: var(--text-caption-size);
+}
+.side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.time {
+  color: var(--color-muted);
+  font-size: var(--text-caption-size);
+}
+.dot {
+  width: var(--size-chat-unread-dot);
+  height: var(--size-chat-unread-dot);
+  border-radius: var(--radius-pill);
+  background: var(--color-bubble-own);
+}

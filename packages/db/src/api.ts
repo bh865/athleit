@@ -628,3 +628,6 @@ export function subscribeToNotifications(client: Client, userId: string, onChang
     .subscribe();
   return () => void client.removeChannel(ch);
 }
+
+export const getMessageablePeople = (client: Client, teamId: string) =>
+  run(client.rpc('get_messageable_people', { p_team_id: teamId }), []);
