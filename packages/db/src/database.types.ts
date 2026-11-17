@@ -777,6 +777,47 @@ export type Database = {
           profile_id: string
         }[]
       }
+      get_join_requests: {
+        Args: { p_team_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string
+          player_first_name: string
+          player_id: string
+          player_last_name: string
+          requester_id: string
+          requester_name: string
+          status: Database["public"]["Enums"]["request_status"]
+        }[]
+      }
+      get_link_requests: {
+        Args: { p_club_id?: string; p_team_id?: string }
+        Returns: {
+          club_id: string
+          club_name: string
+          created_at: string
+          id: string
+          requested_by_name: string
+          season_label: string
+          sport: Database["public"]["Enums"]["sport"]
+          status: Database["public"]["Enums"]["request_status"]
+          team_id: string
+          team_name: string
+        }[]
+      }
+      get_player_login_claims: {
+        Args: never
+        Returns: {
+          claim_id: string
+          claimant_email: string
+          claimant_name: string
+          created_at: string
+          player_first_name: string
+          player_id: string
+          player_last_name: string
+        }[]
+      }
       get_team_members: {
         Args: { p_team_id: string }
         Returns: {
@@ -808,6 +849,16 @@ export type Database = {
           p_team_id: string
         }
         Returns: string
+      }
+      preview_invite: {
+        Args: { p_token: string }
+        Returns: {
+          kind: string
+          reason: string
+          role: string
+          target_name: string
+          valid: boolean
+        }[]
       }
       request_club_link: {
         Args: { p_club_id: string; p_team_id: string }
