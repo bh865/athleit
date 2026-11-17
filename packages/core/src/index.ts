@@ -6,6 +6,7 @@ export * from './schemas/auth';
 export * from './schemas/profile';
 export * from './schemas/teams';
 export * from './schemas/messaging';
+export * from './messaging';
 export * from './capabilities';
 export * from './context';
 export * from './errors';
