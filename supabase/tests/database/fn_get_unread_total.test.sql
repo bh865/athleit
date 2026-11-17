@@ -52,15 +52,15 @@ insert into public.messages (id, thread_id, sender_profile_id, body, created_at)
   ('81000000-0000-0000-0000-000000000003', '71000000-0000-0000-0000-00000000000c', 'bb000000-0000-0000-0000-000000000001', 'dm', now() - interval '1 hour'),
   ('81000000-0000-0000-0000-000000000004', '71000000-0000-0000-0000-00000000000a', 'aa000000-0000-0000-0000-000000000001', 'announce', now());
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000001","role":"authenticated"}', true); set local role authenticated;
-select is((select public.get_unread_total()), 1, 'par1: only the announcement is unread (own messages never count)');
+select is((select public.get_unread_total()), 2, 'par1: the announcement and the coach''s older group message (own messages never count)');
 select public.mark_thread_read('71000000-0000-0000-0000-00000000000a','81000000-0000-0000-0000-000000000004');
-select is((select public.get_unread_total()), 0, 'zero after reading');
+select is((select public.get_unread_total()), 1, 'reading the announcement leaves one');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000003","role":"authenticated"}', true); set local role authenticated;
 select is((select public.get_unread_total()), 3, 'par3: announcement, the group msgs they can see, and the dm');
 select public.set_thread_mute('71000000-0000-0000-0000-00000000000b', now() + interval '1 hour');
 select is((select public.get_unread_total()), 2, 'muted threads are excluded from the badge');
 reset role; select set_config('request.jwt.claims', '{"sub":"dd000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
-select is((select public.get_unread_total()), 1, 'another team only counts its own');
+select is((select public.get_unread_total()), 0, 'another team counts nothing');
 set local role anon; select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select throws_ok($$ select public.get_unread_total() $$, '42501', null, 'anonymous cannot call');
 reset role;

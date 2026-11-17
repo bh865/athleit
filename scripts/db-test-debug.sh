@@ -8,15 +8,15 @@ python3 - "$f" "$tmp" <<'PY'
 import re, sys
 src = open(sys.argv[1]).read().strip()
 src = re.sub(r"select \* from finish\(\);\s*rollback;\s*$", "", src)
-src = src.replace("select * from no_plan();", "select * from no_plan();\ncreate table public.tap_res (line text);\ngrant all on public.tap_res to public;", 1)
+src = src.replace("select * from no_plan();", "select * from no_plan();\ncreate temp table tap_res (line text);\ngrant all on tap_res to public;", 1)
 out = []
 for ln in src.split("\n"):
     m = re.match(r"^select ((is|ok|isnt|is_empty|throws_ok|lives_ok|cmp_ok|results_eq)\(.*;)\s*$", ln)
-    out.append(f"insert into public.tap_res select {m.group(1)}" if m else ln)
+    out.append(f"insert into pg_temp.tap_res select {m.group(1)}" if m else ln)
 src = "\n".join(out) + """
 reset role;
 do $tap$ declare r text; begin
-  select string_agg(line, ' || ') into r from public.tap_res where line like 'not ok%' or line like '%#%Failed%';
+  select string_agg(line, ' || ') into r from pg_temp.tap_res where line like 'not ok%' or line like '%#%Failed%';
   raise exception E'FAILED %', coalesce(r, 'none'); end $tap$;
 """
 open(sys.argv[2], "w").write(src)
