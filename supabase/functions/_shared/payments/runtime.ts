@@ -47,7 +47,11 @@ export function userFunction<T>(
   }) => Promise<Response>,
 ) {
   Deno.serve(async (req) => {
-    const cors = corsHeaders(req.headers.get('origin'), allowedOrigins());
+    const cors = corsHeaders(
+      req.headers.get('origin'),
+      allowedOrigins(),
+      /^(sk|rk)_test_/.test(env('STRIPE_SECRET_KEY') ?? ''),
+    );
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
     if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, cors);
     const log = makeLogger(name);

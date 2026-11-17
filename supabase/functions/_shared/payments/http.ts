@@ -1,10 +1,24 @@
 // Small HTTP helpers shared by the payment Edge Functions.
 import { StripeError } from './stripe.ts';
 
-export function corsHeaders(origin: string | null, allowed: string[]): Record<string, string> {
-  const ok = origin && allowed.includes(origin);
+const norm = (o: string) => o.trim().replace(/\/+$/, '');
+
+/**
+ * The browser's Origin must be one we list (APP_URL / ALLOWED_ORIGINS, trailing slashes ignored). In TEST mode only, any
+ * http://localhost:<port> is also accepted so local development works without configuration.
+ */
+export function corsHeaders(
+  origin: string | null,
+  allowed: string[],
+  testMode = false,
+): Record<string, string> {
+  const list = allowed.map(norm).filter(Boolean);
+  const ok =
+    !!origin &&
+    (list.includes(norm(origin)) ||
+      (testMode && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)));
   return {
-    'access-control-allow-origin': ok ? origin : (allowed[0] ?? 'null'),
+    'access-control-allow-origin': ok ? (origin as string) : (list[0] ?? 'null'),
     'access-control-allow-headers': 'authorization, content-type, apikey, x-client-info',
     'access-control-allow-methods': 'POST, GET, OPTIONS',
     vary: 'origin',

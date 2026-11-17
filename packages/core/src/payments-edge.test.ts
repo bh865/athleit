@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- test doubles for Stripe and the store are deliberately loose */
 import { describe, expect, it, vi } from 'vitest';
 
+import { corsHeaders } from '../../../supabase/functions/_shared/payments/http';
 import { cell, cents, toCsv } from '../../../supabase/functions/_shared/payments/csv';
 import {
   applyPaymentIntent,
@@ -1159,5 +1160,30 @@ describe('review hardening', () => {
     expect(s.get).toHaveBeenCalledWith('/v1/events/evt_c', undefined, 'acct_c');
     expect(store.finishEvent).toHaveBeenCalledWith('evt_c', 'refetch_failed');
     expect(out.errors).toBe(1);
+  });
+});
+
+describe('CORS', () => {
+  it('matches the configured origin ignoring trailing slashes, and never reflects an unknown origin', () => {
+    expect(
+      corsHeaders('http://localhost:3000', ['http://localhost:3000/'])[
+        'access-control-allow-origin'
+      ],
+    ).toBe('http://localhost:3000');
+    expect(
+      corsHeaders('https://evil.test', ['https://app.test'])['access-control-allow-origin'],
+    ).toBe('https://app.test');
+    expect(corsHeaders('https://evil.test', [])['access-control-allow-origin']).toBe('null');
+  });
+  it('accepts localhost on any port only in test mode', () => {
+    expect(corsHeaders('http://localhost:3001', [], true)['access-control-allow-origin']).toBe(
+      'http://localhost:3001',
+    );
+    expect(corsHeaders('http://localhost:3001', [], false)['access-control-allow-origin']).toBe(
+      'null',
+    );
+    expect(
+      corsHeaders('http://localhost.evil.test:3000', [], true)['access-control-allow-origin'],
+    ).toBe('null');
   });
 });
