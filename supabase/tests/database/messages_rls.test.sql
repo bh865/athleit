@@ -52,7 +52,7 @@ insert into public.messages (id, thread_id, sender_profile_id, body, created_at)
   ('81000000-0000-0000-0000-000000000003', '71000000-0000-0000-0000-00000000000c', 'bb000000-0000-0000-0000-000000000001', 'dm', now() - interval '1 hour'),
   ('81000000-0000-0000-0000-000000000004', '71000000-0000-0000-0000-00000000000a', 'aa000000-0000-0000-0000-000000000001', 'announce', now());
 set local role anon; select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select is((select count(*)::int from public.messages where true), 0, 'anonymous reads nothing');
+select throws_ok($$ select 1 from public.messages $$, '42501', null, 'anonymous has no access');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000001","role":"authenticated"}', true); set local role authenticated;
 select is((select count(*)::int from public.messages where true), 4, 'par1 (joined 10 days ago) reads the group history, dm and announcement');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000003","role":"authenticated"}', true); set local role authenticated;
