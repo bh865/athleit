@@ -96,8 +96,13 @@ export class StripeApi {
   get(path: string, query?: Record<string, unknown>, stripeAccount?: string) {
     return this.request('GET', path, query ?? {}, { stripeAccount });
   }
-  post(path: string, params: Record<string, unknown>, idempotencyKey?: string) {
-    return this.request('POST', path, params, { idempotencyKey });
+  post(
+    path: string,
+    params: Record<string, unknown>,
+    idempotencyKey?: string,
+    stripeAccount?: string,
+  ) {
+    return this.request('POST', path, params, { idempotencyKey, stripeAccount });
   }
 }
 

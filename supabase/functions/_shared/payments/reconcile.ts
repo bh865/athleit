@@ -29,7 +29,7 @@ export async function reconcile(d: ReconcileDeps) {
 
   for (const p of c.open_payments)
     await guard('open_payment', async () => {
-      let pi = await d.stripe.get(`/v1/payment_intents/${p.pi}`);
+      let pi = await d.stripe.get(`/v1/payment_intents/${p.pi}`, undefined, p.acct);
       if (
         p.abandoned &&
         ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(pi.status)
@@ -38,23 +38,25 @@ export async function reconcile(d: ReconcileDeps) {
           `/v1/payment_intents/${p.pi}/cancel`,
           {},
           `athleit:cancel:${p.id}`,
+          p.acct,
         );
         out.abandoned++;
       }
-      await applyPaymentIntent(pi, d);
+      await applyPaymentIntent(pi, d, p.acct);
       out.payments++;
     });
 
   // Canceled here: make sure Stripe cannot still take the money (or record it if it already did).
   for (const p of c.canceled_payments)
     await guard('canceled_payment', async () => {
-      let pi = await d.stripe.get(`/v1/payment_intents/${p.pi}`);
-      if (pi.status === 'succeeded') await applyPaymentIntent(pi, d);
+      let pi = await d.stripe.get(`/v1/payment_intents/${p.pi}`, undefined, p.acct);
+      if (pi.status === 'succeeded') await applyPaymentIntent(pi, d, p.acct);
       else if (pi.status !== 'canceled') {
         pi = await d.stripe.post(
           `/v1/payment_intents/${p.pi}/cancel`,
           {},
           `athleit:cancel:${p.id}`,
+          p.acct,
         );
         out.voided++;
       }
@@ -62,7 +64,11 @@ export async function reconcile(d: ReconcileDeps) {
 
   for (const p of c.missing_fee)
     await guard('missing_fee', async () => {
-      await applyPaymentIntent(await d.stripe.get(`/v1/payment_intents/${p.pi}`), d);
+      await applyPaymentIntent(
+        await d.stripe.get(`/v1/payment_intents/${p.pi}`, undefined, p.acct),
+        d,
+        p.acct,
+      );
       out.fees++;
     });
 

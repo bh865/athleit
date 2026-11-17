@@ -1,5 +1,10 @@
 // Maps Stripe events (and the same state fetched during reconcile) onto the idempotent database handlers.
 // The database converges regardless of order or repetition; nothing here decides money.
+//
+// Charges are DIRECT charges on the team/club's connected account, so every payment object lives on that account:
+// its events arrive on the Connect webhook endpoint with `event.account` set, and every Stripe read for it must
+// carry the Stripe-Account header. The account is also passed to the database, which refuses an event whose
+// account is not the one the payment was reserved for.
 import type { StripeApi, StripeObject } from './stripe.ts';
 import type { Store } from './store.ts';
 
@@ -16,14 +21,19 @@ const metaPayment = (o: StripeObject): string | undefined => {
 const idOf = (v: unknown): string | undefined =>
   typeof v === 'string' ? v : (v as StripeObject | null)?.id;
 
-/** The actual Stripe processing fee of a charge (balance transaction), or null if it cannot be read yet. */
+/** The actual Stripe processing fee of a charge (balance transaction on the connected account), or null if unreadable yet. */
 export async function actualStripeFee(
   stripe: HandlerDeps['stripe'],
   chargeId: string | undefined,
+  account: string,
 ): Promise<number | null> {
   if (!chargeId) return null;
   try {
-    const ch = await stripe.get(`/v1/charges/${chargeId}`, { expand: ['balance_transaction'] });
+    const ch = await stripe.get(
+      `/v1/charges/${chargeId}`,
+      { expand: ['balance_transaction'] },
+      account,
+    );
     const bt = ch.balance_transaction as StripeObject | null;
     if (!bt || typeof bt === 'string') return null;
     const details = (bt.fee_details ?? []) as StripeObject[];
@@ -36,13 +46,17 @@ export async function actualStripeFee(
   }
 }
 
-/** Apply a PaymentIntent's current Stripe state (used by webhooks AND reconcile). */
-export async function applyPaymentIntent(pi: StripeObject, d: HandlerDeps): Promise<Outcome> {
+/** Apply a PaymentIntent's current Stripe state (used by webhooks AND reconcile). `account` = the connected account it lives on. */
+export async function applyPaymentIntent(
+  pi: StripeObject,
+  d: HandlerDeps,
+  account: string,
+): Promise<Outcome> {
   const paymentId = metaPayment(pi);
   const status = pi.status as string;
   if (status === 'succeeded') {
     const charge = idOf(pi.latest_charge);
-    const fee = await actualStripeFee(d.stripe, charge);
+    const fee = await actualStripeFee(d.stripe, charge, account);
     return (await d.store.paymentSucceeded({
       pi: pi.id,
       paymentId,
@@ -50,12 +64,16 @@ export async function applyPaymentIntent(pi: StripeObject, d: HandlerDeps): Prom
       stripeFee: fee,
       amount: pi.amount,
       currency: pi.currency,
-      destination: idOf(pi.transfer_data?.destination),
-      applicationFee: pi.application_fee_amount ?? null,
+      destination: account,
+      applicationFee: pi.application_fee_amount ?? 0,
     })) as Outcome;
   }
   if (status === 'processing')
-    return (await d.store.paymentStatus({ pi: pi.id, status: 'processing', paymentId })) as Outcome;
+    return (await d.store.paymentStatus({
+      pi: pi.id,
+      status: 'processing',
+      paymentId,
+    })) as Outcome;
   if (status === 'canceled')
     return (await d.store.paymentStatus({ pi: pi.id, status: 'canceled', paymentId })) as Outcome;
   if (status === 'requires_payment_method' && pi.last_payment_error) {
@@ -64,10 +82,14 @@ export async function applyPaymentIntent(pi: StripeObject, d: HandlerDeps): Prom
   return 'noop';
 }
 
-async function applyRefunds(charge: StripeObject, d: HandlerDeps): Promise<Outcome> {
+async function applyRefunds(
+  charge: StripeObject,
+  d: HandlerDeps,
+  account: string,
+): Promise<Outcome> {
   const pi = idOf(charge.payment_intent);
   if (!pi) return 'ignored';
-  const list = await d.stripe.get('/v1/refunds', { charge: charge.id, limit: 100 });
+  const list = await d.stripe.get('/v1/refunds', { charge: charge.id, limit: 100 }, account);
   const refunds = ((list.data ?? []) as StripeObject[]).map((r) => ({
     id: r.id as string,
     amount: Number(r.amount),
@@ -87,13 +109,16 @@ async function applyRefunds(charge: StripeObject, d: HandlerDeps): Promise<Outco
 
 export async function handleStripeEvent(event: StripeObject, d: HandlerDeps): Promise<Outcome> {
   const obj = (event.data?.object ?? {}) as StripeObject;
-  // Payments are platform-account objects. A payment event scoped to a CONNECTED account is not ours to act on.
-  if (event.account && /^(payment_intent|charge)\./.test(String(event.type))) return 'ignored';
-  switch (event.type) {
+  const type = String(event.type);
+  const account = event.account as string | undefined;
+  // Payment objects are created on connected accounts, so their events always carry `account`. A payment-shaped
+  // event WITHOUT one belongs to the platform's own Stripe account (not our flow): ignore it.
+  if (/^(payment_intent|charge)\./.test(type) && !account) return 'ignored';
+  switch (type) {
     case 'payment_intent.succeeded':
     case 'payment_intent.processing':
     case 'payment_intent.canceled':
-      return applyPaymentIntent(obj, d);
+      return applyPaymentIntent(obj, d, account!);
     case 'payment_intent.payment_failed':
       // Treat as failed regardless of how the snapshot looks at delivery time.
       return (await d.store.paymentStatus({
@@ -102,19 +127,19 @@ export async function handleStripeEvent(event: StripeObject, d: HandlerDeps): Pr
         paymentId: metaPayment(obj),
       })) as Outcome;
     case 'charge.refunded':
-      return applyRefunds(obj, d);
+      return applyRefunds(obj, d, account!);
     case 'charge.refund.updated': {
       const ch =
         typeof obj.charge === 'string'
-          ? await d.stripe.get(`/v1/charges/${obj.charge}`)
+          ? await d.stripe.get(`/v1/charges/${obj.charge}`, undefined, account)
           : (obj.charge as StripeObject);
-      return ch?.id ? applyRefunds(ch, d) : 'ignored';
+      return ch?.id ? applyRefunds(ch, d, account!) : 'ignored';
     }
     case 'charge.dispute.created':
     case 'charge.dispute.closed': {
       const pi = idOf(obj.payment_intent);
       if (!pi) return 'ignored';
-      const closed = event.type.endsWith('closed');
+      const closed = type.endsWith('closed');
       const outcome = closed
         ? obj.status === 'won'
           ? 'won'
@@ -132,10 +157,9 @@ export async function handleStripeEvent(event: StripeObject, d: HandlerDeps): Pr
     case 'account.updated':
       return applyAccount(obj, d);
     case 'account.application.deauthorized': {
-      const acct = event.account as string | undefined;
-      if (!acct) return 'ignored';
+      if (!account) return 'ignored';
       return (await d.store.setAccountStatus({
-        stripeAccountId: acct,
+        stripeAccountId: account,
         detailsSubmitted: false,
         chargesEnabled: false,
         payoutsEnabled: false,

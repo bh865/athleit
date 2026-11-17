@@ -96,12 +96,12 @@ select throws_ok($$ select public.record_offline_payment('b2000000-0000-0000-000
 select throws_ok($$ select public.waive_request('b2000000-0000-0000-0000-000000000002', 'x') $$, '23514', 'payment_in_flight', 'and a waive');
 reset role;
 -- Mismatch between what Stripe charged and what we reserved is refused (and not applied).
-select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 9999, 'usd', 'acct_TestTeamA', 0) $$, '23514', 'payment_mismatch', 'a wrong amount is refused');
-select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 4500, 'usd', 'acct_Evil', 161) $$, '23514', 'payment_mismatch', 'a wrong destination is refused');
-select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 4500, 'eur', 'acct_TestTeamA', 161) $$, '23514', 'payment_mismatch', 'a wrong currency is refused');
+select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 9999, 'usd', 'acct_TestTeamA', 5) $$, '23514', 'payment_mismatch', 'a wrong amount is refused');
+select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 4500, 'usd', 'acct_Evil', 0) $$, '23514', 'payment_mismatch', 'a wrong destination is refused');
+select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 4500, 'eur', 'acct_TestTeamA', 0) $$, '23514', 'payment_mismatch', 'a wrong currency is refused');
 select throws_ok($$ select public.svc_payment_succeeded('pi_F2', null, 'ch_F2', null, 4500, 'usd', 'acct_TestTeamA', 1) $$, '23514', 'payment_mismatch', 'a wrong application fee is refused');
 select is((select status from public.payments where stripe_payment_intent_id = 'pi_F2'), 'processing', 'nothing was applied');
-select is(public.svc_payment_succeeded('pi_F2', null, 'ch_F2', 170, 4500, 'usd', 'acct_TestTeamA', 161), 'applied', 'the exact match is applied');
+select is(public.svc_payment_succeeded('pi_F2', null, 'ch_F2', 170, 4500, 'usd', 'acct_TestTeamA', 0), 'applied', 'the exact match is applied');
 -- Money that arrives after the event was cancelled: refundable, and admins are told.
 select public.svc_reserve_payment('a2222222-2222-2222-2222-222222222222', array['b3000000-0000-0000-0000-000000000003']::uuid[]);
 select public.svc_attach_payment_intent((select id from public.payments where request_set_key = md5('b3000000-0000-0000-0000-000000000003')), 'pi_F3');

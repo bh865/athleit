@@ -72,7 +72,7 @@ select throws_ok($$ select public.svc_reserve_payment('a2222222-2222-2222-2222-2
 reset role;
 select is((public.svc_reserve_payment('a2222222-2222-2222-2222-222222222222', array['b1000000-0000-0000-0000-000000000001']::uuid[]) ->> 'reused')::boolean, false, 'a first reservation creates a payment');
 select is((select count(*)::int from public.payments), 1, 'one payment exists');
-select is((select total_charged_cents || '/' || application_fee_cents || '/' || status from public.payments), '4500/161/requires_payment_method', 'absorb: payer pays $45.00; the application fee carries the estimated Stripe fee ($1.61) so the team nets base minus Stripe''s fee');
+select is((select total_charged_cents || '/' || application_fee_cents || '/' || status from public.payments), '4500/0/requires_payment_method', 'absorb: payer pays $45.00; the application fee is only the Athleit charge (none here): Athleit never pays Stripe''s fee');
 select is((select status from public.payment_requests where id = 'b1000000-0000-0000-0000-000000000001'), 'processing', 'the request is marked processing');
 select is((select is_active from public.payment_items), true, 'its item is active');
 select is((public.svc_reserve_payment('a2222222-2222-2222-2222-222222222222', array['b1000000-0000-0000-0000-000000000001']::uuid[]) ->> 'reused')::boolean, true, 'reserving the same set again reuses the open payment');
@@ -93,8 +93,8 @@ select lives_ok($$ select public.svc_release_payment((select id from public.paym
 select is((select status from public.payment_requests where id = 'b3000000-0000-0000-0000-000000000003'), 'unpaid', 'the request is unpaid again');
 select is((select is_active from public.payment_items where payment_request_id = 'b3000000-0000-0000-0000-000000000003'), false, 'and its item is released');
 -- pass_on with an Athleit charge: the team nets exactly the base.
-select is((public.svc_reserve_payment('a2222222-2222-2222-2222-222222222222', array['b4000000-0000-0000-0000-000000000004']::uuid[]) ->> 'application_fee_cents')::int, 183, 'pass_on: application fee = Athleit charge 75c + service fee $1.08');
-select is((select total_charged_cents - application_fee_cents from public.payments where request_set_key = md5('b4000000-0000-0000-0000-000000000004')), 2500, 'the team receives exactly the $25.00 base');
+select is((public.svc_reserve_payment('a2222222-2222-2222-2222-222222222222', array['b4000000-0000-0000-0000-000000000004']::uuid[]) ->> 'application_fee_cents')::int, 75, 'pass_on: the application fee is only the Athleit charge (75c); the $1.08 service fee stays with the team to cover Stripe''s fee');
+select is((select total_charged_cents - application_fee_cents - estimated_stripe_fee_cents from public.payments where request_set_key = md5('b4000000-0000-0000-0000-000000000004')), 2500, 'after Stripe''s estimated fee the team receives exactly the $25.00 base');
 
 select * from finish();
 rollback;

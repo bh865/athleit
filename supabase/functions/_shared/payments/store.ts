@@ -84,9 +84,9 @@ export interface ReserveResult {
 }
 
 export interface Candidates {
-  open_payments: { id: string; pi: string; status: string; abandoned: boolean }[];
-  canceled_payments: { id: string; pi: string }[];
-  missing_fee: { id: string; pi: string }[];
+  open_payments: { id: string; pi: string; acct: string; status: string; abandoned: boolean }[];
+  canceled_payments: { id: string; pi: string; acct: string }[];
+  missing_fee: { id: string; pi: string; acct: string }[];
   accounts: string[];
   stuck_events: { id: string; account: string | null }[];
 }

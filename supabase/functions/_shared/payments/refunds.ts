@@ -31,18 +31,18 @@ export async function refundPayment(
   for (const r of plan.refunds) {
     let sr;
     try {
-      // reverse_transfer: the team gives back its share. The application fee is returned only when the policy
-      // refunds the Athleit charge. Stripe never returns its own processing fee.
+      // Direct charge: the refund is issued ON the connected account (it is debited there). The application fee is
+      // returned only when the policy refunds the Athleit charge. Stripe never returns its own processing fee.
       sr = await d.stripe.post(
         '/v1/refunds',
         {
           payment_intent: plan.stripe_payment_intent_id,
           amount: r.amount_cents,
-          reverse_transfer: true,
           refund_application_fee: r.refund_application_fee,
           metadata: { athleit_refund_id: r.refund_id },
         },
         `athleit:rf:${r.refund_id}`,
+        plan.stripe_account_id,
       );
     } catch (e) {
       await d.store.failRefund(r.refund_id).catch(() => {});

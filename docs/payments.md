@@ -42,9 +42,10 @@ estimated_stripe_fee = round(total * stripe_bps / 10000) + stripe_fixed
 For a multi-request checkout the charge is computed **once on the summed base** (flat applies once per payment), then allocated across items by
 largest remainder so items sum exactly to the payment. Initial `fee_config`: Athleit charge 0 / 0 bps, Stripe estimate 2.9% + 30¢ (pricing is a pending decision).
 
-**Variance.** Stripe's actual fee (card type, international) differs from the estimate. `payments` stores both. Charges are **destination
-charges**, so Athleit pays Stripe's fee and the team's net is fixed by the application fee: `net = total - application_fee`. The team therefore nets the
-estimate exactly and **Athleit bears the variance** (see [payments-architecture.md](payments-architecture.md)).
+**Variance.** Stripe's actual fee (card type, international) differs from the estimate. `payments` stores both. Charges are **direct charges** on
+accounts that pay their own Stripe fees ([payments-architecture.md](payments-architecture.md)), so Athleit never pays Stripe's fee and
+`application_fee_amount` is only the Athleit charge. `net_to_account = total - application_fee - Stripe fee` (estimate, then actual). The variance
+is the **team's** under both policies.
 
 **Worked example, a $45.00 request** (Stripe estimate 2.9% + 30¢; Athleit charge shown with two settings):
 
@@ -104,15 +105,15 @@ Edge Function secrets: `STRIPE_SECRET_KEY` (test), `STRIPE_WEBHOOK_SECRET` (plat
 `RECONCILE_SECRET`, `APP_URL`, `APP_SCHEME`, optional `ALLOWED_ORIGINS`. Platform-provided: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 Vault secrets for the cron kick: `reconcile_function_url`, `reconcile_secret` (same value as `RECONCILE_SECRET`). The functions refuse live keys.
 
-Webhook events to subscribe to. Platform endpoint: `payment_intent.succeeded`, `payment_intent.processing`, `payment_intent.payment_failed`,
-`payment_intent.canceled`, `charge.refunded`, `charge.refund.updated`, `charge.dispute.created`, `charge.dispute.closed`. Connect endpoint ("connected
-accounts"): `account.updated`, `account.application.deauthorized`.
+Webhook events to subscribe to. Because charges are direct charges, **all of these arrive on the Connect endpoint ("Listen to events on Connected accounts")**: `payment_intent.succeeded`,
+`payment_intent.processing`, `payment_intent.payment_failed`, `payment_intent.canceled`, `charge.refunded`, `charge.refund.updated`,
+`charge.dispute.created`, `charge.dispute.closed`, `account.updated`, `account.application.deauthorized`. The platform endpoint is optional (no events of ours land there).
 
 Convergence rules (tested in pgTAP): duplicate deliveries are no-ops (ledger + idempotent handlers); late events never move a payment backwards;
 a refund before success applies success first; a success on a payment we had canceled is recorded, its items become refundable again and issuer
 admins are told; a webhook that beats the intent-id attach resolves by our payment id in metadata; Stripe's amount, currency, destination and
 application fee must equal what was reserved or the event is refused (`payment_mismatch`).
 
-Known gaps (documented, not hidden): a **lost dispute** is flagged and audited but the transfer is not reversed automatically (recover it in the
-Stripe Dashboard; refunds are blocked while disputed); `refund_application_fee` semantics need a test-mode check (`scripts/payments-integration.mjs`);
-any staff member can publish an event (decision pending).
+Known gaps (documented, not hidden): disputes are debited from the connected account by Stripe (Athleit is not liable) and flagged/audited here, with
+refunds blocked while disputed; `refund_application_fee` semantics and the account configuration need a test-mode check
+(`scripts/payments-integration.mjs`); any staff member can publish an event (decision pending).

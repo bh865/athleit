@@ -44,7 +44,14 @@ export async function connectOnboarding(
     const created = await d.stripe.post(
       '/v1/accounts',
       {
-        type: 'express',
+        // Accounts that pay their OWN Stripe fees (Athleit never does) and whose losses sit with Stripe, with the lightweight
+        // Express dashboard and Stripe-hosted onboarding. Fixed at creation; cannot be changed later.
+        controller: {
+          fees: { payer: 'account' },
+          losses: { payments: 'stripe' },
+          stripe_dashboard: { type: 'express' },
+          requirement_collection: 'stripe',
+        },
         country: 'US',
         capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
         metadata: { athleit_owner: `${o.teamId ? 'team' : 'club'}:${o.teamId ?? o.clubId}` }, // ids only

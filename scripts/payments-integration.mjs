@@ -4,9 +4,10 @@
 //   STRIPE_SECRET_KEY=sk_test_... CONNECTED_ACCOUNT=acct_... node scripts/payments-integration.mjs
 //
 // CONNECTED_ACCOUNT must be an Express test account that finished onboarding in test mode (charges_enabled).
-// It exercises exactly what create-payment-intent / refund-payment send: a destination charge with on_behalf_of and an
-// application fee, then verifies amounts, the actual Stripe fee on the balance transaction, a decline, 3D Secure,
-// and a refund with reverse_transfer. Refuses live keys.
+// It exercises exactly what create-payment-intent / refund-payment send: a DIRECT charge created on the connected account
+// (Stripe-Account header) with an application fee that is only the Athleit charge, then verifies the actual Stripe fee on
+// the connected account's balance transaction (paid by the account, not Athleit), a decline, 3D Secure, and refunds.
+// The account must have been created with controller.fees.payer=account (connect-onboarding does this). Refuses live keys.
 const key = process.env.STRIPE_SECRET_KEY ?? '';
 const acct = process.env.CONNECTED_ACCOUNT ?? '';
 if (/^(sk|rk)_live_/.test(key)) {
@@ -24,7 +25,7 @@ const enc = (o, p = '') =>
       ? enc(v, p ? `${p}[${k}]` : k)
       : [`${encodeURIComponent(p ? `${p}[${k}]` : k)}=${encodeURIComponent(v)}`],
   );
-async function api(method, path, params = {}, idem) {
+async function api(method, path, params = {}, idem, onAccount = acct) {
   const res = await fetch(`https://api.stripe.com${path}`, {
     method,
     headers: {
@@ -70,9 +71,15 @@ async function charge(label, pm, total, appFee) {
   return pi;
 }
 
-// 1. Visa 4242: $45.00 absorb, application fee = estimated Stripe fee ($1.61) so the team nets ~ $43.39
-const ok = await charge('visa', 'pm_card_visa', 4500, 161);
+// 1. Visa 4242: $45.00 absorb with a 50c Athleit charge. Stripe's fee comes out of the TEAM's side, not Athleit's.
+const ok = await charge('visa', 'pm_card_visa', 4545, 45);
 check('4242 succeeds', ok.status === 'succeeded', ok.status);
+check('the intent lives on the connected account', !ok.transfer_data && !ok.on_behalf_of);
+check(
+  'application fee is only the Athleit charge',
+  ok.application_fee_amount === 45,
+  `fee=${ok.application_fee_amount}`,
+);
 const ch = await api('GET', `/v1/charges/${ok.latest_charge}`, {
   'expand[]': 'balance_transaction',
 });
@@ -85,21 +92,19 @@ console.log(
   '| fee_details:',
   JSON.stringify(ch.balance_transaction.fee_details),
 );
-const transfer = await api('GET', `/v1/transfers/${ch.transfer}`);
 check(
-  'team receives total - application fee',
-  transfer.amount === 4500 - 161,
-  `transfer=${transfer.amount}`,
+  'the connected account (not the platform) bears the Stripe fee',
+  stripeFee > 0 && ch.balance_transaction.net === 4545 - stripeFee - 45,
+  `net=${ch.balance_transaction.net}`,
 );
-check('on_behalf_of settles to the connected account', ch.on_behalf_of === acct);
 
 // 2. Idempotency: same key, same intent
-const again = await charge('visa', 'pm_card_visa', 4500, 161);
+const again = await charge('visa', 'pm_card_visa', 4545, 45);
 check('same idempotency key returns the same intent', again.id === ok.id);
 
 // 3. Decline (4000 0000 0000 9995 = insufficient funds)
 try {
-  await charge('decline', 'pm_card_chargeDeclinedInsufficientFunds', 4500, 161);
+  await charge('decline', 'pm_card_chargeDeclinedInsufficientFunds', 4545, 45);
   check('decline is declined', false);
 } catch (e) {
   check(
@@ -110,27 +115,22 @@ try {
 }
 
 // 4. 3D Secure (4000 0025 0000 3155): needs authentication, never succeeds server-side without the customer
-const sca = await charge('3ds', 'pm_card_authenticationRequired', 4500, 161);
+const sca = await charge('3ds', 'pm_card_authenticationRequired', 4545, 45);
 check('3DS card requires action', sca.status === 'requires_action', sca.status);
 await api('POST', `/v1/payment_intents/${sca.id}/cancel`, {}, `itest:${run}:3ds:cancel`);
 
-// 5. Refunds: partial (base only), then the rest with the application fee
+// 5. Refunds are issued ON the connected account; the partial one keeps the application fee, the final one returns it
 const r1 = await api(
   'POST',
   '/v1/refunds',
-  {
-    payment_intent: ok.id,
-    amount: 1000,
-    reverse_transfer: 'true',
-    refund_application_fee: 'false',
-  },
+  { payment_intent: ok.id, amount: 1000, refund_application_fee: 'false' },
   `itest:${run}:r1`,
 );
 check('partial refund created', ['succeeded', 'pending'].includes(r1.status), r1.status);
 const r2 = await api(
   'POST',
   '/v1/refunds',
-  { payment_intent: ok.id, amount: 3500, reverse_transfer: 'true', refund_application_fee: 'true' },
+  { payment_intent: ok.id, amount: 3545, refund_application_fee: 'true' },
   `itest:${run}:r2`,
 );
 check(
@@ -141,14 +141,14 @@ check(
 const after = await api('GET', `/v1/charges/${ok.latest_charge}`);
 check(
   'charge fully refunded',
-  after.refunded === true && after.amount_refunded === 4500,
+  after.refunded === true && after.amount_refunded === 4545,
   `refunded=${after.amount_refunded}`,
 );
-const rev = await api('GET', `/v1/transfers/${ch.transfer}`);
+const fees = await api('GET', '/v1/application_fees', { charge: ok.latest_charge }, undefined, '');
 console.log(
-  '     transfer reversed (cents):',
-  rev.amount_reversed,
-  '(inspect: does the team keep the application-fee share?)',
+  '     application fee object refunded (cents):',
+  fees.data?.[0]?.amount_refunded,
+  '(inspect: how much of the 45c fee came back across the two refunds?)',
 );
 
 console.log(failed ? `\n${failed} check(s) failed` : '\nall checks passed');

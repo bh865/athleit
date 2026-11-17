@@ -66,18 +66,18 @@ function fakeStore(over: Record<string, unknown> = {}): any {
 /** A Stripe fake with real idempotency-key semantics. */
 function fakeStripe(responses: Record<string, any> = {}) {
   const created = new Map<string, any>();
-  const calls: { method: string; path: string; params: any; key?: string }[] = [];
+  const calls: { method: string; path: string; params: any; key?: string; account?: string }[] = [];
   let n = 0;
   return {
     calls,
-    get: vi.fn(async (path: string, query?: any) => {
-      calls.push({ method: 'GET', path, params: query });
+    get: vi.fn(async (path: string, query?: any, account?: string) => {
+      calls.push({ method: 'GET', path, params: query, account } as any);
       if (responses[path])
         return typeof responses[path] === 'function' ? responses[path](query) : responses[path];
       throw new Error(`unexpected GET ${path}`);
     }),
-    post: vi.fn(async (path: string, params: any, key?: string) => {
-      calls.push({ method: 'POST', path, params, key });
+    post: vi.fn(async (path: string, params: any, key?: string, account?: string) => {
+      calls.push({ method: 'POST', path, params, key, account } as any);
       if (key && created.has(key)) return created.get(key);
       if (responses[`POST ${path}`]) {
         const r =
@@ -204,6 +204,7 @@ describe('webhook processing', () => {
     id: 'evt_1',
     type: 'payment_intent.succeeded',
     livemode: false,
+    account: 'acct_X',
     created: Math.floor(Date.now() / 1000),
     data: {
       object: {
@@ -378,6 +379,7 @@ describe('webhook processing', () => {
     const ev = {
       id: 'evt_r',
       type: 'charge.refunded',
+      account: 'acct_X',
       livemode: false,
       created: Math.floor(Date.now() / 1000),
       data: {
@@ -397,7 +399,11 @@ describe('webhook processing', () => {
     const store = fakeStore();
     const d = { store, stripe: fakeStripe() as any };
     await handleStripeEvent(
-      { type: 'payment_intent.payment_failed', data: { object: { id: 'pi_A', metadata: {} } } },
+      {
+        type: 'payment_intent.payment_failed',
+        account: 'acct_X',
+        data: { object: { id: 'pi_A', metadata: {} } },
+      },
       d,
     );
     expect(store.paymentStatus).toHaveBeenLastCalledWith({
@@ -406,7 +412,11 @@ describe('webhook processing', () => {
       paymentId: undefined,
     });
     await handleStripeEvent(
-      { type: 'payment_intent.canceled', data: { object: { id: 'pi_A', status: 'canceled' } } },
+      {
+        type: 'payment_intent.canceled',
+        account: 'acct_X',
+        data: { object: { id: 'pi_A', status: 'canceled' } },
+      },
       d,
     );
     expect(store.paymentStatus).toHaveBeenLastCalledWith({
@@ -415,7 +425,11 @@ describe('webhook processing', () => {
       paymentId: undefined,
     });
     await handleStripeEvent(
-      { type: 'payment_intent.processing', data: { object: { id: 'pi_A', status: 'processing' } } },
+      {
+        type: 'payment_intent.processing',
+        account: 'acct_X',
+        data: { object: { id: 'pi_A', status: 'processing' } },
+      },
       d,
     );
     expect(store.paymentStatus).toHaveBeenLastCalledWith({
@@ -424,7 +438,11 @@ describe('webhook processing', () => {
       paymentId: undefined,
     });
     await handleStripeEvent(
-      { type: 'charge.dispute.created', data: { object: { id: 'dp_1', payment_intent: 'pi_A' } } },
+      {
+        type: 'charge.dispute.created',
+        account: 'acct_X',
+        data: { object: { id: 'dp_1', payment_intent: 'pi_A' } },
+      },
       d,
     );
     expect(store.disputeEvent).toHaveBeenLastCalledWith({
@@ -436,6 +454,7 @@ describe('webhook processing', () => {
     await handleStripeEvent(
       {
         type: 'charge.dispute.closed',
+        account: 'acct_X',
         data: { object: { id: 'dp_1', payment_intent: 'pi_A', status: 'won' } },
       },
       d,
@@ -492,6 +511,7 @@ describe('webhook processing', () => {
         metadata: { athleit_payment_id: "x'; drop table payments;--" },
       },
       { store, stripe: fakeStripe() as any },
+      'acct_X',
     );
     expect(store.paymentStatus).toHaveBeenCalledWith({
       pi: 'pi_A',
@@ -549,10 +569,12 @@ describe('create-payment-intent', () => {
       amount: 4666,
       currency: 'usd',
       application_fee_amount: 166,
-      transfer_data: { destination: 'acct_X' },
-      on_behalf_of: 'acct_X',
       description: 'Jersey fee · PR-3317',
     });
+    // DIRECT charge: created on the connected account, never as a destination charge, never on the platform
+    expect(call.account).toBe('acct_X');
+    expect(call.params).not.toHaveProperty('transfer_data');
+    expect(call.params).not.toHaveProperty('on_behalf_of');
     expect(call.key).toBe(`athleit:pi:${PID}`);
     expect(call.params.metadata).toEqual({
       athleit_payment_id: PID,
@@ -565,6 +587,7 @@ describe('create-payment-intent', () => {
       clientSecret: 'pi_1_secret_x',
       totalCents: 4666,
       reused: false,
+      stripeAccountId: 'acct_X',
     });
   });
   it('re-calling with the same set reuses the open intent instead of creating a second', async () => {
@@ -715,7 +738,13 @@ describe('connect onboarding', () => {
     expect(r.url).toBe('https://connect.stripe.com/setup/s/abc');
     const create = s.calls.find((c) => c.path === '/v1/accounts')!;
     expect(create.params).toMatchObject({
-      type: 'express',
+      controller: {
+        fees: { payer: 'account' },
+        losses: { payments: 'stripe' },
+        stripe_dashboard: { type: 'express' },
+        requirement_collection: 'stripe',
+      },
+      country: 'US',
       capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
     });
     expect(create.params.metadata).toEqual({ athleit_owner: `team:${owner.teamId}` });
@@ -788,10 +817,12 @@ describe('refund-payment', () => {
         c.params.refund_application_fee,
         c.params.reverse_transfer,
         c.key,
+        c.account,
       ]),
     ).toEqual([
-      [1000, false, true, 'athleit:rf:r1'],
-      [2764, true, true, 'athleit:rf:r2'],
+      // direct charge: refunded ON the connected account, no transfer to reverse
+      [1000, false, undefined, 'athleit:rf:r1', 'acct_X'],
+      [2764, true, undefined, 'athleit:rf:r2', 'acct_X'],
     ]);
     expect(store.attachRefund).toHaveBeenCalledWith('r1', 're_1000', 'pending');
     expect(r).toHaveLength(2);
@@ -996,6 +1027,7 @@ describe('logging and export hygiene', () => {
 describe('review hardening', () => {
   const evt = (over: object = {}) => ({
     id: 'evt_h',
+    account: 'acct_X',
     type: 'payment_intent.succeeded',
     livemode: false,
     created: Math.floor(Date.now() / 1000),
@@ -1006,7 +1038,6 @@ describe('review hardening', () => {
         amount: 4500,
         currency: 'usd',
         application_fee_amount: 161,
-        transfer_data: { destination: 'acct_X' },
         latest_charge: 'ch_H',
         metadata: { athleit_payment_id: PID },
       },
@@ -1045,10 +1076,10 @@ describe('review hardening', () => {
     expect(r.body).toMatchObject({ refused: 'payment_mismatch' });
     expect(store.finishEvent).toHaveBeenCalledWith('evt_h', 'payment_mismatch', true);
   });
-  it('payment events scoped to a connected account are ignored', async () => {
+  it('payment events with NO connected account (the platform own objects) are ignored', async () => {
     const store = fakeStore();
     expect(
-      await handleStripeEvent(evt({ account: 'acct_other' }), { store, stripe: stripe() as any }),
+      await handleStripeEvent(evt({ account: undefined }), { store, stripe: stripe() as any }),
     ).toBe('ignored');
     expect(store.paymentSucceeded).not.toHaveBeenCalled();
   });
@@ -1075,7 +1106,11 @@ describe('review hardening', () => {
       },
     });
     await handleStripeEvent(
-      { type: 'charge.refunded', data: { object: { id: 'ch_A', payment_intent: 'pi_A' } } },
+      {
+        type: 'charge.refunded',
+        account: 'acct_X',
+        data: { object: { id: 'ch_A', payment_intent: 'pi_A' } },
+      },
       { store, stripe: s as any },
     );
     expect(store.refundEvent.mock.calls[0][0].refunds[0]).toEqual({
