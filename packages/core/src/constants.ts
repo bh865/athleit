@@ -41,3 +41,13 @@ export const MAX_INVITE_EXPIRY_DAYS = 90;
 export const DEFAULT_INVITE_EXPIRY_DAYS = 7;
 export const MAX_INVITE_USES = 1000;
 export const MAX_JERSEY_NUMBER = 99;
+
+/** Display names for the roles shown in invites and menus. */
+export const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  coach: 'Coach',
+  manager: 'Manager',
+  parent: 'Parent',
+  player: 'Player',
+  guardian: 'Guardian',
+};

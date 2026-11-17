@@ -30,14 +30,28 @@ const fail = <T>(e: PostgrestError | { message: string } | null): Result<T> => (
     details: e && 'details' in e ? e.details : undefined,
   },
 });
-async function run<T>(
-  q: PromiseLike<{ data: T | null; error: PostgrestError | null }>,
-  fallback?: T,
-): Promise<Result<T>> {
-  const { data, error } = await q;
-  if (error) return fail(error);
-  if (data === null && fallback === undefined) return fail({ message: 'No data returned' });
-  return ok((data ?? fallback) as T);
+/** The `data` type of a supabase-js response's success branch. */
+type Data<Q> =
+  Q extends PromiseLike<infer R>
+    ? Extract<R, { error: null }> extends { data: infer D }
+      ? D
+      : never
+    : never;
+
+async function run<Q extends PromiseLike<{ error: PostgrestError | null; data: unknown }>>(
+  q: Q,
+  fallback?: Data<Q>,
+): Promise<Result<Data<Q>>> {
+  const res = (await q) as { error: PostgrestError | null; data: Data<Q> | null };
+  if (res.error) return fail(res.error);
+  if (res.data === null && fallback === undefined) return fail({ message: 'No data returned' });
+  return ok((res.data ?? fallback) as Data<Q>);
+}
+
+/** For functions that return nothing (void RPCs). */
+async function runVoid(q: PromiseLike<{ error: PostgrestError | null }>): Promise<Result<null>> {
+  const { error } = await q;
+  return error ? fail(error) : ok(null);
 }
 
 // Contexts ---------------------------------------------------------------------------------
@@ -147,15 +161,15 @@ export const getLinkRequests = (client: Client, target: { teamId: string } | { c
   );
 
 export const decideClubLink = (client: Client, requestId: string, approve: boolean) =>
-  run(client.rpc('decide_club_link', { p_request_id: requestId, p_approve: approve }), null);
+  runVoid(client.rpc('decide_club_link', { p_request_id: requestId, p_approve: approve }));
 
 export const unlinkTeamFromClub = (client: Client, teamId: string) =>
-  run(client.rpc('unlink_team_from_club', { p_team_id: teamId }), null);
+  runVoid(client.rpc('unlink_team_from_club', { p_team_id: teamId }));
 
 // Household and children -------------------------------------------------------------------
+// One string literal (no concatenation) so supabase-js can infer the joined row type.
 const CHILD_SELECT =
-  'id, household_id, first_name, last_name, date_of_birth, profile_id, photo_path, login_invite_email, ' +
-  'team_players(id, team_id, jersey_number, position, status, teams(id, name, sport, season_label))';
+  'id, household_id, first_name, last_name, date_of_birth, profile_id, photo_path, login_invite_email, team_players(id, team_id, jersey_number, position, status, teams(id, name, sport, season_label))' as const;
 
 export const listChildren = (client: Client) =>
   run(client.from('players').select(CHILD_SELECT).order('first_name'), []);
@@ -313,7 +327,7 @@ export const listInvites = (client: Client, target: InviteTarget) => {
 };
 
 export const revokeInvite = (client: Client, inviteId: string) =>
-  run(client.rpc('revoke_invite', { p_invite_id: inviteId }), null);
+  runVoid(client.rpc('revoke_invite', { p_invite_id: inviteId }));
 
 export const previewInvite = (client: Client, token: string) =>
   run(client.rpc('preview_invite', { p_token: token }), []);
@@ -344,7 +358,7 @@ export const getJoinRequests = (client: Client, teamId: string) =>
   run(client.rpc('get_join_requests', { p_team_id: teamId }), []);
 
 export const decideJoinRequest = (client: Client, requestId: string, approve: boolean) =>
-  run(client.rpc('decide_join_request', { p_request_id: requestId, p_approve: approve }), null);
+  runVoid(client.rpc('decide_join_request', { p_request_id: requestId, p_approve: approve }));
 
 // Player logins ----------------------------------------------------------------------------
 export const claimPlayerLogin = (client: Client, playerId: string) =>
@@ -354,4 +368,4 @@ export const getPlayerLoginClaims = (client: Client) =>
   run(client.rpc('get_player_login_claims'), []);
 
 export const decidePlayerLoginClaim = (client: Client, claimId: string, approve: boolean) =>
-  run(client.rpc('decide_player_login_claim', { p_claim_id: claimId, p_approve: approve }), null);
+  runVoid(client.rpc('decide_player_login_claim', { p_claim_id: claimId, p_approve: approve }));

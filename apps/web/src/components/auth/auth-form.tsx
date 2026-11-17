@@ -11,13 +11,21 @@ import styles from './auth-form.module.css';
 
 const initial: AuthFormState = {};
 
-export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+export function AuthForm({
+  mode,
+  next,
+}: {
+  mode: 'sign-in' | 'sign-up';
+  next?: string | undefined;
+}) {
+  const suffix = next ? `?next=${encodeURIComponent(next)}` : '';
   const isSignUp = mode === 'sign-up';
   const [state, action, pending] = useActionState(isSignUp ? signUp : signIn, initial);
 
   return (
     <div className={styles.wrap}>
       <form action={action} className={styles.form} noValidate>
+        {next && <input type="hidden" name="next" value={next} />}
         {isSignUp && (
           <TextField
             name="displayName"
@@ -79,11 +87,11 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       <p className={styles.switch}>
         {isSignUp ? (
           <>
-            Already have an account? <Link href="/sign-in">Sign in</Link>
+            Already have an account? <Link href={`/sign-in${suffix}`}>Sign in</Link>
           </>
         ) : (
           <>
-            New here? <Link href="/sign-up">Create an account</Link>
+            New here? <Link href={`/sign-up${suffix}`}>Create an account</Link>
           </>
         )}
       </p>

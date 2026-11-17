@@ -70,3 +70,23 @@ export function can(
 ): boolean {
   return ctx ? capabilitiesFor(ctx).has(capability) : false;
 }
+
+/** Union of capabilities across every role the user holds for one team/club/family. */
+export function capabilitiesForPlace(
+  contexts: readonly Pick<AppContext, 'kind' | 'role' | 'id'>[],
+  kind: AppContext['kind'],
+  id: string,
+): ReadonlySet<Capability> {
+  const out = new Set<Capability>();
+  for (const c of contexts) {
+    if (c.kind === kind && c.id === id) for (const cap of capabilitiesFor(c)) out.add(cap);
+  }
+  return out;
+}
+
+/** What an admin of the club a team belongs to may do on that team's page: read, never edit. */
+export const CLUB_ADMIN_TEAM_VIEW: ReadonlySet<Capability> = new Set<Capability>([
+  'team.view',
+  'roster.viewFull',
+  'roster.viewLimited',
+]);
