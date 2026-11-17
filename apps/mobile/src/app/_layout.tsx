@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/components/ui';
 import '@/env'; // validate EXPO_PUBLIC_* at startup
+import { AppProvider } from '@/lib/app-provider';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { fontAssets } from '@/lib/fonts';
 
@@ -38,6 +39,9 @@ function Routes() {
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
       </Stack.Protected>
+      {/* Invite and player-login links work in either state: signed-out users are asked to sign in first. */}
+      <Stack.Screen name="invite/[token]" />
+      <Stack.Screen name="claim/[playerId]" />
       {/* Dev-only design smoke test, reachable in either state. */}
       <Stack.Screen name="smoke" />
     </Stack>
@@ -49,8 +53,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <StatusBar style="auto" />
-          <Routes />
+          <AppProvider>
+            <StatusBar style="auto" />
+            <Routes />
+          </AppProvider>
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

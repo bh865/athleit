@@ -24,3 +24,7 @@ supabase/.env
 .DS_Store
 *.log
 .claude/
+
+# Playwright
+apps/web/test-results
+apps/web/playwright-report

@@ -22,7 +22,8 @@
     "db:push:remote": "supabase db push --remote",
     "db:types:remote": "bash scripts/db-types.sh --remote",
     "db:push": "supabase db push --remote",
-    "db:push:dry": "supabase db push --remote --dry-run"
+    "db:push:dry": "supabase db push --remote --dry-run",
+    "e2e": "pnpm --filter @athleit/web e2e"
   },
   "devDependencies": {
     "@athleit/config": "workspace:*",
