@@ -51,7 +51,16 @@ Composed from existing tokens and components. New component tokens (`componentTo
 
 Mobile mirrors the web screens: the Messages tab (lime count badge via `TabItem.badge`), a full-screen conversation without the tab bar, long-press actions in a glass `Sheet`, and an offline send queue (Sending, then Failed with Retry and Discard).
 
-Not built yet: thread info screen (members, mute, leave), moderation review queue UI, notification preferences, device list and in-app notification centre (Part C).
+## Notifications (Phase 3, Part C)
+
+| Screen / component                  | Composed from                                                                                                                                                                      | Notes                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Alerts (in-app notification centre) | The system's "alerts" list: 44px icon circle, bold title, muted detail, caption time; recent items on lime circles                                                                 | "Mark all read" secondary button; Settings link top-right                                                  |
+| Notification settings               | Cards with a category x channel switch grid, `TextField` times, timezone `Select` (web) or device timezone (mobile), preview switch, device list with ghost "Sign out this device" | The switch is a native checkbox styled with `bubbleOwn` (charcoal in light, lime in dark), not lime-filled |
+| In-app toast                        | Existing glass sheet pill with the `bell` fill icon (neutral tone)                                                                                                                 | Not shown for the thread you are viewing                                                                   |
+| Sidebar "Alerts" item               | Existing sidebar item with the `bell` icon                                                                                                                                         |                                                                                                            |
+
+Not built yet: thread info screen (members, mute, leave), moderation review queue UI.
 
 ## Still not in the system, and not built
 

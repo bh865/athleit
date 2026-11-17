@@ -69,6 +69,15 @@ export function AppScreen({ children }: { children: ReactNode }) {
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">
         <Text variant="heading">More</Text>
+        <Button
+          title="Alerts"
+          variant="secondary"
+          icon="bell"
+          onPress={() => {
+            setMore(false);
+            router.push('/notifications' as never);
+          }}
+        />
         <ThemeToggle />
         <Button title="Sign out" variant="ghost" icon="sign-out" onPress={() => void signOut()} />
       </Sheet>

@@ -35,6 +35,7 @@ import {
   useToast,
 } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
+import { reportOpenThread, setOpenThread } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 
 import { Bubble, REACTION_ICON, REACTION_LABEL } from './bubble';
@@ -78,6 +79,18 @@ export function Conversation({ threadId }: { threadId: string }) {
   const title =
     t.thread?.title ?? [...t.names.entries()].find(([id]) => id !== me)?.[1] ?? 'Message';
   const count = t.messages.length;
+
+  // While this conversation is open: no foreground banner for it, and the worker skips push for this device.
+  useEffect(() => {
+    setOpenThread(threadId);
+    void reportOpenThread(threadId);
+    const timer = setInterval(() => void reportOpenThread(threadId), 15_000);
+    return () => {
+      clearInterval(timer);
+      setOpenThread(null);
+      void reportOpenThread(null);
+    };
+  }, [threadId]);
 
   useEffect(() => {
     if (t.state !== 'ready') return;

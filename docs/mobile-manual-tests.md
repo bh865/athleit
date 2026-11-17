@@ -67,3 +67,14 @@ Setup: two accounts on the same team (for example a coach and a parent; join the
 10. **Reconnect.** With B offline, A sends 3 messages. Turn B online: the missed messages appear once each.
 11. **Failure.** As the parent, try to send in an archived thread (staff archive it first): the bubble shows "Failed to send", Retry and Discard.
 12. **Accessibility.** VoiceOver reads a bubble as "You, 4:14 PM, read: …"; every control is at least 44pt; Reduce Motion and Reduce Transparency (glass becomes solid) are honoured.
+
+## Notifications (real device; needs the Expo/EAS project id and credentials, see docs/notifications.md)
+
+1. **Register.** Sign in, More, Alerts, Settings, "Turn on push on this phone", allow notifications. "Your devices" lists the phone ("this phone").
+2. **Push arrives.** From a second account send a message in a shared group: a push shows the thread title and "New message" (no text unless previews are on and no minor is in the thread). Tap it with the app closed: the app opens that exact thread (signed out: sign in, then it opens).
+3. **Active thread.** With the conversation open on the phone, send from the other account: no banner or push for that thread; leave the thread and send again: it arrives.
+4. **Mute.** Mute the conversation (bell in its header): no push; the thread still shows unread.
+5. **Quiet hours.** Set quiet hours to include now, send: nothing arrives; the notification appears when the window ends.
+6. **Preferences.** Turn "Messages by push" off: no push. Turn on previews in an adult-only group: the push shows text; in a group with a player under 18 it never does.
+7. **Sign out this device** (Settings or More, Sign out): the device disappears from the list and stops receiving.
+8. **In-app.** With the app open on another screen, a new message shows a glass toast and a new row at the top of Alerts on a lime circle.
