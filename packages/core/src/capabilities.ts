@@ -30,7 +30,12 @@ export type Capability =
   | 'schedule.view'
   | 'schedule.manage'
   | 'schedule.rsvpNames'
-  | 'schedule.rsvpOwn';
+  | 'schedule.rsvpOwn'
+  | 'payments.view'
+  | 'payments.manage'
+  | 'payments.refund'
+  | 'payments.setup'
+  | 'payments.pay';
 
 const STAFF: Capability[] = [
   'team.view',
@@ -45,6 +50,8 @@ const STAFF: Capability[] = [
   'schedule.view',
   'schedule.manage',
   'schedule.rsvpNames',
+  'payments.view',
+  'payments.manage',
 ];
 
 const BY_ROLE: Record<string, Capability[]> = {
@@ -57,12 +64,24 @@ const BY_ROLE: Record<string, Capability[]> = {
     'members.manage',
     'invites.createStaff',
     'invites.view',
+    'payments.refund',
+    'payments.setup',
   ],
   'team:coach': STAFF,
   'team:manager': STAFF,
   'team:parent': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
   'team:player': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
-  'club:admin': ['club.view', 'club.decideLink', 'club.invite', 'club.unlinkTeam', 'invites.view'],
+  'club:admin': [
+    'club.view',
+    'club.decideLink',
+    'club.invite',
+    'club.unlinkTeam',
+    'invites.view',
+    'payments.view',
+    'payments.manage',
+    'payments.refund',
+    'payments.setup',
+  ],
   'club:manager': ['club.view'],
   'family:guardian': [
     'family.manage',
@@ -70,6 +89,7 @@ const BY_ROLE: Record<string, Capability[]> = {
     'invites.view',
     'schedule.view',
     'schedule.rsvpOwn',
+    'payments.pay',
   ],
 };
 
