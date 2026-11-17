@@ -61,7 +61,7 @@ edit a linked team unless they also hold a team role.
 
 ## Functions (all `SECURITY DEFINER`, pinned `search_path`, audited, `authenticated` only)
 
-`create_club`, `create_team`, `create_invite`, `accept_invite`, `revoke_invite`,
+`create_club`, `create_team`, `create_invite`, `create_household_invite`, `accept_invite`, `revoke_invite`, `unlink_team_from_club`, `rotate_team_join_code`,
 `request_to_join`, `decide_join_request`, `add_child`, `place_player_on_roster`,
 `request_club_link`, `decide_club_link`, `find_club`, `claim_player_login`,
 `decide_player_login_claim`, `get_team_roster`, `get_team_members`, `get_guardian_contacts`.

@@ -221,6 +221,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           expires_at: string
+          household_id: string | null
           id: string
           max_uses: number
           revoked_at: string | null
@@ -234,6 +235,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expires_at: string
+          household_id?: string | null
           id?: string
           max_uses?: number
           revoked_at?: string | null
@@ -247,6 +249,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expires_at?: string
+          household_id?: string | null
           id?: string
           max_uses?: number
           revoked_at?: string | null
@@ -268,6 +271,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
             referencedColumns: ["id"]
           },
           {
@@ -689,6 +699,7 @@ export type Database = {
         Args: { p_token: string }
         Returns: {
           club_id: string
+          household_id: string
           role: string
           team_id: string
         }[]
@@ -704,6 +715,17 @@ export type Database = {
       }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
       create_club: { Args: { p_name: string; p_slug: string }; Returns: string }
+      create_household_invite: {
+        Args: {
+          p_expires_in?: string
+          p_household_id: string
+          p_max_uses?: number
+        }
+        Returns: {
+          invite_id: string
+          token: string
+        }[]
+      }
       create_invite: {
         Args: {
           p_club_id: string
@@ -801,6 +823,8 @@ export type Database = {
         Returns: string
       }
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      rotate_team_join_code: { Args: { p_team_id: string }; Returns: string }
+      unlink_team_from_club: { Args: { p_team_id: string }; Returns: undefined }
     }
     Enums: {
       club_role: "admin" | "manager"
