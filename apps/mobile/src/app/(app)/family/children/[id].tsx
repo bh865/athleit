@@ -15,16 +15,7 @@ import { Image, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { WEB_ORIGIN } from '@/components/app/invite-panel';
-import {
-  BackLink,
-  Badge,
-  FormMessage,
-  H1,
-  H2,
-  ListItem,
-  LoadState,
-  Notice,
-} from '@/components/app/kit';
+import { Badge, FormMessage, H1, H2, ListItem, LoadState, Notice } from '@/components/app/kit';
 import { Button, Card, Text, TextField } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
@@ -182,7 +173,6 @@ export default function ChildScreen() {
 
   return (
     <AppScreen>
-      <BackLink label="Family" />
       <LoadState loading={child.loading} error={child.error} onRetry={child.reload}>
         {c && (
           <>

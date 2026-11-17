@@ -9,16 +9,21 @@ import { useApp } from '@/lib/app-provider';
 import { useAuth } from '@/lib/auth';
 import { useUnread } from '@/lib/use-unread';
 
-import { ContextSwitcher } from './context-switcher';
+import { AppHeader } from './app-header';
+import { BackLink } from './kit';
 import { ErrorNotice, Loading } from './app-screen-states';
 
-/** Signed-in screen frame: context switcher on top, content, floating glass tab bar. */
+/** Screens that show the brand header (the rest are detail screens with a back button). */
+const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/family', '/notifications']);
+
+/** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
   const { status, contexts, userId } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [more, setMore] = useState(false);
+  const isRoot = ROOT_PATHS.has(pathname);
 
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const hasTeam = contexts.some((c) => c.kind === 'team');
@@ -49,9 +54,17 @@ export function AppScreen({ children }: { children: ReactNode }) {
   return (
     <Backdrop>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: space[4], paddingVertical: space[2] }}>
-          {status === 'ready' ? <ContextSwitcher /> : null}
-        </View>
+        {/* Top-level screens get the brand header; detail screens start with a round back button. */}
+        {isRoot && status === 'ready' ? (
+          <View style={{ paddingHorizontal: space[4], paddingTop: space[2] }}>
+            <AppHeader />
+          </View>
+        ) : null}
+        {!isRoot && status === 'ready' ? (
+          <View style={{ paddingHorizontal: space[4], paddingTop: space[2] }}>
+            <BackLink />
+          </View>
+        ) : null}
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{

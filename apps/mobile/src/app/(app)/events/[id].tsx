@@ -15,7 +15,7 @@ import {
   type RsvpSummary,
 } from '@athleit/db/scheduling';
 import { componentTokens, radius, space } from '@athleit/tokens';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
@@ -28,7 +28,6 @@ import {
   EmptyState,
   ErrorState,
   Icon,
-  IconButton,
   LoadingSkeleton,
   Text,
   useTheme,
@@ -74,7 +73,6 @@ const STATUS_ICON = {
 /** Event detail (deep-link target): glass back button, kicker, title, facts card, mono counts, RSVP pills. */
 export default function EventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { theme } = useTheme();
   const c = theme.color;
   const [state, setState] = useState<Loaded | 'loading' | 'missing' | 'error'>('loading');
@@ -118,35 +116,21 @@ export default function EventScreen() {
     };
   }, [id, reload]);
 
-  const back = (
-    <View style={{ alignSelf: 'flex-start' }}>
-      <IconButton
-        icon="caret-left"
-        label="Back"
-        large
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/schedule'))}
-      />
-    </View>
-  );
-
   if (state === 'loading')
     return (
       <AppScreen>
-        {back}
         <LoadingSkeleton />
       </AppScreen>
     );
   if (state === 'error')
     return (
       <AppScreen>
-        {back}
         <ErrorState message="We couldn’t load this event." onRetry={() => void reload()} />
       </AppScreen>
     );
   if (state === 'missing')
     return (
       <AppScreen>
-        {back}
         <EmptyState
           icon="calendar-blank"
           title="Event not found"
@@ -171,7 +155,6 @@ export default function EventScreen() {
 
   return (
     <AppScreen>
-      {back}
       <View style={{ gap: space[1] }}>
         <Text variant="label" muted>
           {EVENT_TYPE_LABELS[event.type as 'game']}

@@ -31,7 +31,8 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ]
+      ],
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "plugins": [
       "expo-router",
@@ -52,6 +53,17 @@
           "defaultChannel": "messages"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "9e0b2b23-8897-41ca-9360-adc943ee3446"
+      }
+    },
+    "owner": "bhayes865"
   }
 }

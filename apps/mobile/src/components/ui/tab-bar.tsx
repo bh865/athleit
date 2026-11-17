@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge } from './badge';
 import { Glass } from './glass';
 import { Icon } from './icon';
-import { Text } from './text';
 import { useTheme } from './theme';
 
 export interface TabItem {
@@ -76,11 +75,6 @@ export function TabBar({
                 <View style={{ position: 'absolute', top: 0, right: 0 }}>
                   <Badge tone="count">{i.badge > 99 ? '99+' : String(i.badge)}</Badge>
                 </View>
-              ) : null}
-              {on ? (
-                <Text variant="caption" style={{ color: fg }}>
-                  {i.label}
-                </Text>
               ) : null}
             </Pressable>
           );

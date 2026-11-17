@@ -59,6 +59,7 @@ import {
   Repeat,
   Question,
   ShieldCheck,
+  CaretDown,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
 
@@ -124,6 +125,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   repeat: Repeat,
   question: Question,
   'shield-check': ShieldCheck,
+  'caret-down': CaretDown,
 };
 
 export interface IconProps {
