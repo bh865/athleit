@@ -53,6 +53,7 @@ const TYPE_SAMPLES: [TextVariant, string][] = [
   ['caption', 'Caption 13/600'],
   ['label', 'Label 12/700'],
   ['monoLg', 'Mono 28/500 · 1,240.00'],
+  ['monoXl', 'Mono 56/500 · $45.00'],
 ];
 const SPACE = [1, 2, 3, 4, 6, 8, 12] as const;
 const RADII = ['xs', 'sm', 'md', 'lg', 'xl', 'pill'] as const;

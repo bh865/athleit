@@ -16,6 +16,7 @@ function TeamHeader() {
   const tabs = [
     { href: base, label: 'Roster', show: caps.has('roster.viewLimited') },
     { href: `${base}/schedule`, label: 'Schedule', show: caps.has('schedule.view') },
+    { href: `${base}/payments`, label: 'Payments', show: caps.has('payments.view') },
     { href: `${base}/requests`, label: 'Requests', show: caps.has('joinRequests.decide') },
     { href: `${base}/invites`, label: 'Invites', show: caps.has('invites.createFamily') },
     { href: `${base}/members`, label: 'Members', show: caps.has('members.view') },

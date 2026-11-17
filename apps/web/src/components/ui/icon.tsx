@@ -61,6 +61,9 @@ import {
   Question,
   ShieldCheck,
   CaretDown,
+  Receipt,
+  Bank,
+  DownloadSimple,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react';
 
@@ -125,6 +128,9 @@ const icons: Record<IconName, PhosphorIcon> = {
   question: Question,
   'shield-check': ShieldCheck,
   'caret-down': CaretDown,
+  receipt: Receipt,
+  bank: Bank,
+  'download-simple': DownloadSimple,
 };
 
 export type IconSizeName = 'sm' | 'md' | 'lg' | 'xl';

@@ -64,6 +64,9 @@ export const iconNames = [
   'repeat',
   'question',
   'caret-down',
+  'receipt',
+  'bank',
+  'download-simple',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 

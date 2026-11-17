@@ -10,7 +10,8 @@ export type TextVariant =
   | 'label'
   | 'mono'
   | 'monoSm'
-  | 'monoLg';
+  | 'monoLg'
+  | 'monoXl';
 
 export interface TextStyleToken {
   family: 'sans' | 'mono';
@@ -45,6 +46,8 @@ export const textStyles: Record<TextVariant, TextStyleToken> = {
   mono: t('mono', 16, 24, 'medium'),
   monoSm: t('mono', 12, 16, 'medium'),
   monoLg: t('mono', 28, 34, 'medium'),
+  /** The big amount on the Pay screen and request detail (56px, -0.03em). */
+  monoXl: t('mono', 56, 60, 'medium', -0.03),
 };
 
 export const fontWeightValue = (w: FontWeightName) => fontWeight[w];

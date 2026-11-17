@@ -122,6 +122,14 @@ a {
   letter-spacing: var(--text-mono-lg-tracking);
   text-transform: var(--text-mono-lg-transform);
 }
+.t-mono-xl {
+  font-family: var(--text-mono-xl-family);
+  font-size: var(--text-mono-xl-size);
+  line-height: var(--text-mono-xl-leading);
+  font-weight: var(--text-mono-xl-weight);
+  letter-spacing: var(--text-mono-xl-tracking);
+  text-transform: var(--text-mono-xl-transform);
+}
 .t-mono-sm {
   font-family: var(--text-mono-sm-family);
   font-size: var(--text-mono-sm-size);

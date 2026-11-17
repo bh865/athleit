@@ -97,6 +97,14 @@ export default function ClubPage() {
             </section>
           )}
 
+          {caps.has('payments.view') ? (
+            <p>
+              <Link href={`/clubs/${id}/payments`} className={styles.link}>
+                Club payments
+              </Link>
+            </p>
+          ) : null}
+
           <section className={styles.stack} aria-labelledby="teams-h">
             <h2 className={styles.section} id="teams-h">
               Teams

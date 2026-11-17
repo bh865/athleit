@@ -82,6 +82,12 @@
   --text-mono-lg-tracking: 0em;
   --text-mono-lg-family: var(--font-mono);
   --text-mono-lg-transform: none;
+  --text-mono-xl-size: 56px;
+  --text-mono-xl-leading: 60px;
+  --text-mono-xl-weight: 500;
+  --text-mono-xl-tracking: -0.03em;
+  --text-mono-xl-family: var(--font-mono);
+  --text-mono-xl-transform: none;
   --glass-bar-blur: 24px;
   --glass-bar-filter: blur(24px) saturate(180%);
   --glass-sheet-blur: 40px;

@@ -18,6 +18,8 @@
     "@athleit/tokens": "workspace:*",
     "@athleit/ui-core": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
+    "@stripe/react-stripe-js": "^7.1.0",
+    "@stripe/stripe-js": "^10.3.0",
     "next": "16.4.6",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
