@@ -6,11 +6,12 @@ import {
   updateChildSchema,
   type FieldErrors,
 } from '@athleit/core';
-import { getChild, updateChild } from '@athleit/db/api';
+import { getChild, getPhotoUrl, setChildPhoto, updateChild } from '@athleit/db/api';
 import { spacing } from '@athleit/tokens';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { WEB_ORIGIN } from '@/components/app/invite-panel';
@@ -105,6 +106,70 @@ function ChildForm({ c, onSaved }: { c: Child; onSaved: () => void }) {
   );
 }
 
+function PhotoCard({ c, onChanged }: { c: Child; onChanged: () => void }) {
+  const photo = useLoad(
+    () =>
+      c.photo_path
+        ? getPhotoUrl(supabase, c.photo_path)
+        : Promise.resolve({ data: null, error: null }),
+    [c.photo_path],
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function pick() {
+    setError(null);
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    const asset = picked.assets?.[0];
+    if (picked.canceled || !asset) return;
+    const contentType = asset.mimeType ?? 'image/jpeg';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType))
+      return setError('Choose a JPEG, PNG or WebP image.');
+    setBusy(true);
+    const body = await (await fetch(asset.uri)).arrayBuffer();
+    if (body.byteLength > 5 * 1024 * 1024) {
+      setBusy(false);
+      return setError('Choose an image under 5 MB.');
+    }
+    const res = await setChildPhoto(supabase, {
+      playerId: c.id,
+      body,
+      contentType,
+      previousPath: c.photo_path,
+    });
+    setBusy(false);
+    if (res.error) return setError(friendlyError(res.error));
+    onChanged();
+  }
+
+  return (
+    <Card style={{ gap: spacing[3] }}>
+      {photo.data ? (
+        <Image
+          source={{ uri: photo.data }}
+          accessibilityLabel={`${c.first_name}’s photo`}
+          style={{ width: 96, height: 96, borderRadius: 16 }}
+        />
+      ) : null}
+      <Text size="sm" muted>
+        Only you and staff of {c.first_name}’s teams can see it.
+      </Text>
+      <FormMessage error={error} />
+      <Button
+        title={c.photo_path ? 'Change photo' : 'Add a photo (optional)'}
+        variant="secondary"
+        loading={busy}
+        onPress={() => void pick()}
+      />
+    </Card>
+  );
+}
+
 export default function ChildScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -121,6 +186,7 @@ export default function ChildScreen() {
               {c.first_name} {c.last_name}
             </H1>
             <Text muted>{ageOn(c.date_of_birth)} years old</Text>
+            <PhotoCard c={c} onChanged={child.reload} />
             <ChildForm key={c.id + c.date_of_birth} c={c} onSaved={child.reload} />
             {c.profile_id && <Badge tone="success">Has their own login</Badge>}
 

@@ -59,7 +59,7 @@ export async function cleanup() {
   const a = admin();
   if (!a) {
     console.warn(
-      `[e2e] No E2E_SUPABASE_SERVICE_ROLE_KEY: leaving test users e2e-${RUN}-* in place. Run `bash scripts/e2e-cleanup.sh` to remove them.`,
+      `[e2e] No E2E_SUPABASE_SERVICE_ROLE_KEY: leaving test users e2e-${RUN}-* in place. Run bash scripts/e2e-cleanup.sh to remove them.`,
     );
     return;
   }

@@ -369,3 +369,42 @@ export const getPlayerLoginClaims = (client: Client) =>
 
 export const decidePlayerLoginClaim = (client: Client, claimId: string, approve: boolean) =>
   runVoid(client.rpc('decide_player_login_claim', { p_claim_id: claimId, p_approve: approve }));
+
+// Child photos (private bucket; access follows the player row, see the storage migration) ----
+export const PHOTO_BUCKET = 'player-photos';
+
+/**
+ * Upload a new photo for a child, point the player row at it, and delete the previous object.
+ * `body` is a Blob/File (web) or ArrayBuffer (React Native).
+ */
+export async function setChildPhoto(
+  client: Client,
+  input: {
+    playerId: string;
+    body: Blob | ArrayBuffer;
+    contentType: string;
+    previousPath?: string | null;
+  },
+): Promise<Result<string>> {
+  const ext =
+    input.contentType === 'image/png' ? 'png' : input.contentType === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${input.playerId}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const up = await client.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, input.body, { contentType: input.contentType, upsert: false });
+  if (up.error) return fail({ message: up.error.message });
+  const upd = await client
+    .from('players')
+    .update({ photo_path: path })
+    .eq('id', input.playerId)
+    .select('id');
+  if (upd.error) return fail(upd.error);
+  if (input.previousPath) await client.storage.from(PHOTO_BUCKET).remove([input.previousPath]);
+  return ok(path);
+}
+
+/** Short-lived signed URL for displaying a photo to someone allowed to see the player. */
+export async function getPhotoUrl(client: Client, path: string): Promise<Result<string>> {
+  const { data, error } = await client.storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600);
+  return error || !data ? fail({ message: error?.message ?? 'No URL' }) : ok(data.signedUrl);
+}

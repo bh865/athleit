@@ -8,7 +8,7 @@ import {
   updateChildSchema,
   type FieldErrors,
 } from '@athleit/core';
-import { getChild, updateChild } from '@athleit/db/api';
+import { getChild, getPhotoUrl, setChildPhoto, updateChild } from '@athleit/db/api';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -56,6 +56,30 @@ export default function ChildPage() {
     child.reload();
   }
 
+  const photoPath = child.data?.photo_path ?? null;
+  const photo = useLoad(
+    () =>
+      photoPath ? getPhotoUrl(client, photoPath) : Promise.resolve({ data: null, error: null }),
+    [photoPath],
+  );
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  async function onPhoto(file: File | undefined) {
+    if (!file || !child.data) return;
+    setPhotoError(null);
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+      return setPhotoError('Choose a JPEG, PNG or WebP image.');
+    if (file.size > 5 * 1024 * 1024) return setPhotoError('Choose an image under 5 MB.');
+    const res = await setChildPhoto(client, {
+      playerId: child.data.id,
+      body: file,
+      contentType: file.type,
+      previousPath: child.data.photo_path,
+    });
+    if (res.error) return setPhotoError(friendlyError(res.error));
+    child.reload();
+  }
+
   const c = child.data;
   const ownLoginAllowed = c ? canHaveOwnLogin(c.date_of_birth) : false;
 
@@ -71,6 +95,35 @@ export default function ChildPage() {
               {c.first_name} {c.last_name}
             </h1>
             <p className={styles.muted}>{ageOn(c.date_of_birth)} years old</p>
+
+            <Card className={styles.row}>
+              {photo.data ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photo.data}
+                  alt={`${c.first_name}’s photo`}
+                  width={96}
+                  height={96}
+                  style={{ borderRadius: 'var(--radius-md)', objectFit: 'cover' }}
+                />
+              ) : null}
+              <div className={styles.stack} style={{ gap: 'var(--space-1)' }}>
+                <label className={styles.link} style={{ cursor: 'pointer' }}>
+                  {c.photo_path ? 'Change photo' : 'Add a photo (optional)'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    data-testid="photo-input"
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+                    onChange={(e) => void onPhoto(e.target.files?.[0])}
+                  />
+                </label>
+                <p className={styles.muted}>
+                  Only you and staff of {c.first_name}’s teams can see it.
+                </p>
+                <FormMessage error={photoError} />
+              </div>
+            </Card>
 
             <Card>
               <form
