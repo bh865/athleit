@@ -25,6 +25,9 @@ export function AppScreen({ children }: { children: ReactNode }) {
   const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
+    ...(contexts.length > 0
+      ? [{ key: 'schedule', label: 'Schedule', icon: 'calendar-blank' } as TabItem]
+      : []),
     ...(hasTeam
       ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
       : []),
@@ -33,13 +36,15 @@ export function AppScreen({ children }: { children: ReactNode }) {
   ];
   const active = more
     ? 'more'
-    : pathname.startsWith('/messages')
-      ? 'messages'
-      : pathname.startsWith('/family')
-        ? 'family'
-        : pathname === '/'
-          ? 'home'
-          : null;
+    : pathname.startsWith('/schedule') || pathname.startsWith('/events')
+      ? 'schedule'
+      : pathname.startsWith('/messages')
+        ? 'messages'
+        : pathname.startsWith('/family')
+          ? 'family'
+          : pathname === '/'
+            ? 'home'
+            : null;
 
   return (
     <Backdrop>
@@ -64,7 +69,16 @@ export function AppScreen({ children }: { children: ReactNode }) {
         active={active}
         onSelect={(key) => {
           if (key === 'more') setMore(true);
-          else router.replace(key === 'home' ? '/' : key === 'messages' ? '/messages' : '/family');
+          else
+            router.replace(
+              key === 'home'
+                ? '/'
+                : key === 'schedule'
+                  ? '/schedule'
+                  : key === 'messages'
+                    ? '/messages'
+                    : '/family',
+            );
         }}
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">

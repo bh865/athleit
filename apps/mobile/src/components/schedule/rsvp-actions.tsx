@@ -36,7 +36,9 @@ export function RsvpActions({
   const child = kids.find((k) => k.player_id === selected) ?? kids[0];
   if (!child) return null;
   const status = local[child.player_id] !== undefined ? local[child.player_id] : child.status;
-  const height = compact ? componentTokens.schedule.rsvpButton : componentTokens.schedule.rsvpButtonLg;
+  const height = compact
+    ? componentTokens.schedule.rsvpButton
+    : componentTokens.schedule.rsvpButtonLg;
 
   async function choose(next: RsvpStatus) {
     if (!child) return;
@@ -55,9 +57,19 @@ export function RsvpActions({
   return (
     <View style={{ gap: space[3] }} testID="rsvp-actions">
       {kids.length > 1 ? (
-        <View accessibilityRole="radiogroup" accessibilityLabel="Child" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+        <View
+          accessibilityRole="radiogroup"
+          accessibilityLabel="Child"
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}
+        >
           {kids.map((k) => (
-            <Chip key={k.player_id} label={k.first_name} selected={k.player_id === child.player_id} accessibilityRole="radio" onPress={() => setSelected(k.player_id)} />
+            <Chip
+              key={k.player_id}
+              label={k.first_name}
+              selected={k.player_id === child.player_id}
+              accessibilityRole="radio"
+              onPress={() => setSelected(k.player_id)}
+            />
           ))}
         </View>
       ) : null}
@@ -89,7 +101,12 @@ export function RsvpActions({
           />
         </View>
       </View>
-      <Button title={status === 'maybe' ? 'Maybe (selected)' : 'Maybe'} variant="ghost" disabled={pending} onPress={() => choose('maybe')} />
+      <Button
+        title={status === 'maybe' ? 'Maybe (selected)' : 'Maybe'}
+        variant="ghost"
+        disabled={pending}
+        onPress={() => choose('maybe')}
+      />
       {error ? (
         <View style={{ gap: space[2] }}>
           <Notice tone="error">{error.message}</Notice>

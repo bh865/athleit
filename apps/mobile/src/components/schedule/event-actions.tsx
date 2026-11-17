@@ -205,10 +205,22 @@ export function ResultSheet({
         {mode === 'final' ? (
           <View style={{ flexDirection: 'row', gap: space[3] }}>
             <View style={{ flex: 1 }}>
-              <TextField label="Us" mono keyboardType="number-pad" value={final.us} onChangeText={(v) => setFinal({ ...final, us: v })} />
+              <TextField
+                label="Us"
+                mono
+                keyboardType="number-pad"
+                value={final.us}
+                onChangeText={(v) => setFinal({ ...final, us: v })}
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <TextField label="Them" mono keyboardType="number-pad" value={final.them} onChangeText={(v) => setFinal({ ...final, them: v })} />
+              <TextField
+                label="Them"
+                mono
+                keyboardType="number-pad"
+                value={final.them}
+                onChangeText={(v) => setFinal({ ...final, them: v })}
+              />
             </View>
           </View>
         ) : (
@@ -216,22 +228,44 @@ export function ResultSheet({
             {rows.map((r, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: space[3], alignItems: 'flex-end' }}>
                 <View style={{ flex: 1 }}>
-                  <TextField label={`${name} ${i + 1}: us`} mono keyboardType="number-pad" value={r.us} onChangeText={(v) => setRows(rows.map((x, j) => (j === i ? { ...x, us: v } : x)))} />
+                  <TextField
+                    label={`${name} ${i + 1}: us`}
+                    mono
+                    keyboardType="number-pad"
+                    value={r.us}
+                    onChangeText={(v) =>
+                      setRows(rows.map((x, j) => (j === i ? { ...x, us: v } : x)))
+                    }
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <TextField label="Them" mono keyboardType="number-pad" value={r.them} onChangeText={(v) => setRows(rows.map((x, j) => (j === i ? { ...x, them: v } : x)))} />
+                  <TextField
+                    label="Them"
+                    mono
+                    keyboardType="number-pad"
+                    value={r.them}
+                    onChangeText={(v) =>
+                      setRows(rows.map((x, j) => (j === i ? { ...x, them: v } : x)))
+                    }
+                  />
                 </View>
               </View>
             ))}
             {!isSets && rows.length < count + 10 ? (
-              <Button title={`Add ${name.toLowerCase()} (overtime)`} variant="ghost" onPress={() => setRows([...rows, { us: '', them: '' }])} />
+              <Button
+                title={`Add ${name.toLowerCase()} (overtime)`}
+                variant="ghost"
+                onPress={() => setRows([...rows, { us: '', them: '' }])}
+              />
             ) : null}
           </>
         )}
         {!config.ties_allowed ? <Text muted>Ties are not allowed in {event.sport}.</Text> : null}
         <FormMessage error={error} />
         <Button title="Save result" onPress={submit} loading={busy} testID="save-result" />
-        {event.outcome ? <Button title="Clear result" variant="ghost" onPress={clear} disabled={busy} /> : null}
+        {event.outcome ? (
+          <Button title="Clear result" variant="ghost" onPress={clear} disabled={busy} />
+        ) : null}
       </View>
     </Sheet>
   );

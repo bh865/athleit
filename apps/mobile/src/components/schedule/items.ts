@@ -31,7 +31,9 @@ export function fromTeamRows(rows: readonly TeamScheduleRow[]): ScheduleItem[] {
     status: r.status as ScheduleItem['status'],
     cancelled_reason: r.cancelled_reason,
     result:
-      r.outcome != null ? { our: r.our_score, their: r.their_score, outcome: r.outcome } : undefined,
+      r.outcome != null
+        ? { our: r.our_score, their: r.their_score, outcome: r.outcome }
+        : undefined,
   }));
 }
 
