@@ -14,6 +14,7 @@
     "@athleit/core": "workspace:*",
     "@athleit/db": "workspace:*",
     "@athleit/tokens": "workspace:*",
+    "@athleit/ui-core": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
     "next": "16.4.6",
     "qrcode": "^1.5.4",

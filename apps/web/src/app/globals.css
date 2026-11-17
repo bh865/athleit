@@ -20,12 +20,15 @@ body {
   min-height: 100%;
 }
 
+/* Soft blobs over the background colour give glass something to refract. */
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--backdrop-blobs), var(--color-background);
+  background-attachment: fixed;
+  color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: var(--text-base-size);
-  line-height: var(--text-base-leading);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-leading);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -37,10 +40,88 @@ p {
 }
 
 a {
-  color: var(--color-text);
-  text-underline-offset: 3px;
+  color: var(--color-ink);
+  text-underline-offset: var(--space-1);
 }
 
-.mono {
-  font-family: var(--font-mono);
+:focus-visible {
+  outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Type scale (generated variables). Use the <Text> component rather than these classes directly. */
+.t-display {
+  font-family: var(--text-display-family);
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-leading);
+  font-weight: var(--text-display-weight);
+  letter-spacing: var(--text-display-tracking);
+  text-transform: var(--text-display-transform);
+}
+.t-title {
+  font-family: var(--text-title-family);
+  font-size: var(--text-title-size);
+  line-height: var(--text-title-leading);
+  font-weight: var(--text-title-weight);
+  letter-spacing: var(--text-title-tracking);
+  text-transform: var(--text-title-transform);
+}
+.t-heading {
+  font-family: var(--text-heading-family);
+  font-size: var(--text-heading-size);
+  line-height: var(--text-heading-leading);
+  font-weight: var(--text-heading-weight);
+  letter-spacing: var(--text-heading-tracking);
+  text-transform: var(--text-heading-transform);
+}
+.t-body {
+  font-family: var(--text-body-family);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-leading);
+  font-weight: var(--text-body-weight);
+  letter-spacing: var(--text-body-tracking);
+  text-transform: var(--text-body-transform);
+}
+.t-body-bold {
+  font-family: var(--text-body-bold-family);
+  font-size: var(--text-body-bold-size);
+  line-height: var(--text-body-bold-leading);
+  font-weight: var(--text-body-bold-weight);
+  letter-spacing: var(--text-body-bold-tracking);
+  text-transform: var(--text-body-bold-transform);
+}
+.t-caption {
+  font-family: var(--text-caption-family);
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  font-weight: var(--text-caption-weight);
+  letter-spacing: var(--text-caption-tracking);
+  text-transform: var(--text-caption-transform);
+}
+.t-label {
+  font-family: var(--text-label-family);
+  font-size: var(--text-label-size);
+  line-height: var(--text-label-leading);
+  font-weight: var(--text-label-weight);
+  letter-spacing: var(--text-label-tracking);
+  text-transform: var(--text-label-transform);
+}
+.t-mono {
+  font-family: var(--text-mono-family);
+  font-size: var(--text-mono-size);
+  line-height: var(--text-mono-leading);
+  font-weight: var(--text-mono-weight);
+  letter-spacing: var(--text-mono-tracking);
+  text-transform: var(--text-mono-transform);
+}
+.t-mono-lg {
+  font-family: var(--text-mono-lg-family);
+  font-size: var(--text-mono-lg-size);
+  line-height: var(--text-mono-lg-leading);
+  font-weight: var(--text-mono-lg-weight);
+  letter-spacing: var(--text-mono-lg-tracking);
+  text-transform: var(--text-mono-lg-transform);
+}
+.t-muted {
+  color: var(--color-muted);
 }

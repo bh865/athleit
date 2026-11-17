@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     ];
   },
   // Workspace packages ship TypeScript/CSS source (no build step), so Next must compile them.
-  transpilePackages: ['@athleit/core', '@athleit/db', '@athleit/tokens'],
+  transpilePackages: ['@athleit/core', '@athleit/db', '@athleit/tokens', '@athleit/ui-core'],
 };
 
 export default nextConfig;

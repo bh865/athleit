@@ -3,60 +3,69 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 48px;
+  min-height: var(--size-button-height);
+  min-width: var(--size-button-min-width);
   padding: 0 var(--space-6);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   font-family: var(--font-sans);
-  font-size: var(--text-base-size);
-  font-weight: var(--weight-semibold);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-bold-weight);
   line-height: 1;
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
     transform 0.05s ease;
 }
-
+.lg {
+  min-height: var(--size-button-height-lg);
+}
 .button:active:not(:disabled) {
   transform: scale(0.98);
 }
-
-.button:focus-visible {
-  outline: 3px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 .full {
   width: 100%;
 }
-
 .primary {
   background: var(--color-accent);
-  color: var(--color-on-accent);
+  color: var(--color-accent-ink);
+  font-weight: var(--text-display-weight);
 }
 .primary:hover:not(:disabled),
 .primary:active:not(:disabled) {
   background: var(--color-accent-pressed);
 }
-
 .secondary {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border);
-  color: var(--color-text);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
 }
 .secondary:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
+  background: var(--color-line);
 }
-
 .ghost {
   background: transparent;
-  color: var(--color-text);
+  border-color: var(--color-line);
+  color: var(--color-ink);
 }
 .ghost:hover:not(:disabled) {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-alt);
+}
+.iconButton.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-button-size);
+  height: var(--size-icon-button-size);
+  padding: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.iconButton.iconLg {
+  width: var(--size-icon-button-size-lg);
+  height: var(--size-icon-button-size-lg);
 }

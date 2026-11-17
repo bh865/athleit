@@ -26,6 +26,8 @@ export const semanticColorNames = [
   'badSoft',
   'focusRing',
   'scrim',
+  'qrSurface',
+  'qrInk',
   'avatar1',
   'avatar1Ink',
   'avatar2',
@@ -70,6 +72,8 @@ export const lightMap: ThemeMap = {
   badSoft: { color: 'brick', alpha: 0.08 },
   focusRing: 'charcoal',
   scrim: { color: 'charcoal', alpha: 0.48 },
+  qrSurface: 'white',
+  qrInk: 'black',
   ...avatars,
 };
 
@@ -95,5 +99,7 @@ export const darkMap: ThemeMap = {
   badSoft: { color: 'salmon', alpha: 0.14 },
   focusRing: 'lime',
   scrim: { color: 'black', alpha: 0.64 },
+  qrSurface: 'white',
+  qrInk: 'black',
   ...avatars,
 };

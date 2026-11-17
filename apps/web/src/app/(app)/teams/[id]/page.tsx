@@ -22,7 +22,7 @@ import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage, LoadState } from '@/components/app/states';
 import { useTeam } from '@/components/app/team-context';
-import { Badge, Button, Card, Select, TextField } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -70,7 +70,7 @@ export default function RosterPage() {
         <ul className={styles.list} data-testid="roster-limited">
           {rows.map((r) => (
             <li key={r.team_player_id} className={styles.item}>
-              <strong className={styles.mono} style={{ minWidth: '2.5ch' }}>
+              <strong className={`${styles.mono} ${styles.jersey}`}>
                 {r.jersey_number != null ? `#${r.jersey_number}` : '–'}
               </strong>
               <span className={styles.grow}>{r.first_name}</span>
@@ -113,14 +113,14 @@ export default function RosterPage() {
               <li key={r.team_player_id}>
                 <button
                   type="button"
-                  className={styles.item}
-                  style={{ width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer' }}
+                  className={`${styles.item} ${styles.itemButton}`}
                   aria-expanded={selected === r.team_player_id}
                   onClick={() =>
                     setSelected(selected === r.team_player_id ? null : r.team_player_id)
                   }
                 >
-                  <strong className={styles.mono} style={{ minWidth: '2.5ch' }}>
+                  <Avatar name={`${r.first_name} ${r.last_name ?? ''}`.trim()} />
+                  <strong className={`${styles.mono} ${styles.jersey}`}>
                     {r.jersey_number != null ? `#${r.jersey_number}` : '–'}
                   </strong>
                   <span className={styles.grow}>
@@ -274,11 +274,7 @@ function PlayerPanel({
   }
 
   return (
-    <Card
-      className={styles.stack}
-      data-testid="player-panel"
-      style={{ marginTop: 'var(--space-2)' }}
-    >
+    <Card className={`${styles.stack} ${styles.panel}`} data-testid="player-panel">
       <LoadState loading={player.loading} error={player.error} onRetry={player.reload}>
         <p className={styles.muted}>
           {player.data?.first_name} {player.data?.last_name} · born {player.data?.date_of_birth}

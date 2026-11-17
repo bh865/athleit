@@ -2,7 +2,7 @@ import { contrastRatio } from './contrast';
 import { contrastPairs } from './contrast-pairs';
 import { componentTokens } from './components';
 import { glassLevels } from './glass';
-import { fontFamily, fontWeight, radius, space } from './primitives';
+import { fontFamily, fontWeight, iconSize, radius, space } from './primitives';
 import { semanticColorNames } from './semantic';
 import { themeDefinitions, resolveTheme, type Theme } from './themes';
 import { textStyles } from './typography';
@@ -24,6 +24,7 @@ function sharedVars(): string[] {
     decl('font-mono', `"${fontFamily.mono}", ${fontFamily.monoFallback}`),
   ];
   for (const [k, v] of Object.entries(space)) out.push(decl(`space-${k}`, `${v}px`));
+  for (const [k, v] of Object.entries(iconSize)) out.push(decl(`icon-${k}`, `${v}px`));
   for (const [k, v] of Object.entries(radius)) out.push(decl(`radius-${k}`, `${v}px`));
   for (const [k, t] of Object.entries(textStyles)) {
     const n = `text-${kebab(k)}`;
@@ -110,9 +111,10 @@ export function buildThemeCss(): string {
     '',
     `:root {\n${sharedVars().join('\n')}\n}`,
     '',
-    block(`:root,\n:root[data-theme="${firstName}"]`, first),
+    block(`:root,\n:root[data-theme="${firstName}"],\n[data-theme-scope="${firstName}"]`, first),
   ];
-  for (const [name, t] of list.slice(1)) parts.push('', block(`:root[data-theme="${name}"]`, t));
+  for (const [name, t] of list.slice(1))
+    parts.push('', block(`:root[data-theme="${name}"],\n[data-theme-scope="${name}"]`, t));
   if (osDark)
     parts.push(
       '',

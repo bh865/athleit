@@ -3,12 +3,17 @@ import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Manrope } from 'next/font/google';
 import type { ReactNode } from 'react';
 
-import { ThemeProvider } from '@/components/ui';
+import { ThemeProvider, ToastProvider } from '@/components/ui';
 import { themeInitScript } from '@/components/ui/theme-script';
 
 import './globals.css';
 
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
@@ -29,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

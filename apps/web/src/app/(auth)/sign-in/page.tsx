@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import { safeNext } from '@/lib/safe-next';
 
+import styles from '@/components/auth/auth-page.module.css';
+import { Heading } from '@/components/ui';
 import { AuthForm } from '@/components/auth/auth-form';
 
 export default async function SignInPage({
@@ -12,25 +14,18 @@ export default async function SignInPage({
   const { error, next } = await searchParams;
   return (
     <>
-      <h2 style={{ marginBottom: 'var(--space-5)' }}>Sign in</h2>
+      <Heading as="h2" className={styles.heading}>
+        Sign in
+      </Heading>
       {error && (
-        <p
-          role="alert"
-          style={{ marginBottom: 'var(--space-4)', color: 'var(--color-danger-text)' }}
-        >
+        <p role="alert" className={styles.alert}>
           {error}
         </p>
       )}
       <AuthForm mode="sign-in" next={safeNext(next) === '/' ? undefined : safeNext(next)} />
       {process.env.NODE_ENV !== 'production' && (
-        <p
-          style={{
-            marginTop: 'var(--space-4)',
-            textAlign: 'center',
-            fontSize: 'var(--text-sm-size)',
-          }}
-        >
-          <Link href="/smoke">Design smoke test</Link>
+        <p className={styles.devLink}>
+          <Link href="/dev/design">Design gallery</Link>
         </p>
       )}
     </>

@@ -1,38 +1,37 @@
 .glass {
   border: 1px solid transparent;
-  color: var(--color-text);
+  color: var(--color-ink);
 }
-
 .bar {
   border-radius: var(--radius-xl);
   background: var(--glass-bar-tint);
   border-color: var(--glass-bar-border);
+  box-shadow: var(--glass-bar-shadow);
   -webkit-backdrop-filter: var(--glass-bar-filter);
   backdrop-filter: var(--glass-bar-filter);
 }
-
 .sheet {
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   background: var(--glass-sheet-tint);
   border-color: var(--glass-sheet-border);
+  box-shadow: var(--glass-sheet-shadow);
   -webkit-backdrop-filter: var(--glass-sheet-filter);
   backdrop-filter: var(--glass-sheet-filter);
 }
-
 .modal {
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   background: var(--glass-modal-tint);
   border-color: var(--glass-modal-border);
+  box-shadow: var(--glass-modal-shadow);
   -webkit-backdrop-filter: var(--glass-modal-filter);
   backdrop-filter: var(--glass-modal-filter);
 }
-
 /* Reduced transparency makes the tint solid, so give it a visible edge. */
 :root[data-reduce-transparency='true'] .glass {
-  border-color: var(--color-border);
+  border-color: var(--color-line);
 }
 @media (prefers-reduced-transparency: reduce) {
   .glass {
-    border-color: var(--color-border);
+    border-color: var(--color-line);
   }
 }

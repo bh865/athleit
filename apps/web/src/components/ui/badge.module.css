@@ -1,26 +1,29 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs-size);
-  line-height: var(--text-xs-leading);
-  font-weight: var(--weight-semibold);
+  justify-content: center;
+  min-width: var(--size-badge-min-width);
+  height: var(--size-badge-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
   white-space: nowrap;
 }
 .neutral {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
 }
-.success {
-  background: var(--color-success-bg);
-  color: var(--color-success-text);
+.count {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: var(--font-mono);
 }
-.warning {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-text);
-}
-.danger {
-  background: var(--color-danger-bg);
-  color: var(--color-danger-text);
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  white-space: nowrap;
 }

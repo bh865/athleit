@@ -34,7 +34,9 @@
         "avatar2": "#E1EFF6",
         "avatar2Ink": "#272A2B",
         "avatar3": "#3A3F41",
-        "avatar3Ink": "#F3F7F9"
+        "avatar3Ink": "#F3F7F9",
+        "qrSurface": "#FFFFFF",
+        "qrInk": "#000000"
       },
       "glass": {
         "bar": {
@@ -119,7 +121,9 @@
         "avatar2": "#E1EFF6",
         "avatar2Ink": "#272A2B",
         "avatar3": "#3A3F41",
-        "avatar3Ink": "#F3F7F9"
+        "avatar3Ink": "#F3F7F9",
+        "qrSurface": "#FFFFFF",
+        "qrInk": "#000000"
       },
       "glass": {
         "bar": {

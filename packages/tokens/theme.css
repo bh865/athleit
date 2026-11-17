@@ -12,6 +12,10 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
+  --icon-sm: 20px;
+  --icon-md: 22px;
+  --icon-lg: 24px;
+  --icon-xl: 30px;
   --radius-xs: 12px;
   --radius-sm: 16px;
   --radius-md: 20px;
@@ -116,7 +120,8 @@
 }
 
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme-scope="light"] {
   color-scheme: light;
   --color-background: #F3F8FB;
   --color-surface: #FFFFFF;
@@ -139,6 +144,8 @@
   --color-bad-soft: rgba(179, 38, 30, 0.08);
   --color-focus-ring: #272A2B;
   --color-scrim: rgba(39, 42, 43, 0.48);
+  --color-qr-surface: #FFFFFF;
+  --color-qr-ink: #000000;
   --color-avatar1: #CCFF33;
   --color-avatar1-ink: #272A2B;
   --color-avatar2: #E1EFF6;
@@ -160,7 +167,8 @@
   --backdrop-blobs: radial-gradient(circle at 15% 20%, rgba(204, 255, 51, 0.42), transparent 40%), radial-gradient(circle at 80% 80%, #CFE5F1, transparent 50%), radial-gradient(circle at 50% 10%, #CFE5F1, transparent 40%);
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+[data-theme-scope="dark"] {
   color-scheme: dark;
   --color-background: #17191A;
   --color-surface: #242728;
@@ -183,6 +191,8 @@
   --color-bad-soft: rgba(255, 154, 138, 0.14);
   --color-focus-ring: #CCFF33;
   --color-scrim: rgba(0, 0, 0, 0.64);
+  --color-qr-surface: #FFFFFF;
+  --color-qr-ink: #000000;
   --color-avatar1: #CCFF33;
   --color-avatar1-ink: #272A2B;
   --color-avatar2: #E1EFF6;
@@ -228,6 +238,8 @@
     --color-bad-soft: rgba(255, 154, 138, 0.14);
     --color-focus-ring: #CCFF33;
     --color-scrim: rgba(0, 0, 0, 0.64);
+    --color-qr-surface: #FFFFFF;
+    --color-qr-ink: #000000;
     --color-avatar1: #CCFF33;
     --color-avatar1-ink: #272A2B;
     --color-avatar2: #E1EFF6;
