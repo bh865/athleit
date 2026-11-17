@@ -48,6 +48,21 @@ without write access. **Guardian** = member of a household (independent of any t
 | View a child's photo                             |                               ✓ (rostered)                               |  ✓ (rostered)   |   –    |    own only    |          ✓           |    ✓ (rostered)     |      –       |      –      |
 | Create a club / create a team                    |                any signed-in user (creator becomes admin)                |                 |        |                |                      |                     |              |
 
+Messaging and notifications (Phase 3; full rules in [messaging-safety.md](messaging-safety.md)):
+
+| Resource / action                                  |                           Team admin                            | Coach / manager |   Parent    |   Player (13+)    |  Guardian   | Club admin | Club manager | Anyone else |
+| -------------------------------------------------- | :-------------------------------------------------------------: | :-------------: | :---------: | :---------------: | :---------: | :--------: | :----------: | :---------: |
+| Read announcement threads and messages             |                                ✓                                |        ✓        |      ✓      |         ✓         |      –      |     –      |      –       |      –      |
+| Post in announcement threads                       |                                ✓                                |        ✓        |      –      |         –         |      –      |     –      |      –       |      –      |
+| Create group / announcement threads                |                                ✓                                |        ✓        |      –      |         –         |      –      |     –      |      –       |      –      |
+| Read / post in group threads                       |                    participant (admin: read)                    |   participant   | participant | participant (13+) | participant |     –      |      –       |      –      |
+| Direct (1:1) thread                                | any team member, except with a minor who is not their own child |        ↔        |      ↔      | own guardian only |      ↔      |     –      |      –       |      –      |
+| Read messages sent before you joined               |                                ✓                                |        ✓        |      –      |         –         |      –      |     –      |      –       |      –      |
+| Report a message / react / mute a thread           |                    any reader of the thread                     |                 |             |                   |             |            |              |             |
+| Hide a message / review reports                    |                                ✓                                |        ✓        |      –      |         –         |      –      |     –      |      –       |      –      |
+| Read the original text of a hidden message         |                                ✓                                |        –        |      –      |         –         |      –      |     –      |      –       |      –      |
+| Own notification preferences, devices, in-app feed |                    each user, own rows only                     |                 |             |                   |             |            |              |             |
+
 Club members' own rows: club admin reads all memberships in their club and may change roles
 or remove members; a club manager reads the club and their own membership. Club admins cannot
 edit a linked team unless they also hold a team role.
@@ -70,10 +85,11 @@ edit a linked team unless they also hold a team role.
 `request_to_join`, `decide_join_request`, `add_child`, `place_player_on_roster`,
 `request_club_link`, `decide_club_link`, `find_club`, `claim_player_login`,
 `decide_player_login_claim`, `get_team_roster`, `get_team_members`, `get_guardian_contacts`.
+Messaging: `create_thread`, `add_participant`, `remove_participant`, `set_thread_mute`, `set_thread_archived`, `get_thread_members`, `send_message`, `edit_message`, `delete_message`, `hide_message`, `get_hidden_message`, `report_message`, `review_report`, `mark_thread_read`, `toggle_reaction`; notifications: `register_push_device`, `revoke_push_device`, `mark_notifications_read`.
 UI read helpers (no new tables): `get_join_requests`, `get_link_requests`, `get_player_login_claims`, `preview_invite`.
 Policy helpers live in the unexposed `private` schema: `is_team_member`, `has_team_role`,
 `is_team_staff`, `can_view_team_roster`, `is_club_admin`, `is_club_member`,
-`is_household_guardian`, `is_guardian_of`, `is_player_self`, `can_see_player`.
+`is_household_guardian`, `is_guardian_of`, `is_player_self`, `can_see_player`, `can_read_thread`, `can_read_message`, `can_post_thread`, `can_see_participants`, `can_see_reads`, `can_use_thread_channel`.
 
 ## How the apps use this
 

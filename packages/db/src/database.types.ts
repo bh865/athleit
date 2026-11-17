@@ -354,6 +354,350 @@ export type Database = {
           },
         ]
       }
+      message_attachments: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          profile_id: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reads: {
+        Row: {
+          last_read_at: string
+          last_read_message_id: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          last_read_message_id?: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Update: {
+          last_read_at?: string
+          last_read_message_id?: string | null
+          profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reads_last_read_message_id_fkey"
+            columns: ["last_read_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reads_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reason: string
+          reporter_profile_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reason: string
+          reporter_profile_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reason?: string
+          reporter_profile_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reports_reporter_profile_id_fkey"
+            columns: ["reporter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          reply_to_id: string | null
+          sender_profile_id: string | null
+          thread_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          reply_to_id?: string | null
+          sender_profile_id?: string | null
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          reply_to_id?: string | null
+          sender_profile_id?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_outbox: {
+        Row: {
+          attempts: number
+          category: string
+          channel: string
+          created_at: string
+          dedupe_key: string
+          deliver_after: string
+          id: string
+          last_error: string | null
+          payload: Json
+          profile_id: string
+          read_at: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          category: string
+          channel: string
+          created_at?: string
+          dedupe_key: string
+          deliver_after?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          profile_id: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          category?: string
+          channel?: string
+          created_at?: string
+          dedupe_key?: string
+          deliver_after?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          profile_id?: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_outbox_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          category: string
+          channel: string
+          enabled: boolean
+          include_preview: boolean
+          profile_id: string
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          timezone: string
+        }
+        Insert: {
+          category: string
+          channel: string
+          enabled?: boolean
+          include_preview?: boolean
+          profile_id: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string
+        }
+        Update: {
+          category?: string
+          channel?: string
+          enabled?: boolean
+          include_preview?: boolean
+          profile_id?: string
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_login_claims: {
         Row: {
           created_at: string
@@ -483,6 +827,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_devices: {
+        Row: {
+          created_at: string
+          device_label: string | null
+          id: string
+          last_seen_at: string
+          platform: string
+          profile_id: string
+          revoked_at: string | null
+          subscription: Json | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          device_label?: string | null
+          id?: string
+          last_seen_at?: string
+          platform: string
+          profile_id: string
+          revoked_at?: string | null
+          subscription?: Json | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          device_label?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          profile_id?: string
+          revoked_at?: string | null
+          subscription?: Json | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_devices_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_club_link_requests: {
         Row: {
@@ -690,6 +1078,96 @@ export type Database = {
           },
         ]
       }
+      thread_participants: {
+        Row: {
+          joined_at: string
+          left_at: string | null
+          muted_until: string | null
+          profile_id: string
+          role: string
+          thread_id: string
+        }
+        Insert: {
+          joined_at?: string
+          left_at?: string | null
+          muted_until?: string | null
+          profile_id: string
+          role: string
+          thread_id: string
+        }
+        Update: {
+          joined_at?: string
+          left_at?: string | null
+          muted_until?: string | null
+          profile_id?: string
+          role?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_participants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      threads: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_message_at: string
+          team_id: string
+          title: string | null
+          type: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message_at?: string
+          team_id: string
+          title?: string | null
+          type: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message_at?: string
+          team_id?: string
+          title?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "threads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -712,6 +1190,10 @@ export type Database = {
           p_last_name: string
         }
         Returns: string
+      }
+      add_participant: {
+        Args: { p_profile_id: string; p_role?: string; p_thread_id: string }
+        Returns: undefined
       }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
       create_club: { Args: { p_name: string; p_slug: string }; Returns: string }
@@ -748,6 +1230,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_thread: {
+        Args: {
+          p_participant_ids?: string[]
+          p_team_id: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
       decide_club_link: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
@@ -758,6 +1249,11 @@ export type Database = {
       }
       decide_player_login_claim: {
         Args: { p_approve: boolean; p_claim_id: string }
+        Returns: undefined
+      }
+      delete_message: { Args: { p_message_id: string }; Returns: undefined }
+      edit_message: {
+        Args: { p_body: string; p_message_id: string }
         Returns: undefined
       }
       find_club: {
@@ -775,6 +1271,16 @@ export type Database = {
           email: string
           phone: string
           profile_id: string
+        }[]
+      }
+      get_hidden_message: {
+        Args: { p_message_id: string }
+        Returns: {
+          body: string
+          how: string
+          removed_at: string
+          removed_by: string
+          sender_profile_id: string
         }[]
       }
       get_join_requests: {
@@ -840,6 +1346,24 @@ export type Database = {
           team_player_id: string
         }[]
       }
+      get_thread_members: {
+        Args: { p_thread_id: string }
+        Returns: {
+          display_name: string
+          joined_at: string
+          profile_id: string
+          role: string
+        }[]
+      }
+      hide_message: {
+        Args: { p_message_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
+      mark_thread_read: {
+        Args: { p_message_id: string; p_thread_id: string }
+        Returns: undefined
+      }
       place_player_on_roster: {
         Args: {
           p_jersey_number?: number
@@ -860,6 +1384,23 @@ export type Database = {
           valid: boolean
         }[]
       }
+      register_push_device: {
+        Args: {
+          p_label?: string
+          p_platform: string
+          p_subscription?: Json
+          p_token: string
+        }
+        Returns: string
+      }
+      remove_participant: {
+        Args: { p_profile_id: string; p_thread_id: string }
+        Returns: undefined
+      }
+      report_message: {
+        Args: { p_message_id: string; p_reason: string }
+        Returns: string
+      }
       request_club_link: {
         Args: { p_club_id: string; p_team_id: string }
         Returns: string
@@ -873,8 +1414,37 @@ export type Database = {
         }
         Returns: string
       }
+      review_report: {
+        Args: { p_report_id: string; p_status: string }
+        Returns: undefined
+      }
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      revoke_push_device: {
+        Args: { p_device_id?: string; p_token?: string }
+        Returns: undefined
+      }
       rotate_team_join_code: { Args: { p_team_id: string }; Returns: string }
+      send_message: {
+        Args: {
+          p_attachments?: Json
+          p_body: string
+          p_reply_to?: string
+          p_thread_id: string
+        }
+        Returns: string
+      }
+      set_thread_archived: {
+        Args: { p_archived: boolean; p_thread_id: string }
+        Returns: undefined
+      }
+      set_thread_mute: {
+        Args: { p_thread_id: string; p_until: string }
+        Returns: undefined
+      }
+      toggle_reaction: {
+        Args: { p_emoji: string; p_message_id: string }
+        Returns: boolean
+      }
       unlink_team_from_club: { Args: { p_team_id: string }; Returns: undefined }
     }
     Enums: {

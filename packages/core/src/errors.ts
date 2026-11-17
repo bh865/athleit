@@ -33,6 +33,27 @@ const BY_MESSAGE: [RegExp, string][] = [
     /join_requests_one_pending|team_club_link_requests_one_pending|player_login_claims_one_pending/,
     'You already have a pending request for this.',
   ],
+  [
+    /minor_group_needs_two_adults/,
+    'A group that includes a minor needs two coaches or managers, or a coach and that child’s parent.',
+  ],
+  [
+    /direct_minor_guardian_only/,
+    'Children and teens can only be messaged one-to-one by their own parent or guardian. Message their parent instead.',
+  ],
+  [/direct_needs_one_participant/, 'Choose one person to message.'],
+  [/group_needs_participants/, 'Add at least one person to the group.'],
+  [/participant_not_in_team/, 'That person is not on this team.'],
+  [/title_required/, 'Give this thread a title.'],
+  [/thread_archived/, 'This conversation is archived.'],
+  [/rate_limited/, 'You are sending messages too quickly. Wait a moment and try again.'],
+  [/empty_message/, 'Write a message or attach a file.'],
+  [/body_too_long/, 'That message is too long.'],
+  [/message_removed/, 'That message was removed.'],
+  [/cannot_report_own_message/, 'You cannot report your own message.'],
+  [/invalid_attachment_path/, 'That attachment could not be sent. Try uploading it again.'],
+  [/invalid_timezone/, 'Choose a valid timezone.'],
+  [/not_a_participant/, 'You are not part of this conversation.'],
   [/forbidden/, 'You do not have permission to do that.'],
 ];
 
