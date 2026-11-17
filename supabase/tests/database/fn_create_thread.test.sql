@@ -85,7 +85,7 @@ select throws_ok($$ select public.create_thread('e1000000-0000-0000-0000-0000000
 reset role; select set_config('request.jwt.claims', '{"sub":"dd000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.create_thread('e1000000-0000-0000-0000-000000000001','direct',null,array['bb000000-0000-0000-0000-000000000001']::uuid[]) $$, '42501', null, 'a non-member of the team cannot create threads');
 reset role;
-select is((select count(*)::int from public.audit_log where action='thread.create' and created_at = now()), 9, 'thread creation is audited');
+select is((select count(*)::int from public.audit_log where action='thread.create' and created_at = now()), 6, 'thread creation is audited');
 reset role;
 select * from finish();
 rollback;

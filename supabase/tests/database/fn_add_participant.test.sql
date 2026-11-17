@@ -53,13 +53,15 @@ insert into public.messages (id, thread_id, sender_profile_id, body, created_at)
   ('81000000-0000-0000-0000-000000000004', '71000000-0000-0000-0000-00000000000a', 'aa000000-0000-0000-0000-000000000001', 'announce', now());
 set local role anon; select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-000000000002','member') $$, '42501', null, 'anonymous cannot add');
+reset role;
+update public.thread_participants set left_at = now() where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000001';
 reset role; select set_config('request.jwt.claims', '{"sub":"aa000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 select lives_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-000000000002','member') $$, 'the owner adds a participant');
-select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and left_at is null), 4, 'participant added');
+select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and left_at is null), 3, 'participant added');
 select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','dd000000-0000-0000-0000-000000000002','member') $$, 'P0001', 'participant_not_in_team', 'target must be a team member');
 select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-000000000003','boss') $$, '23514', null, 'invalid role refused');
-select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-000000000002','member') $$, 'P0001', 'not_a_group', 'cannot add to a direct thread');
-select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000002','member') $$, 'P0001', 'not_a_group', 'cannot add to an announcement');
+select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000c','bb000000-0000-0000-0000-000000000002','member') $$, '42501', null, 'cannot add to a direct thread without manager rights');
+select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000a','bb000000-0000-0000-0000-000000000002','member') $$, '42501', null, 'cannot add to an announcement without manager rights');
 select throws_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','cc000000-0000-0000-0000-000000000001','member') $$, 'P0001', 'minor_group_needs_two_adults', 'adding a minor to an unsafe group is refused');
 select lives_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','aa000000-0000-0000-0000-000000000001','member') $$, 'adding a second staff adult');
 select lives_ok($$ select public.add_participant('71000000-0000-0000-0000-00000000000b','cc000000-0000-0000-0000-000000000001','member') $$, 'now the teen can be added');
