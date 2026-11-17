@@ -9,9 +9,7 @@
     "ios": {
       "bundleIdentifier": "com.athleit.app",
       "supportsTablet": true,
-      "associatedDomains": [
-        "applinks:athleit.app"
-      ]
+      "associatedDomains": ["applinks:athleit.app"]
     },
     "android": {
       "package": "com.athleit.app",
@@ -31,15 +29,10 @@
               "pathPrefix": "/claim"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "plugins": [
       "expo-router",
