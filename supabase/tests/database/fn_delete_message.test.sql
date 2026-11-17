@@ -66,7 +66,7 @@ select is((select count(*)::int from public.get_hidden_message('81000000-0000-00
 reset role;
 select is((select count(*)::int from public.audit_log where action='message.delete'), 1, 'delete is audited');
 reset role; select set_config('request.jwt.claims', '{"sub":"aa000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
-select throws_ok($$ select public.delete_message('81000000-0000-0000-0000-000000000001') $$, '42501', null, 'staff cannot delete others messages with this function');
+select throws_ok($$ select public.delete_message('81000000-0000-0000-0000-000000000003') $$, '42501', null, 'staff cannot delete others messages with this function');
 reset role;
 select * from finish();
 rollback;
