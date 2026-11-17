@@ -533,7 +533,7 @@ export async function uploadAttachment(
   fileName: string,
   contentType: string,
 ): Promise<Result<string>> {
-  const safe = fileName.replace(/[^\w.\-]+/g, '_').slice(-80) || 'file';
+  const safe = fileName.replace(/[^\w.-]+/g, '_').slice(-80) || 'file';
   const path = `${threadId}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}/${safe}`;
   const { error } = await client.storage
     .from('message-attachments')
