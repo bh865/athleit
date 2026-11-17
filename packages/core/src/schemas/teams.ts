@@ -136,3 +136,35 @@ export type RequestClubLinkInput = z.infer<typeof requestClubLinkSchema>;
 
 export const claimPlayerLoginSchema = z.object({ playerId: z.uuid() });
 export type ClaimPlayerLoginInput = z.infer<typeof claimPlayerLoginSchema>;
+
+export const createHouseholdInviteSchema = z.object({
+  householdId: z.uuid(),
+  expiresInDays: z.number().int().min(1).max(MAX_INVITE_EXPIRY_DAYS).default(7),
+  maxUses: z.number().int().min(1).max(MAX_INVITE_USES).default(1),
+});
+export type CreateHouseholdInviteInput = z.infer<typeof createHouseholdInviteSchema>;
+
+export const teamIdSchema = z.object({ teamId: z.uuid() });
+export type TeamIdInput = z.infer<typeof teamIdSchema>;
+
+/** Optional email the guardian gives a 13+ player so their own login can auto-link. */
+export const playerLoginEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email('Enter a valid email address'));
+
+export const updateChildSchema = z.object({
+  firstName: trimmed('a first name', 60),
+  lastName: trimmed('a last name', 60),
+  dateOfBirth: dateOfBirthSchema,
+  loginInviteEmail: playerLoginEmailSchema.nullish(),
+});
+export type UpdateChildInput = z.infer<typeof updateChildSchema>;
+
+export const updateRosterRowSchema = z.object({
+  jerseyNumber: z.number().int().min(0).max(MAX_JERSEY_NUMBER).nullable(),
+  position: z.string().trim().max(40, 'Use at most 40 characters').nullable(),
+  status: rosterStatusSchema,
+});
+export type UpdateRosterRowInput = z.infer<typeof updateRosterRowSchema>;
