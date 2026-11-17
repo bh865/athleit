@@ -1,3 +1,4 @@
+export * from './chunked-storage';
 export * from './constants';
 export * from './env';
 export * from './forms';

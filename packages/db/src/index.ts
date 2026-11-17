@@ -1,5 +1,6 @@
 import type { Database } from './database.types';
 
+export type { Session, User } from '@supabase/supabase-js';
 export type { Database, Json } from './database.types';
 
 type PublicSchema = Database['public'];
