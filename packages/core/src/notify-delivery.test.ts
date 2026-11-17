@@ -23,7 +23,13 @@ const row = (over: Partial<OutboxRow> & { id: string }): OutboxRow => ({
   category: 'messages',
   channel: 'push',
   attempts: 0,
-  payload: { kind: 'message', thread_id: 't1', message_id: 'm1', title: 'Game day', sender_name: 'Casey' },
+  payload: {
+    kind: 'message',
+    thread_id: 't1',
+    message_id: 'm1',
+    title: 'Game day',
+    sender_name: 'Casey',
+  },
   ...over,
 });
 const device = (over: Partial<Device> = {}): Device => ({
@@ -38,16 +44,40 @@ const device = (over: Partial<Device> = {}): Device => ({
 
 describe('buildContent (lock-screen content)', () => {
   it('shows only the title and a generic body for sensitive threads, even with a preview', () => {
-    const c = buildContent(row({ id: 'a', payload: { kind: 'message', thread_id: 't1', title: 'U12 group', sensitive: true, preview: 'secret words' } }));
+    const c = buildContent(
+      row({
+        id: 'a',
+        payload: {
+          kind: 'message',
+          thread_id: 't1',
+          title: 'U12 group',
+          sensitive: true,
+          preview: 'secret words',
+        },
+      }),
+    );
     expect(c).toEqual({ title: 'U12 group', body: 'New message', url: '/messages/t1' });
   });
   it('includes the preview only when present and not sensitive', () => {
-    expect(buildContent(row({ id: 'a', payload: { kind: 'message', thread_id: 't1', title: 'T', preview: 'hello' } })).body).toBe('hello');
+    expect(
+      buildContent(
+        row({
+          id: 'a',
+          payload: { kind: 'message', thread_id: 't1', title: 'T', preview: 'hello' },
+        }),
+      ).body,
+    ).toBe('hello');
     expect(buildContent(row({ id: 'a' })).body).toBe('New message');
   });
   it('uses announcement and schedule wording and deep links', () => {
     expect(buildContent(row({ id: 'a', category: 'announcements' })).body).toBe('New announcement');
-    const s = buildContent(row({ id: 'a', category: 'schedule', payload: { kind: 'schedule', event_id: 'e9', title: 'Practice', change: 'cancelled' } }));
+    const s = buildContent(
+      row({
+        id: 'a',
+        category: 'schedule',
+        payload: { kind: 'schedule', event_id: 'e9', title: 'Practice', change: 'cancelled' },
+      }),
+    );
     expect(s).toEqual({ title: 'Practice', body: 'Event cancelled', url: '/events/e9' });
     expect(linkFor({ kind: 'message' })).toBe('/');
   });
@@ -55,13 +85,35 @@ describe('buildContent (lock-screen content)', () => {
 
 describe('retry policy', () => {
   it('backs off exponentially with a cap', () => {
-    expect([1, 2, 3, 4, 5].map(backoffMs)).toEqual([30_000, 120_000, 480_000, 1_800_000, 1_800_000]);
+    expect([1, 2, 3, 4, 5].map(backoffMs)).toEqual([
+      30_000, 120_000, 480_000, 1_800_000, 1_800_000,
+    ]);
   });
   it('suppresses push only while the device views that thread', () => {
     const r = row({ id: 'a' });
-    expect(isViewingThread(device({ active_thread_id: 't1', active_at: new Date(NOW.getTime() - 5_000).toISOString() }), r, NOW)).toBe(true);
-    expect(isViewingThread(device({ active_thread_id: 't1', active_at: new Date(NOW.getTime() - 60_000).toISOString() }), r, NOW)).toBe(false);
-    expect(isViewingThread(device({ active_thread_id: 't2', active_at: NOW.toISOString() }), r, NOW)).toBe(false);
+    expect(
+      isViewingThread(
+        device({
+          active_thread_id: 't1',
+          active_at: new Date(NOW.getTime() - 5_000).toISOString(),
+        }),
+        r,
+        NOW,
+      ),
+    ).toBe(true);
+    expect(
+      isViewingThread(
+        device({
+          active_thread_id: 't1',
+          active_at: new Date(NOW.getTime() - 60_000).toISOString(),
+        }),
+        r,
+        NOW,
+      ),
+    ).toBe(false);
+    expect(
+      isViewingThread(device({ active_thread_id: 't2', active_at: NOW.toISOString() }), r, NOW),
+    ).toBe(false);
   });
 });
 
@@ -75,7 +127,12 @@ class MemStore implements Store {
   ) {}
   async claim(limit: number) {
     const due = this.rows
-      .filter((r) => (r.status === 'pending' || r.status === 'failed') && r.deliver_after <= NOW && r.attempts < MAX_ATTEMPTS)
+      .filter(
+        (r) =>
+          (r.status === 'pending' || r.status === 'failed') &&
+          r.deliver_after <= NOW &&
+          r.attempts < MAX_ATTEMPTS,
+      )
       .slice(0, limit);
     due.forEach((r) => (r.status = 'sending'));
     return due;
@@ -139,7 +196,11 @@ describe('processBatch against a mock Expo endpoint', () => {
   it('delivers exactly once per due eligible recipient; deferred (quiet hours) rows wait; no sender row exists', async () => {
     // The database wrote rows for: coach (due), parent (quiet hours -> deferred), teen (due). No row for the sender or a muted user.
     const store = new MemStore(
-      [mk('r-coach', 'coach'), mk('r-parent', 'parent', {}, new Date(NOW.getTime() + 8 * 3600_000)), mk('r-teen', 'teen')],
+      [
+        mk('r-coach', 'coach'),
+        mk('r-parent', 'parent', {}, new Date(NOW.getTime() + 8 * 3600_000)),
+        mk('r-teen', 'teen'),
+      ],
       {
         coach: [device({ id: 'dc', token: 'ExponentPushToken[coach]' })],
         parent: [device({ id: 'dp', token: 'ExponentPushToken[parent]' })],
@@ -148,7 +209,10 @@ describe('processBatch against a mock Expo endpoint', () => {
     );
     const counts = await processBatch(store, transports(), { now: () => NOW });
     expect(counts).toEqual({ sent: 2, skipped: 0, failed: 0 });
-    expect(received.map((m) => m.to).sort()).toEqual(['ExponentPushToken[coach]', 'ExponentPushToken[teen]']);
+    expect(received.map((m) => m.to).sort()).toEqual([
+      'ExponentPushToken[coach]',
+      'ExponentPushToken[teen]',
+    ]);
     expect(store.rows.find((r) => r.id === 'r-parent')!.status).toBe('pending');
     // Running again delivers nothing new: rows are never re-sent.
     await processBatch(store, transports(), { now: () => NOW });
@@ -159,7 +223,12 @@ describe('processBatch against a mock Expo endpoint', () => {
     const store = new MemStore([mk('r1', 'u1')], {
       u1: [
         device({ id: 'a', token: 'ExponentPushToken[phone]' }),
-        device({ id: 'b', token: 'ExponentPushToken[tablet]', active_thread_id: 't1', active_at: NOW.toISOString() }),
+        device({
+          id: 'b',
+          token: 'ExponentPushToken[tablet]',
+          active_thread_id: 't1',
+          active_at: NOW.toISOString(),
+        }),
       ],
     });
     await processBatch(store, transports(), { now: () => NOW });
@@ -176,7 +245,11 @@ describe('processBatch against a mock Expo endpoint', () => {
   });
 
   it('revokes a dead token and skips; a revoked device never receives anything', async () => {
-    respond = () => ({ status: 'error', message: 'gone', details: { error: 'DeviceNotRegistered' } });
+    respond = () => ({
+      status: 'error',
+      message: 'gone',
+      details: { error: 'DeviceNotRegistered' },
+    });
     const store = new MemStore([mk('r1', 'u1')], { u1: [device({ id: 'dead' })] });
     await processBatch(store, transports(), { now: () => NOW });
     expect(store.revoked).toEqual(['dead']);
@@ -188,7 +261,11 @@ describe('processBatch against a mock Expo endpoint', () => {
   });
 
   it('retries transient failures with backoff, then gives up after the maximum attempts', async () => {
-    respond = () => ({ status: 'error', message: 'boom', details: { error: 'MessageRateExceeded' } });
+    respond = () => ({
+      status: 'error',
+      message: 'boom',
+      details: { error: 'MessageRateExceeded' },
+    });
     const store = new MemStore([mk('r1', 'u1')], { u1: [device()] });
     await processBatch(store, transports(), { now: () => NOW });
     const first = store.rows[0]!;
@@ -212,13 +289,26 @@ describe('processBatch against a mock Expo endpoint', () => {
     tr.configured.expo = false;
     const store = new MemStore([mk('r1', 'u1')], { u1: [device()] });
     await processBatch(store, tr, { now: () => NOW });
-    expect(store.results.get('r1')).toMatchObject({ status: 'skipped', reason: 'channel_not_configured' });
+    expect(store.results.get('r1')).toMatchObject({
+      status: 'skipped',
+      reason: 'channel_not_configured',
+    });
     expect(received).toHaveLength(0);
   });
 
   it('puts only the allowed text on the wire for a sensitive thread', async () => {
     const store = new MemStore(
-      [mk('r1', 'u1', { payload: { kind: 'message', thread_id: 't1', title: 'U12 group', sensitive: true, preview: 'private text' } })],
+      [
+        mk('r1', 'u1', {
+          payload: {
+            kind: 'message',
+            thread_id: 't1',
+            title: 'U12 group',
+            sensitive: true,
+            preview: 'private text',
+          },
+        }),
+      ],
       { u1: [device()] },
     );
     await processBatch(store, transports(), { now: () => NOW });

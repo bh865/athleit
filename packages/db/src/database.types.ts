@@ -78,6 +78,41 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_feed_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          profile_id: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          profile_id: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          profile_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_feed_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_memberships: {
         Row: {
           club_id: string
@@ -154,6 +189,231 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_series: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          id: string
+          interval_weeks: number
+          local_start_time: string
+          occurrence_count: number | null
+          starts_on: string
+          team_id: string
+          timezone: string
+          type: string
+          until_on: string | null
+          weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          duration_minutes: number
+          id?: string
+          interval_weeks?: number
+          local_start_time: string
+          occurrence_count?: number | null
+          starts_on: string
+          team_id: string
+          timezone: string
+          type: string
+          until_on?: string | null
+          weekdays: number[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          id?: string
+          interval_weeks?: number
+          local_start_time?: string
+          occurrence_count?: number | null
+          starts_on?: string
+          team_id?: string
+          timezone?: string
+          type?: string
+          until_on?: string | null
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_series_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_series_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          arrive_early_minutes: number | null
+          cancelled_reason: string | null
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          game_format: Json | null
+          home_away: string | null
+          id: string
+          location_id: string | null
+          location_text: string | null
+          notes: string | null
+          opponent_id: string | null
+          revision: number
+          series_id: string | null
+          starts_at: string
+          status: string
+          team_id: string
+          timezone: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          arrive_early_minutes?: number | null
+          cancelled_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          game_format?: Json | null
+          home_away?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          notes?: string | null
+          opponent_id?: string | null
+          revision?: number
+          series_id?: string | null
+          starts_at: string
+          status?: string
+          team_id: string
+          timezone: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          arrive_early_minutes?: number | null
+          cancelled_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          game_format?: Json | null
+          home_away?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          notes?: string | null
+          opponent_id?: string | null
+          revision?: number
+          series_id?: string | null
+          starts_at?: string
+          status?: string
+          team_id?: string
+          timezone?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "opponents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_results: {
+        Row: {
+          entered_at: string
+          entered_by: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          our_score: number
+          outcome: string | null
+          period_scores: Json | null
+          their_score: number
+          updated_at: string
+        }
+        Insert: {
+          entered_at?: string
+          entered_by?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          our_score: number
+          outcome?: string | null
+          period_scores?: Json | null
+          their_score: number
+          updated_at?: string
+        }
+        Update: {
+          entered_at?: string
+          entered_by?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          our_score?: number
+          outcome?: string | null
+          period_scores?: Json | null
+          their_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_results_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -926,6 +1186,8 @@ export type Database = {
       }
       push_devices: {
         Row: {
+          active_at: string | null
+          active_thread_id: string | null
           created_at: string
           device_label: string | null
           id: string
@@ -937,6 +1199,8 @@ export type Database = {
           token: string
         }
         Insert: {
+          active_at?: string | null
+          active_thread_id?: string | null
           created_at?: string
           device_label?: string | null
           id?: string
@@ -948,6 +1212,8 @@ export type Database = {
           token: string
         }
         Update: {
+          active_at?: string | null
+          active_thread_id?: string | null
           created_at?: string
           device_label?: string | null
           id?: string
@@ -960,10 +1226,82 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "push_devices_active_thread_id_fkey"
+            columns: ["active_thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "push_devices_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rsvps: {
+        Row: {
+          event_id: string
+          id: string
+          note: string | null
+          player_id: string
+          responded_at: string
+          responded_by: string | null
+          set_by_staff: boolean
+          status: string
+          team_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          note?: string | null
+          player_id: string
+          responded_at?: string
+          responded_by?: string | null
+          set_by_staff?: boolean
+          status: string
+          team_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          note?: string | null
+          player_id?: string
+          responded_at?: string
+          responded_by?: string | null
+          set_by_staff?: boolean
+          status?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1321,8 +1659,48 @@ export type Database = {
         Args: { p_profile_id: string; p_role?: string; p_thread_id: string }
         Returns: undefined
       }
+      cancel_event: {
+        Args: { p_event_id: string; p_reason: string; p_scope: string }
+        Returns: number
+      }
+      claim_notifications: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          category: string
+          channel: string
+          id: string
+          payload: Json
+          profile_id: string
+        }[]
+      }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
+      clear_game_result: { Args: { p_event_id: string }; Returns: undefined }
+      create_calendar_feed_token: { Args: never; Returns: string }
       create_club: { Args: { p_name: string; p_slug: string }; Returns: string }
+      create_event: {
+        Args: {
+          p_arrive_early_minutes?: number
+          p_ends_at: string
+          p_game_format?: Json
+          p_home_away?: string
+          p_location_id?: string
+          p_location_text?: string
+          p_notes?: string
+          p_opponent_id?: string
+          p_recurrence?: Json
+          p_starts_at: string
+          p_team_id: string
+          p_timezone: string
+          p_title: string
+          p_type: string
+        }
+        Returns: {
+          event_id: string
+          occurrences: number
+          series_id: string
+        }[]
+      }
       create_household_invite: {
         Args: {
           p_expires_in?: string
@@ -1377,10 +1755,34 @@ export type Database = {
         Args: { p_approve: boolean; p_claim_id: string }
         Returns: undefined
       }
+      delete_event: { Args: { p_event_id: string }; Returns: undefined }
       delete_message: { Args: { p_message_id: string }; Returns: undefined }
       edit_message: {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
+      }
+      event_rsvp_detail: {
+        Args: { p_event_id: string }
+        Returns: {
+          first_name: string
+          jersey_number: number
+          last_name: string
+          note: string
+          player_id: string
+          responded_at: string
+          responded_by_name: string
+          set_by_staff: boolean
+          status: string
+        }[]
+      }
+      event_rsvp_summary: {
+        Args: { p_event_id: string }
+        Returns: {
+          going: number
+          maybe: number
+          no_reply: number
+          not_going: number
+        }[]
       }
       find_club: {
         Args: { p_slug: string }
@@ -1445,6 +1847,19 @@ export type Database = {
           is_minor: boolean
           profile_id: string
           role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
+      get_notification_failures: {
+        Args: { p_team_id: string }
+        Returns: {
+          attempts: number
+          category: string
+          channel: string
+          created_at: string
+          deliver_after: string
+          id: string
+          last_error: string
+          status: string
         }[]
       }
       get_player_login_claims: {
@@ -1516,10 +1931,65 @@ export type Database = {
         Args: { p_message_id: string; p_reason?: string }
         Returns: undefined
       }
+      household_schedule: {
+        Args: { p_limit?: number; p_offset?: number; p_when?: string }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          event_id: string
+          home_away: string
+          location_address: string
+          location_name: string
+          location_text: string
+          opponent_name: string
+          our_score: number
+          outcome: string
+          player_first_name: string
+          player_id: string
+          revision: number
+          rsvp_note: string
+          rsvp_status: string
+          starts_at: string
+          status: string
+          team_id: string
+          team_name: string
+          their_score: number
+          timezone: string
+          title: string
+          type: string
+        }[]
+      }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
       mark_thread_read: {
         Args: { p_message_id: string; p_thread_id: string }
         Returns: undefined
+      }
+      next_up: {
+        Args: { p_limit?: number }
+        Returns: {
+          arrive_early_minutes: number
+          children: Json
+          ends_at: string
+          event_id: string
+          going: number
+          home_away: string
+          is_staff: boolean
+          location_address: string
+          location_name: string
+          location_text: string
+          maybe: number
+          no_reply: number
+          not_going: number
+          opponent_name: string
+          revision: number
+          starts_at: string
+          team_id: string
+          team_name: string
+          timezone: string
+          title: string
+          type: string
+        }[]
       }
       place_player_on_roster: {
         Args: {
@@ -1540,6 +2010,16 @@ export type Database = {
           target_name: string
           valid: boolean
         }[]
+      }
+      record_game_result: {
+        Args: {
+          p_event_id: string
+          p_notes?: string
+          p_our_score: number
+          p_period_scores?: Json
+          p_their_score: number
+        }
+        Returns: string
       }
       register_push_device: {
         Args: {
@@ -1571,15 +2051,21 @@ export type Database = {
         }
         Returns: string
       }
+      resolve_calendar_feed_token: {
+        Args: { p_token: string }
+        Returns: string
+      }
       review_report: {
         Args: { p_report_id: string; p_status: string }
         Returns: undefined
       }
+      revoke_calendar_feed_token: { Args: never; Returns: undefined }
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
       revoke_push_device: {
         Args: { p_device_id?: string; p_token?: string }
         Returns: undefined
       }
+      rotate_calendar_feed_token: { Args: never; Returns: string }
       rotate_team_join_code: { Args: { p_team_id: string }; Returns: string }
       send_message: {
         Args: {
@@ -1590,6 +2076,19 @@ export type Database = {
         }
         Returns: string
       }
+      set_active_thread: {
+        Args: { p_thread_id: string; p_token: string }
+        Returns: undefined
+      }
+      set_rsvp: {
+        Args: {
+          p_event_id: string
+          p_note?: string
+          p_player_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       set_thread_archived: {
         Args: { p_archived: boolean; p_thread_id: string }
         Returns: undefined
@@ -1598,11 +2097,72 @@ export type Database = {
         Args: { p_thread_id: string; p_until: string }
         Returns: undefined
       }
+      staff_set_rsvp: {
+        Args: {
+          p_event_id: string
+          p_note?: string
+          p_player_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      team_record: {
+        Args: { p_team_id: string }
+        Returns: {
+          games: number
+          losses: number
+          season_label: string
+          ties: number
+          wins: number
+        }[]
+      }
+      team_schedule: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_team_id: string
+          p_when?: string
+        }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          game_format: Json
+          going: number
+          home_away: string
+          id: string
+          location_address: string
+          location_id: string
+          location_name: string
+          location_text: string
+          maybe: number
+          no_reply: number
+          not_going: number
+          notes: string
+          opponent_id: string
+          opponent_name: string
+          our_score: number
+          outcome: string
+          revision: number
+          series_id: string
+          starts_at: string
+          status: string
+          team_id: string
+          their_score: number
+          timezone: string
+          title: string
+          type: string
+        }[]
+      }
       toggle_reaction: {
         Args: { p_emoji: string; p_message_id: string }
         Returns: boolean
       }
       unlink_team_from_club: { Args: { p_team_id: string }; Returns: undefined }
+      update_event: {
+        Args: { p_event_id: string; p_patch: Json; p_scope: string }
+        Returns: number
+      }
     }
     Enums: {
       club_role: "admin" | "manager"

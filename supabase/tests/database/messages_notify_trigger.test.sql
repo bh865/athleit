@@ -61,6 +61,7 @@ select is((select count(*)::int from public.notification_outbox where channel='p
 select is((select count(*)::int from public.notification_outbox where channel='email'), 0, 'no email for people who have push devices');
 insert into public.messages (thread_id, sender_profile_id, body) values ('71000000-0000-0000-0000-00000000000b','bb000000-0000-0000-0000-000000000001','second in burst');
 select is((select count(*)::int from public.notification_outbox where channel='push'), 2, 'a burst collapses via dedupe_key');
+select is((select count(*)::int from public.notification_outbox where profile_id='aa000000-0000-0000-0000-000000000002' and channel='in_app'), 2, 'but every message still gets its own in-app row');
 update public.thread_participants set muted_until = now() + interval '1 hour' where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000003';
 delete from public.notification_outbox;
 select pg_sleep(0);

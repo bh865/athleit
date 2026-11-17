@@ -154,4 +154,31 @@ test.describe.serial('messaging', () => {
     await expect(parent.getByTestId('unread-dot').first()).toBeVisible();
     await expect(parent.getByRole('link', { name: /Messages/ })).toContainText(/\d/);
   });
+
+  test('the alerts centre lists notifications and links to the thread', async () => {
+    await parent.goto('/notifications');
+    const row = parent.getByTestId('alert-row').filter({ hasText: 'Game day' }).first();
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('New message from Casey Coach');
+    await expect(row).not.toContainText('One more thing'); // message text never appears in alerts
+    await row.click();
+    await expect(parent).toHaveURL(/\/messages\/[0-9a-f-]{36}$/);
+  });
+
+  test('notification preferences persist; quiet hours save with a timezone', async () => {
+    await parent.goto('/notifications/settings');
+    const messagesEmail = parent.getByLabel('Messages by email');
+    await expect(messagesEmail).toBeChecked();
+    await messagesEmail.uncheck();
+    await parent.getByLabel('From').fill('21:00');
+    await parent.getByLabel('Until').fill('07:00');
+    await parent.getByLabel('Timezone').selectOption('America/New_York');
+    await parent.getByRole('button', { name: 'Save quiet hours' }).click();
+    await expect(parent.getByText('Quiet hours saved')).toBeVisible();
+    await parent.reload();
+    await expect(parent.getByLabel('Messages by email')).not.toBeChecked();
+    await expect(parent.getByLabel('From')).toHaveValue('21:00');
+    await expect(parent.getByLabel('Timezone')).toHaveValue('America/New_York');
+    await expect(parent.getByText('No devices registered for push yet.')).toBeVisible();
+  });
 });

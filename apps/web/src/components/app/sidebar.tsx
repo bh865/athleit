@@ -51,6 +51,7 @@ export function Sidebar() {
           } as NavItem,
         ]
       : []),
+    { href: '/notifications', label: 'Alerts', icon: 'bell' },
     ...(hasFamily ? [{ href: '/family', label: 'Family', icon: 'house-line' } as NavItem] : []),
   ];
   const isActive = (href: string) =>

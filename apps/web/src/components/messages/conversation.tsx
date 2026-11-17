@@ -12,6 +12,7 @@ import {
   hideMessage,
   reportMessage,
   toggleReaction,
+  setActiveThread,
   setThreadMute,
 } from '@athleit/db/api';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ import {
   useToast,
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
+import { currentEndpoint } from '@/lib/web-push';
 
 import { Bubble } from './bubble';
 import { Composer } from './composer';
@@ -73,6 +75,24 @@ export function Conversation({ threadId }: { threadId: string }) {
     const el = scroller.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   }, []);
+
+  // While this conversation is open, tell the delivery worker so this browser is not buzzed for it.
+  useEffect(() => {
+    let stop = false;
+    let token: string | null = null;
+    const beat = async () => {
+      token ??= await currentEndpoint();
+      if (token && !stop && document.visibilityState === 'visible')
+        await setActiveThread(getClient(), token, threadId);
+    };
+    void beat();
+    const timer = setInterval(() => void beat(), 15_000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+      if (token) void setActiveThread(getClient(), token, null);
+    };
+  }, [threadId]);
 
   // Stay pinned to the newest message unless the reader scrolled up.
   const count = t.messages.length;

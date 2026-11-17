@@ -634,3 +634,138 @@ export function subscribeToNotifications(client: Client, userId: string, onChang
 
 export const getMessageablePeople = (client: Client, teamId: string) =>
   run(client.rpc('get_messageable_people', { p_team_id: teamId }), []);
+
+// Notifications (Phase 3, Part C) ----------------------------------------------------------------
+export const getNotificationPreferences = (client: Client, userId: string) =>
+  run(
+    client
+      .from('notification_preferences')
+      .select(
+        'channel, category, enabled, quiet_hours_start, quiet_hours_end, timezone, include_preview',
+      )
+      .eq('profile_id', userId),
+    [],
+  );
+
+/** Update one channel/category row (rows are seeded for every profile). */
+export const saveNotificationPreference = (
+  client: Client,
+  userId: string,
+  channel: 'push' | 'email',
+  category: 'messages' | 'announcements' | 'schedule',
+  patch: {
+    enabled?: boolean;
+    quiet_hours_start?: string | null;
+    quiet_hours_end?: string | null;
+    timezone?: string;
+    include_preview?: boolean;
+  },
+) =>
+  runVoid(
+    client
+      .from('notification_preferences')
+      .update(patch)
+      .eq('profile_id', userId)
+      .eq('channel', channel)
+      .eq('category', category),
+  );
+
+/** Apply quiet hours and timezone to every push and email row at once (the UI sets them globally). */
+export const saveQuietHours = (
+  client: Client,
+  userId: string,
+  q: { start: string | null; end: string | null; timezone: string },
+) =>
+  runVoid(
+    client
+      .from('notification_preferences')
+      .update({ quiet_hours_start: q.start, quiet_hours_end: q.end, timezone: q.timezone })
+      .eq('profile_id', userId),
+  );
+
+export const getMyDevices = (client: Client) =>
+  run(
+    client
+      .from('push_devices')
+      .select('id, platform, device_label, token, last_seen_at, revoked_at')
+      .is('revoked_at', null)
+      .order('last_seen_at', { ascending: false }),
+    [],
+  );
+
+export const registerPushDevice = (
+  client: Client,
+  input: {
+    platform: 'ios' | 'android' | 'web';
+    token: string;
+    subscription?: { p256dh: string; auth: string } | null;
+    label?: string | null;
+  },
+) =>
+  run(
+    client.rpc('register_push_device', {
+      p_platform: input.platform,
+      p_token: input.token,
+      p_subscription: (input.subscription ?? NULL) as never,
+      p_label: input.label ?? NULL,
+    }),
+  );
+
+export const revokePushDevice = (client: Client, input: { deviceId?: string; token?: string }) =>
+  runVoid(
+    client.rpc('revoke_push_device', {
+      p_device_id: input.deviceId ?? NULL,
+      p_token: input.token ?? NULL,
+    }),
+  );
+
+/** Tell the delivery worker which thread this device has open (null = none) so it is not buzzed for it. */
+export const setActiveThread = (client: Client, token: string, threadId: string | null) =>
+  runVoid(client.rpc('set_active_thread', { p_token: token, p_thread_id: threadId as string }));
+
+export const getInAppNotifications = (client: Client, limit = 30) =>
+  run(
+    client
+      .from('notification_outbox')
+      .select('id, category, payload, created_at, read_at')
+      .eq('channel', 'in_app')
+      .order('created_at', { ascending: false })
+      .limit(limit),
+    [],
+  );
+
+export const markNotificationsRead = (client: Client, ids?: string[]) =>
+  run(client.rpc('mark_notifications_read', ids ? { p_ids: ids } : {}), 0);
+
+export const getNotificationFailures = (client: Client, teamId: string) =>
+  run(client.rpc('get_notification_failures', { p_team_id: teamId }), []);
+
+/** New in-app notification rows for this user (drives toasts and the badge). */
+export function subscribeToInApp(
+  client: Client,
+  userId: string,
+  onNew: (n: { id: string; category: string; payload: Record<string, unknown> }) => void,
+) {
+  const ch = client
+    .channel(`inapp:${userId}:${Math.random().toString(36).slice(2, 10)}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notification_outbox',
+        filter: `profile_id=eq.${userId}`,
+      },
+      (p) => {
+        const row = p.new as {
+          id: string;
+          channel: string;
+          category: string;
+          payload: Record<string, unknown>;
+        };
+        if (row.channel === 'in_app') onNew(row);
+      },
+    )
+    .subscribe();
+  return () => void client.removeChannel(ch);
+}
