@@ -1,0 +1,140 @@
+.page {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+}
+
+/* A busy, high-contrast backdrop so blur and tint are obvious. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+.blobLime,
+.blobIce,
+.blobCharcoal {
+  position: absolute;
+  border-radius: var(--radius-full);
+}
+.blobLime {
+  top: 8%;
+  left: -8%;
+  width: 55vw;
+  height: 55vw;
+  background: var(--brand-lime);
+}
+.blobIce {
+  top: 38%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: var(--brand-ice);
+}
+.blobCharcoal {
+  bottom: -12%;
+  left: 20%;
+  width: 45vw;
+  height: 45vw;
+  background: var(--brand-charcoal);
+}
+.backdropText {
+  position: absolute;
+  inset: 0;
+  padding: var(--space-6);
+  font-size: var(--text-4xl-size);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--color-text);
+  opacity: 0.5;
+  word-break: break-all;
+}
+
+.topBar {
+  position: sticky;
+  top: var(--space-3);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-2) var(--space-4);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-16);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.section > h2 {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-size: var(--text-xl-size);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.glassSample {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 72px;
+  padding: var(--space-4) var(--space-5);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-size: var(--text-sm-size);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm-size);
+  font-weight: var(--weight-semibold);
+}
+.success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
