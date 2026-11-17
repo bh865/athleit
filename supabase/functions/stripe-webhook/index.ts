@@ -17,7 +17,11 @@ Deno.serve(async (req) => {
     secrets,
     log,
     store: supabaseStore(serviceClient() as any),
-    stripe: stripeApi(),
+    // Built lazily so a bad signature is rejected (400) even before the Stripe key is configured.
+    stripe: {
+      get: (...a: Parameters<ReturnType<typeof stripeApi>['get']>) => stripeApi().get(...a),
+      post: (...a: Parameters<ReturnType<typeof stripeApi>['post']>) => stripeApi().post(...a),
+    },
   });
   return json(r.body, r.status);
 });

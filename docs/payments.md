@@ -86,3 +86,33 @@ never a linked team's own events.
   open intent whose payment is `canceled`.
 - `payer_checkout_quote` only accepts `unpaid` requests; reuse of an open intent is a lookup by `payments.request_set_key`.
 - Receipt ids come from `private.next_receipt_display_id()` (service role).
+
+## Part B: server logic
+
+Edge Functions (all in `supabase/functions/`, logic in `_shared/payments/`, Zod-validated, per-user rate limited, structured logs with redaction):
+
+| Function                | Caller                  | What it does                                                                                              |
+| ----------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `connect-onboarding`    | issuer admin (JWT)      | Creates the Express account once, returns a single-use Account Link (URLs from config), or syncs status.  |
+| `create-payment-intent` | guardian (JWT)          | Request ids only. Reserves the payment, creates the intent (idempotent), returns the client secret.       |
+| `stripe-webhook`        | Stripe (signature)      | Raw-body signature check, ledger first, idempotent handlers. Platform and Connect endpoints, two secrets. |
+| `refund-payment`        | issuer admin (JWT)      | `prepare_refund` (policy amounts) then Stripe refunds with `reverse_transfer`; webhook finalizes.         |
+| `reconcile-payments`    | pg_cron (shared secret) | Repairs stuck / abandoned / canceled intents, missing fees, accounts, stuck events.                       |
+| `export-payments`       | event staff (JWT)       | CSV of one event (no card data, formula-safe cells).                                                      |
+
+Edge Function secrets: `STRIPE_SECRET_KEY` (test), `STRIPE_WEBHOOK_SECRET` (platform endpoint), `STRIPE_CONNECT_WEBHOOK_SECRET` (Connect endpoint),
+`RECONCILE_SECRET`, `APP_URL`, `APP_SCHEME`, optional `ALLOWED_ORIGINS`. Platform-provided: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+Vault secrets for the cron kick: `reconcile_function_url`, `reconcile_secret` (same value as `RECONCILE_SECRET`). The functions refuse live keys.
+
+Webhook events to subscribe to. Platform endpoint: `payment_intent.succeeded`, `payment_intent.processing`, `payment_intent.payment_failed`,
+`payment_intent.canceled`, `charge.refunded`, `charge.refund.updated`, `charge.dispute.created`, `charge.dispute.closed`. Connect endpoint ("connected
+accounts"): `account.updated`, `account.application.deauthorized`.
+
+Convergence rules (tested in pgTAP): duplicate deliveries are no-ops (ledger + idempotent handlers); late events never move a payment backwards;
+a refund before success applies success first; a success on a payment we had canceled is recorded, its items become refundable again and issuer
+admins are told; a webhook that beats the intent-id attach resolves by our payment id in metadata; Stripe's amount, currency, destination and
+application fee must equal what was reserved or the event is refused (`payment_mismatch`).
+
+Known gaps (documented, not hidden): a **lost dispute** is flagged and audited but the transfer is not reversed automatically (recover it in the
+Stripe Dashboard; refunds are blocked while disputed); `refund_application_fee` semantics need a test-mode check (`scripts/payments-integration.mjs`);
+any staff member can publish an event (decision pending).
