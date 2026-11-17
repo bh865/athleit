@@ -39,6 +39,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1462,6 +1480,7 @@ export type Database = {
       }
       payments: {
         Row: {
+          application_fee_cents: number
           base_cents: number
           connected_account_id: string
           created_at: string
@@ -1485,6 +1504,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          application_fee_cents?: number
           base_cents: number
           connected_account_id: string
           created_at?: string
@@ -1508,6 +1528,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          application_fee_cents?: number
           base_cents?: number
           connected_account_id?: string
           created_at?: string
@@ -1744,36 +1765,45 @@ export type Database = {
       refunds: {
         Row: {
           amount_cents: number
+          athleit_charge_cents: number
+          base_cents: number
           created_at: string
           id: string
           payment_id: string
           payment_item_id: string | null
           reason: string | null
           requested_by: string | null
+          service_fee_cents: number
           status: string
           stripe_refund_id: string | null
           updated_at: string
         }
         Insert: {
           amount_cents: number
+          athleit_charge_cents?: number
+          base_cents?: number
           created_at?: string
           id?: string
           payment_id: string
           payment_item_id?: string | null
           reason?: string | null
           requested_by?: string | null
+          service_fee_cents?: number
           status?: string
           stripe_refund_id?: string | null
           updated_at?: string
         }
         Update: {
           amount_cents?: number
+          athleit_charge_cents?: number
+          base_cents?: number
           created_at?: string
           id?: string
           payment_id?: string
           payment_item_id?: string | null
           reason?: string | null
           requested_by?: string | null
+          service_fee_cents?: number
           status?: string
           stripe_refund_id?: string | null
           updated_at?: string
@@ -2774,6 +2804,24 @@ export type Database = {
         }[]
       }
       payer_checkout_quote: { Args: { p_request_ids: string[] }; Returns: Json }
+      payment_event_export: {
+        Args: { p_event_id: string }
+        Returns: {
+          athleit_charge_cents: number
+          base_cents: number
+          display_id: string
+          due_at: string
+          household_name: string
+          paid_at: string
+          paid_via: string
+          player_name: string
+          receipt_display_id: string
+          refunded_cents: number
+          service_fee_cents: number
+          status: string
+          total_charged_cents: number
+        }[]
+      }
       place_player_on_roster: {
         Args: {
           p_jersey_number?: number
@@ -2783,6 +2831,15 @@ export type Database = {
           p_team_id: string
         }
         Returns: string
+      }
+      prepare_refund: {
+        Args: {
+          p_base_cents?: number
+          p_item_id?: string
+          p_payment_id: string
+          p_reason?: string
+        }
+        Returns: Json
       }
       preview_invite: {
         Args: { p_token: string }
@@ -2898,6 +2955,99 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      svc_attach_payment_intent: {
+        Args: { p_payment_id: string; p_pi: string }
+        Returns: undefined
+      }
+      svc_attach_refund: {
+        Args: {
+          p_refund_id: string
+          p_status?: string
+          p_stripe_refund_id: string
+        }
+        Returns: undefined
+      }
+      svc_cleanup_rate_limits: { Args: never; Returns: number }
+      svc_dispute_event: {
+        Args: {
+          p_charge?: string
+          p_dispute_id: string
+          p_outcome?: string
+          p_payment_id?: string
+          p_phase: string
+          p_pi: string
+        }
+        Returns: string
+      }
+      svc_fail_refund: { Args: { p_refund_id: string }; Returns: undefined }
+      svc_finish_event: {
+        Args: { p_error?: string; p_event_id: string; p_final?: boolean }
+        Returns: undefined
+      }
+      svc_ledger_event: {
+        Args: {
+          p_account: string
+          p_event_id: string
+          p_livemode: boolean
+          p_payload: Json
+          p_type: string
+        }
+        Returns: string
+      }
+      svc_payment_status: {
+        Args: { p_payment_id?: string; p_pi: string; p_status: string }
+        Returns: string
+      }
+      svc_payment_succeeded: {
+        Args: {
+          p_amount?: number
+          p_application_fee?: number
+          p_charge?: string
+          p_currency?: string
+          p_destination?: string
+          p_payment_id?: string
+          p_pi: string
+          p_stripe_fee?: number
+        }
+        Returns: string
+      }
+      svc_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      svc_reconcile_candidates: { Args: { p_stale?: string }; Returns: Json }
+      svc_reconcile_candidates_base: {
+        Args: { p_stale?: string }
+        Returns: Json
+      }
+      svc_refund_event: {
+        Args: {
+          p_charge?: string
+          p_payment_id?: string
+          p_pi: string
+          p_refunds: Json
+        }
+        Returns: string
+      }
+      svc_release_payment: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
+      svc_reserve_payment: {
+        Args: { p_request_ids: string[]; p_uid: string }
+        Returns: Json
+      }
+      svc_set_account_status: {
+        Args: {
+          p_charges_enabled: boolean
+          p_deauthorized?: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+          p_requirements?: Json
+          p_stripe_account_id: string
+        }
+        Returns: string
       }
       team_record: {
         Args: { p_team_id: string }
