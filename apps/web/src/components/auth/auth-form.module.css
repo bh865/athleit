@@ -39,7 +39,7 @@
 .divider::after {
   content: '';
   flex: 1;
-  height: 1px;
+  height: var(--size-card-border);
   background: var(--color-line);
 }
 .switch {

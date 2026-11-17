@@ -70,6 +70,12 @@
   --text-mono-tracking: 0em;
   --text-mono-family: var(--font-mono);
   --text-mono-transform: none;
+  --text-mono-sm-size: 12px;
+  --text-mono-sm-leading: 16px;
+  --text-mono-sm-weight: 500;
+  --text-mono-sm-tracking: 0em;
+  --text-mono-sm-family: var(--font-mono);
+  --text-mono-sm-transform: none;
   --text-mono-lg-size: 28px;
   --text-mono-lg-leading: 34px;
   --text-mono-lg-weight: 500;
@@ -115,6 +121,7 @@
   --size-skeleton-row-height: 64px;
   --size-sheet-grabber-width: 36px;
   --size-sheet-grabber-height: 5px;
+  --size-qr-size: 192px;
   --size-min-target: 44px;
   --size-focus-ring-width: 3px;
 }

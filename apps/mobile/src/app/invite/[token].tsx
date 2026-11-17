@@ -1,6 +1,6 @@
 import { contextPath, friendlyError, ROLE_LABELS } from '@athleit/core';
 import { acceptInvite, previewInvite } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -41,7 +41,7 @@ function Landing({ token }: { token: string }) {
   return (
     <AppScreen>
       <LoadState loading={preview.loading} error={preview.error} onRetry={preview.reload}>
-        <Card style={{ gap: spacing[3] }} testID="invite-landing">
+        <Card style={{ gap: space[3] }} testID="invite-landing">
           {p?.valid ? (
             <>
               <H1>
@@ -83,7 +83,7 @@ export default function InviteScreen() {
     // Remember the invite across sign-in/sign-up; the home screen resumes it.
     return (
       <Screen contentStyle={{ justifyContent: 'center' }}>
-        <Card style={{ gap: spacing[3] }}>
+        <Card style={{ gap: space[3] }}>
           <H1>You’ve been invited</H1>
           <Text muted>Sign in or create an account to see and accept this invite.</Text>
           <Button

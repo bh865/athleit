@@ -6,13 +6,13 @@ import {
   revokeInvite,
   type InviteTarget,
 } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { componentTokens, space } from '@athleit/tokens';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Share, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { Button, Text, TextField } from '@/components/ui';
+import { Button, Text, TextField, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
@@ -46,6 +46,7 @@ export function InvitePanel({
   target: InviteTarget;
   roles: readonly RoleOption[];
 }) {
+  const { theme } = useTheme();
   const list = useLoad(() => listInvites(supabase, target), [JSON.stringify(target)]);
   const [role, setRole] = useState(roles[0]?.value ?? '');
   const [days, setDays] = useState('7');
@@ -87,7 +88,7 @@ export function InvitePanel({
   }
 
   return (
-    <View style={{ gap: spacing[4] }}>
+    <View style={{ gap: space[4] }}>
       {roles.length > 1 && (
         <Choice
           label="Role"
@@ -112,13 +113,24 @@ export function InvitePanel({
       <Button title="Create invite link" loading={busy} onPress={() => void onCreate()} />
 
       {created && (
-        <View style={{ gap: spacing[3] }} testID="new-invite">
+        <View style={{ gap: space[3] }} testID="new-invite">
           <Notice>Share this link. It’s shown once, and anyone who has it can join.</Notice>
-          <Text mono selectable testID="invite-link">
+          <Text variant="mono" selectable testID="invite-link">
             {created.url}
           </Text>
-          <View style={{ alignSelf: 'flex-start', padding: spacing[2], backgroundColor: '#fff' }}>
-            <QRCode value={created.url} size={192} />
+          <View
+            style={{
+              alignSelf: 'flex-start',
+              padding: space[2],
+              backgroundColor: theme.color.qrSurface,
+            }}
+          >
+            <QRCode
+              value={created.url}
+              size={componentTokens.qr.size}
+              color={theme.color.qrInk}
+              backgroundColor={theme.color.qrSurface}
+            />
           </View>
           <Button title="Share…" onPress={() => void Share.share({ message: created.url })} />
           <Button
@@ -139,11 +151,11 @@ export function InvitePanel({
         emptyText="No invites yet."
         onRetry={list.reload}
       >
-        <View style={{ gap: spacing[2] }}>
+        <View style={{ gap: space[2] }}>
           {list.data?.map((inv) => {
             const s = status(inv);
             return (
-              <View key={inv.id} style={{ gap: spacing[1] }}>
+              <View key={inv.id} style={{ gap: space[1] }}>
                 <ListItem
                   title={roles.find((r) => r.value === inv.role)?.label ?? inv.role}
                   subtitle={`${inv.use_count}/${inv.max_uses} used · expires ${new Date(inv.expires_at).toLocaleDateString()}`}

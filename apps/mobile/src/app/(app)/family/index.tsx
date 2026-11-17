@@ -1,6 +1,6 @@
 import { ageOn, can, canHaveOwnLogin, friendlyError } from '@athleit/core';
 import { decidePlayerLoginClaim, getPlayerLoginClaims, listChildren } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -37,7 +37,7 @@ export default function FamilyScreen() {
         them.
       </Notice>
 
-      <View style={{ gap: spacing[3] }}>
+      <View style={{ gap: space[3] }}>
         <H2>Children</H2>
         <LoadState
           loading={children.loading}
@@ -46,7 +46,7 @@ export default function FamilyScreen() {
           emptyText="You haven’t added a child yet. You don’t need to join a team first."
           onRetry={children.reload}
         >
-          <View style={{ gap: spacing[2] }} testID="children-list">
+          <View style={{ gap: space[2] }} testID="children-list">
             {children.data?.map((c) => {
               const teams = c.team_players.filter((tp) => tp.teams);
               return (
@@ -79,15 +79,15 @@ export default function FamilyScreen() {
       </View>
 
       {can(family, 'family.claimReview') && (claims.data?.length ?? 0) > 0 && (
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: space[3] }}>
           <H2>Login requests</H2>
           <FormMessage error={claimError} />
           {claims.data?.map((c) => (
-            <Card key={c.claim_id} style={{ gap: spacing[3] }}>
-              <Text weight="semibold">
+            <Card key={c.claim_id} style={{ gap: space[3] }}>
+              <Text variant="bodyBold">
                 {c.claimant_name} wants to sign in as {c.player_first_name}
               </Text>
-              <Text size="sm" muted>
+              <Text variant="caption" muted>
                 {c.claimant_email}
               </Text>
               <Button title="Approve" onPress={() => void decide(c.claim_id, true)} />
@@ -102,7 +102,7 @@ export default function FamilyScreen() {
       )}
 
       {family && (
-        <Card style={{ gap: spacing[3] }}>
+        <Card style={{ gap: space[3] }}>
           <H2>Invite another guardian</H2>
           <Text muted>
             A guardian can see and manage all of your children. Send the link only to someone you

@@ -7,7 +7,7 @@ import {
   type FieldErrors,
 } from '@athleit/core';
 import { getChild, getPhotoUrl, setChildPhoto, updateChild } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { componentTokens, radius, space } from '@athleit/tokens';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -65,7 +65,7 @@ function ChildForm({ c, onSaved }: { c: Child; onSaved: () => void }) {
   }
 
   return (
-    <Card style={{ gap: spacing[4] }}>
+    <Card style={{ gap: space[4] }}>
       <TextField
         label="First name"
         value={first}
@@ -98,7 +98,7 @@ function ChildForm({ c, onSaved }: { c: Child; onSaved: () => void }) {
       <FormMessage error={error} success={saved ? 'Saved.' : null} />
       <Button title="Save changes" loading={busy} onPress={() => void save()} />
       {link && (
-        <Text size="sm" muted selectable>
+        <Text variant="caption" muted selectable>
           Send {c.first_name} this link to sign in: {link}
         </Text>
       )}
@@ -148,15 +148,19 @@ function PhotoCard({ c, onChanged }: { c: Child; onChanged: () => void }) {
   }
 
   return (
-    <Card style={{ gap: spacing[3] }}>
+    <Card style={{ gap: space[3] }}>
       {photo.data ? (
         <Image
           source={{ uri: photo.data }}
           accessibilityLabel={`${c.first_name}’s photo`}
-          style={{ width: 96, height: 96, borderRadius: 16 }}
+          style={{
+            width: componentTokens.avatar.lg * 2,
+            height: componentTokens.avatar.lg * 2,
+            borderRadius: radius.sm,
+          }}
         />
       ) : null}
-      <Text size="sm" muted>
+      <Text variant="caption" muted>
         Only you and staff of {c.first_name}’s teams can see it.
       </Text>
       <FormMessage error={error} />
@@ -190,7 +194,7 @@ export default function ChildScreen() {
             <ChildForm key={c.id + c.date_of_birth} c={c} onSaved={child.reload} />
             {c.profile_id && <Badge tone="success">Has their own login</Badge>}
 
-            <View style={{ gap: spacing[3] }}>
+            <View style={{ gap: space[3] }}>
               <H2>Teams</H2>
               {c.team_players.length === 0 ? (
                 <Notice>{c.first_name} isn’t on a team yet.</Notice>

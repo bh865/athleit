@@ -1,4 +1,4 @@
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -30,7 +30,7 @@ function TeamBody() {
   const current = tabs.some((t) => t.value === section) ? section : 'roster';
   return (
     <>
-      <View style={{ gap: spacing[1] }}>
+      <View style={{ gap: space[1] }}>
         <H1>{team.name}</H1>
         <Text muted>
           {team.sport.charAt(0).toUpperCase() + team.sport.slice(1)} · {team.season_label}

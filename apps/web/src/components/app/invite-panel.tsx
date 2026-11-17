@@ -29,6 +29,7 @@ function Qr({ text }: { text: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
+    // eslint-disable-next-line no-restricted-syntax -- design-exception: raster resolution of the QR image (2x its display size), not a layout value
     QRCode.toDataURL(text, { margin: 1, width: 384 }).then((url) => live && setSrc(url));
     return () => {
       live = false;

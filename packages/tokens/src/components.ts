@@ -18,6 +18,7 @@ export const componentTokens = {
   emptyState: { iconCircle: 88 },
   skeleton: { rowHeight: 64 },
   sheetGrabber: { width: 36, height: 5 },
+  qr: { size: 192 },
   minTarget: 44,
   focusRingWidth: 3,
 } as const;

@@ -1,7 +1,16 @@
 import { fontWeight, type FontWeightName } from './primitives';
 
 export type TextVariant =
-  'display' | 'title' | 'heading' | 'body' | 'bodyBold' | 'caption' | 'label' | 'mono' | 'monoLg';
+  | 'display'
+  | 'title'
+  | 'heading'
+  | 'body'
+  | 'bodyBold'
+  | 'caption'
+  | 'label'
+  | 'mono'
+  | 'monoSm'
+  | 'monoLg';
 
 export interface TextStyleToken {
   family: 'sans' | 'mono';
@@ -34,6 +43,7 @@ export const textStyles: Record<TextVariant, TextStyleToken> = {
   caption: t('sans', 13, 18, 'semibold'),
   label: t('sans', 12, 16, 'bold', 0.08, true),
   mono: t('mono', 16, 24, 'medium'),
+  monoSm: t('mono', 12, 16, 'medium'),
   monoLg: t('mono', 28, 34, 'medium'),
 };
 

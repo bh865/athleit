@@ -1,6 +1,6 @@
 import { friendlyError } from '@athleit/core';
 import { claimPlayerLogin } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -22,7 +22,7 @@ export default function ClaimScreen() {
   if (!session) {
     return (
       <Screen contentStyle={{ justifyContent: 'center' }}>
-        <Card style={{ gap: spacing[3] }}>
+        <Card style={{ gap: space[3] }}>
           <H1>Sign in to link your player login</H1>
           <Button
             title="Sign in"
@@ -47,7 +47,7 @@ export default function ClaimScreen() {
 
   return (
     <AppScreen>
-      <Card style={{ gap: spacing[3] }} testID="claim-card">
+      <Card style={{ gap: space[3] }} testID="claim-card">
         <H1>Use this account as your player login</H1>
         {outcome === 'approved' && (
           <>

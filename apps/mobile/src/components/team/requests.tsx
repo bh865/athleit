@@ -1,6 +1,6 @@
 import { friendlyError } from '@athleit/core';
 import { decideJoinRequest, getJoinRequests } from '@athleit/db/api';
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -26,7 +26,7 @@ export function RequestsSection() {
   if (!caps.has('joinRequests.decide'))
     return <Notice>Only team staff can see join requests.</Notice>;
   return (
-    <View style={{ gap: spacing[3] }}>
+    <View style={{ gap: space[3] }}>
       <H2>Join requests</H2>
       <Text muted>
         Anyone with your team code can ask to join. They get access only after you approve.
@@ -39,9 +39,9 @@ export function RequestsSection() {
         emptyText="No requests yet. Share your team code or an invite link."
         onRetry={list.reload}
       >
-        <View style={{ gap: spacing[3] }} testID="join-requests">
+        <View style={{ gap: space[3] }} testID="join-requests">
           {list.data?.map((r) => (
-            <Card key={r.id} style={{ gap: spacing[2] }}>
+            <Card key={r.id} style={{ gap: space[2] }}>
               <ListItem
                 title={r.requester_name}
                 subtitle={`${r.player_first_name ? `For ${r.player_first_name} ${r.player_last_name}` : 'Parent or guardian'}${r.message ? ` · “${r.message}”` : ''}`}

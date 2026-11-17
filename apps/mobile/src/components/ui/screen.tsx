@@ -1,11 +1,11 @@
-import { spacing } from '@athleit/tokens';
+import { space } from '@athleit/tokens';
 import type { ReactNode } from 'react';
 import { ScrollView, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useTheme } from './theme';
+import { Backdrop } from './backdrop';
 
-/** Themed, safe-area-aware, scrollable screen container. */
+/** Backdrop-painted, safe-area-aware, scrollable screen container. */
 export function Screen({
   children,
   contentStyle,
@@ -13,18 +13,16 @@ export function Screen({
   children: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
-  const { theme } = useTheme();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.color.bg }}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          { padding: spacing[4], gap: spacing[6], flexGrow: 1 },
-          contentStyle,
-        ]}
-      >
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+    <Backdrop>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[{ padding: space[4], gap: space[6], flexGrow: 1 }, contentStyle]}
+        >
+          {children}
+        </ScrollView>
+      </SafeAreaView>
+    </Backdrop>
   );
 }

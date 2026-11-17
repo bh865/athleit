@@ -122,8 +122,8 @@ a.item:hover {
 /* The QR must stay dark-on-white to scan, in both themes. */
 .qr {
   display: block;
-  width: calc(var(--size-sidebar-width) * 0.8);
-  height: calc(var(--size-sidebar-width) * 0.8);
+  width: var(--size-qr-size);
+  height: var(--size-qr-size);
   padding: var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--color-qr-surface);
@@ -171,7 +171,9 @@ a.item:hover {
 }
 .visuallyHidden {
   position: absolute;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- design-exception: 1px is the visually-hidden pattern, not a design value */
   width: 1px;
+  /* stylelint-disable-next-line declaration-property-unit-disallowed-list -- design-exception: see above */
   height: 1px;
   opacity: 0;
 }

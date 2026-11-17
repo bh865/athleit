@@ -22,6 +22,7 @@ export const iconNames = [
   'warning-circle',
   'warning-octagon',
   'wifi-slash',
+  'caret-left',
   'caret-right',
   'caret-up-down',
   'plus',
