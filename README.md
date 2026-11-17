@@ -127,6 +127,12 @@ Until then the buttons show Supabase's "provider is not enabled" error. Email/pa
 - **Unit (Vitest):** `pnpm test`. Includes the WCAG AA contrast assertions for every token pair.
 - **Database (pgTAP):** `pnpm db:test`. See [supabase/README.md](supabase/README.md) for how to write an RLS test for a new table.
 
+## Branching and CI
+
+- All work happens on short-lived working branches cut from **`dev`** (e.g. `feat/teams-roster`) and is merged back into `dev`.
+- **CI runs only when a branch is merged into `dev`** (a push to `dev`). Feature-branch pushes, pull requests and `main` do not trigger it, so run `pnpm lint && pnpm typecheck && pnpm test` locally before merging.
+- `main` is the release branch: it only receives merges from `dev` once CI there is green.
+
 ## Conventions
 
 1. **Membership-based permissions (Phase 1).** Access is granted through membership rows (a user's role in a club/team), never through ad-hoc per-table owner columns or client-side checks. Phase 1 introduces the membership tables and a single set of helper functions that every RLS policy calls. Until then `profiles` is own-row only.
