@@ -1,5 +1,6 @@
 import type { ButtonVariant } from '@athleit/ui-core';
-import type { ComponentProps } from 'react';
+import Link from 'next/link';
+import type { ComponentProps, ComponentPropsWithoutRef } from 'react';
 
 import styles from './button.module.css';
 import { Glass, type GlassProps } from './glass';
@@ -79,5 +80,27 @@ export function IconButton({
     >
       <Icon name={icon} />
     </Glass>
+  );
+}
+
+export interface ButtonLinkProps extends ComponentPropsWithoutRef<typeof Link> {
+  variant?: ButtonVariant;
+  size?: 'md' | 'lg';
+}
+
+/** A link that looks like a Button (use for navigation actions such as "New message"). */
+export function ButtonLink({
+  variant = 'primary',
+  size = 'md',
+  className,
+  ...rest
+}: ButtonLinkProps) {
+  return (
+    <Link
+      {...rest}
+      className={[styles.button, styles[variant], size === 'lg' ? styles.lg : '', className ?? '']
+        .filter(Boolean)
+        .join(' ')}
+    />
   );
 }

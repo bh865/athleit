@@ -64,6 +64,7 @@ export const iconNames = [
   'repeat',
   'question',
   'caret-down',
+  'list',
   'receipt',
   'bank',
   'download-simple',
@@ -76,6 +77,12 @@ export const iconNames = [
   'minus-circle',
   'circle-dashed',
   'hand-coins',
+  'clipboard-text',
+  'folder-open',
+  'upload-simple',
+  'file-text',
+  'eye',
+  'list-checks',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 
@@ -109,3 +116,5 @@ export function avatarSlot(seed: string): 1 | 2 | 3 {
 }
 
 export type AvatarSize = 'sm' | 'md' | 'lg';
+export * from './blobs';
+export * from './dates';

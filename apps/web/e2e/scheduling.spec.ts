@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { cleanup, newSession, signUp } from './helpers';
+import { cleanup, newSession, pickDate, pickTime, signUp } from './helpers';
 
 /**
  * Phase 2: scheduling, RSVP and results across three sessions (a coach and two parents).
@@ -28,7 +28,7 @@ async function addChildAndRequest(page: Page, first: string, last: string, code:
   await page.getByRole('button', { name: 'Add my child' }).click();
   await page.getByLabel('First name').fill(first);
   await page.getByLabel('Last name').fill(last);
-  await page.getByLabel('Date of birth').fill('2016-04-02');
+  await pickDate(page, 'Date of birth', '2016-04-02');
   await page.getByRole('button', { name: 'Add child' }).click();
   await expect(page.getByTestId('children-list')).toContainText(`${first} ${last}`);
   await page.goto('/join?player=');
@@ -75,7 +75,7 @@ test.describe.serial('scheduling', () => {
     for (const name of ['Pat Parent', 'Bo Parent']) {
       await queue.locator('li', { hasText: name }).getByRole('button', { name: 'Approve' }).click();
     }
-    await coach.goto(teamUrl);
+    await coach.goto('/roster');
     for (const [child, jersey] of [
       ['Ava Adams', '7'],
       ['Ben Brown', '10'],
@@ -96,9 +96,9 @@ test.describe.serial('scheduling', () => {
     await coach.getByTestId('new-event').click();
     await coach.getByRole('radio', { name: 'Game' }).click();
     await coach.getByLabel('Title').fill('Game vs. Hawks');
-    await coach.getByLabel('Date').fill(todayKey());
-    await coach.getByLabel('Starts').fill('23:00');
-    await coach.getByLabel('Ends').fill('23:45');
+    await pickDate(coach, 'Date', todayKey());
+    await pickTime(coach, 'Starts', '23:00');
+    await pickTime(coach, 'Ends', '23:45');
     await coach.getByLabel('Location').selectOption({ label: 'Add a new place…' });
     await coach.getByLabel('Place name or address').fill('Field 3, Riverside Park');
     await coach.getByRole('button', { name: 'Save for next time' }).click();
@@ -114,9 +114,9 @@ test.describe.serial('scheduling', () => {
     // Weekly practice on today's weekday, three times: one notification-worthy batch.
     await coach.getByTestId('new-event').click();
     await coach.getByLabel('Title').fill('Practice');
-    await coach.getByLabel('Date').fill(todayKey());
-    await coach.getByLabel('Starts').fill('22:00');
-    await coach.getByLabel('Ends').fill('22:50');
+    await pickDate(coach, 'Date', todayKey());
+    await pickTime(coach, 'Starts', '22:00');
+    await pickTime(coach, 'Ends', '22:50');
     await coach.getByRole('radio', { name: 'Weekly' }).click();
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     await coach
@@ -208,9 +208,9 @@ test.describe.serial('scheduling', () => {
     await coach.getByTestId('new-event').click();
     await coach.getByRole('radio', { name: 'Game' }).click();
     await coach.getByLabel('Title').fill('Early game');
-    await coach.getByLabel('Date').fill(todayKey());
-    await coach.getByLabel('Starts').fill('00:00');
-    await coach.getByLabel('Ends').fill('00:30');
+    await pickDate(coach, 'Date', todayKey());
+    await pickTime(coach, 'Starts', '00:00');
+    await pickTime(coach, 'Ends', '00:30');
     await coach.getByTestId('save-event').click();
     await openRow(coach, 'Early game');
     await coach.getByTestId('enter-result').click();

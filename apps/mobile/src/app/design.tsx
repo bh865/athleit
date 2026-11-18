@@ -9,8 +9,10 @@ import {
   Backdrop,
   Badge,
   Button,
+  CalendarSheetBody,
   Card,
   Chip,
+  DatePicker,
   EmptyState,
   ErrorState,
   Glass,
@@ -28,6 +30,7 @@ import {
   Text,
   TextField,
   ThemeScope,
+  TimePicker,
   useTheme,
   useToast,
 } from '@/components/ui';
@@ -43,6 +46,8 @@ const TYPES: [TextVariant, string][] = [
   ['monoLg', 'Mono 28/500'],
   ['monoXl', 'Mono 56/500'],
 ];
+
+const noop = () => undefined;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -111,6 +116,29 @@ function Panel({ name }: { name: string }) {
               defaultValue="not-an-email"
               error="Enter a valid email address"
             />
+          </Section>
+          <Section title="Pickers">
+            <DatePicker label="Date of birth" value="" onChange={noop} />
+            <DatePicker label="Starts on" value="2026-11-30" onChange={noop} />
+            <DatePicker
+              label="Due date"
+              value=""
+              onChange={noop}
+              error="Choose a due date."
+              required
+            />
+            <DatePicker label="Locked" value="2026-11-30" onChange={noop} disabled />
+            <TimePicker label="Start time" value="15:05" onChange={noop} />
+            <Glass level="modal" style={{ padding: space[4] }}>
+              <CalendarSheetBody
+                value="2026-11-30"
+                limits={{ min: '2026-11-05', max: '2027-02-20', disabledDates: ['2026-11-18'] }}
+                weekStart={0}
+                yearSpan={{ before: 1, after: 2 }}
+                onPick={noop}
+                onCancel={noop}
+              />
+            </Glass>
           </Section>
           <Section title="Chips, badges, status">
             <View

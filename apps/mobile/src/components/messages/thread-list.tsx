@@ -1,4 +1,4 @@
-import { listTimeLabel, memberCountLabel, previewOf } from '@athleit/core';
+import { listTimeLabel, memberCountLabel, previewOf, teamForScreen } from '@athleit/core';
 import { getThreadList, subscribeToNotifications } from '@athleit/db/api';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import type { IconName } from '@athleit/ui-core';
@@ -28,11 +28,11 @@ const ICON: Record<string, IconName> = {
 
 /** 52px circular type icons, bold title, one-line preview, time top-right, unread dot. */
 export function ThreadList() {
-  const { active, userId } = useApp();
+  const { active, contexts, userId } = useApp();
   const router = useRouter();
   const { theme } = useTheme();
   const c = theme.color;
-  const teamId = active?.kind === 'team' ? active.id : null;
+  const teamId = teamForScreen(contexts, active)?.id ?? null;
   const list = useLoad(
     () => (teamId ? getThreadList(supabase, teamId) : Promise.resolve({ data: [], error: null })),
     [teamId],

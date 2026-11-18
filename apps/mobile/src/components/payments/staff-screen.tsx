@@ -30,7 +30,7 @@ import {
   type PaymentEventRow,
 } from '@athleit/db/payments';
 import { radius, space } from '@athleit/tokens';
-import type { IconName } from '@athleit/ui-core';
+import { todayIso, type IconName } from '@athleit/ui-core';
 import { useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
@@ -39,6 +39,7 @@ import {
   Avatar,
   Button,
   Card,
+  DatePicker,
   Icon,
   IconButton,
   SegmentedControl,
@@ -126,7 +127,7 @@ function NewRequest({
       return setError(
         cents === null || cents < MIN_CHARGE_CENTS
           ? `Enter an amount of at least ${formatCents(MIN_CHARGE_CENTS)}.`
-          : 'Add a title and a due date (YYYY-MM-DD).',
+          : 'Add a title and a due date.',
       );
     setBusy(true);
     const made = await createPaymentEvent(supabase, {
@@ -173,13 +174,12 @@ function NewRequest({
         onChangeText={setAmount}
         placeholder="45.00"
       />
-      <TextField
+      <DatePicker
         label="Due date"
-        mono
         value={due}
-        onChangeText={setDue}
-        placeholder="2026-11-30"
-        autoCapitalize="none"
+        onChange={setDue}
+        min={todayIso()}
+        yearSpan={{ before: 0, after: 3 }}
       />
       <SegmentedControl
         label="Who pays the card fee"

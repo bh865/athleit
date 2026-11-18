@@ -13,7 +13,6 @@ export default function TeamPaymentsPage() {
         owner={{ teamId: team.id }}
         canSend={caps.has('payments.manage')}
         isAdmin={caps.has('payments.refund')}
-        placeName={team.name}
       />
     </Suspense>
   );

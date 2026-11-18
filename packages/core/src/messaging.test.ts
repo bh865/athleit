@@ -147,3 +147,12 @@ describe('friendlyError (messaging)', () => {
     expect(friendlyError({ message: 'rate_limited' })).toMatch(/too quickly/);
   });
 });
+
+describe('registration errors', () => {
+  it('says what to do instead of a generic check message', () => {
+    const e = (message: string) => friendlyError({ message, code: '23514' });
+    expect(e('window_required')).toMatch(/opens and closes/);
+    expect(e('required_waivers_missing')).toMatch(/waivers/);
+    expect(e('payments_not_ready')).toMatch(/payout/);
+  });
+});

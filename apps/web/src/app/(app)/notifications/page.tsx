@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
-import { Button, EmptyState, ErrorState, Icon, LoadingSkeleton, Text } from '@/components/ui';
+import { Button, EmptyState, ErrorState, Icon, LoadingSkeleton, PageHeader } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -27,33 +27,43 @@ export default function NotificationsPage() {
     return subscribeToInApp(getClient(), userId, reload);
   }, [userId, reload]);
 
-  if (list.loading) return <LoadingSkeleton />;
-  if (list.error) return <ErrorState message="Can’t load alerts" onRetry={reload} />;
+  if (list.loading || list.error)
+    return (
+      <>
+        <PageHeader title="Alerts" />
+        {list.error ? (
+          <ErrorState message="Can’t load alerts" onRetry={reload} />
+        ) : (
+          <LoadingSkeleton />
+        )}
+      </>
+    );
   const rows = list.data ?? [];
   const unread = rows.filter((r) => r.read_at === null).length;
   return (
     <div className={styles.page}>
-      <div className={styles.head}>
-        <Text variant="title" as="h1">
-          Alerts
-        </Text>
-        <div className={styles.actions}>
-          {unread > 0 ? (
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                await markNotificationsRead(getClient());
-                reload();
-              }}
-            >
-              Mark all read
-            </Button>
-          ) : null}
-          <Link href="/notifications/settings" className={styles.gear}>
-            Settings
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Alerts"
+        subtitle={unread > 0 ? `${unread} unread` : 'You’re up to date'}
+        actions={
+          <>
+            {unread > 0 ? (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  await markNotificationsRead(getClient());
+                  reload();
+                }}
+              >
+                Mark all read
+              </Button>
+            ) : null}
+            <Link href="/notifications/settings" className={styles.gear}>
+              Settings
+            </Link>
+          </>
+        }
+      />
       {rows.length === 0 ? (
         <EmptyState
           icon="bell"

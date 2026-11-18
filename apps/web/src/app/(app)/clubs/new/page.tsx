@@ -9,7 +9,7 @@ import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
 import { formText, slugify } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
-import { Button, Card, TextField } from '@/components/ui';
+import { Button, Card, PageHeader, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 export default function NewClubPage() {
@@ -35,43 +35,45 @@ export default function NewClubPage() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`club:${res.data}:admin`);
+    setActive(`club:${res.data}`);
     router.push(`/clubs/${res.data}`);
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} noValidate className={styles.stack}>
-        <h1 className={styles.title}>Create a club</h1>
-        <p className={styles.muted}>
-          A club groups teams. Teams ask to join it and you approve each one.
-        </p>
-        <TextField
-          name="name"
-          label="Club name"
-          error={errors.name}
-          onChange={(e) => {
-            if (!slugTouched) setSlug(slugify(e.target.value));
-          }}
-        />
-        <TextField
-          name="slug"
-          label="Web address"
-          hint="Teams use this to find your club. Lowercase letters, numbers and hyphens."
-          value={slug}
-          onChange={(e) => {
-            setSlugTouched(true);
-            setSlug(e.target.value);
-          }}
-          autoCapitalize="none"
-          mono
-          error={errors.slug}
-        />
-        <FormMessage error={error} />
-        <Button type="submit" loading={busy}>
-          Create club
-        </Button>
-      </form>
-    </Card>
+    <>
+      <PageHeader
+        title="Create a club"
+        subtitle="A club groups teams. Teams ask to join it and you approve each one."
+      />
+      <Card>
+        <form onSubmit={onSubmit} noValidate className={styles.stack}>
+          <TextField
+            name="name"
+            label="Club name"
+            error={errors.name}
+            onChange={(e) => {
+              if (!slugTouched) setSlug(slugify(e.target.value));
+            }}
+          />
+          <TextField
+            name="slug"
+            label="Web address"
+            hint="Teams use this to find your club. Lowercase letters, numbers and hyphens."
+            value={slug}
+            onChange={(e) => {
+              setSlugTouched(true);
+              setSlug(e.target.value);
+            }}
+            autoCapitalize="none"
+            mono
+            error={errors.slug}
+          />
+          <FormMessage error={error} />
+          <Button type="submit" loading={busy}>
+            Create club
+          </Button>
+        </form>
+      </Card>
+    </>
   );
 }

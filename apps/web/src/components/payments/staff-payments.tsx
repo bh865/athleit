@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { LoadState } from '@/components/app/states';
-import { Button, Icon, SegmentedControl, Sheet, Text } from '@/components/ui';
+import { Button, Icon, Sheet, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -18,26 +18,19 @@ import {
 } from './connect-card';
 import { NewRequestForm } from './new-request-form';
 import styles from './payments.module.css';
-import { PayView } from './pay-view';
 import { RequestDetail } from './request-detail';
 import { RequestList, StatTiles, type Summaries } from './request-list';
 
-/**
- * Staff Pay: header with payout status and "New request", stat tiles, the request list, and a detail view per
- * request. "My payments" switches to the parent view for people who are both staff and guardians.
- */
+/** Staff Pay body (the /pay page owns the title and the My payments toggle): payout status, "New request", stat tiles, request list, detail. */
 export function StaffPayments({
   owner,
   canSend,
   isAdmin,
-  placeName,
 }: {
   owner: Owner;
   canSend: boolean;
   isAdmin: boolean;
-  placeName?: string;
 }) {
-  const [mode, setMode] = useState<'team' | 'mine'>('team');
   const [ready, setReady] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [selected, setSelected] = useState<string | null>(useSearchParams().get('event'));
@@ -72,81 +65,55 @@ export function StaffPayments({
 
   return (
     <div className={styles.page}>
-      {current && mode === 'team' ? null : (
-        <div className={styles.header}>
-          <div>
-            <Text variant="title" as="h2">
-              Pay
-            </Text>
-            <Text muted as="p">
-              Collection{placeName ? ` for ${placeName}` : ''}
-            </Text>
-          </div>
-          <div className={styles.headerActions}>
-            {payout.key === 'ready' ? <PayoutBadge onOpen={() => setSettings(true)} /> : null}
-            <SegmentedControl
-              label="Pay view"
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'mine', label: 'My payments' },
-                { value: 'team', label: 'Team collection' },
-              ]}
-            />
-            {mode === 'team' ? newRequest : null}
-          </div>
+      {current ? null : (
+        <div className={styles.headerActions} style={{ justifyContent: 'flex-end' }}>
+          {payout.key === 'ready' ? <PayoutBadge onOpen={() => setSettings(true)} /> : null}
+          {newRequest}
         </div>
       )}
-
-      {mode === 'mine' ? (
-        <PayView embedded />
+      {notSetUp ? <PayoutSetupTile payout={payout} /> : null}
+      {!notSetUp && payout.key !== 'ready' && !payout.status.loading ? (
+        <PayoutNotice payout={payout} />
+      ) : null}
+      {current ? (
+        <RequestDetail
+          event={current}
+          isAdmin={isAdmin}
+          canSend={canSend}
+          onBack={() => setSelected(null)}
+          onChanged={() => {
+            events.reload();
+            sums.reload();
+          }}
+        />
       ) : (
-        <>
-          {notSetUp ? <PayoutSetupTile payout={payout} /> : null}
-          {!notSetUp && payout.key !== 'ready' && !payout.status.loading ? (
-            <PayoutNotice payout={payout} />
-          ) : null}
-          {current ? (
-            <RequestDetail
-              event={current}
-              isAdmin={isAdmin}
-              canSend={canSend}
-              onBack={() => setSelected(null)}
-              onChanged={() => {
-                events.reload();
-                sums.reload();
-              }}
-            />
+        <LoadState
+          loading={events.loading && !events.data}
+          error={events.error}
+          onRetry={events.reload}
+        >
+          {list.length === 0 ? (
+            <div className={styles.panel}>
+              <div className={styles.centerTile} data-testid="collection">
+                <span className={styles.success} aria-hidden>
+                  <Icon name="receipt" size="lg" />
+                </span>
+                <Text variant="heading" as="h2">
+                  No payment requests yet
+                </Text>
+                <Text muted as="p">
+                  Create one to collect fees, dues or tournament costs from your roster.
+                </Text>
+                {newRequest}
+              </div>
+            </div>
           ) : (
-            <LoadState
-              loading={events.loading && !events.data}
-              error={events.error}
-              onRetry={events.reload}
-            >
-              {list.length === 0 ? (
-                <div className={styles.panel}>
-                  <div className={styles.centerTile} data-testid="collection">
-                    <span className={styles.success} aria-hidden>
-                      <Icon name="receipt" size="lg" />
-                    </span>
-                    <Text variant="heading" as="h2">
-                      No payment requests yet
-                    </Text>
-                    <Text muted as="p">
-                      Create one to collect fees, dues or tournament costs from your roster.
-                    </Text>
-                    {newRequest}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <StatTiles events={list} sums={sums.data ?? {}} />
-                  <RequestList events={list} sums={sums.data ?? {}} onOpen={setSelected} />
-                </>
-              )}
-            </LoadState>
+            <>
+              <StatTiles events={list} sums={sums.data ?? {}} />
+              <RequestList events={list} sums={sums.data ?? {}} onOpen={setSelected} />
+            </>
           )}
-        </>
+        </LoadState>
       )}
 
       <Sheet open={drawer} onClose={() => setDrawer(false)} title="New payment request">

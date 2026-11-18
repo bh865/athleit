@@ -1,6 +1,6 @@
 'use client';
 
-import { createThreadSchema, friendlyError, type ThreadType } from '@athleit/core';
+import { createThreadSchema, friendlyError, type ThreadType, teamForScreen } from '@athleit/core';
 import { createThread, getMessageablePeople } from '@athleit/db/api';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -16,10 +16,11 @@ import { useLoad } from '@/lib/use-load';
  * language before sending and shows the database's answer if it still says no.
  */
 export function NewMessage() {
-  const { active } = useApp();
+  const { active, contexts } = useApp();
   const router = useRouter();
-  const teamId = active?.kind === 'team' ? active.id : null;
-  const isStaff = active?.kind === 'team' && ['admin', 'coach', 'manager'].includes(active.role);
+  const place = teamForScreen(contexts, active);
+  const teamId = place?.id ?? null;
+  const isStaff = place?.isStaff ?? false;
   const people = useLoad(
     () =>
       teamId
@@ -87,7 +88,7 @@ export function NewMessage() {
 
   return (
     <Card>
-      <Text variant="heading" as="h1">
+      <Text variant="heading" as="h2">
         New message
       </Text>
       {options.length > 1 ? (

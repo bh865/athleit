@@ -19,7 +19,18 @@ import {
 } from '@athleit/db/payments';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Icon, Select, SegmentedControl, Text, TextField, useToast } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import {
+  Button,
+  DatePicker,
+  Icon,
+  Select,
+  SegmentedControl,
+  Text,
+  TextField,
+  useToast,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { Amount } from './money';
@@ -164,11 +175,12 @@ export function NewRequestForm({
           onChange={(e) => setAmount(e.target.value)}
           placeholder="45.00"
         />
-        <TextField
+        <DatePicker
           label="Due date"
-          type="date"
           value={due}
-          onChange={(e) => setDue(e.target.value)}
+          onChange={setDue}
+          min={todayIso()}
+          yearSpan={{ before: 0, after: 3 }}
         />
         <Select
           label="For"

@@ -25,12 +25,16 @@ for (const theme of ['light', 'dark'] as const) {
         'Chips, badges, status',
         'List rows and card',
         'States',
+        'Pickers',
         'Schedule · rows and month',
         'Schedule · event detail',
         'Schedule · flows',
         'Payments · pay and receipt',
         'Payments · staff',
         'Payments · states',
+        'Registration · public page',
+        'Registration · staff',
+        'Registration · waivers and documents',
         'Sidebar · sheet · toast',
       ]) {
         await expect(panel.getByRole('region', { name })).toHaveScreenshot(

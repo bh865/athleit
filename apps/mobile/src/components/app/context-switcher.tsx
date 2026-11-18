@@ -1,4 +1,4 @@
-import { contextPath, type AddRoleAction } from '@athleit/core';
+import { contextPath, switcherPlaces, type AddRoleAction } from '@athleit/core';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -9,20 +9,25 @@ import { initialsOf } from '@athleit/ui-core';
 import { Glass, Icon, Sheet, Text, useTheme } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 
-const ADD: Record<AddRoleAction, { label: string; href: string }> = {
+export const ADD: Record<AddRoleAction, { label: string; href: string }> = {
   'add-family': { label: 'Add a family', href: '/family/children/new' },
   'create-team': { label: 'Create a team', href: '/teams/new' },
   'create-club': { label: 'Create a club', href: '/clubs/new' },
   'join-team': { label: 'Join a team', href: '/join' },
 };
 
-/** Switch between roles and places ("Parent, family", "Coach, U10 Hawks", "Admin, Riverside"). */
+/**
+ * Switch between PLACES (teams and clubs); roles are a label ("Admin · Parent"). One place = a static
+ * pill with no sheet. "Add a team / club / family" also lives in More for single-place users.
+ */
 export function ContextSwitcher() {
   const { contexts, active, setActive, addActions } = useApp();
   const { theme } = useTheme();
   const c = theme.color;
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const places = switcherPlaces(contexts);
+  const single = places.length <= 1;
 
   const go = (href: string) => {
     setOpen(false);
@@ -33,8 +38,13 @@ export function ContextSwitcher() {
     <>
       <Pressable
         testID="context-switcher"
-        accessibilityRole="button"
-        accessibilityLabel={`Switch role. Current: ${active ? `${active.title}, ${active.subtitle}` : 'none'}`}
+        accessibilityRole={single ? 'text' : 'button'}
+        accessibilityLabel={
+          single
+            ? `${active ? `${active.title}, ${active.subtitle}` : 'Get started'}`
+            : `Switch team. Current: ${active ? `${active.title}, ${active.subtitle}` : 'none'}`
+        }
+        disabled={single}
         onPress={() => setOpen(true)}
         style={{ flexShrink: 1 }}
       >
@@ -71,19 +81,19 @@ export function ContextSwitcher() {
               {active?.title ?? 'Get started'}
             </Text>
             <Text variant="caption" muted numberOfLines={1}>
-              {active?.subtitle ?? 'Choose a role'}
+              {active?.subtitle ?? 'Add a team or family in More'}
             </Text>
           </View>
-          <Icon name="caret-down" size="sm" />
+          {single ? null : <Icon name="caret-down" size="sm" />}
         </Glass>
       </Pressable>
 
-      <Sheet open={open} onClose={() => setOpen(false)} title="Switch role">
+      <Sheet open={open} onClose={() => setOpen(false)} title="Switch team">
         <ScrollView
           style={{ maxHeight: componentTokens.sidebar.width * 2 }}
           contentContainerStyle={{ gap: space[1] }}
         >
-          {contexts.map((ctx) => (
+          {places.map((ctx) => (
             <Pressable
               key={ctx.key}
               accessibilityRole="menuitem"
@@ -114,7 +124,7 @@ export function ContextSwitcher() {
             muted
             style={{ marginTop: space[3], paddingHorizontal: space[3] }}
           >
-            ADD A ROLE
+            ADD
           </Text>
           {addActions.map((a) => (
             <Pressable

@@ -35,7 +35,14 @@ export type Capability =
   | 'payments.manage'
   | 'payments.refund'
   | 'payments.setup'
-  | 'payments.pay';
+  | 'payments.pay'
+  | 'registration.view'
+  | 'registration.manage'
+  | 'registration.place'
+  | 'registration.sensitive'
+  | 'registration.register'
+  | 'documents.view'
+  | 'documents.manage';
 
 const STAFF: Capability[] = [
   'team.view',
@@ -54,6 +61,21 @@ const STAFF: Capability[] = [
   'payments.manage',
 ];
 
+/**
+ * Phase 5. `registration.sensitive` (medical answers) is held by team admins by default; the database also lets an
+ * admin grant it to a named coach/manager (registration_capability_grants), which this static map cannot know.
+ */
+const REGISTRATION_STAFF: Capability[] = [
+  'registration.view',
+  'registration.place',
+  'documents.view',
+];
+const REGISTRATION_MANAGER: Capability[] = [
+  ...REGISTRATION_STAFF,
+  'registration.manage',
+  'documents.manage',
+];
+
 const BY_ROLE: Record<string, Capability[]> = {
   'team:admin': [
     ...STAFF,
@@ -66,11 +88,26 @@ const BY_ROLE: Record<string, Capability[]> = {
     'invites.view',
     'payments.refund',
     'payments.setup',
+    ...REGISTRATION_MANAGER,
+    'registration.sensitive',
   ],
-  'team:coach': STAFF,
-  'team:manager': STAFF,
-  'team:parent': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
-  'team:player': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn'],
+  'team:coach': [...STAFF, ...REGISTRATION_STAFF],
+  'team:manager': [...STAFF, ...REGISTRATION_MANAGER],
+  'team:parent': [
+    'team.view',
+    'roster.viewLimited',
+    'schedule.view',
+    'schedule.rsvpOwn',
+    'registration.register',
+    'documents.view',
+  ],
+  'team:player': [
+    'team.view',
+    'roster.viewLimited',
+    'schedule.view',
+    'schedule.rsvpOwn',
+    'documents.view',
+  ],
   'club:admin': [
     'club.view',
     'club.decideLink',
@@ -81,8 +118,10 @@ const BY_ROLE: Record<string, Capability[]> = {
     'payments.manage',
     'payments.refund',
     'payments.setup',
+    ...REGISTRATION_MANAGER,
+    'registration.sensitive',
   ],
-  'club:manager': ['club.view'],
+  'club:manager': ['club.view', 'documents.view'],
   'family:guardian': [
     'family.manage',
     'family.claimReview',
@@ -90,15 +129,21 @@ const BY_ROLE: Record<string, Capability[]> = {
     'schedule.view',
     'schedule.rsvpOwn',
     'payments.pay',
+    'registration.register',
   ],
 };
 
-export function capabilitiesFor(ctx: Pick<AppContext, 'kind' | 'role'>): ReadonlySet<Capability> {
-  return new Set(BY_ROLE[`${ctx.kind}:${ctx.role}`] ?? []);
+export function capabilitiesFor(
+  ctx: Pick<AppContext, 'kind' | 'role'> & { roles?: readonly AppContext['role'][] },
+): ReadonlySet<Capability> {
+  const out = new Set<Capability>();
+  for (const r of ctx.roles ?? [ctx.role])
+    for (const c of BY_ROLE[`${ctx.kind}:${r}`] ?? []) out.add(c);
+  return out;
 }
 
 export function can(
-  ctx: Pick<AppContext, 'kind' | 'role'> | null,
+  ctx: (Pick<AppContext, 'kind' | 'role'> & { roles?: readonly AppContext['role'][] }) | null,
   capability: Capability,
 ): boolean {
   return ctx ? capabilitiesFor(ctx).has(capability) : false;
@@ -106,7 +151,9 @@ export function can(
 
 /** Union of capabilities across every role the user holds for one team/club/family. */
 export function capabilitiesForPlace(
-  contexts: readonly Pick<AppContext, 'kind' | 'role' | 'id'>[],
+  contexts: readonly (Pick<AppContext, 'kind' | 'role' | 'id'> & {
+    roles?: readonly AppContext['role'][];
+  })[],
   kind: AppContext['kind'],
   id: string,
 ): ReadonlySet<Capability> {

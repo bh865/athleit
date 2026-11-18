@@ -90,6 +90,7 @@ export const NOTIFICATION_CATEGORIES = [
   'announcements',
   'schedule',
   'payments',
+  'registration',
 ] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 export const PUSH_PLATFORMS = ['ios', 'android', 'web'] as const;

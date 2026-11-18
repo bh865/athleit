@@ -60,6 +60,7 @@ import {
   Question,
   ShieldCheck,
   CaretDown,
+  List,
   Receipt,
   Bank,
   DownloadSimple,
@@ -72,6 +73,12 @@ import {
   MinusCircle,
   CircleDashed,
   HandCoins,
+  ClipboardText,
+  FolderOpen,
+  UploadSimple,
+  FileText,
+  Eye,
+  ListChecks,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
 
@@ -138,6 +145,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   question: Question,
   'shield-check': ShieldCheck,
   'caret-down': CaretDown,
+  list: List,
   receipt: Receipt,
   bank: Bank,
   'download-simple': DownloadSimple,
@@ -150,6 +158,12 @@ const icons: Record<IconName, PhosphorIcon> = {
   'minus-circle': MinusCircle,
   'circle-dashed': CircleDashed,
   'hand-coins': HandCoins,
+  'clipboard-text': ClipboardText,
+  'folder-open': FolderOpen,
+  'upload-simple': UploadSimple,
+  'file-text': FileText,
+  eye: Eye,
+  'list-checks': ListChecks,
 };
 
 export interface IconProps {

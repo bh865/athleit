@@ -1,4 +1,4 @@
-import { createThreadSchema, friendlyError, type ThreadType } from '@athleit/core';
+import { createThreadSchema, friendlyError, type ThreadType, teamForScreen } from '@athleit/core';
 import { createThread, getMessageablePeople } from '@athleit/db/api';
 import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
@@ -13,10 +13,11 @@ import { useLoad } from '@/lib/use-load';
 
 /** New-message flow. The database enforces the safety rules; this explains them in plain words. */
 export function NewMessage() {
-  const { active } = useApp();
+  const { active, contexts } = useApp();
   const router = useRouter();
-  const teamId = active?.kind === 'team' ? active.id : null;
-  const isStaff = active?.kind === 'team' && ['admin', 'coach', 'manager'].includes(active.role);
+  const place = teamForScreen(contexts, active);
+  const teamId = place?.id ?? null;
+  const isStaff = place?.isStaff ?? false;
   const people = useLoad(
     () =>
       teamId ? getMessageablePeople(supabase, teamId) : Promise.resolve({ data: [], error: null }),

@@ -10,6 +10,11 @@ import { iconNames } from '@athleit/ui-core';
 import { useState } from 'react';
 
 import { PayGallery, PayStaffGallery, PayStatesGallery } from '@/components/payments/gallery-parts';
+import {
+  RegistrationDocsGallery,
+  RegistrationPublicGallery,
+  RegistrationStaffGallery,
+} from '@/components/registration/gallery-parts';
 
 import {
   Avatar,
@@ -46,6 +51,7 @@ import {
   ScheduleRowsDemo,
   StaffDetailDemo,
 } from './schedule-gallery';
+import { PickerGallery } from './picker-gallery';
 
 const TYPE_SAMPLES: [TextVariant, string][] = [
   ['display', 'Display 44/800'],
@@ -302,6 +308,10 @@ function ThemePanel({ name }: { name: string }) {
         </div>
       </Section>
 
+      <Section title="Pickers">
+        <PickerGallery />
+      </Section>
+
       <Section title="Schedule · rows and month">
         <ScheduleRowsDemo />
         <MonthDemo />
@@ -324,6 +334,15 @@ function ThemePanel({ name }: { name: string }) {
       </Section>
       <Section title="Payments · states">
         <PayStatesGallery />
+      </Section>
+      <Section title="Registration · public page">
+        <RegistrationPublicGallery />
+      </Section>
+      <Section title="Registration · staff">
+        <RegistrationStaffGallery />
+      </Section>
+      <Section title="Registration · waivers and documents">
+        <RegistrationDocsGallery />
       </Section>
       <Section title="Sidebar · sheet · toast">
         <div className={styles.navDemo}>

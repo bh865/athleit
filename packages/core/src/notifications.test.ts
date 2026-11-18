@@ -86,3 +86,24 @@ describe('summarizePreferences', () => {
     ]);
   });
 });
+
+describe('registration notifications', () => {
+  it('opens the management screen for staff digests', () => {
+    const s = notificationSummary('registration', {
+      title: 'Spring',
+      body: '2 new registrations',
+      registration_event_id: 'e1',
+    });
+    expect(s.href).toBe('/manage/registration/e1');
+    expect(s.icon).toBe('clipboard-text');
+  });
+  it('sends staff waiver notices to the tracker and families to their registrations', () => {
+    expect(notificationSummary('registration', { team_id: 't1', audience: 'staff' }).href).toBe(
+      '/teams/t1/compliance',
+    );
+    expect(notificationSummary('registration', { team_id: 't1', audience: 'family' }).href).toBe(
+      '/registrations',
+    );
+    expect(notificationSummary('registration', {}).href).toBe('/registrations');
+  });
+});

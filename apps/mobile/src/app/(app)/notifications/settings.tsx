@@ -16,7 +16,7 @@ import { Switch, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { H1, H2, Notice } from '@/components/app/kit';
-import { Button, Card, Text, TextField, useTheme, useToast } from '@/components/ui';
+import { Button, Card, Text, TimePicker, useTheme, useToast } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { enablePush, getCurrentPushToken, listMyDevices } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +27,7 @@ const LABEL = {
   announcements: 'Announcements',
   schedule: 'Schedule changes',
   payments: 'Payments',
+  registration: 'Registrations and waivers',
 } as const;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const deviceZone = () => {
@@ -118,22 +119,8 @@ export default function NotificationSettingsScreen() {
             Notifications that arrive during quiet hours wait and are delivered when they end.
             Timezone: {deviceZone()}.
           </Text>
-          <TextField
-            label="From (HH:MM)"
-            value={q.start}
-            onChangeText={(v) => setQuiet({ ...q, start: v })}
-            placeholder="21:00"
-            keyboardType="numbers-and-punctuation"
-            mono
-          />
-          <TextField
-            label="Until (HH:MM)"
-            value={q.end}
-            onChangeText={(v) => setQuiet({ ...q, end: v })}
-            placeholder="07:00"
-            keyboardType="numbers-and-punctuation"
-            mono
-          />
+          <TimePicker label="From" value={q.start} onChange={(v) => setQuiet({ ...q, start: v })} />
+          <TimePicker label="Until" value={q.end} onChange={(v) => setQuiet({ ...q, end: v })} />
           <Button
             title="Save quiet hours"
             loading={busy}

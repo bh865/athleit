@@ -111,6 +111,17 @@ describe('buildContent (lock-screen content)', () => {
     expect(s).toEqual({ title: 'Practice', body: 'Event cancelled', url: '/events/e9' });
     expect(linkFor({ kind: 'message' })).toBe('/');
   });
+  it('links registration notices to the right screen', () => {
+    expect(linkFor({ kind: 'registration', registration_event_id: 'e1' })).toBe(
+      '/manage/registration/e1',
+    );
+    expect(linkFor({ kind: 'registration', team_id: 't1', audience: 'staff' })).toBe(
+      '/teams/t1/compliance',
+    );
+    expect(linkFor({ kind: 'registration', team_id: 't1', audience: 'family' })).toBe(
+      '/registrations',
+    );
+  });
 });
 
 describe('retry policy', () => {
