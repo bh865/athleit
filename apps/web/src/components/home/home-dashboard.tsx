@@ -20,7 +20,9 @@ import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/u
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
+import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
+import { useHomeData } from './use-home-data';
 
 const greeting = (d: Date) => {
   const h = d.getHours();
@@ -221,6 +223,7 @@ export function HomeDashboard() {
   const first = displayName?.split(' ')[0];
   const staff = Boolean(team?.isStaff);
   const clubAdmin = contexts.find((c) => c.kind === 'club');
+  const { attention } = useHomeData(contexts, active);
 
   return (
     <div className={styles.page}>
@@ -244,6 +247,7 @@ export function HomeDashboard() {
           )
         }
       />
+      <AttentionStrip shown={attention.shown} more={attention.more} />
       <NextUpHero canManage={staff} />
       <div className={styles.row3}>
         {team ? <MessagesCard teamId={team.id} /> : null}

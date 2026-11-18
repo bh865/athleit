@@ -166,3 +166,51 @@
   margin: 0;
   color: var(--color-muted);
 }
+.attention {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-icon-button-size);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.chipPrimary {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+}
+.chipIcon {
+  display: inline-flex;
+}
+.chipText {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.chipLabel {
+  font-weight: var(--text-body-bold-weight);
+  font-size: var(--text-caption-size);
+}
+.chipDetail {
+  font-size: var(--text-label-size);
+  opacity: 0.8;
+}
