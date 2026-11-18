@@ -32,6 +32,9 @@ for (const theme of ['light', 'dark'] as const) {
         'Payments · pay and receipt',
         'Payments · staff',
         'Payments · states',
+        'Registration · public page',
+        'Registration · staff',
+        'Registration · waivers and documents',
         'Sidebar · sheet · toast',
       ]) {
         await expect(panel.getByRole('region', { name })).toHaveScreenshot(

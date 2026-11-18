@@ -123,6 +123,37 @@ Apple Pay certificate step (the iOS simulator can show the sheet but cannot comp
 8. **Staff.** As a team admin: Pay tab > Payouts "Set up payouts" opens Stripe in the in-app browser and returns; "New payment request" sends to the roster; "Send reminder" works once per 24 h; a coach sees status but no setup button.
 9. **Accessibility.** VoiceOver reads "Jersey fee, $45.00, due Nov 30, Unpaid" on each request and "45 dollars" for amounts; tap targets are 44pt or larger.
 
+## Registration, waivers and documents (Phase 5)
+
+Prerequisites: the six registration Edge Functions are deployed; `EXPO_PUBLIC_WEB_ORIGIN` points at a deployed web app that serves
+`/captcha` (and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set there; the Turnstile test key `1x00000000000000000000AA` always passes);
+the project has the `CAPTCHA_SECRET`, `APP_URL`, `RESEND_API_KEY` and `EMAIL_FROM` secrets (docs/registration-ops.md).
+Publish a registration on the web first (Team → Registrations → New registration; build a form and a waiver, publish both).
+
+1. **Open the link**: `xcrun simctl openurl booted athleit://r/<slug>` (or scan the QR from the web share panel). The page shows the title,
+   spots badge, price, info blocks and the stepper. A closed, full or not-yet-open event shows a message instead of the form.
+2. **Register as a parent**: step 1 pick a child (or type one), enter your name, email, relationship. Step 2 answers the form: required
+   fields block _Continue_ and show the error under the field. Step 3: tick the guardian box, _Submit registration_. The in-app browser opens
+   the quick human check, closes by itself, and the confirmation appears with a reference like `REG-…`.
+3. **Cancel the human check**: close the browser sheet. You stay on the review step with "We could not confirm you are a person".
+4. **Waivers**: the confirmation (signed in) shows the first waiver. Scroll the text, type your name, tick the box, _Sign waiver_; the next
+   waiver appears, then "All waivers are signed". A signed copy arrives by email.
+5. **My registrations** (More → Registrations): the registration is listed with its status and next step; open it to see the details, sign
+   remaining waivers, _Withdraw registration_ (asks first). "Open for registration" lists other open events.
+6. **Priced event, pay at sign-up**: _Submit and pay_ → confirmation shows _Pay now_ → Pay tab (Phase 4 sheet). The spot is held for the
+   configured minutes; an unpaid hold is released afterwards.
+7. **Staff**: as team admin, Team → _Registrations_ → open the event. Capacity meter, share link and QR (Share…, Copy link), filter chips,
+   search. Tap a row: details, answers, waivers, payment. _Show medical info_ appears only if you hold access and says the view is recorded.
+   _Accept_ / _Waitlist_ / _Decline_ with an optional message; _Place on roster_ after accepting; add a private note.
+8. **Waitlist**: fill the event, register once more (joins the waitlist); free a spot (decline or withdraw one) and use _Move next family up_.
+9. **Waivers tab**: counts of missing and expired, the "Needs attention" filter. Requiring waivers for a team is done on the web.
+10. **Documents tab**: tap a document: it opens in the in-app browser through a short-lived link. Uploading is web-only.
+11. **Notifications**: staff receive a digest when new registrations arrive (tap opens the event); families get "Waiver renewal needed"
+    (opens Registrations). _Alerts → Settings_ lists "Registrations and waivers".
+12. **Accessibility pass**: VoiceOver reads every field label and inline error, the stepper announces the current step, the capacity meter
+    reads "Spots taken", the QR has the label "QR code for …"; targets are at least 44pt; Dynamic Type at the largest size does not clip
+    the form; with _Reduce Transparency_ the sheet is solid.
+
 ## Date and time pickers (polish)
 
 1. **Child date of birth.** Family > Add a child: the Date of birth field shows a calendar icon and "Select a date". Tap it: a glass sheet slides up. Tap the "Month Year" title, choose a year (newest first), a month, then a day: the sheet closes and the field reads like "Apr 2, 2016". Future days are muted and do nothing.

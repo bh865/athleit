@@ -9,7 +9,8 @@
     "./mobile": "./src/mobile.ts",
     "./api": "./src/api.ts",
     "./scheduling": "./src/scheduling-api.ts",
-    "./payments": "./src/payments-api.ts"
+    "./payments": "./src/payments-api.ts",
+    "./registration": "./src/registration-api.ts"
   },
   "scripts": {
     "lint": "eslint .",

@@ -122,6 +122,38 @@ New tokens and icons: text variant `monoXl` (56 / 60, 500, -0.03em) for the Pay 
 Gallery and baselines: "Payments · pay and receipt", "Payments · staff", "Payments · states" in light and dark (`apps/web/visual/`).
 Not built: edit-draft (drafts are created and sent in one step), a payment event detail page, a separate payer-history screen on mobile beyond Receipts.
 
+## Registration, waivers and documents (Phase 5)
+
+The system has no registration, waiver or document screens. Everything below is composed from existing tokens and components; no new
+colors, radii or type styles. One native-input restyle is covered by the existing `TextField` rules (native `select`, `textarea`,
+checkbox and radio stay native for accessibility).
+
+| Screen / component (web / mobile)          | Composed from                                                                                                                                   | Notes                                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Public registration page (`/r/[slug]`)     | Logo lockup, `Heading`, `Badge` (spots), fact grid (`Label` + `bodyBold`), info blocks, `Card` with the stepper, share `Card`                   | Server-rendered; `noindex` for link-only and members-only. Cover image is a radius-24 banner                     |
+| Stepper                                    | Chip-style pills (`surface-alt`; current = lime "sent" fill); `aria-current="step"`                                                             | Mobile uses the `Segmented` chips                                                                                |
+| Form renderer                              | `TextField`, `TextArea`, `Select`, native radio/checkbox rows (44px min), address as four `TextField`s                                          | Mobile: `Choice` chips for single choice, toggle `Chip`s for multiple choice and checkboxes                      |
+| Info blocks                                | Fact grid, text, list rows, native `details` for FAQ                                                                                            | User text is rendered as escaped text, never HTML                                                                |
+| Waiver signer                              | Scrollable `surface-alt` text region (focusable, labelled), `TextField`s, `Select`, consent checkbox, primary `Button`                          | One waiver at a time; typed signature                                                                            |
+| Share panel                                | Mono link text, secondary `Button`s (Copy, Share), QR tile (`qrSurface` / `qrInk`, always dark on white)                                        | Same QR rules as the invite panel                                                                                |
+| Verify and claim landing pages             | Logo, `Card`, `Heading`, `Text`                                                                                                                 | Tokens arrive in the URL fragment and are removed from the address bar                                           |
+| My registrations (list and detail)         | `ListGroup`, `ListRow`, status `Badge`, `Card`, payment and waiver cards                                                                        | Statuses map to tones: accepted/placed = success, waitlisted/unconfirmed = warning, declined/withdrawn = danger  |
+| Staff event management                     | Capacity `Card` (lime meter on `surface-alt`, mono count), filter row (`Select`, `TextField`, checkboxes), table with row checkboxes, bulk bar  | Mobile: `Choice` filter chips and list rows; bulk actions, CSV export and authoring are web-only                 |
+| Registration detail sheet                  | Glass `Sheet`, fact grid, decision buttons, notes list                                                                                          | Medical block uses a `warnSoft` panel and a secondary "Show medical info" button; opening it writes an audit row |
+| Event, form and waiver builders (web only) | `Card` sections, `TextField`, `TextArea`, `Select`, `IconButton` (move, delete), editor rows with a 1px line border                             | Form builder has a live preview using the same renderer as the public page                                       |
+| Waiver compliance tracker                  | Count badges, `Select` filter, table (web) / `ListRow`s (mobile)                                                                                | Names and statuses only                                                                                          |
+| Documents shelf                            | `ListGroup`, `ListRow` with `file-pdf` / `file-text` leading icon, secondary Open button, upload `Card`                                         | Signed URL, 5 minutes. Upload is web-only                                                                        |
+| Captcha                                    | Cloudflare Turnstile widget (managed) on web; mobile opens `/captcha` in the in-app browser and gets the token back through `athleit://captcha` | The widget is the provider's own UI                                                                              |
+
+New icons (added to `@athleit/ui-core` and both Icon wrappers): `clipboard-text`, `folder-open`, `upload-simple`, `file-text`, `eye`, `list-checks`.
+
+Gallery and baselines: "Registration · public page", "Registration · staff" and "Registration · waivers and documents" in light and
+dark (`apps/web/visual/`). The fixtures are static, so the visual tests still need no database.
+
+Not built: a drag-to-reorder form builder (move up/down buttons instead), rich-text waiver editing (plain text only, by design),
+bulk actions and CSV export on mobile, document upload on mobile, in-app payment/refund screens for registration fees (they reuse the
+Phase 4 Pay and Collection screens).
+
 ## Polish pass (date pickers, popovers, headings)
 
 | Piece                                                   | Composed from                                                                                                                                                                        | Notes                                                                                                                                                                                                                                                                                      |
@@ -140,3 +172,6 @@ Not built: edit-draft (drafts are created and sent in one step), a payment event
 | Web Home dashboard                    | PageHeader (greeting, date, lime action), Next up card (kicker, title, time and place, mono counts, location tile with pin and "Open in Maps"), three cards (Messages with unread dots, Payments, Roster with avatar stack) | No live drive time or embedded map (deliberate). Blocks follow capabilities, so staff + parent see counts and Going / Can't go together. |
 | Roster page (web) and screen (mobile) | Existing roster list, player panel, placement card                                                                                                                                                                          | Sidebar item "Roster" / More > Roster. The team page is now an overview that links to it.                                                |
 | Place header                          | Static name + "Admin · Parent" label for one place; dropdown only for two or more                                                                                                                                           | **Deviation:** the design's switcher always opens. "Add or join" moves to the sidebar footer (web) and More (mobile).                    |
+
+Note on `ListGroup`: it renders a `<ul>`, so every `ListRow` inside it must be wrapped in an `<li>` (the row separators are styled on `li`). The
+registration screens follow that; axe flags a bare row as a `list` violation.

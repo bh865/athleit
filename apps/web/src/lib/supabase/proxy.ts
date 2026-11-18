@@ -4,7 +4,16 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 
 /** Routes reachable without a session. Everything else requires sign-in. */
-const PUBLIC_PATHS = ['/sign-in', '/sign-up', '/auth', '/dev', '/.well-known'];
+const PUBLIC_PATHS = [
+  '/sign-in',
+  '/sign-up',
+  '/auth',
+  '/dev',
+  '/.well-known',
+  '/r',
+  '/register/verify',
+  '/captcha',
+];
 const AUTH_ONLY_GUEST_PATHS = ['/sign-in', '/sign-up'];
 
 const matches = (pathname: string, bases: string[]) =>

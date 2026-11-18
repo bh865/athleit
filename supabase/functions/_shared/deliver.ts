@@ -18,14 +18,15 @@ export const EXPO_BATCH = 100;
 export interface OutboxRow {
   id: string;
   profile_id: string;
-  category: 'messages' | 'announcements' | 'schedule' | 'payments_reserved';
+  category:
+    'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'payments_reserved';
   channel: 'push' | 'email';
   payload: NotificationPayload;
   attempts: number;
 }
 
 export interface NotificationPayload {
-  kind: 'message' | 'schedule';
+  kind: 'message' | 'schedule' | 'payment' | 'registration' | 'registration_email';
   title?: string;
   sender_name?: string | null;
   preview?: string;
@@ -34,6 +35,8 @@ export interface NotificationPayload {
   message_id?: string;
   event_id?: string;
   team_id?: string;
+  audience?: 'staff' | 'family';
+  registration_event_id?: string;
   change?: string;
   /** Ready-to-show body for schedule notifications ("12 practices added"); never contains a child's name. */
   body?: string;
@@ -105,6 +108,9 @@ export interface Transports {
 export function linkFor(p: NotificationPayload): string {
   if (p.thread_id) return `/messages/${p.thread_id}`;
   if (p.event_id) return `/events/${p.event_id}`;
+  if (p.registration_event_id) return `/manage/registration/${p.registration_event_id}`;
+  if (p.kind === 'registration' && p.team_id)
+    return p.audience === 'staff' ? `/teams/${p.team_id}/compliance` : '/registrations';
   return '/';
 }
 
@@ -127,6 +133,9 @@ export function buildContent(row: OutboxRow): { title: string; body: string; url
       body: p.body || change[p.change ?? ''] || 'Schedule update',
       url,
     };
+  }
+  if (row.category === 'registration') {
+    return { title: p.title || 'Registration', body: p.body || 'Registration update', url };
   }
   const title = p.title || p.sender_name || 'New message';
   const generic = row.category === 'announcements' ? 'New announcement' : 'New message';

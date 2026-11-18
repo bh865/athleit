@@ -10,6 +10,11 @@ import { iconNames } from '@athleit/ui-core';
 import { useState } from 'react';
 
 import { PayGallery, PayStaffGallery, PayStatesGallery } from '@/components/payments/gallery-parts';
+import {
+  RegistrationDocsGallery,
+  RegistrationPublicGallery,
+  RegistrationStaffGallery,
+} from '@/components/registration/gallery-parts';
 
 import {
   Avatar,
@@ -329,6 +334,15 @@ function ThemePanel({ name }: { name: string }) {
       </Section>
       <Section title="Payments · states">
         <PayStatesGallery />
+      </Section>
+      <Section title="Registration · public page">
+        <RegistrationPublicGallery />
+      </Section>
+      <Section title="Registration · staff">
+        <RegistrationStaffGallery />
+      </Section>
+      <Section title="Registration · waivers and documents">
+        <RegistrationDocsGallery />
       </Section>
       <Section title="Sidebar · sheet · toast">
         <div className={styles.navDemo}>

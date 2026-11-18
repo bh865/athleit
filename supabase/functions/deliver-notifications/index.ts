@@ -21,6 +21,12 @@ import {
   type Transports,
 } from '../_shared/deliver.ts';
 import { expoTransport, resendTransport } from '../_shared/transports.ts';
+import { processRegistrationEmails } from '../_shared/registration/mail.ts';
+import {
+  appUrl as regAppUrl,
+  emailStore,
+  mailer as regMailer,
+} from '../_shared/registration/runtime.ts';
 
 const env = (k: string) => Deno.env.get(k) || undefined;
 const db = createClient(env('SUPABASE_URL')!, env('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -103,9 +109,11 @@ const transports: Transports = {
 Deno.serve(async () => {
   try {
     const counts = await processBatch(store, transports);
+    // Registrant emails (no profile): transactional, sent regardless of notification preferences.
+    const registration = await processRegistrationEmails(emailStore(), regMailer(), regAppUrl());
     // Counts only: never rows, tokens, addresses or message text.
-    console.log(JSON.stringify({ delivered: counts }));
-    return new Response(JSON.stringify(counts), {
+    console.log(JSON.stringify({ delivered: counts, registration }));
+    return new Response(JSON.stringify({ ...counts, registration }), {
       headers: { 'content-type': 'application/json' },
     });
   } catch (e) {

@@ -65,6 +65,12 @@ import {
   Receipt,
   Bank,
   DownloadSimple,
+  ClipboardText,
+  FolderOpen,
+  UploadSimple,
+  FileText,
+  Eye,
+  ListChecks,
   type Icon as PhosphorIcon,
 } from '@phosphor-icons/react';
 
@@ -133,6 +139,12 @@ const icons: Record<IconName, PhosphorIcon> = {
   receipt: Receipt,
   bank: Bank,
   'download-simple': DownloadSimple,
+  'clipboard-text': ClipboardText,
+  'folder-open': FolderOpen,
+  'upload-simple': UploadSimple,
+  'file-text': FileText,
+  eye: Eye,
+  'list-checks': ListChecks,
 };
 
 export type IconSizeName = 'sm' | 'md' | 'lg' | 'xl';

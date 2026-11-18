@@ -13,6 +13,7 @@ export interface InAppPayload {
   team_id?: string | null;
   club_id?: string | null;
   audience?: string;
+  registration_event_id?: string;
 }
 
 const CHANGE_LABEL: Record<string, string> = {
@@ -29,7 +30,7 @@ export function notificationSummary(
 ): {
   title: string;
   detail: string;
-  icon: 'calendar-blank' | 'megaphone' | 'chat-circle' | 'credit-card';
+  icon: 'calendar-blank' | 'megaphone' | 'chat-circle' | 'credit-card' | 'clipboard-text';
   href: string;
 } {
   const href = p.thread_id
@@ -54,6 +55,19 @@ export function notificationSummary(
           : p.request_id
             ? `/pay?request=${p.request_id}`
             : '/pay',
+    };
+  }
+  if (category === 'registration') {
+    // Staff digests open the event's management screen; waiver notices open the tracker (staff) or the family's list.
+    return {
+      title: p.title || 'Registration',
+      detail: p.body || 'Registration update',
+      icon: 'clipboard-text',
+      href: p.registration_event_id
+        ? `/manage/registration/${p.registration_event_id}`
+        : p.team_id && p.audience === 'staff'
+          ? `/teams/${p.team_id}/compliance`
+          : '/registrations',
     };
   }
   if (category === 'schedule') {

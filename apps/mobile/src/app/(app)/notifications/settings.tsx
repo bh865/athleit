@@ -27,6 +27,7 @@ const LABEL = {
   announcements: 'Announcements',
   schedule: 'Schedule changes',
   payments: 'Payments',
+  registration: 'Registrations and waivers',
 } as const;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const deviceZone = () => {

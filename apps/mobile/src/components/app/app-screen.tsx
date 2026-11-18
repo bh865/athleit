@@ -128,6 +128,17 @@ export function AppScreen({ children }: { children: ReactNode }) {
             }}
           />
         ) : null}
+        {hasFamily ? (
+          <Button
+            title="Registrations"
+            variant="secondary"
+            icon="clipboard-text"
+            onPress={() => {
+              setMore(false);
+              router.push('/registrations' as never);
+            }}
+          />
+        ) : null}
         <Button
           title="Alerts"
           variant="secondary"

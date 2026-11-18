@@ -82,8 +82,12 @@ export async function cleanup() {
     .from('household_members')
     .select('household_id')
     .in('profile_id', ids);
-  await a.from('teams').delete().in('created_by', ids);
-  await a.from('clubs').delete().in('created_by', ids);
+  // Phase 5 registration data is immutable by design, so a team that published forms or took registrations is protected
+  // by restrict foreign keys. Best effort: leave what the database protects (harmless example.test accounts).
+  for (const table of ['teams', 'clubs'] as const) {
+    const { data: rows } = await a.from(table).select('id').in('created_by', ids);
+    for (const row of rows ?? []) await a.from(table).delete().eq('id', row.id); // one at a time: a protected one must not block the rest
+  }
   await a
     .from('households')
     .delete()
@@ -91,7 +95,11 @@ export async function cleanup() {
       'id',
       (households ?? []).map((h) => h.household_id),
     );
-  for (const id of ids) await a.auth.admin.deleteUser(id);
+  for (const id of ids) {
+    const { error } = await a.auth.admin.deleteUser(id);
+    if (error)
+      console.warn(`[e2e] kept user ${id}: ${error.message} (protected registration data)`);
+  }
 }
 
 const MONTHS = [
@@ -113,7 +121,9 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 /** Choose a date (YYYY-MM-DD) in a <DatePicker> by its label: year, month, then the day. */
 export async function pickDate(page: Page, label: string, iso: string) {
   const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
-  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  await page
+    .getByRole('button', { name: new RegExp(`^${label.replace(/[()]/g, '\\$&')}(?!\\w)`) })
+    .click();
   const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
   await dialog.getByRole('button', { name: /choose month and year/ }).click();
   await dialog.getByRole('button', { name: String(y), exact: true }).click();
@@ -125,7 +135,9 @@ export async function pickDate(page: Page, label: string, iso: string) {
 /** Choose a time (HH:MM, 24 hour) in a <TimePicker>; minutes must be a multiple of 5. */
 export async function pickTime(page: Page, label: string, hhmm: string) {
   const [h, min] = hhmm.split(':').map(Number) as [number, number];
-  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  await page
+    .getByRole('button', { name: new RegExp(`^${label.replace(/[()]/g, '\\$&')}(?!\\w)`) })
+    .click();
   const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
   await dialog
     .getByRole('group', { name: 'Hour' })

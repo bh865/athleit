@@ -460,3 +460,23 @@ verify_jwt = false
 # Called by pg_cron through pg_net with a shared secret header (checked in the function).
 [functions.reconcile-payments]
 verify_jwt = false
+
+# Phase 5 registration. The public ones are called by anonymous visitors (a captcha, rate limits and the database are
+# the gate); sign-waiver authenticates inside (a session or a signing token); export checks the caller's session.
+[functions.get-public-registration]
+verify_jwt = false
+
+[functions.submit-registration]
+verify_jwt = false
+
+[functions.verify-registration]
+verify_jwt = false
+
+[functions.sign-waiver]
+verify_jwt = false
+
+[functions.export-registrations]
+verify_jwt = false
+
+[functions.claim-registration]
+verify_jwt = false

@@ -27,6 +27,11 @@
               "scheme": "https",
               "host": "athleit.app",
               "pathPrefix": "/claim"
+            },
+            {
+              "scheme": "https",
+              "host": "athleit.app",
+              "pathPrefix": "/r"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
