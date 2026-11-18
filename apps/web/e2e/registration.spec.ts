@@ -56,7 +56,7 @@ test.describe.serial('registration (end to end)', () => {
 
     // Waiver, published.
     await admin.goto(`/manage/waivers/new?team=${teamId}`);
-    await admin.getByLabel('Title').fill('Liability waiver');
+    await admin.getByLabel('Title', { exact: true }).fill('Liability waiver');
     await admin.getByLabel('Waiver text').fill('I agree to the terms of participation.');
     await admin.getByRole('button', { name: /Publish version 1/ }).click();
     // Creating then publishing swaps to the edit route, which drops the toast: the version list is the lasting proof.
@@ -65,11 +65,11 @@ test.describe.serial('registration (end to end)', () => {
 
     // Registration event using both.
     await admin.goto(`/manage/registration/new?team=${teamId}`);
-    await admin.getByLabel('Title').fill('E2E Spring League');
+    await admin.getByLabel('Title', { exact: true }).fill('E2E Spring League');
     await admin.getByLabel('Web address').fill(slug);
     // Publishing needs an open window.
-    await admin.getByLabel('Opens').fill('2020-01-01T09:00');
-    await admin.getByLabel('Closes').fill('2099-01-01T09:00');
+    await admin.getByLabel('Opens', { exact: true }).fill('2020-01-01T09:00');
+    await admin.getByLabel('Closes', { exact: true }).fill('2099-01-01T09:00');
     await admin.getByLabel('Spots (leave blank for no limit)').fill('1');
     await admin.getByLabel('Registration form').selectOption({ index: 1 });
     await admin.getByLabel('Liability waiver').check();
