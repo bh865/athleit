@@ -22,3 +22,5 @@ export * from './schemas/registration';
 export * from './registration';
 export * from './pay-views';
 export * from './places';
+export * from './home-tiles';
+export * from './home-attention';
