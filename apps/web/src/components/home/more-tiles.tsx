@@ -1,6 +1,6 @@
 'use client';
 
-import { previewOf, type AppContext } from '@athleit/core';
+import { previewOf, sumCents, type AppContext } from '@athleit/core';
 import {
   getNotificationFailures,
   getRoster,
@@ -8,12 +8,13 @@ import {
   listChildren,
   type Result,
 } from '@athleit/db/api';
-import { getConnectedAccountStatus } from '@athleit/db/payments';
+import { getConnectedAccountStatus, getHouseholdPayments } from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
 import { getFeedTokenStatus, getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
-import { Badge, Icon, Text } from '@/components/ui';
+import { Amount, dueText } from '@/components/payments/money';
+import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -252,6 +253,31 @@ export function PlacesTile({
           </li>
         ))}
       </ul>
+    </TileShell>
+  );
+}
+
+/** Amount due for the family: big mono total, what it is for, when, and one Pay button. */
+export function DueTile({ id }: { id: string }) {
+  const res = useLoad(() => getHouseholdPayments(getClient()), []);
+  const due = (res.data ?? []).filter((r) => r.can_pay);
+  const first = [...due].sort((a, b) => a.due_at.localeCompare(b.due_at))[0];
+  const total = sumCents(due.map((r) => r.amount_cents));
+  return (
+    <TileShell id={id} title="Amount due" res={res} empty={!first} hasData={res.data !== null}>
+      {first ? (
+        <div className={styles.amount} data-testid="due-card">
+          <Badge tone="neutral">{`${due.length} request${due.length === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={total} variant="monoLg" label="Amount due" />
+          <Text variant="caption" muted>
+            {due.length === 1
+              ? `${first.title}${first.player_first_name ? ` · ${first.player_first_name}` : ''}`
+              : `${due.length} payments`}{' '}
+            · due {dueText(first.due_at)}
+          </Text>
+          <ButtonLink href="/pay">Pay {`$${(total / 100).toFixed(2)}`}</ButtonLink>
+        </div>
+      ) : null}
     </TileShell>
   );
 }

@@ -5,7 +5,7 @@ import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { Icon, ListGroup, ListRow, Sheet, Text } from '@/components/ui';
+import { Badge, Card, Icon, ListGroup, ListRow, Sheet, Text } from '@/components/ui';
 
 import styles from './home.module.css';
 
@@ -37,14 +37,18 @@ export function AttentionStrip({
   const [open, setOpen] = useState(false);
   if (shown.length === 0) return null;
   return (
-    <section
+    <Card
+      role="region"
       aria-labelledby="home-attention"
       className={styles.attention}
       data-testid="home-attention"
     >
-      <h2 id="home-attention" className={styles.kicker}>
-        Needs your attention
-      </h2>
+      <div className={styles.attentionHead}>
+        <h2 id="home-attention" className={styles.kicker}>
+          Needs your attention
+        </h2>
+        <Badge tone="count">{shown.length + more.length}</Badge>
+      </div>
       <ul className={styles.chips}>
         {shown.map((i, n) => (
           <li key={i.key}>
@@ -86,6 +90,6 @@ export function AttentionStrip({
           ))}
         </ListGroup>
       </Sheet>
-    </section>
+    </Card>
   );
 }

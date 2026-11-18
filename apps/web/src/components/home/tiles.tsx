@@ -15,7 +15,7 @@ import {
 } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
-import { Badge, Icon, Text } from '@/components/ui';
+import { Badge, ButtonLink, Text } from '@/components/ui';
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
@@ -30,6 +30,18 @@ const RSVP_LABEL: Record<string, string> = {
   maybe: 'Maybe',
 };
 
+interface WeekRow {
+  key: string;
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  where: string;
+  pill: string;
+  who: string;
+}
+
 /** "This week": the next 7 days. Staff see the team's events with RSVP counts; families see each child's RSVP. */
 export function WeekTile({
   teamId,
@@ -41,7 +53,7 @@ export function WeekTile({
   family: boolean;
 }) {
   const zone = useViewerZone();
-  const res = useLoad(async () => {
+  const res = useLoad(async (): Promise<Result<WeekRow[]>> => {
     const from = new Date();
     const to = new Date(from.getTime() + 7 * DAY);
     if (staff && teamId) {
@@ -60,10 +72,8 @@ export function WeekTile({
           starts_at: e.starts_at,
           ends_at: e.ends_at,
           timezone: e.timezone,
-          cancelled: e.status === 'cancelled',
-          reason: e.cancelled_reason,
-          meta:
-            e.status === 'cancelled' ? 'Cancelled' : `${e.going} going · ${e.no_reply} no reply`,
+          where: e.location_name ?? e.location_text ?? '',
+          pill: e.status === 'cancelled' ? 'Cancelled' : `${e.going} going`,
           who: '',
         })),
         error: null,
@@ -79,9 +89,8 @@ export function WeekTile({
         starts_at: e.starts_at,
         ends_at: e.ends_at,
         timezone: e.timezone,
-        cancelled: e.status === 'cancelled',
-        reason: e.cancelled_reason,
-        meta:
+        where: e.location_name ?? e.location_text ?? '',
+        pill:
           e.status === 'cancelled'
             ? 'Cancelled'
             : e.rsvp_status
@@ -93,10 +102,12 @@ export function WeekTile({
     };
   }, [teamId, staff, family]);
   const rows = (res.data ?? []).slice(0, 6);
+  const names = [...new Set(rows.map((r) => r.who).filter(Boolean))];
+  const title = names.length === 1 ? `This week · ${names[0]}` : 'This week';
   return (
     <TileShell
       id="home-week"
-      title="This week"
+      title={title}
       href="/schedule"
       linkLabel="See full schedule"
       res={res}
@@ -106,19 +117,29 @@ export function WeekTile({
       <ul className={styles.threads}>
         {rows.map((e) => {
           const t = describeEventTime(e.starts_at, e.ends_at, e.timezone, zone ?? 'UTC');
+          const day = new Intl.DateTimeFormat('en-US', {
+            day: 'numeric',
+            timeZone: zone ?? e.timezone,
+          }).format(new Date(e.starts_at));
           return (
             <li key={e.key}>
-              <Link href={`/events/${e.id}`} className={styles.thread}>
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>
-                    {t.weekdayShort} {t.startLabel} · {e.title}
-                  </span>
+              <Link
+                href={`/events/${e.id}`}
+                className={styles.weekRow}
+                aria-label={`${e.title}, ${t.weekdayShort} ${t.startLabel}${e.who ? `, ${e.who}` : ''}: ${e.pill}`}
+              >
+                <span className={styles.weekDate} aria-hidden>
+                  <span className={styles.weekDay}>{t.weekdayShort}</span>
+                  <span className={styles.weekNum}>{day}</span>
+                </span>
+                <span className={styles.weekText}>
+                  <span className={styles.threadTitle}>{e.title}</span>
                   <span className={styles.threadPreview}>
-                    {e.who ? `${e.who}: ` : ''}
-                    {e.meta}
-                    {e.cancelled && e.reason ? ` · ${e.reason}` : ''}
+                    {t.startLabel}
+                    {e.where ? ` · ${e.where}` : ''}
                   </span>
                 </span>
+                <Badge tone="neutral">{e.pill}</Badge>
               </Link>
             </li>
           );
@@ -128,14 +149,14 @@ export function WeekTile({
   );
 }
 
-/** Season record and the last result. Hidden until a game has been played. */
+/** Season record, shown big beside Next up. Hidden until a game has been played. */
 export function RecordTile({ teamId }: { teamId: string }) {
   const res = useLoad(() => getTeamRecord(getClient(), teamId), [teamId]);
   const r = res.data;
   return (
     <TileShell
       id="home-record"
-      title="Team record"
+      title={r ? `${r.season_label} · Record` : 'Team record'}
       href="/schedule"
       res={res}
       empty={!r || r.games === 0}
@@ -143,24 +164,14 @@ export function RecordTile({ teamId }: { teamId: string }) {
     >
       {r ? (
         <>
-          <div
-            className={styles.stats}
-            role="group"
-            aria-label={`Record ${r.wins} wins, ${r.losses} losses, ${r.ties} ties`}
+          <span
+            className={styles.record}
+            aria-label={`${r.wins} wins, ${r.losses} losses, ${r.ties} ties`}
           >
-            {[
-              { v: r.wins, l: 'Wins' },
-              { v: r.losses, l: 'Losses' },
-              { v: r.ties, l: 'Ties' },
-            ].map((c) => (
-              <div key={c.l} className={styles.count}>
-                <span className={styles.countValue}>{c.v}</span>
-                <span className={styles.countLabel}>{c.l}</span>
-              </div>
-            ))}
-          </div>
+            {r.wins}–{r.losses}–{r.ties}
+          </span>
           <Text variant="caption" muted>
-            {r.season_label}
+            Wins · Losses · Ties
           </Text>
         </>
       ) : null}
@@ -255,19 +266,17 @@ export function WaiversTile({
           </ul>
         </>
       ) : (
-        <ul className={styles.threads}>
-          {d?.own.map((o, i) => (
-            <li key={`${o.name}${i}`}>
-              <Link href="/registrations" className={styles.thread}>
-                <Icon name="clipboard-text" size="sm" />
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>Sign {o.name}’s waiver</span>
-                  <span className={styles.threadPreview}>{o.event}</span>
-                </span>
-              </Link>
-            </li>
+        <div className={styles.threads}>
+          {d?.own.slice(0, 2).map((o, i) => (
+            <div key={`${o.name}${i}`} className={styles.block}>
+              <Text variant="bodyBold">Sign {o.name}’s waiver</Text>
+              <Text variant="caption" muted>
+                {o.event}
+              </Text>
+              <ButtonLink href="/registrations">Sign waiver</ButtonLink>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </TileShell>
   );

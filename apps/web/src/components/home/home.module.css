@@ -171,6 +171,11 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+.attentionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -200,6 +205,13 @@
 }
 .chipIcon {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-avatar-sm);
+  height: var(--size-avatar-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 .chipText {
   display: flex;
@@ -232,4 +244,85 @@
 .scope {
   color: var(--color-muted);
   font-size: var(--text-caption-size);
+}
+
+.heroRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+@media (min-width: 900px) {
+  .heroRow:has(> :nth-child(2)) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+.record {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-xl-size, var(--text-title-size));
+  line-height: var(--text-title-leading);
+  font-weight: var(--text-mono-weight);
+}
+.weekRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--size-icon-button-size);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.weekDate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: var(--size-avatar-md);
+}
+.weekDay {
+  color: var(--color-muted);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  text-transform: uppercase;
+}
+.weekNum {
+  font-size: var(--text-title-size);
+  line-height: var(--text-title-leading);
+  font-weight: var(--text-title-weight);
+}
+.weekText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+.threadAvatar {
+  flex: none;
+}
+.ago {
+  flex: none;
+  color: var(--color-muted);
+  font-size: var(--text-label-size);
+}
+.amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.amount > a {
+  align-self: stretch;
+}
+.srOnly {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

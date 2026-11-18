@@ -16,7 +16,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
-import { DueCard, StaffPaymentsCard } from '@/components/payments/home-cards';
+import { StaffPaymentsCard } from '@/components/payments/home-cards';
 import { RsvpControls } from '@/components/schedule/rsvp-controls';
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/ui';
@@ -26,6 +26,7 @@ import { useLoad } from '@/lib/use-load';
 import {
   AnnouncementTile,
   CalendarTile,
+  DueTile,
   DocumentsTile,
   FamilyTile,
   NotificationHealthTile,
@@ -37,6 +38,12 @@ import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile, WeekTile } f
 import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
 import { useHomeData } from './use-home-data';
+
+/** "2m", "1h", "3d". */
+const ago = (iso: string) => {
+  const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+  return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`;
+};
 
 const greeting = (d: Date) => {
   const h = d.getHours();
@@ -149,6 +156,9 @@ function MessagesCard({ teamId }: { teamId: string }) {
             return (
               <li key={r.thread_id}>
                 <Link href={`/messages/${r.thread_id}`} className={styles.thread}>
+                  <span className={styles.threadAvatar}>
+                    <Avatar name={r.title ?? r.other_name ?? 'Message'} size="sm" />
+                  </span>
                   <span className={styles.threadText}>
                     <span className={styles.threadTitle}>
                       {r.title ?? r.other_name ?? 'Message'}
@@ -165,7 +175,10 @@ function MessagesCard({ teamId }: { teamId: string }) {
                       )}
                     </span>
                   </span>
-                  {unread ? <span className={styles.dot} aria-label="Unread" /> : null}
+                  {r.last_message_at ? (
+                    <span className={styles.ago}>{ago(r.last_message_at)}</span>
+                  ) : null}
+                  {unread ? <span className={styles.dot} role="img" aria-label="Unread" /> : null}
                 </Link>
               </li>
             );
@@ -242,6 +255,9 @@ export function HomeDashboard() {
   const teamId = team?.id ?? null;
   const staffReg = Boolean(staff && caps.has('registration.view'));
   const showTeamGroup = Boolean(staff || views.staff || (clubAdmin && !team) || tiles.has('setup'));
+  const showFamilyGroup = Boolean(
+    views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup),
+  );
   const teamRoles = team
     ? (contexts.find((c) => c.kind === 'team' && c.id === team.id)?.roles ?? [])
     : [];
@@ -271,17 +287,20 @@ export function HomeDashboard() {
         }
       />
       <AttentionStrip shown={attention.shown} more={attention.more} />
-      <NextUpHero canManage={staff} />
+      <div className={styles.heroRow}>
+        <NextUpHero canManage={staff} />
+        {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
+      </div>
       <div className={styles.row3}>
         {tiles.has('thisWeek') ? (
           <WeekTile teamId={teamId} staff={staff} family={views.payer} />
         ) : null}
-        {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
+        {views.payer && !showTeamGroup ? <DueTile id="home-payments" /> : null}
         {team ? <MessagesCard teamId={team.id} /> : null}
         {tiles.has('announcement') && teamId ? <AnnouncementTile teamId={teamId} /> : null}
       </div>
       {showTeamGroup ? (
-        <Group id="team" label="For your team" scope={teamScope}>
+        <Group id="team" label="For your team" scope={teamScope} showHead={showFamilyGroup}>
           {tiles.has('approvals') && teamId && caps.has('joinRequests.decide') ? (
             <ApprovalsTile teamId={teamId} />
           ) : null}
@@ -330,12 +349,8 @@ export function HomeDashboard() {
         </Group>
       ) : null}
       {views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup) ? (
-        <Group id="family" label="For your family" scope={familyScope}>
-          {views.payer ? (
-            <div className={styles.card} data-testid={showTeamGroup ? 'home-due' : 'home-payments'}>
-              <DueCard />
-            </div>
-          ) : null}
+        <Group id="family" label="For your family" scope={familyScope} showHead={showTeamGroup}>
+          {views.payer && showTeamGroup ? <DueTile id="home-due" /> : null}
           {views.payer && tiles.has('waivers') ? (
             <WaiversTile teamId={teamId} staff={false} family />
           ) : null}
@@ -348,7 +363,7 @@ export function HomeDashboard() {
           ) : null}
         </Group>
       ) : null}
-      <Group id="more" label="More" scope="">
+      <Group id="more" label="More" scope="" showHead>
         {tiles.has('documents') && teamId ? <DocumentsTile teamId={teamId} /> : null}
         {tiles.has('calendar') ? <CalendarTile /> : null}
         {tiles.has('places') ? <PlacesTile places={contexts} /> : null}
@@ -362,11 +377,13 @@ function Group({
   id,
   label,
   scope,
+  showHead,
   children,
 }: {
   id: string;
   label: string;
   scope: string;
+  showHead: boolean;
   children: ReactNode;
 }) {
   return (
@@ -375,7 +392,7 @@ function Group({
       className={styles.group}
       data-testid={`home-group-${id}`}
     >
-      <div className={styles.groupHead}>
+      <div className={showHead ? styles.groupHead : styles.srOnly}>
         <h2 id={`home-group-${id}`} className={styles.kicker}>
           {label}
         </h2>
