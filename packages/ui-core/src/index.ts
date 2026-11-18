@@ -64,6 +64,7 @@ export const iconNames = [
   'repeat',
   'question',
   'caret-down',
+  'list',
   'receipt',
   'bank',
   'download-simple',

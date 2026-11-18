@@ -56,7 +56,7 @@ export function ContextSwitcher() {
         <Icon name="caret-up-down" />
       </button>
       {open && (
-        <Glass level="sheet" className={styles.menu} role="menu">
+        <Glass solid level="modal" className={styles.menu} role="menu">
           {contexts.map((c) => (
             <button
               key={c.key}
@@ -89,7 +89,9 @@ export function ContextSwitcher() {
                 router.push(ADD_LABEL[a].href);
               }}
             >
-              <Icon name="plus" size="sm" />
+              <span className={styles.addIcon}>
+                <Icon name="plus" size="sm" />
+              </span>
               <span className={styles.title}>{ADD_LABEL[a].label}</span>
             </button>
           ))}

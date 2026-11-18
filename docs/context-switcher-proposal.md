@@ -27,17 +27,17 @@ Join a team.
 
 **Screens that depend on the _active_ context** (the risky ones):
 
-| Screen                                                         | Web                                                              | Mobile                                                       | Decided by                                                                                           |
-| -------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Home                                                           | redirect to `contextPath(active)`                                | places list                                                  | active key                                                                                           |
-| Schedule                                                       | `active.kind` family→household feed, team→team view, club→empty  | `active.kind === 'family'` → household else team             | **kind**                                                                                             |
-| Pay                                                            | `PayView` always (parent view only; staff via `/teams/[id]/payments`) | `active.kind` team/club → **StaffScreen**, else PayScreen | **kind** (the bug behind "No payment requests yet": parent in a team context gets the staff screen) |
-| Messages list / new                                            | `active.kind === 'team'` → that team; staff test uses `active.role` | same                                                      | **kind + role**                                                                                      |
-| Conversation                                                   | `contexts.find(kind team, id)` → first role found decides `isStaff` | same                                                      | first matching role (wrong for Admin + Parent when Parent is found first)                            |
-| Sidebar / tab bar                                              | items from `contexts.some(kind)`                                 | same                                                         | kind presence                                                                                        |
-| Team page, members, requests, schedule tab, payments, club page | URL id + `capabilitiesForPlace`                                  | same                                                         | capabilities (good)                                                                                  |
-| Family, add child                                              | `contexts.find(kind family)`                                     | same                                                         | kind presence                                                                                        |
-| Notifications, settings                                        | user-scoped                                                      | user-scoped                                                  | none                                                                                                 |
+| Screen                                                          | Web                                                                   | Mobile                                                    | Decided by                                                                                          |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Home                                                            | redirect to `contextPath(active)`                                     | places list                                               | active key                                                                                          |
+| Schedule                                                        | `active.kind` family→household feed, team→team view, club→empty       | `active.kind === 'family'` → household else team          | **kind**                                                                                            |
+| Pay                                                             | `PayView` always (parent view only; staff via `/teams/[id]/payments`) | `active.kind` team/club → **StaffScreen**, else PayScreen | **kind** (the bug behind "No payment requests yet": parent in a team context gets the staff screen) |
+| Messages list / new                                             | `active.kind === 'team'` → that team; staff test uses `active.role`   | same                                                      | **kind + role**                                                                                     |
+| Conversation                                                    | `contexts.find(kind team, id)` → first role found decides `isStaff`   | same                                                      | first matching role (wrong for Admin + Parent when Parent is found first)                           |
+| Sidebar / tab bar                                               | items from `contexts.some(kind)`                                      | same                                                      | kind presence                                                                                       |
+| Team page, members, requests, schedule tab, payments, club page | URL id + `capabilitiesForPlace`                                       | same                                                      | capabilities (good)                                                                                 |
+| Family, add child                                               | `contexts.find(kind family)`                                          | same                                                      | kind presence                                                                                       |
+| Notifications, settings                                         | user-scoped                                                           | user-scoped                                               | none                                                                                                |
 
 Everything keyed on `active.kind`/`active.role` breaks for dual-role users; everything keyed on `capabilitiesForPlace` works.
 
@@ -67,11 +67,14 @@ reachable for single-place users; let a person who holds two roles in one place 
 ## 3. Options
 
 ### A. Keep per-role contexts, de-duplicate the display only
+
 Group rows by place visually but keep keys and role-specific active context.
+
 - (+) Almost no code change, keys stay valid.
 - (−) Does not fix the actual bug class: screens still pick behaviour from one role. Switching "role" remains a concept users must learn.
 
 ### B. Contexts are PLACES; capabilities are the union of roles (recommended)
+
 - A context is a **team**, a **club**, or the **household**. Key: `team:<id>`, `club:<id>`, `family:<id>`.
 - `AppContext.roles: ContextRole[]` (all of the user's roles there); `capabilities` = union (`capabilitiesForPlace` generalised).
   Label: "Admin · Parent" (`rolesLabel`).
@@ -84,7 +87,9 @@ Group rows by place visually but keep keys and role-specific active context.
   controls for own children via `schedule.rsvpOwn` next to staff counts).
 
 ### C. Role-agnostic "My Athleit" with no active context
+
 Remove the active context entirely; everything is a cross-place feed (all teams on Home, one schedule, one pay list).
+
 - (+) Fits multi-team parents best long term.
 - (−) Large redesign (messages and schedule need per-team filtering, Home dashboard design is per-team); not what the design files show.
 
@@ -108,13 +113,13 @@ sets `team:<id>`.
 
 **Per-screen behaviour (staff + parent):**
 
-| Screen   | Behaviour                                                                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Screen   | Behaviour                                                                                                                                                                                            |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Home     | Team place: next-up with staff RSVP counts _and_ Going / Can't go for the user's own children; Payments card shows "You owe" (guardian) and collection (staff); Roster card if `roster.viewLimited`. |
-| Roster   | Full view when `roster.viewFull`, otherwise limited.                                                                                       |
-| Pay      | Segments **My payments** (`payments.pay`) and **Team collection** (`payments.view/manage`); a single-capability user sees one view without segments. |
-| Messages | Place's threads; staff controls by `isStaff` computed from the union of roles in that place (fixes the first-role bug).                    |
-| Schedule | Team schedule; per-child RSVP uses household children rostered on that team; staff get manage controls by `schedule.manage`.               |
+| Roster   | Full view when `roster.viewFull`, otherwise limited.                                                                                                                                                 |
+| Pay      | Segments **My payments** (`payments.pay`) and **Team collection** (`payments.view/manage`); a single-capability user sees one view without segments.                                                 |
+| Messages | Place's threads; staff controls by `isStaff` computed from the union of roles in that place (fixes the first-role bug).                                                                              |
+| Schedule | Team schedule; per-child RSVP uses household children rostered on that team; staff get manage controls by `schedule.manage`.                                                                         |
 
 **Wireframes**
 

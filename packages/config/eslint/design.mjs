@@ -37,7 +37,8 @@ export const designRestrictedSyntax = [
     message: 'Blur and backdrop-filter live in the Glass component only.',
   },
   {
-    selector: "JSXAttribute[name.name='type'][value.value=/^(date|time|datetime-local|month|week)$/]",
+    selector:
+      "JSXAttribute[name.name='type'][value.value=/^(date|time|datetime-local|month|week)$/]",
     message:
       'No native date/time inputs (unstyled browser chrome). Use <DatePicker> / <TimePicker> from components/ui.',
   },

@@ -1,3 +1,4 @@
+import { payViewsFor } from '@athleit/core';
 import { space } from '@athleit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
@@ -27,6 +28,8 @@ export function AppScreen({ children }: { children: ReactNode }) {
 
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const hasTeam = contexts.some((c) => c.kind === 'team');
+  const pv = payViewsFor(contexts, null);
+  const showPay = pv.payer || pv.staff !== null;
   const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
@@ -36,9 +39,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
     ...(hasTeam
       ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
       : []),
-    ...(hasFamily || contexts.some((c) => c.kind === 'team' || c.kind === 'club')
-      ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem]
-      : []),
+    ...(showPay ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem] : []),
     ...(hasFamily ? [{ key: 'family', label: 'Family', icon: 'house-line' } as TabItem] : []),
     { key: 'more', label: 'More', icon: 'dots-three-circle' },
   ];

@@ -1,6 +1,6 @@
 'use client';
 
-import { isUnread, listTimeLabel, previewOf, memberCountLabel } from '@athleit/core';
+import { isUnread, listTimeLabel, previewOf, memberCountLabel, teamForScreen } from '@athleit/core';
 import { getThreadList, subscribeToNotifications } from '@athleit/db/api';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
@@ -22,9 +22,9 @@ const ICON: Record<string, IconName> = {
 
 /** The 340px column: circular type icons, bold title, one-line preview, time and unread dot. */
 export function ThreadList() {
-  const { active, userId } = useApp();
+  const { active, contexts, userId } = useApp();
   const pathname = usePathname();
-  const teamId = active?.kind === 'team' ? active.id : null;
+  const teamId = teamForScreen(contexts, active)?.id ?? null;
   const list = useLoad(
     () =>
       teamId ? getThreadList(getClient(), teamId) : Promise.resolve({ data: [], error: null }),

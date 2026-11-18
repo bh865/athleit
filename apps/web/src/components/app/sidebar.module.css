@@ -56,3 +56,60 @@
     height: calc(100dvh - var(--space-8));
   }
 }
+
+/* Below 900px the sidebar is a glass drawer opened from a top bar, so content gets the full width. */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.scrim {
+  display: none;
+}
+@media (max-width: 899px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: var(--space-1) 0;
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    z-index: 44;
+    inset: 0;
+    background: var(--color-scrim);
+  }
+  .sidebar.sidebar {
+    position: fixed;
+    z-index: 45;
+    top: var(--space-4);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    width: min(var(--size-sidebar-width), calc(100vw - var(--space-8)));
+    overflow-y: auto;
+    visibility: hidden;
+    transform: translateX(calc(-100% - var(--space-8)));
+    transition:
+      transform 0.2s ease,
+      visibility 0.2s;
+  }
+  .sidebar.sidebar[data-open='true'] {
+    visibility: visible;
+    transform: none;
+  }
+  .drawerBrand {
+    display: none;
+  }
+}
+@media (min-width: 900px) {
+  .topbar {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar.sidebar {
+    transition: none;
+  }
+}

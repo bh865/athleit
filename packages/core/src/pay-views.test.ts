@@ -54,3 +54,17 @@ describe('payViewsFor', () => {
     expect(payViewsFor([], null)).toEqual({ payer: false, staff: null, initial: 'payer' });
   });
 });
+
+import { isTeamStaff, teamForScreen } from './places';
+
+describe('places', () => {
+  it('staff is the union of roles in the team, not the first row found', () => {
+    expect(isTeamStaff([parent, admin], 't1')).toBe(true);
+    expect(isTeamStaff([admin, parent], 't1')).toBe(true);
+    expect(isTeamStaff([parent], 't1')).toBe(false);
+  });
+  it('a parent with the family active still gets their team for Messages', () => {
+    expect(teamForScreen([family, parent], family)).toMatchObject({ id: 't1', isStaff: false });
+    expect(teamForScreen([family], family)).toBeNull();
+  });
+});

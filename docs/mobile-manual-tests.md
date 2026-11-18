@@ -133,3 +133,13 @@ Apple Pay certificate step (the iOS simulator can show the sheet but cannot comp
 6. **Accessibility.** VoiceOver: each day reads "Monday, November 30, 2026" (plus ", today" / selected / dimmed); the header reads "November 2026, choose month and year"; day targets are 44pt or larger.
 7. **Reduce Transparency / dark mode.** Turn on Settings > Accessibility > Display > Reduce Transparency: the sheet becomes solid and stays readable. Repeat in dark mode.
 8. **Backdrop blobs.** Home in dark mode: the green and blue corner glows are faint (about 13% and 22% at their centres), not solid colour.
+
+## Pay views by capability (polish)
+
+Run each with the team as the last-used place (switch to the team, close and reopen the app).
+
+1. **Parent only** (member of a team as Parent, has a household with a rostered child): Pay shows the child's requests, "Amount due", Pay and Receipts. No "Team collection" segment, never "No payment requests yet" when requests exist.
+2. **Staff only** (team admin or coach, no household): Pay shows payouts, "New payment request" and collection. No "My payments" segment.
+3. **Staff and parent**: Pay shows two segments, "My payments" and "Team collection"; it opens on the one matching the active place.
+4. **Messages as a parent** with the family active: the team's conversations still show (the first team is used).
+5. **Dual-role Messages**: an Admin who is also a Parent sees the staff-only controls (announcements, hide message) in the team's threads.
