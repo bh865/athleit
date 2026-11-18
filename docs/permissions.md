@@ -187,3 +187,11 @@ A unit test per role in `packages/core/src/context.test.ts` keeps the two aligne
 Notes on interpretation: a **club manager** only reads the club; a **club admin** reads the linked
 team's roster (names, jersey, status) but not guardian contacts and cannot edit; a **player (13+)**
 sees the limited roster and only their own player row and photo.
+
+### Home dashboard
+
+Which Home tiles a person sees is `homeTileIds` in `packages/core/src/home-tiles.ts`, a pure function of
+`capabilitiesForPlace` (never the active place kind or one role), with a unit test per persona. Home adds
+no database functions: it composes existing RPCs and only ever shows counts and first names from them
+(waiver compliance, join requests, registrations). It must not render last names, emails, signed waiver text,
+medical answers or RSVP names to parents and players.
