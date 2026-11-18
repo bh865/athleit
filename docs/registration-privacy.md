@@ -27,11 +27,11 @@ Detail, list and export functions exclude sensitive answers; an export that asks
 
 **Storage options considered** (decision requested in the Part A summary):
 
-| Option                                                              | Protects against                                                                | Cost                                                                                       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Separate RLS-protected table, no grants, audited read function (built) | Accidental exposure through lists, exports, joins, policies; every read audited | Plaintext at rest inside the database (as is everything else; Supabase encrypts disks)     |
-| Column encryption with Supabase Vault / pgsodium                    | A database dump or a leaked read-only connection                                 | Key management, no server-side search (not needed), pgsodium is being deprecated upstream; adds failure modes to a read path that is already narrow |
-| Application-level encryption in the Edge Function                   | Database-level exposure, including operators                                    | Key in Edge secrets; decrypt only in functions; complicates the audited SQL read path       |
+| Option                                                                 | Protects against                                                                | Cost                                                                                                                                                |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Separate RLS-protected table, no grants, audited read function (built) | Accidental exposure through lists, exports, joins, policies; every read audited | Plaintext at rest inside the database (as is everything else; Supabase encrypts disks)                                                              |
+| Column encryption with Supabase Vault / pgsodium                       | A database dump or a leaked read-only connection                                | Key management, no server-side search (not needed), pgsodium is being deprecated upstream; adds failure modes to a read path that is already narrow |
+| Application-level encryption in the Edge Function                      | Database-level exposure, including operators                                    | Key in Edge secrets; decrypt only in functions; complicates the audited SQL read path                                                               |
 
 Recommendation: keep the separate table now; add application-level encryption only if counsel or a customer requires protection from database-level access.
 

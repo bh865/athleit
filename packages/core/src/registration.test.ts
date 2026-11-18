@@ -14,46 +14,96 @@ import { can } from './capabilities';
 
 const form = formSchemaSchema.parse({
   fields: [
-    { id: 'shirt', type: 'dropdown', label: 'Shirt', required: true, options: [{ value: 's', label: 'S' }, { value: 'm', label: 'M' }] },
+    {
+      id: 'shirt',
+      type: 'dropdown',
+      label: 'Shirt',
+      required: true,
+      options: [
+        { value: 's', label: 'S' },
+        { value: 'm', label: 'M' },
+      ],
+    },
     { id: 'has_allergy', type: 'checkbox', label: 'Any allergies?' },
-    { id: 'allergy', type: 'long_text', label: 'Allergies', sensitive: true, show_if: { field: 'has_allergy', equals: true } },
+    {
+      id: 'allergy',
+      type: 'long_text',
+      label: 'Allergies',
+      sensitive: true,
+      show_if: { field: 'has_allergy', equals: true },
+    },
     { id: 'age', type: 'number', label: 'Age', validation: { min: 4, max: 18 } },
     { id: 'terms', type: 'consent_checkbox', label: 'I agree', required: true },
   ],
 });
 
 describe('form schema', () => {
-  it.each(['SSN', 'Social Security number', "Driver's license #", 'Passport no.', 'Credit card number', 'CVV code', 'Bank account'])(
-    'refuses a field asking for %s',
-    (label) => {
-      expect(isForbiddenFieldText(label)).toBe(true);
-      expect(formFieldSchema.safeParse({ id: 'x', type: 'short_text', label }).success).toBe(false);
-    },
-  );
+  it.each([
+    'SSN',
+    'Social Security number',
+    "Driver's license #",
+    'Passport no.',
+    'Credit card number',
+    'CVV code',
+    'Bank account',
+  ])('refuses a field asking for %s', (label) => {
+    expect(isForbiddenFieldText(label)).toBe(true);
+    expect(formFieldSchema.safeParse({ id: 'x', type: 'short_text', label }).success).toBe(false);
+  });
   it('allows ordinary labels', () => {
     expect(isForbiddenFieldText('Shirt size')).toBe(false);
     expect(isForbiddenFieldText('Classroom')).toBe(false);
   });
   it('has no file-upload type and rejects unknown keys', () => {
     expect(formFieldSchema.safeParse({ id: 'x', type: 'file', label: 'Doc' }).success).toBe(false);
-    expect(formFieldSchema.safeParse({ id: 'x', type: 'short_text', label: 'a', onclick: 'x' }).success).toBe(false);
+    expect(
+      formFieldSchema.safeParse({ id: 'x', type: 'short_text', label: 'a', onclick: 'x' }).success,
+    ).toBe(false);
   });
   it('requires options only for choice fields and unique ids', () => {
-    expect(formFieldSchema.safeParse({ id: 'x', type: 'dropdown', label: 'a' }).success).toBe(false);
-    expect(formFieldSchema.safeParse({ id: 'x', type: 'short_text', label: 'a', options: [{ value: 'a', label: 'a' }] }).success).toBe(false);
-    const dup = { fields: [{ id: 'a', type: 'short_text', label: 'a' }, { id: 'a', type: 'short_text', label: 'b' }] };
+    expect(formFieldSchema.safeParse({ id: 'x', type: 'dropdown', label: 'a' }).success).toBe(
+      false,
+    );
+    expect(
+      formFieldSchema.safeParse({
+        id: 'x',
+        type: 'short_text',
+        label: 'a',
+        options: [{ value: 'a', label: 'a' }],
+      }).success,
+    ).toBe(false);
+    const dup = {
+      fields: [
+        { id: 'a', type: 'short_text', label: 'a' },
+        { id: 'a', type: 'short_text', label: 'b' },
+      ],
+    };
     expect(formSchemaSchema.safeParse(dup).success).toBe(false);
   });
   it('allows show-if only on an earlier field', () => {
-    const fwd = { fields: [{ id: 'a', type: 'short_text', label: 'a', show_if: { field: 'b', equals: 'x' } }, { id: 'b', type: 'short_text', label: 'b' }] };
+    const fwd = {
+      fields: [
+        { id: 'a', type: 'short_text', label: 'a', show_if: { field: 'b', equals: 'x' } },
+        { id: 'b', type: 'short_text', label: 'b' },
+      ],
+    };
     expect(formSchemaSchema.safeParse(fwd).success).toBe(false);
   });
 });
 
 describe('answer validation', () => {
   it('accepts valid answers and splits sensitive ones', () => {
-    const r = validateAnswers(form, { shirt: 's', has_allergy: true, allergy: 'peanuts', terms: true });
-    expect(r).toEqual({ ok: true, answers: { shirt: 's', has_allergy: true, terms: true }, sensitive: { allergy: 'peanuts' } });
+    const r = validateAnswers(form, {
+      shirt: 's',
+      has_allergy: true,
+      allergy: 'peanuts',
+      terms: true,
+    });
+    expect(r).toEqual({
+      ok: true,
+      answers: { shirt: 's', has_allergy: true, terms: true },
+      sensitive: { allergy: 'peanuts' },
+    });
   });
   it('requires visible required fields, including consent', () => {
     const r = validateAnswers(form, { has_allergy: false });
@@ -64,7 +114,9 @@ describe('answer validation', () => {
     const r = validateAnswers(form, { shirt: 'xl', age: 3, terms: true });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(['age', 'shirt']);
-    expect(validateAnswers(form, { shirt: 's', terms: true, age: '9' as unknown as number }).ok).toBe(false);
+    expect(
+      validateAnswers(form, { shirt: 's', terms: true, age: '9' as unknown as number }).ok,
+    ).toBe(false);
   });
   it('rejects hidden-field smuggling and unknown keys', () => {
     const hidden = validateAnswers(form, { shirt: 's', terms: true, allergy: 'peanuts' });
@@ -73,7 +125,9 @@ describe('answer validation', () => {
     expect(unknown.ok).toBe(false);
   });
   it('rejects oversized payloads', () => {
-    expect(validateAnswers(form, { shirt: 's', terms: true, junk: 'x'.repeat(60_000) }).ok).toBe(false);
+    expect(validateAnswers(form, { shirt: 's', terms: true, junk: 'x'.repeat(60_000) }).ok).toBe(
+      false,
+    );
   });
   it('evaluates show-if chains', () => {
     expect(visibleFields(form, { has_allergy: true }).map((f) => f.id)).toContain('allergy');
@@ -97,25 +151,50 @@ describe('info blocks and inputs', () => {
   });
   it('event data refuses unknown keys such as status, and a price without a timing', () => {
     expect(registrationEventDataSchema.safeParse({ status: 'open' }).success).toBe(false);
-    expect(registrationEventDataSchema.safeParse({ price_cents: 2500, payment_timing: 'none' }).success).toBe(false);
-    expect(registrationEventDataSchema.safeParse({ price_cents: 2500, payment_timing: 'after_acceptance' }).success).toBe(true);
+    expect(
+      registrationEventDataSchema.safeParse({ price_cents: 2500, payment_timing: 'none' }).success,
+    ).toBe(false);
+    expect(
+      registrationEventDataSchema.safeParse({
+        price_cents: 2500,
+        payment_timing: 'after_acceptance',
+      }).success,
+    ).toBe(true);
   });
   it('submission needs the guardian attestation and an empty honeypot, and normalizes email', () => {
     const base = {
-      slug: 'fall-2026', formVersionId: crypto.randomUUID(), guardianName: 'Pat', guardianEmail: ' PAT@Example.TEST ',
-      guardianRelationship: 'Mother', playerFirstName: 'Ava', playerLastName: 'Adams', playerDateOfBirth: '2016-05-05',
-      guardianAttestation: true as const, answers: {},
+      slug: 'fall-2026',
+      formVersionId: crypto.randomUUID(),
+      guardianName: 'Pat',
+      guardianEmail: ' PAT@Example.TEST ',
+      guardianRelationship: 'Mother',
+      playerFirstName: 'Ava',
+      playerLastName: 'Adams',
+      playerDateOfBirth: '2016-05-05',
+      guardianAttestation: true as const,
+      answers: {},
     };
     const ok = submitRegistrationSchema.parse(base);
     expect(ok.guardianEmail).toBe('pat@example.test');
-    expect(submitRegistrationSchema.safeParse({ ...base, guardianAttestation: false }).success).toBe(false);
+    expect(
+      submitRegistrationSchema.safeParse({ ...base, guardianAttestation: false }).success,
+    ).toBe(false);
     expect(submitRegistrationSchema.safeParse({ ...base, website: 'spam' }).success).toBe(false);
     expect(submitRegistrationSchema.safeParse({ ...base, extra: 1 }).success).toBe(false);
   });
   it('a waiver acceptance requires electronic consent', () => {
-    const base = { waiverVersionId: crypto.randomUUID(), signerName: 'Pat', signerRelationship: 'Mother', signerEmail: 'p@e.co' };
-    expect(waiverAcceptanceSchema.safeParse({ ...base, electronicConsent: false }).success).toBe(false);
-    expect(waiverAcceptanceSchema.safeParse({ ...base, electronicConsent: true }).success).toBe(true);
+    const base = {
+      waiverVersionId: crypto.randomUUID(),
+      signerName: 'Pat',
+      signerRelationship: 'Mother',
+      signerEmail: 'p@e.co',
+    };
+    expect(waiverAcceptanceSchema.safeParse({ ...base, electronicConsent: false }).success).toBe(
+      false,
+    );
+    expect(waiverAcceptanceSchema.safeParse({ ...base, electronicConsent: true }).success).toBe(
+      true,
+    );
   });
 });
 

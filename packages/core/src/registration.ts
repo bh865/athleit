@@ -15,8 +15,11 @@ export type AnswerResult =
 
 function matches(cond: ShowIf, answers: Record<string, unknown>): boolean {
   const v = answers[cond.field];
-  if ('equals' in cond) return v === cond.equals || (Array.isArray(v) && v.includes(cond.equals as string));
-  return Array.isArray(v) ? v.some((x) => cond.in.includes(String(x))) : cond.in.includes(String(v));
+  if ('equals' in cond)
+    return v === cond.equals || (Array.isArray(v) && v.includes(cond.equals as string));
+  return Array.isArray(v)
+    ? v.some((x) => cond.in.includes(String(x)))
+    : cond.in.includes(String(v));
 }
 
 /** Fields shown for the current answers: a field is visible when it has no condition, or its condition holds
@@ -59,11 +62,14 @@ function checkOne(f: FormField, v: unknown): string | null {
       if (typeof v !== 'string') return 'Invalid answer';
       const max = val.max_length ?? (f.type === 'short_text' ? 200 : 4000);
       if (v.length > max) return `Keep this under ${max} characters`;
-      if (val.min_length && v.trim().length < val.min_length) return `Enter at least ${val.min_length} characters`;
+      if (val.min_length && v.trim().length < val.min_length)
+        return `Enter at least ${val.min_length} characters`;
       return null;
     }
     case 'email':
-      return typeof v === 'string' && v.length <= 254 && EMAIL.test(v) ? null : 'Enter a valid email';
+      return typeof v === 'string' && v.length <= 254 && EMAIL.test(v)
+        ? null
+        : 'Enter a valid email';
     case 'phone':
       return typeof v === 'string' && PHONE.test(v) ? null : 'Enter a valid phone number';
     case 'number': {
@@ -76,18 +82,23 @@ function checkOne(f: FormField, v: unknown): string | null {
       return typeof v === 'string' && isValidDate(v) ? null : 'Enter a valid date';
     case 'single_choice':
     case 'dropdown':
-      return typeof v === 'string' && f.options?.some((o) => o.value === v) ? null : 'Choose one of the options';
+      return typeof v === 'string' && f.options?.some((o) => o.value === v)
+        ? null
+        : 'Choose one of the options';
     case 'multiple_choice': {
       if (!Array.isArray(v) || !v.every((x) => typeof x === 'string')) return 'Invalid answer';
       const allowed = new Set(f.options?.map((o) => o.value));
-      if (new Set(v).size !== v.length || !v.every((x) => allowed.has(x))) return 'Choose from the options';
+      if (new Set(v).size !== v.length || !v.every((x) => allowed.has(x)))
+        return 'Choose from the options';
       return null;
     }
     case 'address': {
       if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'Invalid address';
       const a = v as Record<string, unknown>;
-      if (Object.keys(a).some((k) => !(ADDRESS_KEYS as readonly string[]).includes(k))) return 'Invalid address';
-      if (Object.values(a).some((x) => typeof x !== 'string' || x.length > 120)) return 'Invalid address';
+      if (Object.keys(a).some((k) => !(ADDRESS_KEYS as readonly string[]).includes(k)))
+        return 'Invalid address';
+      if (Object.values(a).some((x) => typeof x !== 'string' || x.length > 120))
+        return 'Invalid address';
       if (!a.line1 || !a.city || !a.postal_code) return 'Enter street, city and postal code';
       return null;
     }
@@ -103,7 +114,8 @@ function checkOne(f: FormField, v: unknown): string | null {
  */
 export function validateAnswers(schema: FormSchema, raw: Record<string, unknown>): AnswerResult {
   const errors: AnswerErrors = {};
-  if (JSON.stringify(raw).length > MAX_ANSWERS_BYTES) return { ok: false, errors: { _form: 'Answers are too large' } };
+  if (JSON.stringify(raw).length > MAX_ANSWERS_BYTES)
+    return { ok: false, errors: { _form: 'Answers are too large' } };
   const byId = new Map(schema.fields.map((f) => [f.id, f]));
   for (const key of Object.keys(raw)) if (!byId.has(key)) errors[key] = 'Unknown field';
 
@@ -126,10 +138,20 @@ export function validateAnswers(schema: FormSchema, raw: Record<string, unknown>
 
 /** Neutralize spreadsheet formula injection: a cell that starts with = + - @ (or tab/CR) gets a leading apostrophe. */
 export function csvSafeCell(value: unknown): string {
-  const s = value === null || value === undefined ? '' : typeof value === 'string' ? value : JSON.stringify(value);
+  const s =
+    value === null || value === undefined
+      ? ''
+      : typeof value === 'string'
+        ? value
+        : JSON.stringify(value);
   const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 /** Display rank labels for the spots_left availability string returned by get_public_registration. */
-export const SPOTS_LABELS = { open: 'Spots available', few: 'Only a few spots left', waitlist: 'Full: join the waitlist', full: 'Full' } as const;
+export const SPOTS_LABELS = {
+  open: 'Spots available',
+  few: 'Only a few spots left',
+  waitlist: 'Full: join the waitlist',
+  full: 'Full',
+} as const;

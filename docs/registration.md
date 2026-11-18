@@ -5,19 +5,19 @@ Permissions: [permissions.md](permissions.md). Data handling: [registration-priv
 
 ## Model
 
-| Table                            | Purpose                                                                                                                       | Written by                                                       |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `forms` / `form_versions`        | A form owner (team or club) with a mutable `draft_schema`; each publish creates the next immutable version.                    | `create_form`, `save_form_draft`, `publish_form_version`         |
-| `waivers` / `waiver_versions`    | Same pattern for waiver text (restricted markdown) with a sha256 `content_hash` and optional `requires_resign_after_days`.     | `create_waiver`, `save_waiver_draft`, `publish_waiver_version`   |
-| `team_required_waivers`          | Waivers every rostered player of a team must have signed.                                                                      | `set_team_required_waiver`                                       |
-| `registration_events`            | The public offering: issuer, info blocks, window, capacity, waitlist, price and payment timing, form + waiver versions.         | `create/update/publish/close/archive_registration_event`         |
-| `registrations`                  | One child per registration (`REG-1042`). Ordinary answers only.                                                                | `svc_create_registration` + decision functions (Edge Functions)  |
-| `registration_sensitive_answers` | Medical and other sensitive answers. No grants at all; read only through `get_sensitive_answers` (audited).                     | `svc_create_registration`                                        |
-| `registration_notes`             | Staff-only evaluation notes. Never visible to families.                                                                        | `add_registration_note`                                          |
-| `registration_capability_grants` | Who besides issuer admins holds the `sensitive_answers` capability.                                                            | `grant_registration_capability`                                  |
-| `waiver_acceptances`             | Append-only signatures: typed name, relationship, email, electronic-records consent, version, optional PDF path.               | `record_waiver_acceptance`, `svc_record_waiver_acceptance`       |
-| `waiver_acceptance_evidence`     | Signer IP and user agent, readable by issuer admins only. Populated only if the product decision allows it.                    | `svc_record_waiver_acceptance`                                   |
-| `documents`                      | Metadata for files in the private `documents` bucket.                                                                          | `create_document`, `update_document`, `archive_document`        |
+| Table                            | Purpose                                                                                                                    | Written by                                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `forms` / `form_versions`        | A form owner (team or club) with a mutable `draft_schema`; each publish creates the next immutable version.                | `create_form`, `save_form_draft`, `publish_form_version`        |
+| `waivers` / `waiver_versions`    | Same pattern for waiver text (restricted markdown) with a sha256 `content_hash` and optional `requires_resign_after_days`. | `create_waiver`, `save_waiver_draft`, `publish_waiver_version`  |
+| `team_required_waivers`          | Waivers every rostered player of a team must have signed.                                                                  | `set_team_required_waiver`                                      |
+| `registration_events`            | The public offering: issuer, info blocks, window, capacity, waitlist, price and payment timing, form + waiver versions.    | `create/update/publish/close/archive_registration_event`        |
+| `registrations`                  | One child per registration (`REG-1042`). Ordinary answers only.                                                            | `svc_create_registration` + decision functions (Edge Functions) |
+| `registration_sensitive_answers` | Medical and other sensitive answers. No grants at all; read only through `get_sensitive_answers` (audited).                | `svc_create_registration`                                       |
+| `registration_notes`             | Staff-only evaluation notes. Never visible to families.                                                                    | `add_registration_note`                                         |
+| `registration_capability_grants` | Who besides issuer admins holds the `sensitive_answers` capability.                                                        | `grant_registration_capability`                                 |
+| `waiver_acceptances`             | Append-only signatures: typed name, relationship, email, electronic-records consent, version, optional PDF path.           | `record_waiver_acceptance`, `svc_record_waiver_acceptance`      |
+| `waiver_acceptance_evidence`     | Signer IP and user agent, readable by issuer admins only. Populated only if the product decision allows it.                | `svc_record_waiver_acceptance`                                  |
+| `documents`                      | Metadata for files in the private `documents` bucket.                                                                      | `create_document`, `update_document`, `archive_document`        |
 
 Storage buckets (all private; policies and tests in `documents_storage`, `waiver_copies_storage`, `registration_covers_storage`):
 `documents` (20 MB, PDF, images, Office), `waiver-copies` (service role writes; signer, family and issuer staff read), `registration-covers` (managers

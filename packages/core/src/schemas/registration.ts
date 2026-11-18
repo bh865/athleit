@@ -47,7 +47,9 @@ export function isForbiddenFieldText(text: string | null | undefined): boolean {
 export const FORBIDDEN_FIELD_MESSAGE =
   'Forms cannot ask for government ID numbers, Social Security numbers or card data.';
 
-export const formFieldIdSchema = z.string().regex(/^[a-z][a-z0-9_]{0,39}$/, 'Use lower-case letters, numbers and underscores');
+export const formFieldIdSchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9_]{0,39}$/, 'Use lower-case letters, numbers and underscores');
 
 export const formOptionSchema = z.strictObject({
   value: z.string().trim().min(1).max(100),
@@ -55,8 +57,14 @@ export const formOptionSchema = z.strictObject({
 });
 
 export const showIfSchema = z.union([
-  z.strictObject({ field: formFieldIdSchema, equals: z.union([z.string(), z.number(), z.boolean()]) }),
-  z.strictObject({ field: formFieldIdSchema, in: z.array(z.string()).min(1).max(MAX_FIELD_OPTIONS) }),
+  z.strictObject({
+    field: formFieldIdSchema,
+    equals: z.union([z.string(), z.number(), z.boolean()]),
+  }),
+  z.strictObject({
+    field: formFieldIdSchema,
+    in: z.array(z.string()).min(1).max(MAX_FIELD_OPTIONS),
+  }),
 ]);
 export type ShowIf = z.infer<typeof showIfSchema>;
 
@@ -84,8 +92,14 @@ export const formFieldSchema = z
       ctx.addIssue({ code: 'custom', path: ['label'], message: FORBIDDEN_FIELD_MESSAGE });
     }
     const choice = CHOICE_FIELD_TYPES.includes(f.type);
-    if (choice && !f.options) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Add at least one option' });
-    if (!choice && f.options) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Only choice fields have options' });
+    if (choice && !f.options)
+      ctx.addIssue({ code: 'custom', path: ['options'], message: 'Add at least one option' });
+    if (!choice && f.options)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['options'],
+        message: 'Only choice fields have options',
+      });
     if (f.options && new Set(f.options.map((o) => o.value)).size !== f.options.length) {
       ctx.addIssue({ code: 'custom', path: ['options'], message: 'Option values must be unique' });
     }
@@ -97,10 +111,15 @@ export const formSchemaSchema = z
   .superRefine((form, ctx) => {
     const seen = new Set<string>();
     form.fields.forEach((f, i) => {
-      if (seen.has(f.id)) ctx.addIssue({ code: 'custom', path: ['fields', i, 'id'], message: 'Duplicate field id' });
+      if (seen.has(f.id))
+        ctx.addIssue({ code: 'custom', path: ['fields', i, 'id'], message: 'Duplicate field id' });
       // A condition may only reference an EARLIER field.
       if (f.show_if && !seen.has(f.show_if.field)) {
-        ctx.addIssue({ code: 'custom', path: ['fields', i, 'show_if'], message: 'Show-if can only use an earlier field' });
+        ctx.addIssue({
+          code: 'custom',
+          path: ['fields', i, 'show_if'],
+          message: 'Show-if can only use an earlier field',
+        });
       }
       seen.add(f.id);
     });
@@ -123,7 +142,9 @@ export const infoBlockSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('what_to_bring'), items: z.array(text(200).min(1)).max(40) }),
   z.strictObject({
     type: z.literal('faq'),
-    items: z.array(z.strictObject({ question: text(200).min(1), answer: text(2000).min(1) })).max(30),
+    items: z
+      .array(z.strictObject({ question: text(200).min(1), answer: text(2000).min(1) }))
+      .max(30),
   }),
 ]);
 export type InfoBlock = z.infer<typeof infoBlockSchema>;
@@ -147,7 +168,11 @@ export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
 
 export const eligibilitySchema = z.union([
   z
-    .strictObject({ type: z.literal('birth_date'), min: isoDate.optional(), max: isoDate.optional() })
+    .strictObject({
+      type: z.literal('birth_date'),
+      min: isoDate.optional(),
+      max: isoDate.optional(),
+    })
     .refine((v) => v.min || v.max, 'Set at least one bound'),
   z
     .strictObject({
@@ -163,7 +188,11 @@ export const eligibilitySchema = z.union([
 export const registrationEventDataSchema = z
   .strictObject({
     title: z.string().trim().min(1, 'Add a title').max(120),
-    slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Lower-case letters, numbers and dashes').min(6).max(80),
+    slug: z
+      .string()
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Lower-case letters, numbers and dashes')
+      .min(6)
+      .max(80),
     kind: z.enum(REGISTRATION_KINDS),
     sport: z.string().nullable(),
     summary: z.string().trim().max(500).nullable(),
@@ -192,10 +221,18 @@ export const registrationEventDataSchema = z
   .partial()
   .superRefine((v, ctx) => {
     if (v.price_cents != null && v.payment_timing === 'none') {
-      ctx.addIssue({ code: 'custom', path: ['payment_timing'], message: 'Choose when to collect payment' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['payment_timing'],
+        message: 'Choose when to collect payment',
+      });
     }
     if (v.opens_at && v.closes_at && new Date(v.closes_at) <= new Date(v.opens_at)) {
-      ctx.addIssue({ code: 'custom', path: ['closes_at'], message: 'Closing must be after opening' });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['closes_at'],
+        message: 'Closing must be after opening',
+      });
     }
   });
 export type RegistrationEventData = z.infer<typeof registrationEventDataSchema>;

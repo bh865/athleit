@@ -65,8 +65,16 @@ const STAFF: Capability[] = [
  * Phase 5. `registration.sensitive` (medical answers) is held by team admins by default; the database also lets an
  * admin grant it to a named coach/manager (registration_capability_grants), which this static map cannot know.
  */
-const REGISTRATION_STAFF: Capability[] = ['registration.view', 'registration.place', 'documents.view'];
-const REGISTRATION_MANAGER: Capability[] = [...REGISTRATION_STAFF, 'registration.manage', 'documents.manage'];
+const REGISTRATION_STAFF: Capability[] = [
+  'registration.view',
+  'registration.place',
+  'documents.view',
+];
+const REGISTRATION_MANAGER: Capability[] = [
+  ...REGISTRATION_STAFF,
+  'registration.manage',
+  'documents.manage',
+];
 
 const BY_ROLE: Record<string, Capability[]> = {
   'team:admin': [
@@ -93,7 +101,13 @@ const BY_ROLE: Record<string, Capability[]> = {
     'registration.register',
     'documents.view',
   ],
-  'team:player': ['team.view', 'roster.viewLimited', 'schedule.view', 'schedule.rsvpOwn', 'documents.view'],
+  'team:player': [
+    'team.view',
+    'roster.viewLimited',
+    'schedule.view',
+    'schedule.rsvpOwn',
+    'documents.view',
+  ],
   'club:admin': [
     'club.view',
     'club.decideLink',
