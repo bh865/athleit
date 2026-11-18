@@ -118,6 +118,8 @@ Known gaps (documented, not hidden): disputes are debited from the connected acc
 refunds blocked while disputed; `refund_application_fee` semantics need a test-mode check
 (`scripts/payments-integration.mjs`); any staff member can publish an event (decision pending).
 
+See [payments-e2e-todo.md](payments-e2e-todo.md) for what has been verified live and the end-to-end test scenarios still to run.
+
 ## Part C: UI
 
 Web: `/pay` (parents: Due / Receipts, multi-select checkout, Stripe Payment Element initialised with the connected account), `/teams/[id]/payments` and
