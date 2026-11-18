@@ -57,7 +57,8 @@ test.describe.serial('registration (end to end)', () => {
     await admin.getByLabel('Title').fill('Liability waiver');
     await admin.getByLabel('Waiver text').fill('I agree to the terms of participation.');
     await admin.getByRole('button', { name: /Publish version 1/ }).click();
-    await expect(admin.getByText('Published.')).toBeVisible();
+    // Creating then publishing swaps to the edit route, which drops the toast: the version list is the lasting proof.
+    await expect(admin.getByRole('heading', { name: 'Published versions' })).toBeVisible();
 
     // Registration event using both.
     await admin.goto(`/manage/registration/new?team=${teamId}`);
