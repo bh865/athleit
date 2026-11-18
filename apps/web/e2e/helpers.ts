@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Browser, type Page } from '@playwright/test';
 
 /** Every e2e user and what they created, so teardown can remove it. */
@@ -16,7 +16,9 @@ const admin = () =>
     : null;
 
 /** Every auth user, across pages (a single page misses newer users once the project has many). */
-export async function listAllUsers(client: ReturnType<typeof createClient>) {
+export async function listAllUsers(client: {
+  auth: { admin: Pick<SupabaseClient['auth']['admin'], 'listUsers'> };
+}) {
   const all: { id: string; email?: string }[] = [];
   for (let page = 1; page < 100; page++) {
     const { data } = await client.auth.admin.listUsers({ page, perPage: 200 });
