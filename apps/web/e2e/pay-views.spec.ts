@@ -8,9 +8,9 @@ import { cleanup, emailFor, newSession, signUp } from './helpers';
  * not which place is active. Needs the hosted TEST project and its service role key (setup only;
  * assertions go through the UI). No Stripe account is required.
  *
- *   E2E_SUPABASE_SERVICE_ROLE_KEY=... pnpm --filter @athleit/web exec playwright test e2e/pay-views.spec.ts
+ *   E2E_SUPABASE_URL=https://<ref>.supabase.co E2E_SUPABASE_SERVICE_ROLE_KEY=... pnpm --filter @athleit/web exec playwright test --project=chromium pay-views
  */
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.E2E_SUPABASE_URL ?? '';
 const service = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY ?? '';
 
 test.describe('Pay views by capability', () => {
