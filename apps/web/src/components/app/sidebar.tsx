@@ -78,6 +78,7 @@ export function Sidebar() {
           } as NavItem,
         ]
       : []),
+    ...(hasTeam ? [{ href: '/roster', label: 'Roster', icon: 'users-three' } as NavItem] : []),
     ...(contexts.length > 0
       ? [{ href: '/schedule', label: 'Schedule', icon: 'calendar-blank' } as NavItem]
       : []),

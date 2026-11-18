@@ -15,7 +15,11 @@ function TeamHeader() {
   const pathname = usePathname();
   const base = `/teams/${team.id}`;
   const tabs = [
-    { href: base, label: 'Roster', show: caps.has('roster.viewLimited') },
+    {
+      href: base,
+      label: 'Overview',
+      show: caps.has('team.view') || caps.has('roster.viewLimited'),
+    },
     { href: `${base}/schedule`, label: 'Schedule', show: caps.has('schedule.view') },
     { href: `${base}/payments`, label: 'Payments', show: caps.has('payments.view') },
     { href: `${base}/requests`, label: 'Requests', show: caps.has('joinRequests.decide') },

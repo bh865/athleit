@@ -93,7 +93,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('staff place the child on the roster and see guardian contacts', async () => {
-    await coach.goto(teamUrl);
+    await coach.goto('/roster');
     const form = coach.getByTestId('place-form');
     await form.getByLabel('Jersey number').fill('7');
     await form.getByLabel('Position').fill('Forward');
@@ -107,7 +107,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('the parent now sees the limited roster only', async () => {
-    await parent.goto(teamUrl);
+    await parent.goto('/roster');
     const limited = parent.getByTestId('roster-limited');
     await expect(limited).toContainText('#7');
     await expect(limited).toContainText('Ava');

@@ -75,7 +75,7 @@ test.describe.serial('scheduling', () => {
     for (const name of ['Pat Parent', 'Bo Parent']) {
       await queue.locator('li', { hasText: name }).getByRole('button', { name: 'Approve' }).click();
     }
-    await coach.goto(teamUrl);
+    await coach.goto('/roster');
     for (const [child, jersey] of [
       ['Ava Adams', '7'],
       ['Ben Brown', '10'],
