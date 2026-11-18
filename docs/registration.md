@@ -81,7 +81,7 @@ version, answers split into ordinary and sensitive) calls `svc_create_registrati
 not count toward capacity. The registrant receives an email whose link carries a single-use, 60-minute token in the URL **fragment**
 (`/register/verify#token=...`); only its sha256 is stored. `verify-registration` consumes it (replay, expiry and unknown look identical), the registration
 becomes `submitted` or `waitlisted` (capacity is decided now, under the event lock), and the response carries a 60-minute **signing token** (body only, never
-emailed) so the registrant can sign waivers without an account. A repeated anonymous submission looks identical to a first one (no enumeration) and re-sends the link.
+emailed) so the registrant can sign waivers without an account. A repeated anonymous submission looks identical to a first one (no enumeration; the id is shown after confirmation) and re-sends the link without cancelling the original.
 
 **Signed-in guardian.** Skips verification. If the event takes payment at submission an account is required (the function refuses anonymous submitters) and
 the child must be linked (`player_required`).
@@ -96,8 +96,8 @@ IP and user agent are stored only when `RECORD_SIGNER_EVIDENCE=true` (off by def
 until `hold_expires_at`; the registration cannot be accepted until the request is paid; paying lifts the hold; the cron `registration-expire-holds` withdraws
 unpaid expired holds (a payment in flight keeps its spot), cancels the request, emails the registrant and advances the waitlist. `after_acceptance`: accepting
 creates the request (due in 7 days). An anonymous registrant who must pay gets an email asking them to create an account with the same address;
-`claim_my_registrations` links verified anonymous registrations to a confirmed account email, and `link_registration_player` links the child, which creates the
-request. Declining or withdrawing cancels an UNPAID request; a PAID one stays, `registration_payment_status.refundable` tells the UI to offer the staff refund
+the email carries a single-use claim link (`claim-registration`) that attaches the registration to their signed-in account, and `link_registration_player`
+links the child (name and date of birth must match), which creates the request. Declining or withdrawing cancels an UNPAID request; a PAID one stays, `registration_payment_status.refundable` tells the UI to offer the staff refund
 through the existing `refund-payment` function. Changes to Phase 4 tables are listed in the Part B summary and migration `20260302000100`.
 
 **Notifications.** Registrant emails (received, decision, promoted, payment due, hold expired) go through `notification_outbox` rows with `recipient_email`

@@ -11,7 +11,7 @@ import type { Result } from './submit.ts';
 
 export interface SignStore {
   rateLimit(bucket: string, limit: number, windowSeconds: number): Promise<boolean>;
-  user(authHeader: string): Promise<{ id: string } | null>;
+  user(authHeader: string): Promise<{ id: string; email?: string | null } | null>;
   resolveSignToken(hash: string): Promise<string | null>;
   signingState(registrationId: string): Promise<{
     display_id: string;
@@ -64,6 +64,7 @@ export async function signWaiver(
     return { status: 429, body: { error: 'rate_limited' } };
 
   let userId: string | null = null;
+  let userEmail: string | null = null;
   let tokenRegistration: string | null = null;
   if (signToken) {
     if (!/^[A-Za-z0-9_-]{20,200}$/.test(signToken))
@@ -74,6 +75,10 @@ export async function signWaiver(
     const u = await d.store.user(req.authHeader);
     if (!u) return { status: 401, body: { error: 'not_authenticated' } };
     userId = u.id;
+    userEmail = u.email ?? null;
+    // Signing creates permanent records and sends email: also limit per account, not only per IP.
+    if (!(await d.store.rateLimit(`reg-sign:user:${u.id}`, 20, 600)))
+      return { status: 429, body: { error: 'rate_limited' } };
   } else return { status: 401, body: { error: 'not_authenticated' } };
 
   // State request: which waivers remain (with their text), for the signing screen. Token path only.
@@ -187,7 +192,11 @@ export async function signWaiver(
           .slice(0, 40)}.pdf`,
         pdfBase64: toBase64(bytes),
       });
-      const r = await d.mailer.send({ to: ctx.signer_email, ...mail });
+      // Only ever to an address we already trust: the signed-in account's email, or the registration's verified
+      // guardian email. The typed signer email is a record of what the signer wrote, never a place to send mail.
+      const to = userId ? userEmail : ((ctx.guardian_email as string | undefined) ?? null);
+      if (!to) throw new Error('no_trusted_address');
+      const r = await d.mailer.send({ to, ...mail });
       if (r.ok) copy = 'emailed';
       else d.log('warn', 'copy_email_failed', { status: r.status });
     }

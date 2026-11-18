@@ -91,6 +91,40 @@ describe('form schema', () => {
   });
 });
 
+describe('form rules from the security review', () => {
+  it.each(['S.S.N.', 'soc sec #', 'Social Insurance Number', 'SIN number'])(
+    'refuses %s',
+    (label) => {
+      expect(isForbiddenFieldText(label)).toBe(true);
+    },
+  );
+  it('checks option labels too', () => {
+    const f = {
+      id: 'x',
+      type: 'dropdown',
+      label: 'ID type',
+      options: [{ value: 'a', label: 'Passport' }],
+    };
+    expect(formFieldSchema.safeParse(f).success).toBe(false);
+  });
+  it('an ordinary field cannot depend on a sensitive answer', () => {
+    const leaky = {
+      fields: [
+        { id: 'cond', type: 'checkbox', label: 'Any conditions?', sensitive: true },
+        {
+          id: 'detail',
+          type: 'short_text',
+          label: 'Tell us more',
+          show_if: { field: 'cond', equals: true },
+        },
+      ],
+    };
+    expect(formSchemaSchema.safeParse(leaky).success).toBe(false);
+    const ok = { fields: [leaky.fields[0], { ...leaky.fields[1], sensitive: true }] };
+    expect(formSchemaSchema.safeParse(ok).success).toBe(true);
+  });
+});
+
 describe('answer validation', () => {
   it('accepts valid answers and splits sensitive ones', () => {
     const r = validateAnswers(form, {

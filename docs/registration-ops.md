@@ -10,6 +10,7 @@ Everything an operator needs for Phase 5 Parts A and B: functions, secrets, sche
 | `submit-registration`     | anyone                                    | captcha; optional session                | The only write path. Honeypot, per-IP/email/event limits, validation against the published form.                |
 | `verify-registration`     | the emailed link                          | single-use token                         | Confirms the email, returns a signing token.                                                                    |
 | `sign-waiver`             | signed-in guardian or verified registrant | session or signing token                 | Append-only signature, signed-copy PDF in Storage, copy emailed.                                                |
+| `claim-registration`      | signed-in user with an emailed claim link | session + single-use claim token         | Attaches an anonymous registration to the signed-in account.                                                    |
 | `export-registrations`    | staff                                     | session; database decides                | CSV (formula-injection safe); sensitive columns only with the capability; audited.                              |
 | `deliver-notifications`   | database (pg_net) and cron                | n/a (queue only)                         | Existing worker, now also sends registrant emails (rows with `recipient_email`).                                |
 
@@ -58,7 +59,7 @@ Run by hand: `select public.svc_run_registration_retention(12, 90);` (service ro
 ## Deploy
 
 ```bash
-pnpm supabase functions deploy get-public-registration submit-registration verify-registration sign-waiver export-registrations deliver-notifications --use-api
+pnpm supabase functions deploy get-public-registration submit-registration verify-registration sign-waiver claim-registration export-registrations deliver-notifications --use-api
 ```
 
 ## Runbook
@@ -67,3 +68,24 @@ pnpm supabase functions deploy get-public-registration submit-registration verif
 - **A signed copy PDF is missing:** the signature exists (`waiver_acceptances`); `copy: "pending"` was returned. The PDF can be regenerated from `svc_acceptance_context(acceptance_id)`; `svc_attach_signed_copy` sets the path once.
 - **Captcha refusing everyone:** `CAPTCHA_SECRET` unset or mismatched with the site key.
 - **Spam wave:** lower the per-IP/per-event limits in `submit.ts`, or close the event; the honeypot and captcha already stop most bots.
+
+## Security review (Part B) and what changed because of it
+
+An independent reviewer read the migrations and Edge Functions cold. Everything it found was fixed (migration `20260302000400_registration_hardening.sql`
+and the Edge code), and each fix has a test:
+
+- **Account takeover by email match.** Claiming no longer trusts `email_confirmed_at` (this project auto-confirms signups, so any stranger could
+  claim a registration by signing up with the same address). A claim now needs the single-use token emailed to the registration's verified address
+  (`/register/claim#token=...` -> `claim-registration`).
+- **Capacity via late payment.** A payment that completes after its hold expired re-checks capacity under the event lock; the registration is waitlisted
+  (or withdrawn when there is no waitlist) and its paid request is offered for refund. Abandoned `processing` checkouts expire 15 minutes after the hold.
+- **Direct RPC bypassing the Edge rate limit.** `get_public_registration` is no longer executable by `anon`; the Edge Function reads it with the service role.
+- **Enumeration and blocking.** A new anonymous registration and a duplicate return the identical 202 (the registration id is shown after the email is
+  confirmed); a duplicate no longer invalidates the real registrant's link; unverified rows are deleted after 24 hours and hidden from staff lists.
+- **Content.** Info blocks are validated in SQL; a cover path must sit under the issuer's own prefix; a field cannot be shown only when a sensitive
+  answer is given; more forbidden label patterns, option labels checked.
+- **Other.** The child linked to a registration must match its name and date of birth; the signed copy is emailed only to the account or the verified guardian
+  address; per-account signing limit; the PDF notes characters it could not draw; outbox emails are purged on erasure and after 30 days.
+
+Open items for the platform: confirm that Supabase overwrites `x-forwarded-for` / `cf-connecting-ip` (rate limits use the last forwarded entry), and decide
+whether to enable "Confirm email" on the hosted project (recommended regardless; claims no longer depend on it).

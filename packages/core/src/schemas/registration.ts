@@ -38,7 +38,7 @@ export const MAX_ANSWERS_BYTES = 50_000;
 
 /** Labels and help text that ask for government ids, SSNs or card data are refused (mirrors the SQL regex). */
 const FORBIDDEN =
-  /\b(ssn|social security|social sec|passport|drivers? licen[sc]e|driver s licen[sc]e|driving licen[sc]e|government id|govt id|national id|tax id|taxpayer|credit card|debit card|card number|cvv|cvc|routing number|bank account|iban)\b/;
+  /\b(ssn|s s n|ss number|social security|social sec|soc sec|social insurance|sin number|passport|drivers? licen[sc]e|driver s licen[sc]e|driving licen[sc]e|government id|govt id|national id|tax id|taxpayer|credit card|debit card|card number|cvv|cvc|routing number|bank account|iban)\b/;
 
 export function isForbiddenFieldText(text: string | null | undefined): boolean {
   return FORBIDDEN.test((text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' '));
@@ -100,6 +100,9 @@ export const formFieldSchema = z
         path: ['options'],
         message: 'Only choice fields have options',
       });
+    if (f.options?.some((o) => isForbiddenFieldText(o.label))) {
+      ctx.addIssue({ code: 'custom', path: ['options'], message: FORBIDDEN_FIELD_MESSAGE });
+    }
     if (f.options && new Set(f.options.map((o) => o.value)).size !== f.options.length) {
       ctx.addIssue({ code: 'custom', path: ['options'], message: 'Option values must be unique' });
     }
@@ -110,6 +113,7 @@ export const formSchemaSchema = z
   .strictObject({ fields: z.array(formFieldSchema).max(MAX_FORM_FIELDS) })
   .superRefine((form, ctx) => {
     const seen = new Set<string>();
+    const sensitiveIds = new Set<string>();
     form.fields.forEach((f, i) => {
       if (seen.has(f.id))
         ctx.addIssue({ code: 'custom', path: ['fields', i, 'id'], message: 'Duplicate field id' });
@@ -121,6 +125,15 @@ export const formSchemaSchema = z
           message: 'Show-if can only use an earlier field',
         });
       }
+      // An ordinary field shown only when a SENSITIVE answer is given would reveal that answer to anyone who reads ordinary answers.
+      if (f.show_if && sensitiveIds.has(f.show_if.field) && !f.sensitive) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['fields', i, 'show_if'],
+          message: 'A field that depends on a sensitive answer must be sensitive too',
+        });
+      }
+      if (f.sensitive) sensitiveIds.add(f.id);
       seen.add(f.id);
     });
   });

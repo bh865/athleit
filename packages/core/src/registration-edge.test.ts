@@ -12,6 +12,7 @@ import {
   resendMailer,
   verificationEmail,
 } from '../../../supabase/functions/_shared/registration/mail';
+import { claimRegistration } from '../../../supabase/functions/_shared/registration/claim';
 import { getPublicRegistration } from '../../../supabase/functions/_shared/registration/public';
 import { signWaiver } from '../../../supabase/functions/_shared/registration/sign';
 import { submitRegistration } from '../../../supabase/functions/_shared/registration/submit';
@@ -124,13 +125,9 @@ describe('submit-registration', () => {
   it('creates an anonymous registration as pending and emails a hashed single-use link (token in the fragment)', async () => {
     const h = submitHarness();
     const r = await h.run(body());
-    expect(r.status).toBe(201);
-    expect(r.body).toMatchObject({
-      ok: true,
-      displayId: 'REG-1042',
-      status: 'pending_verification',
-      next: ['verify_email'],
-    });
+    // 202 and an identical body to a duplicate: a stranger cannot tell whether the child was already registered.
+    expect(r.status).toBe(202);
+    expect(r.body).toEqual({ ok: true, status: 'pending_verification', next: ['verify_email'] });
     expect(h.store.create.mock.calls[0][0]).toMatchObject({
       guardianEmail: 'pat@example.test',
       submittedBy: null,
@@ -139,6 +136,7 @@ describe('submit-registration', () => {
       'reg-1',
       await sha256Hex('TESTTOKEN_abcdefghijklmnop'),
       60,
+      false,
     );
     expect(h.sent).toHaveLength(1);
     expect(h.sent[0].to).toBe('pat@example.test');
@@ -279,7 +277,7 @@ describe('submit-registration', () => {
       const r = await h.run(body());
       expect(r.status).toBe(202);
       expect(r.body).toEqual({ ok: true, status: 'pending_verification', next: ['verify_email'] });
-      expect(h.store.issueToken).toHaveBeenCalledWith('reg-pending', expect.any(String), 60);
+      expect(h.store.issueToken).toHaveBeenCalledWith('reg-pending', expect.any(String), 60, true);
     });
     it('a signed-in duplicate is 409', async () => {
       const h = submitHarness({
@@ -480,7 +478,7 @@ describe('waiver PDF', () => {
   });
   it('markdown becomes plain text, never markup', () => {
     expect(markdownToPlain('# T\n\n**b** and _i_ [x](https://e.test) `c`\n- a')).toBe(
-      'T\n\nb and i x (https://e.test) c\n• a',
+      'T\n\nb and _i_ x (https://e.test) c\n• a',
     );
     expect(toWinAnsi('日本 “q”')).toBe('?? "q"');
   });
@@ -491,7 +489,8 @@ describe('sign-waiver', () => {
     waiver: { title: 'Liability', version: 1, body: 'text', content_hash: 'cd'.repeat(32) },
     signer_name: 'Pat',
     signer_relationship: 'Mother',
-    signer_email: 'pat@example.test',
+    signer_email: 'typed@example.test',
+    guardian_email: 'guardian@example.test',
     accepted_at: '2026-11-17T10:00:00Z',
     electronic_consent: true,
     registration_display_id: 'REG-1',
@@ -557,6 +556,7 @@ describe('sign-waiver', () => {
     );
     expect(h.store.storeCopy.mock.calls[0][0]).toBe('wc/acc-1.pdf');
     expect(h.store.attachCopy).toHaveBeenCalledWith('acc-1', 'wc/acc-1.pdf');
+    expect(h.sent[0].to).toBe('guardian@example.test'); // the registration's verified address, never the typed signer email
     expect(h.sent[0].attachments[0].filename).toMatch(/\.pdf$/);
     expect(
       Buffer.from(h.sent[0].attachments[0].contentBase64, 'base64').subarray(0, 5).toString(),
@@ -774,7 +774,7 @@ describe('registration email', () => {
     )!;
     expect(m.subject).toBe('Registration REG-1042: accepted');
     expect(m.text).toContain('$25.00');
-    expect(m.text).toContain('create an Athleit account with this same email');
+    expect(m.text).toContain('sign in or create an Athleit account');
     expect(m.text).toContain('Welcome <b>aboard</b>'); // plain text: shown literally, never interpreted
   });
   it('keeps control characters out of subjects and returns null for unknown templates', () => {
@@ -816,6 +816,7 @@ describe('registration email', () => {
     const finished: any[] = [];
     const store = {
       claim: async () => rows as any,
+      issueClaimToken: async () => undefined,
       finish: async (id: string, attempts: number, r: any) => {
         finished.push([id, attempts, r]);
       },
@@ -840,6 +841,7 @@ describe('registration email', () => {
       await processRegistrationEmails(
         {
           claim: async () => rows.slice(0, 1) as any,
+          issueClaimToken: async () => undefined,
           finish: async (...a: any[]) => {
             none.push(a);
           },
@@ -866,11 +868,11 @@ describe('registration email', () => {
 });
 
 describe('util', () => {
-  it('clientIp prefers cf-connecting-ip, takes the first forwarded entry and rejects junk', () => {
+  it('clientIp prefers cf-connecting-ip, takes the last forwarded entry and rejects junk', () => {
     expect(
       clientIp(new Headers({ 'cf-connecting-ip': '1.2.3.4', 'x-forwarded-for': '9.9.9.9' })),
     ).toBe('1.2.3.4');
-    expect(clientIp(new Headers({ 'x-forwarded-for': '5.6.7.8, 9.9.9.9' }))).toBe('5.6.7.8');
+    expect(clientIp(new Headers({ 'x-forwarded-for': '5.6.7.8, 9.9.9.9' }))).toBe('9.9.9.9');
     expect(clientIp(new Headers({ 'x-forwarded-for': '<script>' }))).toBe('unknown');
   });
   it('tokens are long, url-safe and unique; hashes are sha256 hex', async () => {
@@ -905,6 +907,184 @@ describe('util', () => {
     expect(mapDbError(new Error('relation "x" does not exist'))).toEqual({
       status: 500,
       code: 'internal_error',
+    });
+  });
+});
+
+describe('hardening', () => {
+  it('the anonymous new-registration and duplicate answers are byte-identical', async () => {
+    const fresh = await submitHarness().run(body());
+    const dup = await submitHarness({
+      createError: { code: '23505', message: 'duplicate key' },
+    }).run(body());
+    expect(JSON.stringify(dup)).toBe(JSON.stringify(fresh));
+  });
+  it('clientIp trusts the LAST forwarded entry (the one the platform appended)', () => {
+    expect(clientIp(new Headers({ 'x-forwarded-for': '6.6.6.6, 1.2.3.4' }))).toBe('1.2.3.4');
+  });
+  it('sign-waiver (signed in) emails the copy to the account address, never the typed one, and limits per account', async () => {
+    const sent: any[] = [];
+    const ctx = {
+      waiver: { title: 'L', version: 1, body: 'b', content_hash: 'cd'.repeat(32) },
+      signer_name: 'Pat',
+      signer_relationship: 'Mother',
+      signer_email: 'victim@example.test',
+      accepted_at: '2026-11-17T10:00:00Z',
+      electronic_consent: true,
+      registration_display_id: 'REG-1',
+      player_name: 'Ava',
+      subject: 'Fall',
+    };
+    const store: any = {
+      rateLimit: vi.fn(async () => true),
+      user: vi.fn(async () => ({ id: 'u1', email: 'me@example.test' })),
+      recordAsUser: vi.fn(async () => 'acc'),
+      recordEvidence: vi.fn(),
+      context: vi.fn(async () => ctx),
+      storeCopy: vi.fn(),
+      attachCopy: vi.fn(),
+    };
+    const deps: any = {
+      store,
+      mailer: {
+        send: async (m: any) => {
+          sent.push(m);
+          return { ok: true, status: 200 };
+        },
+      },
+      pdf: pdfLib,
+      appUrl: 'https://a',
+      recordEvidence: false,
+      log: () => undefined,
+    };
+    const sig = {
+      waiverVersionId: '33333333-3333-4333-8333-333333333333',
+      registrationId: '44444444-4444-4444-8444-444444444444',
+      signerName: 'Pat',
+      signerRelationship: 'Mother',
+      signerEmail: 'victim@example.test',
+      electronicConsent: true,
+    };
+    expect(
+      (
+        await signWaiver(deps, {
+          ip: '1.1.1.1',
+          userAgent: 'ua',
+          authHeader: 'Bearer u',
+          body: sig,
+        })
+      ).body,
+    ).toMatchObject({ copy: 'emailed' });
+    expect(sent[0].to).toBe('me@example.test');
+    expect(store.rateLimit.mock.calls.map((c: any[]) => c[0])).toContain('reg-sign:user:u1');
+  });
+  it('the PDF says so when characters could not be drawn', async () => {
+    const data = {
+      waiver: { title: 'T', version: 1, body: '日本語 text', content_hash: 'ab'.repeat(32) },
+      signer: { name: 'P', relationship: 'M', email: 'a@b.co' },
+      acceptedAt: '2026-01-01T00:00:00Z',
+      electronicConsent: true,
+      registrationDisplayId: null,
+      playerName: null,
+      subject: null,
+    };
+    const bytes = await buildWaiverPdf(pdfLib as any, data);
+    const t = [
+      ...Buffer.from(bytes)
+        .toString('latin1')
+        .matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g),
+    ]
+      .map((m) => {
+        try {
+          return inflateSync(Buffer.from(m[1]!, 'latin1')).toString('latin1');
+        } catch {
+          return '';
+        }
+      })
+      .join('');
+    expect(
+      [...t.matchAll(/<([0-9A-Fa-f]{2,})>\s*Tj/g)]
+        .map((h) => Buffer.from(h[1]!, 'hex').toString('latin1'))
+        .join('\n'),
+    ).toContain('could not be drawn');
+  });
+  it('markdown conversion is linear on adversarial input', () => {
+    const t0 = Date.now();
+    markdownToPlain('*a '.repeat(20000) + '_b '.repeat(20000));
+    expect(Date.now() - t0).toBeLessThan(500);
+  });
+  it('queued emails for anonymous registrants carry a freshly minted claim link (token only in the email)', async () => {
+    const issued: any[] = [];
+    const sent: any[] = [];
+    const row = {
+      id: '1',
+      recipient_email: 'a@b.co',
+      attempts: 0,
+      payload: {
+        template: 'decision',
+        display_id: 'REG-1',
+        status: 'accepted',
+        needs_account: true,
+        registration_id: 'reg-uuid',
+        price_cents: 2500,
+        payment_timing: 'after_acceptance',
+      },
+    };
+    const store = {
+      claim: async () => [row] as any,
+      finish: async () => undefined,
+      issueClaimToken: async (...a: any[]) => {
+        issued.push(a);
+      },
+    };
+    await processRegistrationEmails(
+      store as any,
+      {
+        send: async (m: any) => {
+          sent.push(m);
+          return { ok: true, status: 200 };
+        },
+      },
+      'https://app.example.test',
+    );
+    expect(issued).toHaveLength(1);
+    const token = /#token=([A-Za-z0-9_-]+)/.exec(sent[0].text)![1]!;
+    expect(issued[0][1]).toBe(await sha256Hex(token));
+    expect(sent[0].text).toContain('https://app.example.test/register/claim#token=');
+    expect(issued[0][0]).toBe('reg-uuid');
+  });
+  describe('claim-registration', () => {
+    const tok = 'C'.repeat(43);
+    const mk = (claim: () => Promise<string>) => {
+      const store: any = {
+        rateLimit: vi.fn(async () => true),
+        user: vi.fn(async () => ({ id: 'u1' })),
+        claim: vi.fn(claim),
+      };
+      return {
+        store,
+        run: (b: unknown, auth: string | null = 'Bearer u') =>
+          claimRegistration(
+            { store, log: () => undefined },
+            { ip: '1.1.1.1', authHeader: auth, body: b },
+          ),
+      };
+    };
+    it('needs a session and a well-formed token; hashes the token', async () => {
+      const h = mk(async () => 'reg-1');
+      expect((await h.run({ token: tok }, null)).status).toBe(401);
+      expect((await h.run({ token: 'nope' })).status).toBe(400);
+      expect((await h.run({ token: tok })).body).toEqual({ ok: true, registrationId: 'reg-1' });
+      expect(h.store.claim).toHaveBeenCalledWith(await sha256Hex(tok), 'u1');
+    });
+    it('a used, expired or unknown token is a plain invalid_token', async () => {
+      expect(
+        (
+          await mk(async () => {
+            throw new Error('invalid_token');
+          }).run({ token: tok })
+        ).body,
+      ).toEqual({ error: 'invalid_token' });
     });
   });
 });

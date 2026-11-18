@@ -26,7 +26,6 @@ export function markdownToPlain(md: string): string {
     .replace(/^\s{0,3}#{1,6}\s+/gm, '')
     .replace(/^\s*[-*+]\s+/gm, '• ')
     .replace(/\*\*(.+?)\*\*|__(.+?)__/g, '$1$2')
-    .replace(/(?<![*\w])\*(?!\s)(.+?)\*(?!\w)|(?<![_\w])_(?!\s)(.+?)_(?!\w)/g, '$1$2')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)')
     .replace(/^\s*([-*_])\1{2,}\s*$/gm, '')
@@ -148,6 +147,13 @@ export async function buildWaiverPdf(lib: PdfLib, data: WaiverCopyData): Promise
     8,
     muted,
   );
+  if (/[^\x00-\u00ff\u2022\u2018\u2019\u201c\u201d\u2013\u2014\u2026]/.test(data.waiver.body))
+    draw(
+      'Some characters could not be drawn in this PDF and appear as ?. The stored text and its hash are the authoritative record.',
+      font,
+      8,
+      muted,
+    );
   return await doc.save();
 }
 

@@ -477,3 +477,6 @@ verify_jwt = false
 
 [functions.export-registrations]
 verify_jwt = false
+
+[functions.claim-registration]
+verify_jwt = false

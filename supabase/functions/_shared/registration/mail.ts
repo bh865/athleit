@@ -1,7 +1,9 @@
 // Registration email: templates, a Resend sender (with attachments) and the outbox processor.
 // Registrant emails are transactional: they are sent regardless of notification preferences. Plain text only, so
 // nothing user-authored can become markup. Nothing here logs addresses, tokens or bodies.
-import { formatMoney, oneLine } from './util.ts';
+import { formatMoney, oneLine, randomToken, sha256Hex } from './util.ts';
+
+export const CLAIM_TTL_MINUTES = 14 * 24 * 60;
 
 export interface EmailMessage {
   to: string;
@@ -91,6 +93,7 @@ export function renderRegistrationEmail(
   template: string,
   p: P,
   appUrl: string,
+  claimUrl?: string,
 ): Omit<EmailMessage, 'to'> | null {
   const id = oneLine(p.display_id, 20);
   const event = oneLine(p.event_title, 120);
@@ -104,7 +107,7 @@ export function renderRegistrationEmail(
   const needsAccount = p.needs_account === true;
   const signIn = link(appUrl, '/registrations');
   const account = needsAccount
-    ? `\nTo continue, create an Athleit account with this same email address, then open:\n${link(appUrl, '/sign-up')}\nYour registration will be linked to your account automatically.\n`
+    ? `\nTo continue, sign in or create an Athleit account, then open this link once to attach the registration to your account:\n${claimUrl ?? link(appUrl, '/sign-up')}\nThe link only works for the person who received this email; do not forward it.\n`
     : `\nView it here: ${signIn}\n`;
   switch (template) {
     case 'received':
@@ -184,6 +187,8 @@ export interface EmailRow {
 }
 export interface EmailStore {
   claim(limit: number): Promise<EmailRow[]>;
+  /** Mint a single-use claim token for an anonymous registration; the raw token is only ever put in the email. */
+  issueClaimToken(registrationId: string, tokenHash: string, ttlMinutes: number): Promise<void>;
   finish(
     id: string,
     attempts: number,
@@ -203,7 +208,31 @@ export async function processRegistrationEmails(
   const out = { sent: 0, skipped: 0, failed: 0 };
   const rows = await store.claim(50);
   for (const row of rows) {
-    const content = renderRegistrationEmail(String(row.payload.template), row.payload, appUrl);
+    let claimUrl: string | undefined;
+    if (
+      mailer &&
+      appUrl &&
+      row.payload.needs_account === true &&
+      typeof row.payload.registration_id === 'string'
+    ) {
+      try {
+        const token = randomToken();
+        await store.issueClaimToken(
+          row.payload.registration_id,
+          await sha256Hex(token),
+          CLAIM_TTL_MINUTES,
+        );
+        claimUrl = link(appUrl, `/register/claim#token=${token}`);
+      } catch {
+        /* not claimable (declined, claimed, erased): the email still goes out without a link */
+      }
+    }
+    const content = renderRegistrationEmail(
+      String(row.payload.template),
+      row.payload,
+      appUrl,
+      claimUrl,
+    );
     if (!mailer || !appUrl) {
       await store.finish(row.id, row.attempts, {
         status: 'skipped',

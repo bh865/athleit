@@ -74,7 +74,7 @@ insert into public.registration_events (id, team_id, title, slug, kind, status, 
 
 reset role;
 insert into public.registrations (id, registration_event_id, display_id, guardian_name, guardian_email, guardian_relationship, player_first_name, player_last_name, player_date_of_birth, form_version_id, status, verified_at)
-  values ('d9000000-0000-0000-0000-000000000030', 'e2000000-0000-0000-0000-0000000000a2', private.next_registration_display_id(), 'Pat Parent', 'claimme@example.test', 'Mother', 'Ava', 'Adams', date '2016-05-05', 'f2000000-0000-0000-0000-000000000001', 'accepted', now());
+  values ('d9000000-0000-0000-0000-000000000030', 'e2000000-0000-0000-0000-0000000000a2', private.next_registration_display_id(), 'Pat Parent', 'claimme@example.test', 'Mother', 'Ava', 'Adams', (current_date - interval '10 years')::date, 'f2000000-0000-0000-0000-000000000001', 'accepted', now());
 reset role; select set_config('request.jwt.claims', '{"role":"anon"}', true); set local role anon;
 select throws_ok($$ select public.link_registration_player('d9000000-0000-0000-0000-000000000030', '91000000-0000-0000-0000-000000000001') $$, '42501', null, 'anonymous cannot link');
 reset role; select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-4444-444444444444","role":"authenticated"}', true); set local role authenticated;

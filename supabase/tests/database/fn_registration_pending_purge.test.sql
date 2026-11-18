@@ -47,27 +47,21 @@ insert into public.registration_notes (registration_id, author_id, body) values
   ('d1000000-0000-0000-0000-000000000001', 'a3333333-3333-3333-3333-333333333333', 'Strong left foot');
 
 reset role;
-insert into public.registrations (id, registration_event_id, display_id, guardian_name, guardian_email, guardian_relationship, player_first_name, player_last_name, player_date_of_birth, form_version_id, status, verified_at) values
-  ('d9000000-0000-0000-0000-000000000031', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), 'Anon', 'parent@example.test', 'Mother', 'Cy', 'Cole', date '2016-01-02', 'f2000000-0000-0000-0000-000000000001', 'submitted', now()),
-  ('d9000000-0000-0000-0000-000000000032', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), 'Anon', 'parent@example.test', 'Mother', 'Di', 'Dole', date '2016-01-03', 'f2000000-0000-0000-0000-000000000001', 'declined', now()),
-  ('d9000000-0000-0000-0000-000000000033', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), 'Anon', 'someoneelse@example.test', 'Mother', 'Ed', 'Eole', date '2016-01-04', 'f2000000-0000-0000-0000-000000000001', 'submitted', now());
 insert into public.registrations (id, registration_event_id, display_id, guardian_name, guardian_email, guardian_relationship, player_first_name, player_last_name, player_date_of_birth, form_version_id, status)
-  values ('d9000000-0000-0000-0000-000000000034', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), 'Anon', 'parent@example.test', 'Mother', 'Fy', 'Fole', date '2016-01-05', 'f2000000-0000-0000-0000-000000000001', 'pending_verification');
-reset role; select set_config('request.jwt.claims', '{"role":"anon"}', true); set local role anon;
-select throws_ok($$ select public.claim_my_registrations() $$, '42501', null, 'anonymous cannot claim');
-reset role; select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-4444-444444444444","role":"authenticated"}', true); set local role authenticated;
-select is(public.claim_my_registrations(), 0, 'an unconfirmed account email claims nothing');
+  values ('d9000000-0000-0000-0000-000000000020', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), 'Anon', 'anon@example.test', 'Father', 'Zed', 'Zane', date '2016-01-01', 'f2000000-0000-0000-0000-000000000001', 'pending_verification');
+insert into public.registrations (id, registration_event_id, display_id, submitted_by, household_id, guardian_name, guardian_email, guardian_relationship,
+  player_first_name, player_last_name, player_date_of_birth, form_version_id, status, waitlist_position, hold_expires_at)
+  values ('d9000000-0000-0000-0000-000000000051', 'e1000000-0000-0000-0000-000000000001', private.next_registration_display_id(), null, null, 'Guardian 51', 'g51@example.test', 'Mother',
+  'Kid51', 'Kidson51', date '2016-05-05', 'f2000000-0000-0000-0000-000000000001', 'submitted', null, null);
+
+update public.registrations set created_at = now() - interval '2 days' where id = 'd9000000-0000-0000-0000-000000000020';
+reset role; select set_config('request.jwt.claims', '{"sub":"a3333333-3333-3333-3333-333333333333","role":"authenticated"}', true); set local role authenticated;
+select is((select count(*)::int from public.list_registrations('e1000000-0000-0000-0000-000000000001')), 3, 'staff lists hide unverified registrations by default (R1, R2 and one more)');
+select is((select count(*)::int from public.list_registrations('e1000000-0000-0000-0000-000000000001', p_status => array['pending_verification'])), 1, 'but can ask for them');
 reset role;
-update auth.users set email_confirmed_at = now() where id = 'a4444444-4444-4444-4444-444444444444';
-reset role; select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-4444-444444444444","role":"authenticated"}', true); set local role authenticated;
-select is(public.claim_my_registrations(), 1, 'a confirmed email claims only its verified, active registrations');
-select is((select count(*)::int from public.registrations where id = 'd9000000-0000-0000-0000-000000000031' and submitted_by = 'a4444444-4444-4444-4444-444444444444'), 1, 'the matching one is claimed');
-select is((select count(*)::int from public.registrations where id in ('d9000000-0000-0000-0000-000000000032', 'd9000000-0000-0000-0000-000000000033', 'd9000000-0000-0000-0000-000000000034') and submitted_by is not null), 0, 'declined, other-email and unverified ones are not');
-select is(public.claim_my_registrations(), 0, 'claiming again is a no-op');
-reset role; select set_config('request.jwt.claims', '{"sub":"a8888888-8888-8888-8888-888888888888","role":"authenticated"}', true); set local role authenticated;
-select is(public.claim_my_registrations(), 0, 'another account (different email) claims nothing');
-reset role;
-select is((select count(*)::int from public.audit_log where action = 'registration.claim' and created_at = now()), 1, 'the claim is audited');
+select is((select public.svc_run_registration_retention() ->> 'pending_deleted'), '1', 'unverified registrations older than 24 hours are deleted');
+select is((select count(*)::int from public.registrations where id = 'd9000000-0000-0000-0000-000000000020'), 0, 'gone');
+select is((select count(*)::int from public.registrations where id = 'd9000000-0000-0000-0000-000000000051'), 1, 'verified ones are kept');
 
 select * from finish();
 rollback;

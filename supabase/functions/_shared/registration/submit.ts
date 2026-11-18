@@ -49,7 +49,12 @@ export interface SubmitStore {
     last: string,
     dob: string,
   ): Promise<string | null>;
-  issueToken(registrationId: string, hash: string, ttlMinutes: number): Promise<void>;
+  issueToken(
+    registrationId: string,
+    hash: string,
+    ttlMinutes: number,
+    keepExisting?: boolean,
+  ): Promise<void>;
 }
 
 export interface SubmitDeps {
@@ -144,9 +149,14 @@ export async function submitRegistration(
   const eventId = await store.eventId(input.slug);
   if (!eventId) return { status: 404, body: { error: 'not_found' } };
 
-  const emitToken = async (registrationId: string) => {
+  const emitToken = async (registrationId: string, keepExisting = false) => {
     const token = (d.token ?? randomToken)();
-    await store.issueToken(registrationId, await sha256Hex(token), VERIFY_TTL_MINUTES);
+    await store.issueToken(
+      registrationId,
+      await sha256Hex(token),
+      VERIFY_TTL_MINUTES,
+      keepExisting,
+    );
     if (d.mailer) {
       const mail = verificationEmail({
         appUrl: d.appUrl,
@@ -178,15 +188,9 @@ export async function submitRegistration(
     log('info', 'registration_created', { registration: created.id, status: created.status });
     if (!userId) {
       await emitToken(created.id);
-      return {
-        status: 201,
-        body: {
-          ok: true,
-          displayId: created.display_id,
-          status: created.status,
-          next: ['verify_email'],
-        },
-      };
+      // Identical to the duplicate case: nothing here tells a stranger whether this child was already registered.
+      // The registration id is shown once the email is confirmed.
+      return generic();
     }
     const next: string[] = [];
     if (event.waivers.length) next.push('sign_waivers');
@@ -218,7 +222,8 @@ export async function submitRegistration(
           input.playerLastName,
           input.playerDateOfBirth,
         );
-        if (pending) await emitToken(pending).catch(() => log('warn', 'resend_refused'));
+        // keepExisting: re-submitting someone else's details must not invalidate the real registrant's link.
+        if (pending) await emitToken(pending, true).catch(() => log('warn', 'resend_refused'));
         return generic();
       }
       return { status: 409, body: { error: 'already_registered' } };

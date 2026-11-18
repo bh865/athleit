@@ -3,7 +3,7 @@
 export function clientIp(h: Headers): string {
   const raw =
     h.get('cf-connecting-ip') ??
-    h.get('x-forwarded-for')?.split(',')[0] ??
+    h.get('x-forwarded-for')?.split(',').at(-1) ??
     h.get('x-real-ip') ??
     '';
   const ip = raw.trim();

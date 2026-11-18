@@ -9,7 +9,7 @@ import {
   json,
   publicStore,
 } from '../_shared/registration/runtime.ts';
-import { clientIp } from '../_shared/registration/util.ts';
+import { clientIp, readJsonBody } from '../_shared/registration/util.ts';
 
 Deno.serve(async (req) => {
   const cors = corsHeaders(
@@ -20,10 +20,12 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'GET' && req.method !== 'POST')
     return json({ error: 'method_not_allowed' }, 405, cors);
-  const slug =
-    req.method === 'GET'
-      ? new URL(req.url).searchParams.get('slug')
-      : ((await req.json().catch(() => null)) as { slug?: string } | null)?.slug;
+  let slug: unknown = req.method === 'GET' ? new URL(req.url).searchParams.get('slug') : undefined;
+  if (req.method === 'POST') {
+    const body = await readJsonBody(req, 1024);
+    if (!body.ok) return json({ error: body.error }, body.status, cors);
+    slug = (body.value as { slug?: string } | null)?.slug;
+  }
   try {
     const r = await getPublicRegistration(
       { store: publicStore(), cacheSeconds: Number(env('PUBLIC_CACHE_SECONDS') ?? '60') },

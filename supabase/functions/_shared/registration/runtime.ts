@@ -60,7 +60,7 @@ const rateLimit =
   };
 const callerUser = async (authHeader: string) => {
   const { data, error } = await asCaller(authHeader).auth.getUser();
-  return error || !data.user ? null : { id: data.user.id };
+  return error || !data.user ? null : { id: data.user.id, email: data.user.email ?? null };
 };
 const must = <T>(r: { data: T; error: unknown }): T => {
   if (r.error) throw r.error;
@@ -72,7 +72,11 @@ export function submitStore(): SubmitStore {
   return {
     rateLimit: rateLimit(db),
     async publicEvent(slug, authHeader) {
-      const { data } = await asCaller(authHeader).rpc('get_public_registration', { p_slug: slug });
+      // Anonymous callers use the service role: the RPC is not executable by anon (no direct, unthrottled access).
+      const { data } = await (authHeader ? asCaller(authHeader) : service()).rpc(
+        'get_public_registration',
+        { p_slug: slug },
+      );
       return (data as PublicEvent | null) ?? null;
     },
     user: callerUser,
@@ -115,12 +119,13 @@ export function submitStore(): SubmitStore {
         }),
       ) as string | null;
     },
-    async issueToken(registrationId, hash, ttl) {
+    async issueToken(registrationId, hash, ttl, keepExisting = false) {
       must(
         await db.rpc('svc_issue_verification_token', {
           p_registration_id: registrationId,
           p_token_hash: hash,
           p_ttl_minutes: ttl,
+          p_keep_existing: keepExisting,
         }),
       );
     },
@@ -215,7 +220,10 @@ export function publicStore(): PublicStore {
   return {
     rateLimit: rateLimit(db),
     async event(slug, authHeader) {
-      const { data } = await asCaller(authHeader).rpc('get_public_registration', { p_slug: slug });
+      const { data } = await (authHeader ? asCaller(authHeader) : service()).rpc(
+        'get_public_registration',
+        { p_slug: slug },
+      );
       return (data as Record<string, any> | null) ?? null;
     },
     async coverUrl(path, expiresIn) {
@@ -227,9 +235,31 @@ export function publicStore(): PublicStore {
   };
 }
 
+export function claimStore() {
+  const db = service();
+  return {
+    rateLimit: rateLimit(db),
+    user: callerUser,
+    async claim(hash: string, userId: string) {
+      return must(
+        await db.rpc('svc_claim_registration', { p_token_hash: hash, p_user_id: userId }),
+      ) as string;
+    },
+  };
+}
+
 export function emailStore(): EmailStore {
   const db = service();
   return {
+    async issueClaimToken(registrationId, hash, ttlMinutes) {
+      must(
+        await db.rpc('svc_issue_claim_token', {
+          p_registration_id: registrationId,
+          p_token_hash: hash,
+          p_ttl_minutes: ttlMinutes,
+        }),
+      );
+    },
     async claim(limit) {
       return must(await db.rpc('claim_registration_emails', { p_limit: limit })) as any;
     },
