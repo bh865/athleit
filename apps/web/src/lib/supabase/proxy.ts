@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/.well-known',
   '/r',
   '/register/verify',
+  '/captcha',
 ];
 const AUTH_ONLY_GUEST_PATHS = ['/sign-in', '/sign-up'];
 

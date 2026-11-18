@@ -105,6 +105,21 @@ export default function ClubPage() {
             </p>
           ) : null}
 
+          {caps.has('registration.view') ? (
+            <p>
+              <Link href={`/clubs/${id}/registrations`} className={styles.link}>
+                Club registrations
+              </Link>
+            </p>
+          ) : null}
+          {caps.has('documents.view') ? (
+            <p>
+              <Link href={`/clubs/${id}/documents`} className={styles.link}>
+                Club documents
+              </Link>
+            </p>
+          ) : null}
+
           <section className={styles.stack} aria-labelledby="teams-h">
             <h2 className={styles.section} id="teams-h">
               Teams
