@@ -27,6 +27,7 @@ import {
   Card,
   DatePicker,
   Heading,
+  PlaceAutocomplete,
   Select,
   Text,
   TextArea,
@@ -160,6 +161,7 @@ export function EventBuilder({ eventId, owner }: { eventId: string | null; owner
   const [startsOn, setStartsOn] = useState('');
   const [endsOn, setEndsOn] = useState('');
   const [location, setLocation] = useState('');
+  const [locationPicked, setLocationPicked] = useState(false);
   const [opens, setOpens] = useState('');
   const [closes, setCloses] = useState('');
   const [capacity, setCapacity] = useState('');
@@ -348,11 +350,19 @@ export function EventBuilder({ eventId, owner }: { eventId: string | null; owner
           />
           <DatePicker label="Starts" value={startsOn} onChange={setStartsOn} />
           <DatePicker label="Ends" value={endsOn} onChange={setEndsOn} />
-          <TextField
+          <PlaceAutocomplete
             label="Location"
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            maxLength={200}
+            verified={locationPicked}
+            onChange={(text) => setLocation(text.slice(0, 200))}
+            onSelect={(p) => {
+              setLocationPicked(true);
+              setLocation(p.formattedAddress.slice(0, 200));
+            }}
+            onClear={() => {
+              setLocationPicked(false);
+              setLocation('');
+            }}
           />
           <div className={styles.stack}>
             <Text variant="label">Cover image (optional)</Text>
