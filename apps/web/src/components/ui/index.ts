@@ -2,7 +2,9 @@ export { Avatar, type AvatarProps } from './avatar';
 export { Badge, type BadgeTone } from './badge';
 export {
   Button,
+  ButtonLink,
   IconButton,
+  type ButtonLinkProps,
   type ButtonProps,
   type ButtonVariant,
   type IconButtonProps,
@@ -27,3 +29,4 @@ export { ToastProvider, useToast } from './toast';
 export { Calendar, DatePicker, type DatePickerProps } from './date-picker';
 export { Popover } from './popover';
 export { TimePicker, type TimePickerProps } from './time-picker';
+export { PageHeader, type PageHeaderProps } from './page-header';

@@ -5,7 +5,7 @@ import { startConnectOnboarding } from '@athleit/db/payments';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-import { ErrorState, LoadingSkeleton } from '@/components/ui';
+import { ErrorState, LoadingSkeleton, PageHeader } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 /** The onboarding link expired or was already used: make a fresh one and continue. */
@@ -22,7 +22,12 @@ function Refresh() {
       else if (r.data.url) window.location.href = r.data.url;
     });
   }, [team, club]);
-  return error ? <ErrorState message={error} /> : <LoadingSkeleton />;
+  return (
+    <>
+      <PageHeader title="Payments" subtitle="Opening Stripe again…" />
+      {error ? <ErrorState message={error} /> : <LoadingSkeleton />}
+    </>
+  );
 }
 
 export default function ConnectRefreshPage() {

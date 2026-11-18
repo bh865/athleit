@@ -11,7 +11,7 @@ import { formText } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
 import { todayIso } from '@athleit/ui-core';
 
-import { Button, Card, DatePicker, TextField } from '@/components/ui';
+import { Button, Card, DatePicker, PageHeader, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 export default function AddChildPage() {
@@ -45,32 +45,34 @@ export default function AddChildPage() {
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} noValidate className={styles.stack}>
-        <h1 className={styles.title}>Add a child</h1>
-        <p className={styles.notice}>
-          You don’t need to join a team first. Children under 13 never have their own login; you
-          manage everything for them.
-        </p>
-        <TextField
-          name="firstName"
-          label="First name"
-          autoComplete="off"
-          error={errors.firstName}
-        />
-        <TextField name="lastName" label="Last name" autoComplete="off" error={errors.lastName} />
-        <DatePicker
-          name="dateOfBirth"
-          label="Date of birth"
-          max={todayIso()}
-          yearSpan={{ before: 25, after: 0 }}
-          error={errors.dateOfBirth}
-        />
-        <FormMessage error={error} />
-        <Button type="submit" loading={busy}>
-          Add child
-        </Button>
-      </form>
-    </Card>
+    <>
+      <PageHeader
+        title="Add a child"
+        back={{ href: '/family', label: 'Family' }}
+        subtitle="You don’t need to join a team first. Children under 13 never have their own login; you manage everything for them."
+      />
+      <Card>
+        <form onSubmit={onSubmit} noValidate className={styles.stack}>
+          <TextField
+            name="firstName"
+            label="First name"
+            autoComplete="off"
+            error={errors.firstName}
+          />
+          <TextField name="lastName" label="Last name" autoComplete="off" error={errors.lastName} />
+          <DatePicker
+            name="dateOfBirth"
+            label="Date of birth"
+            max={todayIso()}
+            yearSpan={{ before: 25, after: 0 }}
+            error={errors.dateOfBirth}
+          />
+          <FormMessage error={error} />
+          <Button type="submit" loading={busy}>
+            Add child
+          </Button>
+        </form>
+      </Card>
+    </>
   );
 }

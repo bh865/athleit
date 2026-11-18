@@ -87,7 +87,7 @@ export function NewMessage() {
 
   return (
     <Card>
-      <Text variant="heading" as="h1">
+      <Text variant="heading" as="h2">
         New message
       </Text>
       {options.length > 1 ? (

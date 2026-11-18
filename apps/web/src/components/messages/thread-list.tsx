@@ -54,12 +54,9 @@ export function ThreadList() {
   return (
     <div className={styles.column}>
       <div className={styles.head}>
-        <Text variant="title" as="h1">
-          Messages
+        <Text variant="label" muted as="h2">
+          Conversations
         </Text>
-        <Link href="/messages/new" aria-label="New message" className={styles.new}>
-          <Icon name="plus" />
-        </Link>
       </div>
       {rows.length === 0 ? (
         <EmptyState

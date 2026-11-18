@@ -8,7 +8,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
-import { Button, Card, Select, TextField } from '@/components/ui';
+import { Button, Card, PageHeader, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -41,13 +41,15 @@ function JoinForm() {
 
   if (sent) {
     return (
-      <Card className={styles.stack} data-testid="join-sent">
-        <h1 className={styles.title}>Request sent</h1>
-        <p>
-          The team’s staff will review it. You’ll see the team here once they approve; until then
-          you can’t see any of its information.
-        </p>
-      </Card>
+      <>
+        <PageHeader title="Request sent" />
+        <Card className={styles.stack} data-testid="join-sent">
+          <p>
+            The team’s staff will review it. You’ll see the team here once they approve; until then
+            you can’t see any of its information.
+          </p>
+        </Card>
+      </>
     );
   }
 
@@ -57,35 +59,36 @@ function JoinForm() {
   ];
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} noValidate className={styles.stack}>
-        <h1 className={styles.title}>Join a team</h1>
-        <p className={styles.muted}>
-          Enter the team code from your coach. This sends a request; the team’s staff approve it
-          before you get any access.
-        </p>
-        <TextField
-          name="code"
-          label="Team code"
-          mono
-          autoCapitalize="characters"
-          autoComplete="off"
-          error={codeError}
-        />
-        <Select
-          name="playerId"
-          label="Which child is this for?"
-          options={options}
-          defaultValue={params.get('player') ?? ''}
-          hint="Add your child first if they’re not listed."
-        />
-        <TextField name="message" label="Message (optional)" maxLength={500} />
-        <FormMessage error={error} />
-        <Button type="submit" loading={busy}>
-          Send request
-        </Button>
-      </form>
-    </Card>
+    <>
+      <PageHeader
+        title="Join a team"
+        subtitle="Enter the team code from your coach. This sends a request; the team’s staff approve it before you get any access."
+      />
+      <Card>
+        <form onSubmit={onSubmit} noValidate className={styles.stack}>
+          <TextField
+            name="code"
+            label="Team code"
+            mono
+            autoCapitalize="characters"
+            autoComplete="off"
+            error={codeError}
+          />
+          <Select
+            name="playerId"
+            label="Which child is this for?"
+            options={options}
+            defaultValue={params.get('player') ?? ''}
+            hint="Add your child first if they’re not listed."
+          />
+          <TextField name="message" label="Message (optional)" maxLength={500} />
+          <FormMessage error={error} />
+          <Button type="submit" loading={busy}>
+            Send request
+          </Button>
+        </form>
+      </Card>
+    </>
   );
 }
 

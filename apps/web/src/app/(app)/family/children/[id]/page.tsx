@@ -18,7 +18,7 @@ import { formText } from '@/components/app/form-utils';
 import { FormMessage, LoadState } from '@/components/app/states';
 import { todayIso } from '@athleit/ui-core';
 
-import { Badge, Button, Card, DatePicker, TextField } from '@/components/ui';
+import { Badge, Button, Card, DatePicker, PageHeader, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -87,17 +87,14 @@ export default function ChildPage() {
 
   return (
     <>
-      <Link href="/family" className={styles.link}>
-        ← Family
-      </Link>
+      <PageHeader
+        title={c ? `${c.first_name} ${c.last_name}` : 'Child'}
+        subtitle={c ? `${ageOn(c.date_of_birth)} years old` : undefined}
+        back={{ href: '/family', label: 'Family' }}
+      />
       <LoadState loading={child.loading} error={child.error} onRetry={child.reload}>
         {c && (
           <>
-            <h1 className={styles.title}>
-              {c.first_name} {c.last_name}
-            </h1>
-            <p className={styles.muted}>{ageOn(c.date_of_birth)} years old</p>
-
             <Card className={styles.row}>
               {photo.data ? (
                 // eslint-disable-next-line @next/next/no-img-element
