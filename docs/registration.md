@@ -1,6 +1,6 @@
 # Registration, forms, waivers and documents (Phase 5)
 
-Part A (this document's scope so far) is the database, RLS and shared packages. Edge Functions (Part B) and the UI (Part C) build on it.
+Parts A (database, RLS, shared packages) and B (Edge Functions, integrations) are built; the UI (Part C) builds on them. Operations, secrets and runbook: [registration-ops.md](registration-ops.md).
 Permissions: [permissions.md](permissions.md). Data handling: [registration-privacy.md](registration-privacy.md). Tests: `supabase/tests/database/`.
 
 ## Model
@@ -74,8 +74,41 @@ happen in the `submit-registration` Edge Function (Part B), which calls `svc_cre
 `registration.submit|verify|decide|promote|withdraw|place|note|export|sensitive_read|capability`, `document.create|update|archive`.
 Audit rows hold ids and statuses only, never names, emails or answers.
 
-## Known limits (Part A)
+## Server flows (Part B)
 
-- Concurrency is enforced by row locks and verified in pgTAP by sequential scenarios; true parallel-call tests belong with the Edge Functions (Part B).
+**Anonymous registration.** `submit-registration` (captcha, per-IP/per-email/per-event rate limits, honeypot, 64 KB cap, Zod against the PUBLISHED form
+version, answers split into ordinary and sensitive) calls `svc_create_registration` with the service role. The row starts `pending_verification` and does
+not count toward capacity. The registrant receives an email whose link carries a single-use, 60-minute token in the URL **fragment**
+(`/register/verify#token=...`); only its sha256 is stored. `verify-registration` consumes it (replay, expiry and unknown look identical), the registration
+becomes `submitted` or `waitlisted` (capacity is decided now, under the event lock), and the response carries a 60-minute **signing token** (body only, never
+emailed) so the registrant can sign waivers without an account. A repeated anonymous submission looks identical to a first one (no enumeration) and re-sends the link.
+
+**Signed-in guardian.** Skips verification. If the event takes payment at submission an account is required (the function refuses anonymous submitters) and
+the child must be linked (`player_required`).
+
+**Waivers.** `sign-waiver` records the acceptance (signed-in: AS the user, so ownership is checked by the database; token: bound to one registration), builds a
+signed-copy PDF (title, version, content hash, full text, typed signature, relationship, email, UTC time, consent, registration), stores it in the private
+`waiver-copies` bucket, attaches its path once, and emails the PDF to the signer. If copy generation fails the signature still stands (`copy: "pending"`).
+IP and user agent are stored only when `RECORD_SIGNER_EVIDENCE=true` (off by default).
+
+**Payments (Phase 4 reused).** One `payment_events` row of kind `registration` per registration event, one `payment_requests` row per registration, amount from
+`registration_events.price_cents` only. `at_submission`: the request exists as soon as a signed-in submission with a linked child is created; the spot is held
+until `hold_expires_at`; the registration cannot be accepted until the request is paid; paying lifts the hold; the cron `registration-expire-holds` withdraws
+unpaid expired holds (a payment in flight keeps its spot), cancels the request, emails the registrant and advances the waitlist. `after_acceptance`: accepting
+creates the request (due in 7 days). An anonymous registrant who must pay gets an email asking them to create an account with the same address;
+`claim_my_registrations` links verified anonymous registrations to a confirmed account email, and `link_registration_player` links the child, which creates the
+request. Declining or withdrawing cancels an UNPAID request; a PAID one stays, `registration_payment_status.refundable` tells the UI to offer the staff refund
+through the existing `refund-payment` function. Changes to Phase 4 tables are listed in the Part B summary and migration `20260302000100`.
+
+**Notifications.** Registrant emails (received, decision, promoted, payment due, hold expired) go through `notification_outbox` rows with `recipient_email`
+(no profile), are **transactional and ignore notification preferences**, and are deduped by key. Staff get batched summaries ("N new registrations",
+"registration is full", "N waivers expire within 14 days") via `enqueue_notification` category `registration`, never one per submission and never with
+names or answers. Delivery is the existing worker (`deliver-notifications`).
+
+**Exports and data requests.** `export-registrations` returns CSV (formula-injection safe); sensitive columns only when requested AND the caller holds the
+capability; every export audited. `export_registrant_data` and `erase_registrant_data` are staff-triggered and audited. Retention runs daily.
+
+## Known limits
+
+- Concurrency is enforced by row locks (`SELECT ... FOR UPDATE` on the event). pgTAP runs inside one transaction, so the parallel proof lives in `scripts/registration-concurrency.mjs` (see registration-ops.md).
 - Club-issued placement requires a person who is staff of the destination team.
-- Payment requests for registrations (Part B) need small, backward-compatible changes to Phase 4 (see the Part A summary).

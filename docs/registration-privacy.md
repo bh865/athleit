@@ -42,7 +42,7 @@ phone, date of birth and answers replaced; counts and audit trail kept); accepte
 deleted 90 days after the event ends unless the player is placed on a roster; signed waivers and acceptance records kept for the statute-of-limitations
 period (**Counsel**: commonly several years after a minor reaches majority); audit entries kept. Anonymization of waiver acceptances conflicts with
 append-only and is therefore not built; **Counsel** to decide whether signed records are retained intact or pseudonymized by a dedicated, logged procedure.
-Parent-requested export or deletion is a staff-triggered, audited function (Part B).
+Parent-requested export and deletion are staff-triggered, audited functions (`export_registrant_data`, `erase_registrant_data`). The retention job (`svc_run_registration_retention`, daily) anonymizes declined/withdrawn registrations 12 months after the event ends and deletes sensitive answers 90 days after it ends (kept for placed players); both periods are parameters of that function.
 
 ## Items for counsel to confirm
 
@@ -54,3 +54,12 @@ Parent-requested export or deletion is a staff-triggered, audited function (Part
 - Retention periods above, and the right to deletion versus legal-hold of signed waivers.
 - Medical information handling: whether any answer collected is regulated health data for the issuer and what notice is required.
 - Anonymous submissions: the email magic link is the only verification before a registration counts.
+
+## Operational privacy notes (Part B)
+
+- Verification and signing tokens are random 256-bit values stored only as sha256 hashes; the verification token is in the URL fragment so it never reaches a server log or a Referer header.
+- Logs contain ids, statuses and error codes only (the logger redacts names, emails, tokens and bodies). Rate-limit buckets use a hash of the email, not the address.
+- Registrant emails are plain text. They contain the display id, event title, issuer name, the child's first name and (when staff wrote one) the decision message; never answers or medical data.
+- Signer IP and user agent are NOT recorded unless `RECORD_SIGNER_EVIDENCE=true` is set on `sign-waiver`.
+- The cover image of a public page is served through a 1-hour signed URL that may be cached publicly for 60 seconds; do not put anything in a cover image that must stay private.
+- Signed waiver copies are stored privately and emailed as attachments to the signer's address; the email provider (Resend) therefore processes them.

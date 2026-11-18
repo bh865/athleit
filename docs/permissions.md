@@ -146,8 +146,11 @@ Functions: `create_form`, `save_form_draft`, `publish_form_version`, `create_wai
 `grant_registration_capability`, `decide_registration`, `withdraw_registration`, `promote_from_waitlist`, `place_registered_player`, `get_registration_detail`,
 `get_sensitive_answers`, `list_registrations`, `registration_capacity_summary`, `add_registration_note`, `export_registrations`, `list_my_registrations`,
 `list_open_registration_events`, `get_public_registration` (also `anon`), `record_waiver_acceptance`, `waiver_compliance`, `create_document`, `update_document`,
-`archive_document`, `list_documents`. Service role only (Edge Functions): `svc_create_registration`, `svc_verify_registration`, `svc_record_waiver_acceptance`,
-`svc_attach_signed_copy`. Helpers: `is_issuer_manager`, `can_read_sensitive`, `can_view_registration`, `is_registration_family`, `is_registration_event_staff`,
+`archive_document`, `list_documents`. Also: `registration_payment_status`, `link_registration_player`, `claim_my_registrations`, `export_registrant_data`, `erase_registrant_data`.
+Service role only (Edge Functions): `svc_create_registration`, `svc_verify_registration`, `svc_record_waiver_acceptance`,
+`svc_attach_signed_copy`, `svc_issue_verification_token`, `svc_consume_verification_token`, `svc_issue_sign_token`, `svc_resolve_sign_token`,
+`svc_find_pending_registration`, `svc_acceptance_context`, `svc_registration_signing_state`, `svc_record_evidence`, `svc_run_registration_retention`,
+`claim_registration_emails`. Helpers: `is_issuer_manager`, `can_read_sensitive`, `can_view_registration`, `is_registration_family`, `is_registration_event_staff`,
 `can_read_document`, `can_read_acceptance`, `is_team_family`. Capabilities in code: `registration.view|manage|place|sensitive|register`, `documents.view|manage`.
 
 ## Data-minimization rules for minors
