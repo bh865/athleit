@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Date and time pickers, exercised on the design gallery (no database needed).
@@ -10,7 +10,7 @@ test.describe('DatePicker', () => {
     await page.evaluate(() => document.fonts.ready);
   });
 
-  const panel = (page: import('@playwright/test').Page) =>
+  const panel = (page: Page) =>
     page.getByTestId('gallery-light').getByRole('region', { name: 'Pickers' });
 
   test('opens, selects a day with the keyboard, returns focus and shows a friendly date', async ({
