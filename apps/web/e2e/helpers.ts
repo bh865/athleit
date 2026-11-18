@@ -71,8 +71,12 @@ export async function cleanup() {
     .from('household_members')
     .select('household_id')
     .in('profile_id', ids);
-  await a.from('teams').delete().in('created_by', ids);
-  await a.from('clubs').delete().in('created_by', ids);
+  // Phase 5 registration data is immutable by design, so a team that published forms or took registrations is protected
+  // by restrict foreign keys. Best effort: leave what the database protects (harmless example.test accounts).
+  for (const table of ['teams', 'clubs'] as const) {
+    const { data: rows } = await a.from(table).select('id').in('created_by', ids);
+    for (const row of rows ?? []) await a.from(table).delete().eq('id', row.id); // one at a time: a protected one must not block the rest
+  }
   await a
     .from('households')
     .delete()
@@ -80,5 +84,9 @@ export async function cleanup() {
       'id',
       (households ?? []).map((h) => h.household_id),
     );
-  for (const id of ids) await a.auth.admin.deleteUser(id);
+  for (const id of ids) {
+    const { error } = await a.auth.admin.deleteUser(id);
+    if (error)
+      console.warn(`[e2e] kept user ${id}: ${error.message} (protected registration data)`);
+  }
 }
