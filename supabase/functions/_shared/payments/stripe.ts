@@ -93,8 +93,9 @@ export class StripeApi {
         `stripe_${e.type ?? 'error'}`,
         // The offending field NAME (e.g. controller[fees][payer]) is safe to keep; the message is not.
         typeof e.param === 'string' ? e.param.slice(0, 80) : null,
-        // Account creation carries no personal data (controller flags and an owner id), so Stripe's explanation is safe to log there only.
-        method === 'POST' && path === '/v1/accounts' && typeof e.message === 'string'
+        // Account and account-link requests carry no personal data (controller flags, ids, redirect URLs), so Stripe's explanation is safe to log there only.
+        (path.startsWith('/v1/accounts') || path === '/v1/account_links') &&
+          typeof e.message === 'string'
           ? e.message.slice(0, 240)
           : null,
       );

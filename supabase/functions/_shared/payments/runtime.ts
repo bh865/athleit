@@ -89,6 +89,7 @@ export function userFunction<T>(
               stripe_code: e.code,
               stripe_status: e.status,
               stripe_param: e.param,
+              stripe_detail: e.detail,
             }
           : { reason: String((e as Error)?.message ?? e).slice(0, 60) };
       log(m.status >= 500 ? 'error' : 'warn', 'request_failed', { code: m.code, ...detail });
