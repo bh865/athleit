@@ -30,3 +30,4 @@ export { Calendar, DatePicker, type DatePickerProps } from './date-picker';
 export { Popover } from './popover';
 export { TimePicker, type TimePickerProps } from './time-picker';
 export { PageHeader, type PageHeaderProps } from './page-header';
+export { PlaceAutocomplete, type PlaceAutocompleteProps } from './place-autocomplete';

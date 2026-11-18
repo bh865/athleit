@@ -10,7 +10,8 @@
     "./api": "./src/api.ts",
     "./scheduling": "./src/scheduling-api.ts",
     "./payments": "./src/payments-api.ts",
-    "./registration": "./src/registration-api.ts"
+    "./registration": "./src/registration-api.ts",
+    "./places": "./src/places-api.ts"
   },
   "scripts": {
     "lint": "eslint .",
