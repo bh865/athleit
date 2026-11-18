@@ -67,6 +67,15 @@ export const iconNames = [
   'receipt',
   'bank',
   'download-simple',
+  'magnifying-glass',
+  'arrows-down-up',
+  'bell-ringing',
+  'dots-three',
+  'hourglass',
+  'plugs',
+  'minus-circle',
+  'circle-dashed',
+  'hand-coins',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 

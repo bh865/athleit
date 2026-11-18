@@ -31,7 +31,7 @@ const tone = (s: string) =>
         : 'neutral';
 
 /** Parent Pay: "Amount due" over a 56px mono total, request cards, a lime Pay pill; Receipts tab. */
-export function PayView() {
+export function PayView({ embedded = false }: { embedded?: boolean }) {
   const [tab, setTab] = useState<Tab>('due');
   const linked = useSearchParams().get('request');
   const [picked, setPicked] = useState<Set<string> | null>(linked ? new Set([linked]) : null);
@@ -56,9 +56,11 @@ export function PayView() {
 
   return (
     <div className={styles.layout}>
-      <Text variant="title" as="h1">
-        Pay
-      </Text>
+      {embedded ? null : (
+        <Text variant="title" as="h1">
+          Pay
+        </Text>
+      )}
       <SegmentedControl
         label="Pay sections"
         value={tab}

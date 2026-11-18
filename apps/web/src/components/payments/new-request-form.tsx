@@ -19,7 +19,7 @@ import {
 } from '@athleit/db/payments';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Card, Select, SegmentedControl, Text, TextField, useToast } from '@/components/ui';
+import { Button, Icon, Select, SegmentedControl, Text, TextField, useToast } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { Amount } from './money';
@@ -34,11 +34,15 @@ interface RosterPlayer {
 export function NewRequestForm({
   owner,
   canSend,
+  defaultPolicy = 'absorb',
   onSent,
+  onClose,
 }: {
   owner: Owner;
   canSend: boolean;
+  defaultPolicy?: FeePolicy;
   onSent: () => void;
+  onClose: () => void;
 }) {
   const toast = useToast();
   const [title, setTitle] = useState('');
@@ -47,7 +51,7 @@ export function NewRequestForm({
   const [audience, setAudience] = useState<'all_active_roster' | 'selected_players'>(
     'all_active_roster',
   );
-  const [policy, setPolicy] = useState<FeePolicy>('absorb');
+  const [policy, setPolicy] = useState<FeePolicy>(defaultPolicy);
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [cfg, setCfg] = useState<Parameters<typeof computeFees>[2] | null>(null);
@@ -125,10 +129,11 @@ export function NewRequestForm({
     setAmount('');
     setDue('');
     onSent();
+    onClose();
   };
 
   return (
-    <Card>
+    <>
       <form
         className={styles.stack}
         onSubmit={(e) => {
@@ -136,9 +141,14 @@ export function NewRequestForm({
           void submit();
         }}
       >
-        <Text variant="heading" as="h2">
-          New payment request
-        </Text>
+        <div className={styles.drawerHead}>
+          <Text variant="heading" as="h2">
+            New payment request
+          </Text>
+          <button type="button" className={styles.pillButton} aria-label="Close" onClick={onClose}>
+            <Icon name="x" size="sm" />
+          </button>
+        </div>
         <TextField
           label="Title"
           value={title}
@@ -147,7 +157,7 @@ export function NewRequestForm({
           maxLength={100}
         />
         <TextField
-          label="Amount"
+          label="Amount per player"
           mono
           inputMode="decimal"
           value={amount}
@@ -244,6 +254,6 @@ export function NewRequestForm({
           </Text>
         ) : null}
       </form>
-    </Card>
+    </>
   );
 }

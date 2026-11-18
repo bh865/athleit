@@ -63,6 +63,15 @@ import {
   Receipt,
   Bank,
   DownloadSimple,
+  MagnifyingGlass,
+  ArrowsDownUp,
+  BellRinging,
+  DotsThree,
+  Hourglass,
+  Plugs,
+  MinusCircle,
+  CircleDashed,
+  HandCoins,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
 
@@ -132,6 +141,15 @@ const icons: Record<IconName, PhosphorIcon> = {
   receipt: Receipt,
   bank: Bank,
   'download-simple': DownloadSimple,
+  'magnifying-glass': MagnifyingGlass,
+  'arrows-down-up': ArrowsDownUp,
+  'bell-ringing': BellRinging,
+  'dots-three': DotsThree,
+  hourglass: Hourglass,
+  plugs: Plugs,
+  'minus-circle': MinusCircle,
+  'circle-dashed': CircleDashed,
+  'hand-coins': HandCoins,
 };
 
 export interface IconProps {
