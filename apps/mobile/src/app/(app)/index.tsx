@@ -1,4 +1,10 @@
-import { contextPath } from '@athleit/core';
+import {
+  capabilitiesForPlace,
+  contextPath,
+  homeTileIds,
+  payViewsFor,
+  teamForScreen,
+} from '@athleit/core';
 import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -6,6 +12,15 @@ import { View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { H1, ListItem } from '@/components/app/kit';
+import { AttentionStrip } from '@/components/home/attention-strip';
+import {
+  ApprovalsTile,
+  RecordTile,
+  RegistrationsTile,
+  WaiversTile,
+  WeekTile,
+} from '@/components/home/tiles';
+import { useHomeData } from '@/components/home/use-home-data';
 import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Button, Card, ListGroup, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
@@ -31,12 +46,18 @@ const greeting = () => {
 };
 
 /**
- * Home (design system): greeting, Next up, and your places. Resumes a pending invite first.
+ * Home (design system): greeting, attention chips, Next up, capability-driven tiles and your places. Resumes a pending invite first.
  * It never redirects into a team or family page: those are one tap away below, and the role
  * switcher in the header still jumps straight to them.
  */
 export default function HomeScreen() {
-  const { contexts, displayName, addActions, status } = useApp();
+  const { contexts, active, displayName, addActions, status } = useApp();
+  const { attention, loading } = useHomeData(contexts, active);
+  const tiles = new Set(homeTileIds(contexts, active));
+  const team = teamForScreen(contexts, active);
+  const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : new Set<string>();
+  const payer = payViewsFor(contexts, active).payer;
+  const staffReg = Boolean(team?.isStaff && caps.has('registration.view'));
   const router = useRouter();
 
   useEffect(() => {
@@ -66,7 +87,21 @@ export default function HomeScreen() {
             {greeting()}
             {displayName ? `,\n${displayName.split(' ')[0]}` : ''}
           </H1>
+          <AttentionStrip shown={attention.shown} more={attention.more} loading={loading} />
           <NextUpCard />
+          {tiles.has('thisWeek') ? (
+            <WeekTile teamId={team?.id ?? null} staff={Boolean(team?.isStaff)} />
+          ) : null}
+          {tiles.has('teamRecord') && team ? <RecordTile teamId={team.id} /> : null}
+          {tiles.has('approvals') && team && caps.has('joinRequests.decide') ? (
+            <ApprovalsTile teamId={team.id} />
+          ) : null}
+          {tiles.has('waivers') ? (
+            <WaiversTile teamId={team?.id ?? null} staff={staffReg} family={payer} />
+          ) : null}
+          {tiles.has('registrations') ? (
+            <RegistrationsTile teamId={team?.id ?? null} staff={staffReg} />
+          ) : null}
           <View style={{ gap: space[3] }}>
             <Text variant="label" muted>
               YOUR PLACES
