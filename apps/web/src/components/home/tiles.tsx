@@ -11,11 +11,12 @@ import {
 import {
   getHouseholdScheduleRange,
   getTeamRecord,
+  getTeamSchedule,
   getTeamScheduleRange,
 } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
-import { Badge, ButtonLink, Text } from '@/components/ui';
+import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
@@ -139,7 +140,20 @@ export function WeekTile({
                     {e.where ? ` · ${e.where}` : ''}
                   </span>
                 </span>
-                <Badge tone="neutral">{e.pill}</Badge>
+                <span className={styles.pill}>
+                  <Icon
+                    name={
+                      e.pill === 'Going'
+                        ? 'check-circle'
+                        : e.pill === 'Cancelled'
+                          ? 'x-circle'
+                          : 'question'
+                    }
+                    weight="fill"
+                    size="sm"
+                  />
+                  {e.pill}
+                </span>
               </Link>
             </li>
           );
@@ -149,10 +163,48 @@ export function WeekTile({
   );
 }
 
-/** Season record, shown big beside Next up. Hidden until a game has been played. */
+/** Season record shown big beside Next up, with the last result. Hidden until a game has been played. */
 export function RecordTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getTeamRecord(getClient(), teamId), [teamId]);
-  const r = res.data;
+  const res = useLoad(async (): Promise<Result<RecordView | null>> => {
+    const c = getClient();
+    const [rec, past] = await Promise.all([
+      getTeamRecord(c, teamId),
+      getTeamSchedule(c, teamId, 'past', 10),
+    ]);
+    if (rec.error) return rec;
+    if (!rec.data) return { data: null, error: null };
+    const last = (past.data ?? []).find(
+      (e) =>
+        e.type === 'game' &&
+        e.status !== 'cancelled' &&
+        e.our_score != null &&
+        e.their_score != null,
+    );
+    return {
+      data: {
+        record: rec.data,
+        last: last
+          ? {
+              outcome:
+                last.our_score! > last.their_score!
+                  ? 'W'
+                  : last.our_score! < last.their_score!
+                    ? 'L'
+                    : 'T',
+              score: `${last.our_score}–${last.their_score}`,
+              opponent: last.opponent_name ?? '',
+              when: new Date(last.starts_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              }),
+            }
+          : null,
+      },
+      error: null,
+    };
+  }, [teamId]);
+  const r = res.data?.record;
+  const last = res.data?.last;
   return (
     <TileShell
       id="home-record"
@@ -160,7 +212,7 @@ export function RecordTile({ teamId }: { teamId: string }) {
       href="/schedule"
       res={res}
       empty={!r || r.games === 0}
-      hasData={r !== null}
+      hasData={r !== undefined}
     >
       {r ? (
         <>
@@ -173,10 +225,26 @@ export function RecordTile({ teamId }: { teamId: string }) {
           <Text variant="caption" muted>
             Wins · Losses · Ties
           </Text>
+          {last ? (
+            <div className={styles.lastResult}>
+              <span className={styles.pill}>
+                {last.outcome} {last.score}
+              </span>
+              <Text variant="caption" muted>
+                {last.opponent ? `vs. ${last.opponent} · ` : ''}
+                {last.when}
+              </Text>
+            </div>
+          ) : null}
         </>
       ) : null}
     </TileShell>
   );
+}
+
+interface RecordView {
+  record: { wins: number; losses: number; ties: number; games: number; season_label: string };
+  last: { outcome: string; score: string; opponent: string; when: string } | null;
 }
 
 interface WaiverView {
@@ -269,11 +337,20 @@ export function WaiversTile({
         <div className={styles.threads}>
           {d?.own.slice(0, 2).map((o, i) => (
             <div key={`${o.name}${i}`} className={styles.block}>
-              <Text variant="bodyBold">Sign {o.name}’s waiver</Text>
-              <Text variant="caption" muted>
-                {o.event}
-              </Text>
-              <ButtonLink href="/registrations">Sign waiver</ButtonLink>
+              <div className={styles.blockHead}>
+                <Icon name="warning" weight="fill" />
+                <div>
+                  <Text variant="bodyBold" as="div">
+                    {o.name}’s waiver needs signing
+                  </Text>
+                  <Text variant="caption" muted as="div">
+                    {o.event}
+                  </Text>
+                </div>
+              </div>
+              <ButtonLink href="/registrations">
+                <Icon name="pencil" size="sm" /> Sign waiver
+              </ButtonLink>
             </div>
           ))}
         </div>

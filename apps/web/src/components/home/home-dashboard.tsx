@@ -87,10 +87,26 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
         <Link href={`/events/${top.event_id}`} className={styles.heroTitle}>
           {top.title}
         </Link>
-        <p className={styles.meta}>
-          {t.dateLabel} · {t.startLabel}
-          {place ? ` · ${place}` : ''}
-        </p>
+        <ul className={styles.metaRow}>
+          <li>
+            <Icon name="clock" size="sm" /> {t.startLabel}
+          </li>
+          {place ? (
+            <li>
+              <Icon name="map-pin" size="sm" /> {place}
+            </li>
+          ) : null}
+          {top.home_away ? (
+            <li>
+              <Icon name="house" size="sm" /> {top.home_away === 'home' ? 'Home' : 'Away'}
+            </li>
+          ) : null}
+        </ul>
+        {top.arrive_early_minutes ? (
+          <p className={styles.info}>
+            <Icon name="info" size="sm" /> Arrive {top.arrive_early_minutes} min early for warm-up
+          </p>
+        ) : null}
         {top.is_staff ? (
           <div className={styles.counts} role="group" aria-label="RSVP counts">
             {[
@@ -113,6 +129,7 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
             eventId={top.event_id}
             child={c}
             showName={children.length > 1}
+            layout="row"
           />
         ))}
       </div>
@@ -156,11 +173,23 @@ function MessagesCard({ teamId }: { teamId: string }) {
             return (
               <li key={r.thread_id}>
                 <Link href={`/messages/${r.thread_id}`} className={styles.thread}>
-                  <span className={styles.threadAvatar}>
-                    <Avatar name={r.title ?? r.other_name ?? 'Message'} size="sm" />
+                  <span className={styles.threadIcon} aria-hidden>
+                    <Icon
+                      name={
+                        r.type === 'announcement'
+                          ? 'megaphone'
+                          : r.type === 'group'
+                            ? 'users-three'
+                            : 'user'
+                      }
+                      size="md"
+                    />
                   </span>
                   <span className={styles.threadText}>
-                    <span className={styles.threadTitle}>
+                    {r.type === 'announcement' ? (
+                      <span className={styles.threadKicker}>Announcement</span>
+                    ) : null}
+                    <span className={unread ? styles.threadTitleUnread : styles.threadTitle}>
                       {r.title ?? r.other_name ?? 'Message'}
                     </span>
                     <span className={styles.threadPreview}>
@@ -281,7 +310,7 @@ export function HomeDashboard() {
             </ButtonLink>
           ) : (
             <ButtonLink href="/schedule" variant="secondary">
-              Schedule
+              <Icon name="calendar-blank" size="sm" /> Schedule
             </ButtonLink>
           )
         }
@@ -291,11 +320,16 @@ export function HomeDashboard() {
         <NextUpHero canManage={staff} />
         {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
       </div>
-      <div className={styles.row3}>
+      <div className={styles.heroRow}>
         {tiles.has('thisWeek') ? (
           <WeekTile teamId={teamId} staff={staff} family={views.payer} />
         ) : null}
         {views.payer && !showTeamGroup ? <DueTile id="home-payments" /> : null}
+      </div>
+      <div className={styles.row3}>
+        {views.payer && !showTeamGroup && tiles.has('waivers') ? (
+          <WaiversTile teamId={teamId} staff={false} family />
+        ) : null}
         {team ? <MessagesCard teamId={team.id} /> : null}
         {tiles.has('announcement') && teamId ? <AnnouncementTile teamId={teamId} /> : null}
       </div>
@@ -351,7 +385,7 @@ export function HomeDashboard() {
       {views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup) ? (
         <Group id="family" label="For your family" scope={familyScope} showHead={showTeamGroup}>
           {views.payer && showTeamGroup ? <DueTile id="home-due" /> : null}
-          {views.payer && tiles.has('waivers') ? (
+          {views.payer && showTeamGroup && tiles.has('waivers') ? (
             <WaiversTile teamId={teamId} staff={false} family />
           ) : null}
           {views.payer && tiles.has('registrations') ? (

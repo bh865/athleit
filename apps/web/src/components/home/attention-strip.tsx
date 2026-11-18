@@ -10,10 +10,10 @@ import { Badge, Card, Icon, ListGroup, ListRow, Sheet, Text } from '@/components
 import styles from './home.module.css';
 
 const ICON: Record<AttentionKind, IconName> = {
-  rsvp: 'calendar-blank',
+  rsvp: 'question',
   result: 'flag',
   payment: 'credit-card',
-  waiver: 'clipboard-text',
+  waiver: 'warning',
   registrationStep: 'receipt',
   joinRequests: 'users-three',
   loginClaims: 'user',
