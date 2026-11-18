@@ -112,3 +112,30 @@ capability; every export audited. `export_registrant_data` and `erase_registrant
 
 - Concurrency is enforced by row locks (`SELECT ... FOR UPDATE` on the event). pgTAP runs inside one transaction, so the parallel proof lives in `scripts/registration-concurrency.mjs` (see registration-ops.md).
 - Club-issued placement requires a person who is staff of the destination team.
+
+## Screens (Part C)
+
+Web routes (all under the signed-in app except where noted):
+
+| Route                                                                | Who                | What                                                                                                      |
+| -------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------- |
+| `/r/[slug]` (public)                                                 | anyone with link   | Server-rendered page, share panel with QR, registration flow, social preview, `noindex` unless `public`   |
+| `/register/verify` (public), `/register/claim`                       | emailed recipients | Single-use tokens in the URL fragment; sign waivers after confirming; attach a registration to an account |
+| `/captcha` (public)                                                  | mobile app         | Runs Turnstile and returns the token to `athleit://captcha` (fixed target)                                |
+| `/registrations`, `/registrations/[id]`                              | guardians          | My registrations, sign waivers, pay, withdraw                                                             |
+| `/teams/[id]/registrations`, `/clubs/[id]/registrations`             | staff              | Events, forms and waivers for the owner                                                                   |
+| `/manage/registration/[eventId]` (+ `/edit`, `/new?team=\|club=`)    | staff              | Capacity, filters, bulk decisions, detail sheet, audited medical view, notes, placement, CSV, share       |
+| `/manage/forms/[formId]`, `/manage/waivers/[waiverId]` (+ `/new`)    | managers           | Builders with live preview and immutable publishing                                                       |
+| `/teams/[id]/compliance`, `/teams/[id]/documents` (+ club documents) | staff / members    | Waiver tracker and required waivers; documents shelf with signed URLs                                     |
+
+Mobile: `r/[slug]` (also the universal link), `registrations`, `registrations/[id]`, `manage/registration/[eventId]`, and the team tabs
+_Registrations_, _Waivers_, _Documents_. Authoring, bulk actions, CSV export and uploads are web-only.
+
+Security properties the UI keeps (each has a test or a documented check):
+
+- Medical answers are never fetched with a registration; "Show medical info" calls the audited function, the sheet is re-keyed per
+  registration so answers do not survive closing, and exports include them only on an explicit second action.
+- No amount is ever sent from a client; payment is created by the server from the event price.
+- User-authored text (info blocks, waiver text, answers) renders as escaped text; no `dangerouslySetInnerHTML` anywhere in the feature.
+- The public page and the verify/claim pages never list registrants. Tokens are read from the fragment and removed from the address bar.
+- Captcha fails closed: without a site key the form says registration is unavailable.
