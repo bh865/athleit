@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { csvSafeCell, validateAnswers, visibleFields } from './registration';
+import {
+  buildRegistrationCsv,
+  csvSafeCell,
+  FORM_TEMPLATES,
+  validateAnswers,
+  visibleFields,
+} from './registration';
 import {
   formFieldSchema,
   formSchemaSchema,
@@ -244,5 +250,50 @@ describe('registration capabilities', () => {
     expect(can({ kind: 'family', role: 'guardian' }, 'registration.register')).toBe(true);
     expect(can({ kind: 'club', role: 'admin' }, 'documents.manage')).toBe(true);
     expect(can({ kind: 'club', role: 'manager' }, 'registration.view')).toBe(false);
+  });
+});
+
+describe('buildRegistrationCsv', () => {
+  it('neutralizes formulas, quotes commas and joins multi-select answers', () => {
+    const csv = buildRegistrationCsv(
+      [
+        { id: 'shirt', label: 'Shirt' },
+        { id: 'days', label: 'Days' },
+      ],
+      [
+        {
+          display_id: 'REG-1',
+          status: 'accepted',
+          player_first_name: '=cmd()',
+          guardian_name: 'Lee, Pat',
+          answers: { shirt: 'M', days: ['Mon', 'Tue'] },
+        },
+      ],
+      false,
+    );
+    const [head, row] = csv.split('\r\n');
+    expect(head).toContain('Reference');
+    expect(row).toContain("'=cmd()");
+    expect(row).toContain('"Lee, Pat"');
+    expect(row).toContain('Mon; Tue');
+  });
+  it('only includes sensitive answers when asked', () => {
+    const rows = [{ answers: {}, sensitive_answers: { allergy: 'peanuts' } }];
+    const f = [{ id: 'allergy', label: 'Allergy' }];
+    expect(buildRegistrationCsv(f, rows, false)).not.toContain('peanuts');
+    expect(buildRegistrationCsv(f, rows, true)).toContain('peanuts');
+  });
+});
+
+describe('FORM_TEMPLATES', () => {
+  it('every template is a valid form and keeps medical questions sensitive', () => {
+    for (const t of FORM_TEMPLATES) {
+      expect(formSchemaSchema.safeParse({ fields: t.fields }).success, t.id).toBe(true);
+    }
+    const medical = FORM_TEMPLATES.flatMap((t) => t.fields).filter((f) =>
+      /allerg|medic|condition/i.test(f.label),
+    );
+    expect(medical.length).toBeGreaterThan(0);
+    expect(medical.every((f) => f.sensitive)).toBe(true);
   });
 });

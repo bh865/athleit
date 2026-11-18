@@ -180,3 +180,14 @@
   border: var(--size-card-border) solid var(--color-line);
   border-radius: var(--radius-md);
 }
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: var(--text-body-bold-weight);
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: var(--size-min-target);
+}

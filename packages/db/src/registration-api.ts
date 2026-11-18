@@ -16,9 +16,7 @@ export type ComplianceRow = Fn['waiver_compliance']['Returns'][number];
 export type PaymentStatusRow = Fn['registration_payment_status']['Returns'][number];
 
 const ok = <T>(data: T): Result<T> => ({ data, error: null });
-const fail = <T>(
-  e: { message?: string; code?: string; details?: string | null } | null,
-): Result<T> => ({
+const fail = (e: { message?: string; code?: string; details?: string | null } | null) => ({
   data: null,
   error: { message: e?.message ?? 'Unknown error', code: e?.code, details: e?.details },
 });
@@ -124,12 +122,57 @@ export async function withdrawRegistration(c: Client, id: string): Promise<Resul
   const { data, error } = await c.rpc('withdraw_registration', { p_registration_id: id });
   return error ? fail(error) : ok(data);
 }
+export interface RegistrationDetail {
+  registration: {
+    id: string;
+    display_id: string;
+    status: string;
+    guardian_name: string;
+    guardian_email: string;
+    guardian_phone: string | null;
+    guardian_relationship: string;
+    player_first_name: string;
+    player_last_name: string;
+    player_date_of_birth: string;
+    player_id: string | null;
+    answers: Record<string, unknown>;
+    decision_note: string | null;
+    decided_at: string | null;
+    waitlist_position: number | null;
+    payment_request_id: string | null;
+    submitted_at: string;
+    hold_expires_at: string | null;
+  };
+  event: {
+    id: string;
+    title: string;
+    slug: string;
+    kind: string;
+    price_cents: number | null;
+    payment_timing: string;
+    confirmation_message: string | null;
+    status: string;
+  };
+  form_schema: Json;
+  waivers: {
+    waiver_version_id: string;
+    title: string;
+    acceptance_id: string | null;
+    accepted_at: string | null;
+    has_copy: boolean;
+  }[];
+  notes: { id: string; body: string; created_at: string; author_name: string }[];
+  has_sensitive: boolean;
+  can_read_sensitive: boolean;
+  is_staff: boolean;
+  can_decide: boolean;
+}
 export async function getRegistrationDetail(
   c: Client,
   id: string,
-): Promise<Result<Record<string, any>>> {
+): Promise<Result<RegistrationDetail>> {
   const { data, error } = await c.rpc('get_registration_detail', { p_registration_id: id });
-  return error ? fail(error) : ok((data ?? {}) as Record<string, unknown>);
+  return error ? fail(error) : ok(data as unknown as RegistrationDetail);
 }
 export async function getRegistrationPaymentStatus(
   c: Client,
@@ -194,11 +237,11 @@ export async function decideRegistration(
     p_decision: decision,
     ...(message ? { p_message: message } : {}),
   });
-  return error ? fail<Json>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function promoteFromWaitlist(c: Client, eventId: string) {
   const { data, error } = await c.rpc('promote_from_waitlist', { p_event_id: eventId });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function placeRegisteredPlayer(
   c: Client,
@@ -210,19 +253,19 @@ export async function placeRegisteredPlayer(
     ...(a.jerseyNumber !== undefined ? { p_jersey_number: a.jerseyNumber } : {}),
     ...(a.position ? { p_position: a.position } : {}),
   });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function addRegistrationNote(c: Client, id: string, body: string) {
   const { data, error } = await c.rpc('add_registration_note', {
     p_registration_id: id,
     p_body: body,
   });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 /** Audited server-side: every call writes an audit_log row. Never cache the result. */
 export async function getSensitiveAnswers(c: Client, id: string) {
   const { data, error } = await c.rpc('get_sensitive_answers', { p_registration_id: id });
-  return error ? fail<Json>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function exportRegistrationRows(
   c: Client,
@@ -233,7 +276,7 @@ export async function exportRegistrationRows(
     p_event_id: eventId,
     p_include_sensitive: includeSensitive,
   });
-  return error ? fail<Json>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 
 // ------------------------------------------------------------------------------------------------- authoring
@@ -243,11 +286,11 @@ export async function createRegistrationEvent(c: Client, o: Owner, data: Json) {
     p_club_id: o.clubId ?? NULL,
     p_data: data,
   });
-  return error ? fail<string>(error) : ok(id);
+  return error ? fail(error) : ok(id);
 }
 export async function updateRegistrationEvent(c: Client, id: string, data: Json) {
   const { error } = await c.rpc('update_registration_event', { p_event_id: id, p_data: data });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 export async function setRegistrationEventState(
   c: Client,
@@ -256,12 +299,12 @@ export async function setRegistrationEventState(
 ) {
   const fn = `${action}_registration_event` as const;
   const { error } = await c.rpc(fn, { p_event_id: id });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 export async function listForms(c: Client, o: Owner) {
   let q = c
     .from('forms')
-    .select('id, name, team_id, club_id, current_version_id, updated_at')
+    .select('id, name, team_id, club_id, updated_at, form_versions(version)')
     .order('updated_at', { ascending: false });
   if (o.teamId) q = q.eq('team_id', o.teamId);
   if (o.clubId) q = q.eq('club_id', o.clubId);
@@ -269,7 +312,11 @@ export async function listForms(c: Client, o: Owner) {
   return error ? fail(error) : ok(data ?? []);
 }
 export async function getForm(c: Client, id: string) {
-  const { data, error } = await c.from('forms').select('*').eq('id', id).single();
+  const { data, error } = await c
+    .from('forms')
+    .select('*, form_versions(id, version, published_at, schema)')
+    .eq('id', id)
+    .single();
   return error ? fail(error) : ok(data);
 }
 export async function createForm(c: Client, o: Owner, name: string, schema?: Json) {
@@ -279,7 +326,7 @@ export async function createForm(c: Client, o: Owner, name: string, schema?: Jso
     p_name: name,
     ...(schema ? { p_schema: schema } : {}),
   });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function saveFormDraft(c: Client, id: string, name: string, schema: Json) {
   const { error } = await c.rpc('save_form_draft', {
@@ -287,16 +334,16 @@ export async function saveFormDraft(c: Client, id: string, name: string, schema:
     p_name: name,
     p_schema: schema,
   });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 export async function publishFormVersion(c: Client, id: string) {
   const { data, error } = await c.rpc('publish_form_version', { p_form_id: id });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function listWaivers(c: Client, o: Owner) {
   let q = c
     .from('waivers')
-    .select('id, title, team_id, club_id, current_version_id, updated_at')
+    .select('id, title, team_id, club_id, updated_at, waiver_versions(version)')
     .order('updated_at', { ascending: false });
   if (o.teamId) q = q.eq('team_id', o.teamId);
   if (o.clubId) q = q.eq('club_id', o.clubId);
@@ -304,7 +351,11 @@ export async function listWaivers(c: Client, o: Owner) {
   return error ? fail(error) : ok(data ?? []);
 }
 export async function getWaiver(c: Client, id: string) {
-  const { data, error } = await c.from('waivers').select('*').eq('id', id).single();
+  const { data, error } = await c
+    .from('waivers')
+    .select('*, waiver_versions(id, version, published_at, title, body)')
+    .eq('id', id)
+    .single();
   return error ? fail(error) : ok(data);
 }
 export async function createWaiver(
@@ -321,7 +372,7 @@ export async function createWaiver(
     p_body: body,
     ...(resignDays ? { p_requires_resign_after_days: resignDays } : {}),
   });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function saveWaiverDraft(
   c: Client,
@@ -336,11 +387,11 @@ export async function saveWaiverDraft(
     p_body: body,
     ...(resignDays ? { p_requires_resign_after_days: resignDays } : {}),
   });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 export async function publishWaiverVersion(c: Client, id: string) {
   const { data, error } = await c.rpc('publish_waiver_version', { p_waiver_id: id });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function setTeamRequiredWaiver(
   c: Client,
@@ -353,7 +404,7 @@ export async function setTeamRequiredWaiver(
     p_waiver_id: waiverId,
     p_required: required,
   });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 export async function getWaiverCompliance(c: Client, teamId: string) {
   const { data, error } = await c.rpc('waiver_compliance', { p_team_id: teamId });
@@ -395,11 +446,11 @@ export async function createDocumentRecord(
     p_mime_type: d.mime,
     p_size_bytes: d.size,
   });
-  return error ? fail<string>(error) : ok(data);
+  return error ? fail(error) : ok(data);
 }
 export async function archiveDocument(c: Client, id: string) {
   const { error } = await c.rpc('archive_document', { p_document_id: id });
-  return error ? fail<null>(error) : ok(null);
+  return error ? fail(error) : ok(null);
 }
 /** Short-lived signed URL (5 minutes); RLS on storage.objects decides whether the caller may read the file. */
 export async function signedDocumentUrl(c: Client, path: string): Promise<Result<string>> {

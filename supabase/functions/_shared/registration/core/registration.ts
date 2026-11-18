@@ -156,3 +156,199 @@ export const SPOTS_LABELS = {
   waitlist: 'Full: join the waitlist',
   full: 'Full',
 } as const;
+
+// ------------------------------------------------------------------------------------------------ shared UI copy
+export const REGISTRATION_STATUS_LABELS: Record<string, string> = {
+  pending_verification: 'Confirm your email',
+  submitted: 'Submitted',
+  waitlisted: 'Waitlisted',
+  accepted: 'Accepted',
+  placed: 'Placed on a team',
+  declined: 'Declined',
+  withdrawn: 'Withdrawn',
+};
+
+export type RegistrationTone = 'neutral' | 'success' | 'warning' | 'danger';
+export function registrationStatusTone(status: string): RegistrationTone {
+  if (status === 'accepted' || status === 'placed') return 'success';
+  if (status === 'waitlisted' || status === 'pending_verification') return 'warning';
+  if (status === 'declined' || status === 'withdrawn') return 'danger';
+  return 'neutral';
+}
+
+const EDGE_ERRORS: Record<string, string> = {
+  invalid_input: 'Check the highlighted fields and try again.',
+  invalid_answers: 'Some answers need attention.',
+  captcha_failed: 'We could not confirm you are a person. Try again.',
+  rate_limited: 'Too many tries. Wait a few minutes and try again.',
+  not_found: 'We could not find that registration.',
+  not_open_yet: 'Registration has not opened yet.',
+  registration_closed: 'Registration is closed.',
+  registration_full: 'This registration just filled up.',
+  form_changed: 'The form was updated. Reload the page and try again.',
+  account_required: 'Sign in to register for this event.',
+  not_authenticated: 'Sign in to continue.',
+  already_registered: 'This child is already registered for this event.',
+  invalid_token: 'That link has expired or was already used.',
+  already_signed: 'You already signed this waiver.',
+  network: 'You seem to be offline. Check your connection and try again.',
+  internal_error: 'Something went wrong on our side. Try again in a moment.',
+};
+export function registrationErrorMessage(code: unknown): string {
+  return (typeof code === 'string' && EDGE_ERRORS[code]) || 'Something went wrong. Try again.';
+}
+
+/** Whole-dollar price label for a registration event ("Free" when there is no price). */
+export function registrationPriceLabel(cents: number | null | undefined): string {
+  if (!cents) return 'Free';
+  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+}
+
+/** Slug suggestion for a new event title (the database enforces uniqueness). */
+export function suggestSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return base.length >= 6
+    ? base
+    : `${base || 'event'}-${Math.random().toString(36).slice(2, 6)}`.slice(0, 80);
+}
+
+/** CSV for export_registrations: fixed columns, then one column per form field. Every cell is formula-safe. */
+export function buildRegistrationCsv(
+  fields: { id: string; label: string }[],
+  rows: Record<string, unknown>[],
+  includeSensitive: boolean,
+): string {
+  const base = [
+    ['display_id', 'Reference'],
+    ['status', 'Status'],
+    ['submitted_at', 'Submitted'],
+    ['player_first_name', 'Child first name'],
+    ['player_last_name', 'Child last name'],
+    ['player_date_of_birth', 'Date of birth'],
+    ['guardian_name', 'Guardian'],
+    ['guardian_email', 'Guardian email'],
+    ['guardian_phone', 'Guardian phone'],
+    ['guardian_relationship', 'Relationship'],
+  ] as const;
+  const head = [...base.map(([, l]) => l), ...fields.map((f) => f.label)];
+  const lines = [head.map(csvSafeCell).join(',')];
+  for (const r of rows) {
+    const ordinary = (r.answers ?? {}) as Record<string, unknown>;
+    const sensitive = (includeSensitive ? (r.sensitive_answers ?? {}) : {}) as Record<
+      string,
+      unknown
+    >;
+    const cells = [
+      ...base.map(([k]) => r[k]),
+      ...fields.map((f) => {
+        const v = f.id in ordinary ? ordinary[f.id] : sensitive[f.id];
+        return Array.isArray(v) ? v.join('; ') : v;
+      }),
+    ];
+    lines.push(cells.map(csvSafeCell).join(','));
+  }
+  return lines.join('\r\n');
+}
+
+// ----------------------------------------------------------------------------------------- authoring templates
+export interface FormTemplate {
+  id: string;
+  name: string;
+  description: string;
+  fields: FormField[];
+}
+/**
+ * Starter forms. They ask only what a youth program needs: no government IDs, no card data. Medical questions are
+ * flagged sensitive, so they are stored apart and hidden from lists, exports and notifications.
+ */
+export const FORM_TEMPLATES: FormTemplate[] = [
+  {
+    id: 'season',
+    name: 'Season registration',
+    description: 'Shirt size, emergency contact and medical notes.',
+    fields: [
+      {
+        id: 'shirt_size',
+        type: 'dropdown',
+        label: 'Shirt size',
+        required: true,
+        options: [
+          { value: 'YS', label: 'Youth S' },
+          { value: 'YM', label: 'Youth M' },
+          { value: 'YL', label: 'Youth L' },
+          { value: 'AS', label: 'Adult S' },
+          { value: 'AM', label: 'Adult M' },
+          { value: 'AL', label: 'Adult L' },
+        ],
+      },
+      { id: 'emergency_name', type: 'short_text', label: 'Emergency contact name', required: true },
+      { id: 'emergency_phone', type: 'phone', label: 'Emergency contact phone', required: true },
+      {
+        id: 'allergies',
+        type: 'long_text',
+        label: 'Allergies or conditions we should know about',
+        sensitive: true,
+      },
+      {
+        id: 'photo_ok',
+        type: 'consent_checkbox',
+        label: 'Photos of my child may be shared with the team',
+      },
+    ],
+  },
+  {
+    id: 'tryout',
+    name: 'Tryout',
+    description: 'Position preference and previous experience.',
+    fields: [
+      {
+        id: 'position',
+        type: 'multiple_choice',
+        label: 'Positions your child plays',
+        required: true,
+        options: [
+          { value: 'goalie', label: 'Goalie' },
+          { value: 'defense', label: 'Defense' },
+          { value: 'midfield', label: 'Midfield' },
+          { value: 'forward', label: 'Forward' },
+        ],
+      },
+      { id: 'experience', type: 'long_text', label: 'Playing experience' },
+      { id: 'previous_team', type: 'short_text', label: 'Previous team (optional)' },
+      {
+        id: 'medical',
+        type: 'long_text',
+        label: 'Anything medical we should know about?',
+        sensitive: true,
+      },
+    ],
+  },
+  {
+    id: 'camp',
+    name: 'Camp or clinic',
+    description: 'Sessions, pickup and medical notes.',
+    fields: [
+      {
+        id: 'sessions',
+        type: 'multiple_choice',
+        label: 'Sessions',
+        required: true,
+        options: [
+          { value: 'am', label: 'Morning' },
+          { value: 'pm', label: 'Afternoon' },
+        ],
+      },
+      {
+        id: 'pickup_person',
+        type: 'short_text',
+        label: 'Who will pick up your child?',
+        required: true,
+      },
+      { id: 'medications', type: 'long_text', label: 'Medications or conditions', sensitive: true },
+    ],
+  },
+];

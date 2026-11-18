@@ -141,7 +141,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   'folder-open': FolderOpen,
   'upload-simple': UploadSimple,
   'file-text': FileText,
-  'eye': Eye,
+  eye: Eye,
   'list-checks': ListChecks,
 };
 
