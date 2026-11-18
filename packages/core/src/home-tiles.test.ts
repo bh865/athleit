@@ -182,3 +182,62 @@ describe('deriveAttention', () => {
     expect(withinRsvpWindow('2026-11-21T12:00:00Z', now)).toBe(false);
   });
 });
+
+import { buildAttentionItems } from './home-data';
+
+describe('buildAttentionItems', () => {
+  const now = new Date('2026-11-18T12:00:00Z');
+  it('one RSVP chip per unanswered child within 48h; none for answered or far events', () => {
+    const items = buildAttentionItems({
+      now,
+      nextUp: [
+        {
+          event_id: 'e1',
+          title: 'Game',
+          starts_at: '2026-11-19T15:00:00Z',
+          children: [
+            { player_id: 'p1', first_name: 'Maya', status: null },
+            { player_id: 'p2', first_name: 'Leo', status: 'going' },
+          ],
+        },
+        {
+          event_id: 'e2',
+          title: 'Later',
+          starts_at: '2026-12-30T15:00:00Z',
+          children: [{ player_id: 'p1', first_name: 'Maya', status: null }],
+        },
+      ],
+    });
+    expect(items.map((i) => i.label)).toEqual(['RSVP for Maya']);
+  });
+
+  it('flags overdue payments and ignores ones the person cannot pay', () => {
+    const items = buildAttentionItems({
+      now,
+      payments: [
+        {
+          request_id: 'a',
+          title: 'Jersey',
+          amount_cents: 4500,
+          due_at: '2026-11-10T00:00:00Z',
+          can_pay: true,
+        },
+        {
+          request_id: 'b',
+          title: 'Read-only',
+          amount_cents: 100,
+          due_at: '2026-11-30T00:00:00Z',
+          can_pay: false,
+        },
+      ],
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0]!.overdue).toBe(true);
+  });
+
+  it('staff counts become single chips with no names', () => {
+    const items = buildAttentionItems({ now, pendingJoinRequests: 2, waiversNeedingAction: 3 });
+    expect(items.map((i) => i.label).sort()).toEqual(['2 join requests', '3 waivers missing']);
+    expect(JSON.stringify(items)).not.toMatch(/@/);
+  });
+});

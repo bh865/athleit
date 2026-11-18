@@ -24,3 +24,4 @@ export * from './pay-views';
 export * from './places';
 export * from './home-tiles';
 export * from './home-attention';
+export * from './home-data';
