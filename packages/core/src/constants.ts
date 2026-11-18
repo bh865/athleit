@@ -85,7 +85,12 @@ export type ReportStatus = (typeof REPORT_STATUSES)[number];
 /** Settable channels/categories; the *_reserved values exist in the database but are not implemented. */
 export const NOTIFICATION_CHANNELS = ['push', 'email'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
-export const NOTIFICATION_CATEGORIES = ['messages', 'announcements', 'schedule'] as const;
+export const NOTIFICATION_CATEGORIES = [
+  'messages',
+  'announcements',
+  'schedule',
+  'payments',
+] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 export const PUSH_PLATFORMS = ['ios', 'android', 'web'] as const;
 export type PushPlatform = (typeof PUSH_PLATFORMS)[number];

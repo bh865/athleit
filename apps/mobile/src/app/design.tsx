@@ -41,6 +41,7 @@ const TYPES: [TextVariant, string][] = [
   ['caption', 'Caption 13/600'],
   ['label', 'Label 12/700'],
   ['monoLg', 'Mono 28/500'],
+  ['monoXl', 'Mono 56/500'],
 ];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

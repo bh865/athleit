@@ -40,6 +40,13 @@
       "expo-web-browser",
       "expo-status-bar",
       "expo-font",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.athleit.app",
+          "enableGooglePay": true
+        }
+      ],
       "expo-splash-screen",
       [
         "expo-image-picker",

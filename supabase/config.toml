@@ -452,3 +452,11 @@ enabled = true
 # The calendar feed is authenticated by its secret token in the URL (calendar apps cannot send a JWT).
 [functions.calendar-feed]
 verify_jwt = false
+
+# Stripe calls the webhook with its own signature, not a Supabase JWT. The function verifies it.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Called by pg_cron through pg_net with a shared secret header (checked in the function).
+[functions.reconcile-payments]
+verify_jwt = false

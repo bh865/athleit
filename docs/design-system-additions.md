@@ -93,3 +93,31 @@ and dark under `apps/web/visual/`. The visual project now runs in `America/New_Y
 ## Still not in the system, and not built
 
 Alerts, Pay and the related states (Phases 4 and 5), a team record screen, and staff-set RSVPs in the UI.
+
+## Payments (Phase 4)
+
+The system specifies the Pay list, request detail, confirm sheet, receipt, the three states, the staff "New payment request" + collection
+card and the Home payment rows; those are built as drawn (56px mono total, lime pay pill, glass confirm modal, 88px lime check circle, progress
+ring with a mono percent, status dots). Everything below is NOT in the system; each is composed from existing tokens and components.
+
+| Screen / component                     | Composed from                                                                                              | Notes                                                                                                     |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Payouts status + "Set up payouts"      | Card, Badge (neutral / warning / danger / success), Button                                                 | Four states: not started, in review, needs info, ready (+ disconnected). Opens Stripe's hosted onboarding |
+| Fee policy selector + live breakdown   | SegmentedControl ("We pay the fee" / "Families pay a service fee"), line rows, mono amounts                | Breakdown uses the shared fee module; copy labels the pass-through "Service fee" (legal review pending)   |
+| Audience picker                        | Select ("Everyone on the active roster" / "Selected players") + checkbox list                              | Team only; a club sends to every active player on its linked teams                                        |
+| Confirm review (server-computed lines) | Sheet (modal), line rows, mono total                                                                       | Item lines, Athleit charge, service fee, total: from `payer_checkout_quote`, never from the client        |
+| Stripe Payment Element / PaymentSheet  | Stripe Appearance API fed from semantic tokens (web: CSS variables; mobile: theme colours, `input` radius) | Apple Pay / Google Pay via Stripe; needs a development build on mobile                                    |
+| Processing state                       | Centered heading + status text                                                                             | Shown until the webhook marks the payment paid; "taking longer" copy after ~20 s                          |
+| Failure states                         | Notice (`badSoft`), warning-circle in IconCircle, "Try again"                                              | Declined, authentication failed, network lost, already paid in the household, request cancelled           |
+| Multi-request checkout                 | Checkbox rows, summed mono total, one lime pay pill                                                        | Different payees or fee terms must be paid separately (server refuses mixed sets)                         |
+| Payer history / receipts               | ListRow-style rows with receipt id, SegmentedControl (Due / Receipts), receipt card                        |                                                                                                           |
+| Collection detail rows + actions       | Badge status, mono amounts, ghost buttons (Paid offline, Waive, Refund)                                    | Refund is admin-only; a "Disputed" danger badge appears on flagged requests                               |
+| Record offline / waive / refund sheets | Sheet, Select, TextField (mono for amounts), Button                                                        | All audited server-side                                                                                   |
+| Dispute notice                         | Notice (danger)                                                                                            | Staff also get a notification                                                                             |
+| Club-issued view                       | Same staff screen under `/clubs/[id]/payments`                                                             | Names and totals only for events the club issued                                                          |
+| CSV export                             | Secondary button with `download-simple`                                                                    | Formula-safe cells; no card data                                                                          |
+| Mobile staff payments                  | Cards: payouts, new request (typed due date), collection with progress bar, remind / waive / paid-cash     | Refund, audience picker and CSV are web-only for now                                                      |
+
+New tokens and icons: text variant `monoXl` (56 / 60, 500, -0.03em) for the Pay and receipt amounts; icons `receipt`, `bank`, `download-simple`.
+Gallery and baselines: "Payments · pay and receipt", "Payments · staff", "Payments · states" in light and dark (`apps/web/visual/`).
+Not built: edit-draft (drafts are created and sent in one step), a payment event detail page, a separate payer-history screen on mobile beyond Receipts.

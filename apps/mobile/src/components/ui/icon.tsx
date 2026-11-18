@@ -60,6 +60,9 @@ import {
   Question,
   ShieldCheck,
   CaretDown,
+  Receipt,
+  Bank,
+  DownloadSimple,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
 
@@ -126,6 +129,9 @@ const icons: Record<IconName, PhosphorIcon> = {
   question: Question,
   'shield-check': ShieldCheck,
   'caret-down': CaretDown,
+  receipt: Receipt,
+  bank: Bank,
+  'download-simple': DownloadSimple,
 };
 
 export interface IconProps {

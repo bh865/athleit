@@ -9,6 +9,8 @@ import {
 import { iconNames } from '@athleit/ui-core';
 import { useState } from 'react';
 
+import { PayGallery, PayStaffGallery, PayStatesGallery } from '@/components/payments/gallery-parts';
+
 import {
   Avatar,
   Badge,
@@ -53,6 +55,7 @@ const TYPE_SAMPLES: [TextVariant, string][] = [
   ['caption', 'Caption 13/600'],
   ['label', 'Label 12/700'],
   ['monoLg', 'Mono 28/500 · 1,240.00'],
+  ['monoXl', 'Mono 56/500 · $45.00'],
 ];
 const SPACE = [1, 2, 3, 4, 6, 8, 12] as const;
 const RADII = ['xs', 'sm', 'md', 'lg', 'xl', 'pill'] as const;
@@ -312,6 +315,15 @@ function ThemePanel({ name }: { name: string }) {
       </Section>
       <Section title="Schedule · flows">
         <FlowPartsDemo />
+      </Section>
+      <Section title="Payments · pay and receipt">
+        <PayGallery />
+      </Section>
+      <Section title="Payments · staff">
+        <PayStaffGallery />
+      </Section>
+      <Section title="Payments · states">
+        <PayStatesGallery />
       </Section>
       <Section title="Sidebar · sheet · toast">
         <div className={styles.navDemo}>

@@ -54,6 +54,7 @@ export function Sidebar() {
     ...(contexts.length > 0
       ? [{ href: '/schedule', label: 'Schedule', icon: 'calendar-blank' } as NavItem]
       : []),
+    ...(hasFamily ? [{ href: '/pay', label: 'Pay', icon: 'credit-card' } as NavItem] : []),
     { href: '/notifications', label: 'Alerts', icon: 'bell' },
     ...(hasFamily ? [{ href: '/family', label: 'Family', icon: 'house-line' } as NavItem] : []),
   ];

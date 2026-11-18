@@ -39,6 +39,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -189,6 +207,76 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connected_accounts: {
+        Row: {
+          charges_enabled: boolean
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          default_fee_policy: string
+          details_submitted: boolean
+          id: string
+          onboarding_status: string
+          payouts_enabled: boolean
+          requirements: Json
+          stripe_account_id: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          charges_enabled?: boolean
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_fee_policy?: string
+          details_submitted?: boolean
+          id?: string
+          onboarding_status?: string
+          payouts_enabled?: boolean
+          requirements?: Json
+          stripe_account_id: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          charges_enabled?: boolean
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_fee_policy?: string
+          details_submitted?: boolean
+          id?: string
+          onboarding_status?: string
+          payouts_enabled?: boolean
+          requirements?: Json
+          stripe_account_id?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connected_accounts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connected_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connected_accounts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -360,6 +448,65 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          id: string
+          is_active: boolean
+          note: string | null
+          platform_fee_bps: number
+          platform_fee_flat_cents: number
+          refund_athleit_charge_on_full: boolean
+          refund_athleit_charge_on_partial: boolean
+          refund_service_fee_on_full: boolean
+          refund_service_fee_on_partial: boolean
+          stripe_fee_bps: number
+          stripe_fee_fixed_cents: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          platform_fee_bps?: number
+          platform_fee_flat_cents?: number
+          refund_athleit_charge_on_full?: boolean
+          refund_athleit_charge_on_partial?: boolean
+          refund_service_fee_on_full?: boolean
+          refund_service_fee_on_partial?: boolean
+          stripe_fee_bps?: number
+          stripe_fee_fixed_cents?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          platform_fee_bps?: number
+          platform_fee_flat_cents?: number
+          refund_athleit_charge_on_full?: boolean
+          refund_athleit_charge_on_partial?: boolean
+          refund_service_fee_on_full?: boolean
+          refund_service_fee_on_partial?: boolean
+          stripe_fee_bps?: number
+          stripe_fee_fixed_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_config_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1012,6 +1159,48 @@ export type Database = {
           },
         ]
       }
+      offline_payments: {
+        Row: {
+          id: string
+          method: string
+          note: string | null
+          payment_request_id: string
+          recorded_at: string
+          recorded_by: string | null
+        }
+        Insert: {
+          id?: string
+          method: string
+          note?: string | null
+          payment_request_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Update: {
+          id?: string
+          method?: string
+          note?: string | null
+          payment_request_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offline_payments_payment_request_id_fkey"
+            columns: ["payment_request_id"]
+            isOneToOne: true
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offline_payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opponents: {
         Row: {
           created_at: string
@@ -1050,6 +1239,338 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_events: {
+        Row: {
+          amount_cents: number
+          audience: string
+          audience_player_ids: string[] | null
+          cancelled_at: string | null
+          club_id: string | null
+          connected_account_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          due_at: string
+          fee_config: Json | null
+          fee_policy: string
+          id: string
+          published_at: string | null
+          status: string
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          audience?: string
+          audience_player_ids?: string[] | null
+          cancelled_at?: string | null
+          club_id?: string | null
+          connected_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          due_at: string
+          fee_config?: Json | null
+          fee_policy?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          audience?: string
+          audience_player_ids?: string[] | null
+          cancelled_at?: string | null
+          club_id?: string | null
+          connected_account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          due_at?: string
+          fee_config?: Json | null
+          fee_policy?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_items: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          is_active: boolean
+          payment_id: string
+          payment_request_id: string
+          platform_fee_cents: number
+          processing_fee_passthrough_cents: number
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          payment_id: string
+          payment_request_id: string
+          platform_fee_cents?: number
+          processing_fee_passthrough_cents?: number
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          payment_id?: string
+          payment_request_id?: string
+          platform_fee_cents?: number
+          processing_fee_passthrough_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_items_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_items_payment_request_id_fkey"
+            columns: ["payment_request_id"]
+            isOneToOne: false
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_requests: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          display_id: string
+          disputed: boolean
+          due_at: string
+          due_soon_notified_at: string | null
+          household_id: string
+          id: string
+          last_reminded_at: string | null
+          note: string | null
+          overdue_notified_at: string | null
+          paid_at: string | null
+          payment_event_id: string
+          player_id: string
+          status: string
+          updated_at: string
+          waived_at: string | null
+          waived_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          display_id: string
+          disputed?: boolean
+          due_at: string
+          due_soon_notified_at?: string | null
+          household_id: string
+          id?: string
+          last_reminded_at?: string | null
+          note?: string | null
+          overdue_notified_at?: string | null
+          paid_at?: string | null
+          payment_event_id: string
+          player_id: string
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          display_id?: string
+          disputed?: boolean
+          due_at?: string
+          due_soon_notified_at?: string | null
+          household_id?: string
+          id?: string
+          last_reminded_at?: string | null
+          note?: string | null
+          overdue_notified_at?: string | null
+          paid_at?: string | null
+          payment_event_id?: string
+          player_id?: string
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_payment_event_id_fkey"
+            columns: ["payment_event_id"]
+            isOneToOne: false
+            referencedRelation: "payment_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_waived_by_fkey"
+            columns: ["waived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          application_fee_cents: number
+          base_cents: number
+          connected_account_id: string
+          created_at: string
+          currency: string
+          estimated_stripe_fee_cents: number
+          fee_policy: string
+          household_id: string
+          id: string
+          net_to_account_cents: number | null
+          payer_profile_id: string | null
+          platform_fee_cents: number
+          processing_fee_passthrough_cents: number
+          receipt_display_id: string | null
+          request_set_key: string
+          status: string
+          stripe_charge_id: string | null
+          stripe_fee_cents: number | null
+          stripe_payment_intent_id: string | null
+          succeeded_at: string | null
+          total_charged_cents: number
+          updated_at: string
+        }
+        Insert: {
+          application_fee_cents?: number
+          base_cents: number
+          connected_account_id: string
+          created_at?: string
+          currency?: string
+          estimated_stripe_fee_cents: number
+          fee_policy: string
+          household_id: string
+          id?: string
+          net_to_account_cents?: number | null
+          payer_profile_id?: string | null
+          platform_fee_cents?: number
+          processing_fee_passthrough_cents?: number
+          receipt_display_id?: string | null
+          request_set_key: string
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_fee_cents?: number | null
+          stripe_payment_intent_id?: string | null
+          succeeded_at?: string | null
+          total_charged_cents: number
+          updated_at?: string
+        }
+        Update: {
+          application_fee_cents?: number
+          base_cents?: number
+          connected_account_id?: string
+          created_at?: string
+          currency?: string
+          estimated_stripe_fee_cents?: number
+          fee_policy?: string
+          household_id?: string
+          id?: string
+          net_to_account_cents?: number | null
+          payer_profile_id?: string | null
+          platform_fee_cents?: number
+          processing_fee_passthrough_cents?: number
+          receipt_display_id?: string | null
+          request_set_key?: string
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_fee_cents?: number | null
+          stripe_payment_intent_id?: string | null
+          succeeded_at?: string | null
+          total_charged_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payer_profile_id_fkey"
+            columns: ["payer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1241,6 +1762,76 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount_cents: number
+          athleit_charge_cents: number
+          base_cents: number
+          created_at: string
+          id: string
+          payment_id: string
+          payment_item_id: string | null
+          reason: string | null
+          requested_by: string | null
+          service_fee_cents: number
+          status: string
+          stripe_refund_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          athleit_charge_cents?: number
+          base_cents?: number
+          created_at?: string
+          id?: string
+          payment_id: string
+          payment_item_id?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          service_fee_cents?: number
+          status?: string
+          stripe_refund_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          athleit_charge_cents?: number
+          base_cents?: number
+          created_at?: string
+          id?: string
+          payment_id?: string
+          payment_item_id?: string | null
+          reason?: string | null
+          requested_by?: string | null
+          service_fee_cents?: number
+          status?: string
+          stripe_refund_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_item_id_fkey"
+            columns: ["payment_item_id"]
+            isOneToOne: false
+            referencedRelation: "payment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rsvps: {
         Row: {
           event_id: string
@@ -1333,6 +1924,45 @@ export type Database = {
           scoring_label?: string
           sport?: Database["public"]["Enums"]["sport"]
           ties_allowed?: boolean
+        }
+        Relationships: []
+      }
+      stripe_webhook_events: {
+        Row: {
+          attempts: number
+          error: string | null
+          id: string
+          livemode: boolean
+          payload: Json
+          processed_at: string | null
+          received_at: string
+          stripe_account_id: string | null
+          stripe_event_id: string
+          type: string
+        }
+        Insert: {
+          attempts?: number
+          error?: string | null
+          id?: string
+          livemode?: boolean
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          stripe_account_id?: string | null
+          stripe_event_id: string
+          type: string
+        }
+        Update: {
+          attempts?: number
+          error?: string | null
+          id?: string
+          livemode?: boolean
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          stripe_account_id?: string | null
+          stripe_event_id?: string
+          type?: string
         }
         Relationships: []
       }
@@ -1659,10 +2289,34 @@ export type Database = {
         Args: { p_profile_id: string; p_role?: string; p_thread_id: string }
         Returns: undefined
       }
+      calendar_feed_events: {
+        Args: { p_profile_id: string }
+        Returns: {
+          arrive_early_minutes: number
+          cancelled_reason: string
+          ends_at: string
+          home_away: string
+          id: string
+          location_address: string
+          location_name: string
+          location_text: string
+          notes: string
+          opponent_name: string
+          revision: number
+          starts_at: string
+          status: string
+          team_name: string
+          timezone: string
+          title: string
+          type: string
+          updated_at: string
+        }[]
+      }
       cancel_event: {
         Args: { p_event_id: string; p_reason: string; p_scope: string }
         Returns: number
       }
+      cancel_payment_event: { Args: { p_event_id: string }; Returns: number }
       claim_notifications: {
         Args: { p_limit?: number }
         Returns: {
@@ -1676,6 +2330,17 @@ export type Database = {
       }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
       clear_game_result: { Args: { p_event_id: string }; Returns: undefined }
+      connected_account_status: {
+        Args: { p_club_id?: string; p_team_id?: string }
+        Returns: {
+          can_manage: boolean
+          charges_enabled: boolean
+          default_fee_policy: string
+          exists_account: boolean
+          onboarding_status: string
+          payouts_enabled: boolean
+        }[]
+      }
       create_calendar_feed_token: { Args: never; Returns: string }
       create_club: { Args: { p_name: string; p_slug: string }; Returns: string }
       create_event: {
@@ -1725,6 +2390,20 @@ export type Database = {
           token: string
         }[]
       }
+      create_payment_event: {
+        Args: {
+          p_amount_cents: number
+          p_audience?: string
+          p_audience_player_ids?: string[]
+          p_club_id: string
+          p_description: string
+          p_due_at: string
+          p_fee_policy?: string
+          p_team_id: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_team: {
         Args: {
           p_club_id?: string
@@ -1760,6 +2439,43 @@ export type Database = {
       edit_message: {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
+      }
+      event_collection_detail: {
+        Args: { p_event_id: string }
+        Returns: {
+          amount_cents: number
+          display_id: string
+          disputed: boolean
+          due_at: string
+          household_name: string
+          last_reminded_at: string
+          paid_at: string
+          paid_via: string
+          player_name: string
+          receipt_display_id: string
+          request_id: string
+          status: string
+        }[]
+      }
+      event_collection_summary: {
+        Args: { p_event_id: string }
+        Returns: {
+          collected_cents: number
+          disputed_count: number
+          due_at: string
+          expected_cents: number
+          outstanding_cents: number
+          paid_count: number
+          processing_count: number
+          progress_percent: number
+          refunded_cents: number
+          refunded_count: number
+          status: string
+          total_requests: number
+          unpaid_count: number
+          waived_cents: number
+          waived_count: number
+        }[]
       }
       event_rsvp_detail: {
         Args: { p_event_id: string }
@@ -1965,6 +2681,39 @@ export type Database = {
         Args: { p_message_id: string; p_reason?: string }
         Returns: undefined
       }
+      household_payments: {
+        Args: { p_household_id?: string }
+        Returns: {
+          amount_cents: number
+          can_pay: boolean
+          display_id: string
+          disputed: boolean
+          due_at: string
+          household_id: string
+          issuer_name: string
+          paid_at: string
+          payment_event_id: string
+          player_first_name: string
+          request_id: string
+          status: string
+          title: string
+        }[]
+      }
+      household_receipts: {
+        Args: { p_household_id?: string }
+        Returns: {
+          base_cents: number
+          items: Json
+          payment_id: string
+          platform_fee_cents: number
+          processing_fee_passthrough_cents: number
+          receipt_display_id: string
+          refunded_cents: number
+          status: string
+          succeeded_at: string
+          total_charged_cents: number
+        }[]
+      }
       household_schedule: {
         Args: { p_limit?: number; p_offset?: number; p_when?: string }
         Returns: {
@@ -2054,6 +2803,25 @@ export type Database = {
           type: string
         }[]
       }
+      payer_checkout_quote: { Args: { p_request_ids: string[] }; Returns: Json }
+      payment_event_export: {
+        Args: { p_event_id: string }
+        Returns: {
+          athleit_charge_cents: number
+          base_cents: number
+          display_id: string
+          due_at: string
+          household_name: string
+          paid_at: string
+          paid_via: string
+          player_name: string
+          receipt_display_id: string
+          refunded_cents: number
+          service_fee_cents: number
+          status: string
+          total_charged_cents: number
+        }[]
+      }
       place_player_on_roster: {
         Args: {
           p_jersey_number?: number
@@ -2063,6 +2831,15 @@ export type Database = {
           p_team_id: string
         }
         Returns: string
+      }
+      prepare_refund: {
+        Args: {
+          p_base_cents?: number
+          p_item_id?: string
+          p_payment_id: string
+          p_reason?: string
+        }
+        Returns: Json
       }
       preview_invite: {
         Args: { p_token: string }
@@ -2074,6 +2851,7 @@ export type Database = {
           valid: boolean
         }[]
       }
+      publish_payment_event: { Args: { p_event_id: string }; Returns: number }
       record_game_result: {
         Args: {
           p_event_id: string
@@ -2083,6 +2861,10 @@ export type Database = {
           p_their_score: number
         }
         Returns: string
+      }
+      record_offline_payment: {
+        Args: { p_method: string; p_note?: string; p_request_id: string }
+        Returns: undefined
       }
       register_push_device: {
         Args: {
@@ -2139,8 +2921,13 @@ export type Database = {
         }
         Returns: string
       }
+      send_payment_reminders: { Args: { p_event_id: string }; Returns: number }
       set_active_thread: {
         Args: { p_thread_id: string; p_token: string }
+        Returns: undefined
+      }
+      set_default_fee_policy: {
+        Args: { p_club_id?: string; p_policy?: string; p_team_id?: string }
         Returns: undefined
       }
       set_rsvp: {
@@ -2168,6 +2955,99 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      svc_attach_payment_intent: {
+        Args: { p_payment_id: string; p_pi: string }
+        Returns: undefined
+      }
+      svc_attach_refund: {
+        Args: {
+          p_refund_id: string
+          p_status?: string
+          p_stripe_refund_id: string
+        }
+        Returns: undefined
+      }
+      svc_cleanup_rate_limits: { Args: never; Returns: number }
+      svc_dispute_event: {
+        Args: {
+          p_charge?: string
+          p_dispute_id: string
+          p_outcome?: string
+          p_payment_id?: string
+          p_phase: string
+          p_pi: string
+        }
+        Returns: string
+      }
+      svc_fail_refund: { Args: { p_refund_id: string }; Returns: undefined }
+      svc_finish_event: {
+        Args: { p_error?: string; p_event_id: string; p_final?: boolean }
+        Returns: undefined
+      }
+      svc_ledger_event: {
+        Args: {
+          p_account: string
+          p_event_id: string
+          p_livemode: boolean
+          p_payload: Json
+          p_type: string
+        }
+        Returns: string
+      }
+      svc_payment_status: {
+        Args: { p_payment_id?: string; p_pi: string; p_status: string }
+        Returns: string
+      }
+      svc_payment_succeeded: {
+        Args: {
+          p_amount?: number
+          p_application_fee?: number
+          p_charge?: string
+          p_currency?: string
+          p_destination?: string
+          p_payment_id?: string
+          p_pi: string
+          p_stripe_fee?: number
+        }
+        Returns: string
+      }
+      svc_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      svc_reconcile_candidates: { Args: { p_stale?: string }; Returns: Json }
+      svc_reconcile_candidates_base: {
+        Args: { p_stale?: string }
+        Returns: Json
+      }
+      svc_refund_event: {
+        Args: {
+          p_charge?: string
+          p_payment_id?: string
+          p_pi: string
+          p_refunds: Json
+        }
+        Returns: string
+      }
+      svc_release_payment: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
+      svc_reserve_payment: {
+        Args: { p_request_ids: string[]; p_uid: string }
+        Returns: Json
+      }
+      svc_set_account_status: {
+        Args: {
+          p_charges_enabled: boolean
+          p_deauthorized?: boolean
+          p_details_submitted: boolean
+          p_payouts_enabled: boolean
+          p_requirements?: Json
+          p_stripe_account_id: string
+        }
+        Returns: string
       }
       team_record: {
         Args: { p_team_id: string }
@@ -2258,6 +3138,23 @@ export type Database = {
       update_event: {
         Args: { p_event_id: string; p_patch: Json; p_scope: string }
         Returns: number
+      }
+      update_payment_event: {
+        Args: {
+          p_amount_cents: number
+          p_audience: string
+          p_audience_player_ids: string[]
+          p_description: string
+          p_due_at: string
+          p_event_id: string
+          p_fee_policy: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      waive_request: {
+        Args: { p_note?: string; p_request_id: string }
+        Returns: undefined
       }
     }
     Enums: {

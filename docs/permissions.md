@@ -87,6 +87,29 @@ Club members' own rows: club admin reads all memberships in their club and may c
 or remove members; a club manager reads the club and their own membership. Club admins cannot
 edit a linked team unless they also hold a team role.
 
+Payments (Phase 4; model and fee rules in [payments.md](payments.md)). **Issuer** = the issuing team, or the club for club-issued events.
+Staff = admin / coach / manager. Club admins act for club-issued events only; they never see a linked team's own payment events.
+
+| Resource / action                                           |                               Issuer admin                                | Coach / manager | Parent / guardian (household) | Player (13+) | Club admin (club-issued) | Anyone else |
+| ----------------------------------------------------------- | :-----------------------------------------------------------------------: | :-------------: | :---------------------------: | :----------: | :----------------------: | :---------: |
+| Set up / manage the connected account (payouts)             |                                     ✓                                     |        –        |               –               |      –       |         ✓ (club)         |      –      |
+| Read the connected account row (requirements)               |                                     ✓                                     |        –        |               –               |      –       |         ✓ (club)         |      –      |
+| See account status (ready / needs info)                     |                                     ✓                                     |        ✓        |               –               |      –       |            ✓             |      –      |
+| Change the default fee policy                               |                                     ✓                                     |        –        |               –               |      –       |            ✓             |      –      |
+| Create / edit draft, publish, remind, waive, record offline |                                     ✓                                     |        ✓        |               –               |      –       |            ✓             |      –      |
+| Cancel a published event, refund                            |                                     ✓                                     |        –        |               –               |      –       |            ✓             |      –      |
+| See who paid / who hasn't (names)                           |                                     ✓                                     |        ✓        |               –               |      –       |   ✓ (club-issued only)   |      –      |
+| See collection totals                                       |                                     ✓                                     |        ✓        |               –               |      –       |   ✓ (club-issued only)   |      –      |
+| Read own household's requests, payments, receipts, refunds  |                                     –                                     |        –        |         ✓ (own only)          | own requests |            –             |      –      |
+| Pay a request (guardians only by default)                   |                                     –                                     |        –        |               ✓               |      –       |            –             |      –      |
+| Edit fee config                                             |              nobody in the apps (service role only, audited)              |
+| Write payment tables directly                               | nobody; only `SECURITY DEFINER` functions and service-role Edge Functions |
+
+Functions: `create_payment_event`, `update_payment_event`, `publish_payment_event`, `cancel_payment_event`, `waive_request`, `record_offline_payment`,
+`send_payment_reminders`, `payer_checkout_quote`, `event_collection_summary`, `event_collection_detail`, `household_payments`, `household_receipts`,
+`connected_account_status`, `set_default_fee_policy`. Helpers: `is_issuer_admin`, `is_issuer_staff`, `is_event_staff`, `is_event_admin`, `is_event_payer`,
+`is_payment_staff`, `can_read_payment`. Capabilities in code: `payments.view|manage|refund|setup|pay`.
+
 ## Data-minimization rules for minors
 
 - Children under 13 never have a login: `players.profile_id` cannot be set when the player is

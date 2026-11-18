@@ -8,6 +8,11 @@ export interface InAppPayload {
   change?: string;
   body?: string;
   sensitive?: boolean;
+  request_id?: string | null;
+  payment_event_id?: string;
+  team_id?: string | null;
+  club_id?: string | null;
+  audience?: string;
 }
 
 const CHANGE_LABEL: Record<string, string> = {
@@ -24,7 +29,7 @@ export function notificationSummary(
 ): {
   title: string;
   detail: string;
-  icon: 'calendar-blank' | 'megaphone' | 'chat-circle';
+  icon: 'calendar-blank' | 'megaphone' | 'chat-circle' | 'credit-card';
   href: string;
 } {
   const href = p.thread_id
@@ -32,6 +37,25 @@ export function notificationSummary(
     : p.event_id
       ? `/events/${p.event_id}`
       : '/';
+  if (category === 'payments') {
+    // Parents open the exact request (or the Pay list); staff open the event's collection.
+    const staffBase = p.team_id
+      ? `/teams/${p.team_id}/payments`
+      : p.club_id
+        ? `/clubs/${p.club_id}/payments`
+        : '/';
+    return {
+      title: p.title || 'Payment',
+      detail: p.body || 'Payment update',
+      icon: 'credit-card',
+      href:
+        p.audience === 'staff'
+          ? `${staffBase}${p.payment_event_id ? `?event=${p.payment_event_id}` : ''}`
+          : p.request_id
+            ? `/pay?request=${p.request_id}`
+            : '/pay',
+    };
+  }
   if (category === 'schedule') {
     return {
       title: p.title || 'Schedule update',
