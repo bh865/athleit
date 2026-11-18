@@ -67,6 +67,9 @@ test.describe.serial('registration (end to end)', () => {
     await admin.goto(`/manage/registration/new?team=${teamId}`);
     await admin.getByLabel('Title').fill('E2E Spring League');
     await admin.getByLabel('Web address').fill(slug);
+    // Publishing needs an open window.
+    await admin.getByLabel('Opens').fill('2020-01-01T09:00');
+    await admin.getByLabel('Closes').fill('2099-01-01T09:00');
     await admin.getByLabel('Spots (leave blank for no limit)').fill('1');
     await admin.getByLabel('Registration form').selectOption({ index: 1 });
     await admin.getByLabel('Liability waiver').check();
@@ -76,7 +79,7 @@ test.describe.serial('registration (end to end)', () => {
     await admin.waitForURL(/\/manage\/registration\/[0-9a-f-]{36}$/);
     eventId = admin.url().split('/').pop()!;
     await admin.getByRole('button', { name: 'Publish' }).click();
-    await expect(admin.getByText('Published')).toBeVisible();
+    await expect(admin.getByText('open', { exact: true })).toBeVisible();
     await expect(admin.getByRole('img', { name: /QR code/ })).toBeVisible();
   });
 

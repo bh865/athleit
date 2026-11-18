@@ -95,6 +95,33 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/ends_before_start/, 'The end time must be after the start.'],
   [/location_wrong_team|opponent_wrong_team/, 'That location or opponent belongs to another team.'],
   [/token_exists/, 'You already have a calendar link. Reset it to get a new one.'],
+  // Registration (Phase 5). The database names the rule; the UI says what to do about it.
+  [/form_required/, 'Choose a published form for this registration first.'],
+  [/window_required/, 'Set when registration opens and closes before publishing.'],
+  [/window_in_past/, 'The closing time has already passed. Pick a later closing time.'],
+  [
+    /required_waivers_missing/,
+    'This team requires waivers that are not attached to the registration. Add them first.',
+  ],
+  [/payments_not_ready/, 'Finish payout setup (Payments tab) before opening a paid registration.'],
+  [/invalid_status_transition/, 'That is not possible in the registration’s current state.'],
+  [/capacity_full|registration_full/, 'This registration is full.'],
+  [/capacity_below_taken/, 'You cannot set fewer spots than are already taken.'],
+  [/registration_closed|not_open_yet/, 'Registration is not open.'],
+  [
+    /not_verified|unverified|verification_required/,
+    'The family has not confirmed their email yet.',
+  ],
+  [/payment_required/, 'This registration needs payment before it can be accepted.'],
+  [/placement_disabled/, 'This registration is not set up to place players on a roster.'],
+  [/already_placed/, 'That player is already on a roster.'],
+  [/placed_withdraw_first/, 'This player is on a roster. Remove them from the roster first.'],
+  [/not_accepted/, 'Accept the registration before placing the player.'],
+  [/waiver_version_outdated/, 'A newer version of this waiver exists. Reload and sign the latest.'],
+  [/sensitive_forbidden/, 'You do not have access to medical information.'],
+  [/slug_locked/, 'The web address cannot change after registrations arrive.'],
+  [/terms_locked/, 'Price and payment terms cannot change after registrations arrive.'],
+  [/event_archived/, 'This registration is archived.'],
   [/forbidden/, 'You do not have permission to do that.'],
 ];
 
