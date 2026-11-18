@@ -42,13 +42,14 @@ export function MyRegistrations() {
       >
         <ListGroup>
           {(list.data ?? []).map((r) => (
-            <ListRow
-              key={r.id}
-              href={`/registrations/${r.id}`}
-              title={`${r.player_first_name} · ${r.event_title}`}
-              subtitle={`${registrationPriceLabel(r.price_cents)} · ${r.display_id}${NEXT_STEP[r.next_step] ? ` · ${NEXT_STEP[r.next_step]}` : ''}`}
-              trailing={<RegistrationStatusBadge status={r.status} />}
-            />
+            <li key={r.id}>
+              <ListRow
+                href={`/registrations/${r.id}`}
+                title={`${r.player_first_name} · ${r.event_title}`}
+                subtitle={`${registrationPriceLabel(r.price_cents)} · ${r.display_id}${NEXT_STEP[r.next_step] ? ` · ${NEXT_STEP[r.next_step]}` : ''}`}
+                trailing={<RegistrationStatusBadge status={r.status} />}
+              />
+            </li>
           ))}
         </ListGroup>
       </LoadState>

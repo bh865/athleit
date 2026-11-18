@@ -120,29 +120,32 @@ export function DocumentsShelf({ owner, canManage }: { owner: Owner; canManage: 
       >
         <ListGroup>
           {(docs.data ?? []).map((d) => (
-            <ListRow
-              key={d.id}
-              leading={<Icon name={d.mime_type === 'application/pdf' ? 'file-pdf' : 'file-text'} />}
-              title={
-                <>
-                  {d.pinned ? <Icon name="star" weight="fill" size="sm" /> : null} {d.title}
-                </>
-              }
-              subtitle={`${CAT_LABEL[d.category] ?? d.category} · ${kb(d.size_bytes)} · ${d.uploaded_by_name}`}
-              trailing={
-                <span className={styles.row}>
-                  {canManage ? <Badge>{VIS_LABEL[d.visibility] ?? d.visibility}</Badge> : null}
-                  <Button variant="secondary" onClick={() => void open(d.storage_path)}>
-                    Open
-                  </Button>
-                  {canManage ? (
-                    <Button variant="ghost" onClick={() => void archive(d.id)}>
-                      Archive
+            <li key={d.id}>
+              <ListRow
+                leading={
+                  <Icon name={d.mime_type === 'application/pdf' ? 'file-pdf' : 'file-text'} />
+                }
+                title={
+                  <>
+                    {d.pinned ? <Icon name="star" weight="fill" size="sm" /> : null} {d.title}
+                  </>
+                }
+                subtitle={`${CAT_LABEL[d.category] ?? d.category} · ${kb(d.size_bytes)} · ${d.uploaded_by_name}`}
+                trailing={
+                  <span className={styles.row}>
+                    {canManage ? <Badge>{VIS_LABEL[d.visibility] ?? d.visibility}</Badge> : null}
+                    <Button variant="secondary" onClick={() => void open(d.storage_path)}>
+                      Open
                     </Button>
-                  ) : null}
-                </span>
-              }
-            />
+                    {canManage ? (
+                      <Button variant="ghost" onClick={() => void archive(d.id)}>
+                        Archive
+                      </Button>
+                    ) : null}
+                  </span>
+                }
+              />
+            </li>
           ))}
         </ListGroup>
       </LoadState>

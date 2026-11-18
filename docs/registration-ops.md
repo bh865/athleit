@@ -87,5 +87,26 @@ and the Edge code), and each fix has a test:
 - **Other.** The child linked to a registration must match its name and date of birth; the signed copy is emailed only to the account or the verified guardian
   address; per-account signing limit; the PDF notes characters it could not draw; outbox emails are purged on erasure and after 30 days.
 
-Open items for the platform: confirm that Supabase overwrites `x-forwarded-for` / `cf-connecting-ip` (rate limits use the last forwarded entry), and decide
-whether to enable "Confirm email" on the hosted project (recommended regardless; claims no longer depend on it).
+**Client IP and rate limits (checked 2026-11-18 against the Dev project).** The functions key rate limits on `cf-connecting-ip`, then the last
+`x-forwarded-for` entry. A request that sets its own `cf-connecting-ip` is rejected with 403 at the edge, and 75 requests with a different spoofed
+`x-forwarded-for` each got 60 successes and then 429, so the limit followed the real client and could not be dodged by header spoofing. Re-check after
+any change to how the functions are fronted (a custom domain, a proxy in front of Supabase).
+
+Still open for the platform: decide whether to enable "Confirm email" on the hosted project (recommended regardless; claims no longer depend on it).
+
+## Completion checklist (Phase 5)
+
+Done: database, RLS and pgTAP; Edge Functions and their review; web and mobile screens; notifications; unit tests; visual baselines; axe checks on the
+registration gallery sections and public pages (`apps/web/visual/a11y.spec.ts`, runs without a database); public-surface Playwright tests.
+
+To do before calling Phase 5 shipped (none needs new code unless a run finds a bug):
+
+1. **Full web e2e**: `REGISTRATION_E2E=1 E2E_SUPABASE_SERVICE_ROLE_KEY=... pnpm --filter @athleit/web exec playwright test e2e/registration.spec.ts`
+   (the Turnstile TEST keys must be configured; the run leaves a small protected team behind because registration data is immutable).
+2. **One real mobile pass** with `docs/mobile-manual-tests.md`: needs a development build (`eas build --profile development --platform ios`), because Stripe
+   needs native code and Expo Go cannot run it. The human check uses the web `/captcha` page, so `EXPO_PUBLIC_WEB_ORIGIN` must be a deployed web app.
+3. **Assistive-technology pass** (VoiceOver on iOS and a screen reader plus keyboard-only on web) on the registrant flow, the staff sheet and the
+   waiver signer. Automated axe checks cover roughly a third of issues.
+4. **Legal and policy decisions** listed in `docs/registration-privacy.md` (retention periods, e-signature and minors' releases, COPPA, signed-waiver anonymization).
+5. **Platform setting**: "Confirm email" on the hosted project.
+6. **Authenticated screens in axe**: extend `a11y.spec.ts` to the staff and builder screens once the e2e seed data exists.

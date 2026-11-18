@@ -184,9 +184,7 @@ function Field({
         />
       );
     case 'date':
-      return (
-        <DatePicker {...common} value={String(value ?? '')} onChange={set} />
-      );
+      return <DatePicker {...common} value={String(value ?? '')} onChange={set} />;
     case 'email':
       return (
         <TextField

@@ -50,17 +50,18 @@ export function StaffRegistrations({ owner, canManage }: { owner: Owner; canMana
       >
         <ListGroup>
           {(events.data ?? []).map((e) => (
-            <ListRow
-              key={e.id}
-              href={`/manage/registration/${e.id}`}
-              title={e.title}
-              subtitle={`${registrationPriceLabel(e.price_cents)} · ${e.capacity ? `${e.capacity} spots` : 'No limit'} · ${e.kind}`}
-              trailing={
-                <Badge tone={EVENT_TONE[e.status as keyof typeof EVENT_TONE] ?? 'neutral'}>
-                  {e.status}
-                </Badge>
-              }
-            />
+            <li key={e.id}>
+              <ListRow
+                href={`/manage/registration/${e.id}`}
+                title={e.title}
+                subtitle={`${registrationPriceLabel(e.price_cents)} · ${e.capacity ? `${e.capacity} spots` : 'No limit'} · ${e.kind}`}
+                trailing={
+                  <Badge tone={EVENT_TONE[e.status as keyof typeof EVENT_TONE] ?? 'neutral'}>
+                    {e.status}
+                  </Badge>
+                }
+              />
+            </li>
           ))}
         </ListGroup>
       </LoadState>
@@ -84,12 +85,13 @@ export function StaffRegistrations({ owner, canManage }: { owner: Owner; canMana
               >
                 <ListGroup>
                   {(forms.data ?? []).map((f) => (
-                    <ListRow
-                      key={f.id}
-                      href={`/manage/forms/${f.id}`}
-                      title={f.name}
-                      subtitle={f.form_versions.length > 0 ? 'Published' : 'Draft only'}
-                    />
+                    <li key={f.id}>
+                      <ListRow
+                        href={`/manage/forms/${f.id}`}
+                        title={f.name}
+                        subtitle={f.form_versions.length > 0 ? 'Published' : 'Draft only'}
+                      />
+                    </li>
                   ))}
                 </ListGroup>
               </LoadState>
@@ -113,12 +115,13 @@ export function StaffRegistrations({ owner, canManage }: { owner: Owner; canMana
               >
                 <ListGroup>
                   {(waivers.data ?? []).map((w) => (
-                    <ListRow
-                      key={w.id}
-                      href={`/manage/waivers/${w.id}`}
-                      title={w.title}
-                      subtitle={w.waiver_versions.length > 0 ? 'Published' : 'Draft only'}
-                    />
+                    <li key={w.id}>
+                      <ListRow
+                        href={`/manage/waivers/${w.id}`}
+                        title={w.title}
+                        subtitle={w.waiver_versions.length > 0 ? 'Published' : 'Draft only'}
+                      />
+                    </li>
                   ))}
                 </ListGroup>
               </LoadState>

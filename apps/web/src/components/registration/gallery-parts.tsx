@@ -169,18 +169,22 @@ export function RegistrationDocsGallery() {
         name below is my signature.
       </div>
       <ListGroup>
-        <ListRow
-          leading={<Icon name="file-pdf" />}
-          title="Season rules"
-          subtitle="Rules · 214 KB · Coach Dee"
-          trailing={<Button variant="secondary">Open</Button>}
-        />
-        <ListRow
-          leading={<Icon name="file-text" />}
-          title="Tournament schedule"
-          subtitle="Schedule · 88 KB · Coach Dee"
-          trailing={<Button variant="secondary">Open</Button>}
-        />
+        <li>
+          <ListRow
+            leading={<Icon name="file-pdf" />}
+            title="Season rules"
+            subtitle="Rules · 214 KB · Coach Dee"
+            trailing={<Button variant="secondary">Open</Button>}
+          />
+        </li>
+        <li>
+          <ListRow
+            leading={<Icon name="file-text" />}
+            title="Tournament schedule"
+            subtitle="Schedule · 88 KB · Coach Dee"
+            trailing={<Button variant="secondary">Open</Button>}
+          />
+        </li>
       </ListGroup>
     </div>
   );
