@@ -2,6 +2,7 @@ import {
   capabilitiesForPlace,
   contextPath,
   homeTileIds,
+  rolesLabel,
   payViewsFor,
   teamForScreen,
 } from '@athleit/core';
@@ -20,6 +21,17 @@ import {
   WaiversTile,
   WeekTile,
 } from '@/components/home/tiles';
+import {
+  AnnouncementTile,
+  CollectionTile,
+  DocumentsTile,
+  DueTile,
+  FamilyTile,
+  GroupHead,
+  NotificationHealthTile,
+  PayoutsTile,
+  SetupTile,
+} from '@/components/home/more-tiles';
 import { useHomeData } from '@/components/home/use-home-data';
 import { NextUpCard } from '@/components/schedule/next-up-card';
 import { Button, Card, ListGroup, Text } from '@/components/ui';
@@ -57,6 +69,15 @@ export default function HomeScreen() {
   const team = teamForScreen(contexts, active);
   const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : new Set<string>();
   const payer = payViewsFor(contexts, active).payer;
+  const views = payViewsFor(contexts, active);
+  const owner = views.staff
+    ? views.staff.kind === 'team'
+      ? { teamId: views.staff.id }
+      : { clubId: views.staff.id }
+    : null;
+  const teamRoles = team
+    ? (contexts.find((c) => c.kind === 'team' && c.id === team.id)?.roles ?? [])
+    : [];
   const staffReg = Boolean(team?.isStaff && caps.has('registration.view'));
   const router = useRouter();
 
@@ -93,17 +114,46 @@ export default function HomeScreen() {
             <WeekTile teamId={team?.id ?? null} staff={Boolean(team?.isStaff)} />
           ) : null}
           {tiles.has('teamRecord') && team ? <RecordTile teamId={team.id} /> : null}
-          {tiles.has('approvals') && team && caps.has('joinRequests.decide') ? (
-            <ApprovalsTile teamId={team.id} />
+          {tiles.has('announcement') && team ? <AnnouncementTile teamId={team.id} /> : null}
+          {team?.isStaff || owner ? (
+            <>
+              <GroupHead
+                label="For your team"
+                scope={team ? `${team.title} · ${rolesLabel(teamRoles)}` : ''}
+              />
+              {tiles.has('approvals') && team && caps.has('joinRequests.decide') ? (
+                <ApprovalsTile teamId={team.id} />
+              ) : null}
+              {staffReg && tiles.has('waivers') ? (
+                <WaiversTile teamId={team?.id ?? null} staff family={false} />
+              ) : null}
+              {staffReg && tiles.has('registrations') ? (
+                <RegistrationsTile teamId={team?.id ?? null} staff />
+              ) : null}
+              {owner && caps.has('payments.view') ? <CollectionTile owner={owner} /> : null}
+              {owner && tiles.has('payouts') ? <PayoutsTile owner={owner} /> : null}
+              {tiles.has('setup') && team ? <SetupTile teamId={team.id} /> : null}
+              {tiles.has('notificationHealth') && team && caps.has('members.manage') ? (
+                <NotificationHealthTile teamId={team.id} />
+              ) : null}
+            </>
           ) : null}
-          {tiles.has('waivers') ? (
-            <WaiversTile teamId={team?.id ?? null} staff={staffReg} family={payer} />
+          {payer ? (
+            <>
+              <GroupHead label="For your family" />
+              <DueTile />
+              {tiles.has('waivers') ? (
+                <WaiversTile teamId={team?.id ?? null} staff={false} family />
+              ) : null}
+              {tiles.has('registrations') ? (
+                <RegistrationsTile teamId={team?.id ?? null} staff={false} />
+              ) : null}
+              {tiles.has('family') ? <FamilyTile /> : null}
+            </>
           ) : null}
-          {tiles.has('registrations') ? (
-            <RegistrationsTile teamId={team?.id ?? null} staff={staffReg} />
-          ) : null}
+          {tiles.has('documents') && team ? <DocumentsTile teamId={team.id} /> : null}
           <View style={{ gap: space[3] }}>
-            <Text variant="label" muted>
+            <Text variant="label" muted accessibilityRole="header">
               YOUR PLACES
             </Text>
             <ListGroup>

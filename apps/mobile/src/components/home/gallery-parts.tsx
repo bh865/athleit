@@ -10,7 +10,13 @@ import { Stat, Tile } from './tiles';
 const ITEMS: AttentionItem[] = [
   { kind: 'rsvp', key: 'a', label: 'RSVP for Maya', detail: 'Game Sat 10:00 AM', href: '/' },
   { kind: 'waiver', key: 'b', label: 'Sign Maya’s waiver', detail: 'Expired Nov 15', href: '/' },
-  { kind: 'payment', key: 'c', label: 'Pay jersey fee', detail: '$45.00 · due in 3 days', href: '/' },
+  {
+    kind: 'payment',
+    key: 'c',
+    label: 'Pay jersey fee',
+    detail: '$45.00 · due in 3 days',
+    href: '/',
+  },
 ];
 const OK = { loading: false, error: null, reload: () => undefined };
 
@@ -34,10 +40,22 @@ export function HomeGallery() {
         <Badge tone="warning">Eli · Expired</Badge>
         <Badge tone="danger">Zara · Missing</Badge>
       </Tile>
-      <Tile id="g-loading" title="Registrations" res={{ ...OK, loading: true }} hasData={false} empty={false}>
+      <Tile
+        id="g-loading"
+        title="Registrations"
+        res={{ ...OK, loading: true }}
+        hasData={false}
+        empty={false}
+      >
         {null}
       </Tile>
-      <Tile id="g-error" title="Join requests" res={{ ...OK, error: 'x' }} hasData={false} empty={false}>
+      <Tile
+        id="g-error"
+        title="Join requests"
+        res={{ ...OK, error: 'x' }}
+        hasData={false}
+        empty={false}
+      >
         {null}
       </Tile>
     </View>
