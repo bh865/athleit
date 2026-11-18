@@ -11,7 +11,13 @@ import { TileShell } from './tile-shell';
 const ITEMS: AttentionItem[] = [
   { kind: 'rsvp', key: 'a', label: 'RSVP for Maya', detail: 'Game Sat 10:00 AM', href: '#' },
   { kind: 'waiver', key: 'b', label: 'Sign Maya’s waiver', detail: 'Expired Nov 15', href: '#' },
-  { kind: 'payment', key: 'c', label: 'Pay jersey fee', detail: '$45.00 · due in 3 days', href: '#' },
+  {
+    kind: 'payment',
+    key: 'c',
+    label: 'Pay jersey fee',
+    detail: '$45.00 · due in 3 days',
+    href: '#',
+  },
 ];
 const MORE: AttentionItem[] = [
   { kind: 'joinRequests', key: 'd', label: '2 join requests', href: '#' },
@@ -24,7 +30,15 @@ export function HomeGallery() {
     <div className={styles.page}>
       <AttentionStrip shown={ITEMS} more={MORE} />
       <div className={styles.row3}>
-        <TileShell id="g-week" title="This week" href="#" linkLabel="See full schedule" res={OK} empty={false} hasData>
+        <TileShell
+          id="g-week"
+          title="This week"
+          href="#"
+          linkLabel="See full schedule"
+          res={OK}
+          empty={false}
+          hasData
+        >
           <ul className={styles.threads}>
             <li>
               <span className={styles.threadTitle}>Thu 5:30 PM · Practice</span>
@@ -57,10 +71,22 @@ export function HomeGallery() {
           <Badge tone="warning">Eli · Expired</Badge>
           <Badge tone="danger">Zara · Missing</Badge>
         </TileShell>
-        <TileShell id="g-loading" title="Registrations" res={{ ...OK, loading: true }} empty={false} hasData={false}>
+        <TileShell
+          id="g-loading"
+          title="Registrations"
+          res={{ ...OK, loading: true }}
+          empty={false}
+          hasData={false}
+        >
           {null}
         </TileShell>
-        <TileShell id="g-error" title="Join requests" res={{ ...OK, error: 'x' }} empty={false} hasData={false}>
+        <TileShell
+          id="g-error"
+          title="Join requests"
+          res={{ ...OK, error: 'x' }}
+          empty={false}
+          hasData={false}
+        >
           {null}
         </TileShell>
       </div>

@@ -3,6 +3,7 @@
 import {
   capabilitiesForPlace,
   homeTileIds,
+  rolesLabel,
   describeEventTime,
   payViewsFor,
   previewOf,
@@ -12,6 +13,7 @@ import {
 import { getJoinRequests, getRoster, getThreadList } from '@athleit/db/api';
 import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
 import { DueCard, StaffPaymentsCard } from '@/components/payments/home-cards';
@@ -21,6 +23,16 @@ import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/u
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
+import {
+  AnnouncementTile,
+  CalendarTile,
+  DocumentsTile,
+  FamilyTile,
+  NotificationHealthTile,
+  PayoutsTile,
+  PlacesTile,
+  SetupTile,
+} from './more-tiles';
 import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile, WeekTile } from './tiles';
 import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
@@ -228,6 +240,13 @@ export function HomeDashboard() {
   const { attention } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const teamId = team?.id ?? null;
+  const staffReg = Boolean(staff && caps.has('registration.view'));
+  const showTeamGroup = Boolean(staff || views.staff || (clubAdmin && !team) || tiles.has('setup'));
+  const teamRoles = team
+    ? (contexts.find((c) => c.kind === 'team' && c.id === team.id)?.roles ?? [])
+    : [];
+  const teamScope = team ? `${team.title} · ${rolesLabel(teamRoles)}` : (clubAdmin?.title ?? '');
+  const familyScope = contexts.find((c) => c.kind === 'family')?.title ?? '';
 
   return (
     <div className={styles.page}>
@@ -258,26 +277,22 @@ export function HomeDashboard() {
           <WeekTile teamId={teamId} staff={staff} family={views.payer} />
         ) : null}
         {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
-      </div>
-      <div className={styles.row3}>
         {team ? <MessagesCard teamId={team.id} /> : null}
-        {tiles.has('approvals') && teamId && caps.has('joinRequests.decide') ? (
-          <ApprovalsTile teamId={teamId} />
-        ) : null}
-        {tiles.has('waivers') ? (
-          <WaiversTile
-            teamId={teamId}
-            staff={staff && caps.has('registration.view')}
-            family={views.payer}
-          />
-        ) : null}
-        {tiles.has('registrations') ? (
-          <RegistrationsTile teamId={teamId} staff={staff && caps.has('registration.view')} />
-        ) : null}
-        {views.payer || views.staff ? (
-          <div className={styles.card} data-testid="home-payments">
-            {views.payer ? <DueCard /> : null}
-            {views.staff && caps.has('payments.view') ? (
+        {tiles.has('announcement') && teamId ? <AnnouncementTile teamId={teamId} /> : null}
+      </div>
+      {showTeamGroup ? (
+        <Group id="team" label="For your team" scope={teamScope}>
+          {tiles.has('approvals') && teamId && caps.has('joinRequests.decide') ? (
+            <ApprovalsTile teamId={teamId} />
+          ) : null}
+          {staffReg && tiles.has('waivers') ? (
+            <WaiversTile teamId={teamId} staff family={false} />
+          ) : null}
+          {staffReg && tiles.has('registrations') ? (
+            <RegistrationsTile teamId={teamId} staff />
+          ) : null}
+          {views.staff && caps.has('payments.view') ? (
+            <div className={styles.card} data-testid="home-payments">
               <StaffPaymentsCard
                 owner={
                   views.staff.kind === 'team'
@@ -286,21 +301,87 @@ export function HomeDashboard() {
                 }
                 href="/pay"
               />
-            ) : null}
-          </div>
-        ) : null}
-        {team && caps.has('roster.viewLimited') ? (
-          <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />
-        ) : null}
-        {!team && clubAdmin ? (
-          <Card className={styles.card}>
-            <Text variant="bodyBold">{clubAdmin.title}</Text>
-            <Link href={`/clubs/${clubAdmin.id}`} className={styles.cardLink}>
-              Open club
-            </Link>
-          </Card>
-        ) : null}
-      </div>
+            </div>
+          ) : null}
+          {views.staff && tiles.has('payouts') ? (
+            <PayoutsTile
+              owner={
+                views.staff.kind === 'team'
+                  ? { teamId: views.staff.id }
+                  : { clubId: views.staff.id }
+              }
+            />
+          ) : null}
+          {team && caps.has('roster.viewLimited') ? (
+            <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />
+          ) : null}
+          {tiles.has('setup') && teamId ? <SetupTile teamId={teamId} /> : null}
+          {tiles.has('notificationHealth') && teamId && caps.has('members.manage') ? (
+            <NotificationHealthTile teamId={teamId} />
+          ) : null}
+          {!team && clubAdmin ? (
+            <Card className={styles.card}>
+              <Text variant="bodyBold">{clubAdmin.title}</Text>
+              <Link href={`/clubs/${clubAdmin.id}`} className={styles.cardLink}>
+                Open club
+              </Link>
+            </Card>
+          ) : null}
+        </Group>
+      ) : null}
+      {views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup) ? (
+        <Group id="family" label="For your family" scope={familyScope}>
+          {views.payer ? (
+            <div className={styles.card} data-testid={showTeamGroup ? 'home-due' : 'home-payments'}>
+              <DueCard />
+            </div>
+          ) : null}
+          {views.payer && tiles.has('waivers') ? (
+            <WaiversTile teamId={teamId} staff={false} family />
+          ) : null}
+          {views.payer && tiles.has('registrations') ? (
+            <RegistrationsTile teamId={teamId} staff={false} />
+          ) : null}
+          {tiles.has('family') ? <FamilyTile /> : null}
+          {team && caps.has('roster.viewLimited') && !showTeamGroup ? (
+            <RosterCard teamId={team.id} staff={false} />
+          ) : null}
+        </Group>
+      ) : null}
+      <Group id="more" label="More" scope="">
+        {tiles.has('documents') && teamId ? <DocumentsTile teamId={teamId} /> : null}
+        {tiles.has('calendar') ? <CalendarTile /> : null}
+        {tiles.has('places') ? <PlacesTile places={contexts} /> : null}
+      </Group>
     </div>
+  );
+}
+
+/** A labelled group of tiles with a scope line ("U12 Falcons · Admin"). Hidden when it holds no tile. */
+function Group({
+  id,
+  label,
+  scope,
+  children,
+}: {
+  id: string;
+  label: string;
+  scope: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-labelledby={`home-group-${id}`}
+      className={styles.group}
+      data-testid={`home-group-${id}`}
+    >
+      <div className={styles.groupHead}>
+        <h2 id={`home-group-${id}`} className={styles.kicker}>
+          {label}
+        </h2>
+        {scope ? <span className={styles.scope}>{scope}</span> : null}
+      </div>
+      <div className={styles.row3}>{children}</div>
+    </section>
   );
 }
