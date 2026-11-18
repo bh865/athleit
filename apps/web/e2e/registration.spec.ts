@@ -50,7 +50,9 @@ test.describe.serial('registration (end to end)', () => {
     await admin.goto(`/manage/forms/new?team=${teamId}`);
     await admin.getByRole('button', { name: 'Use' }).first().click();
     await admin.getByRole('button', { name: /Publish version 1/ }).click();
-    await expect(admin.getByText(/Published/)).toBeVisible();
+    // The builder only moves to the edit route after create AND publish finished.
+    await admin.waitForURL(/\/manage\/forms\/[0-9a-f-]{36}$/);
+    await expect(admin.getByRole('button', { name: /Publish version 2/ })).toBeVisible();
 
     // Waiver, published.
     await admin.goto(`/manage/waivers/new?team=${teamId}`);
@@ -58,6 +60,7 @@ test.describe.serial('registration (end to end)', () => {
     await admin.getByLabel('Waiver text').fill('I agree to the terms of participation.');
     await admin.getByRole('button', { name: /Publish version 1/ }).click();
     // Creating then publishing swaps to the edit route, which drops the toast: the version list is the lasting proof.
+    await admin.waitForURL(/\/manage\/waivers\/[0-9a-f-]{36}$/);
     await expect(admin.getByRole('heading', { name: 'Published versions' })).toBeVisible();
 
     // Registration event using both.
