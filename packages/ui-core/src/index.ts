@@ -67,6 +67,12 @@ export const iconNames = [
   'receipt',
   'bank',
   'download-simple',
+  'clipboard-text',
+  'folder-open',
+  'upload-simple',
+  'file-text',
+  'eye',
+  'list-checks',
 ] as const;
 export type IconName = (typeof iconNames)[number];
 

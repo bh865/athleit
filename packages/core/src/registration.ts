@@ -155,3 +155,62 @@ export const SPOTS_LABELS = {
   waitlist: 'Full: join the waitlist',
   full: 'Full',
 } as const;
+
+// ------------------------------------------------------------------------------------------------ shared UI copy
+export const REGISTRATION_STATUS_LABELS: Record<string, string> = {
+  pending_verification: 'Confirm your email',
+  submitted: 'Submitted',
+  waitlisted: 'Waitlisted',
+  accepted: 'Accepted',
+  placed: 'Placed on a team',
+  declined: 'Declined',
+  withdrawn: 'Withdrawn',
+};
+
+export type RegistrationTone = 'neutral' | 'success' | 'warning' | 'danger';
+export function registrationStatusTone(status: string): RegistrationTone {
+  if (status === 'accepted' || status === 'placed') return 'success';
+  if (status === 'waitlisted' || status === 'pending_verification') return 'warning';
+  if (status === 'declined' || status === 'withdrawn') return 'danger';
+  return 'neutral';
+}
+
+const EDGE_ERRORS: Record<string, string> = {
+  invalid_input: 'Check the highlighted fields and try again.',
+  invalid_answers: 'Some answers need attention.',
+  captcha_failed: 'We could not confirm you are a person. Try again.',
+  rate_limited: 'Too many tries. Wait a few minutes and try again.',
+  not_found: 'We could not find that registration.',
+  not_open_yet: 'Registration has not opened yet.',
+  registration_closed: 'Registration is closed.',
+  registration_full: 'This registration just filled up.',
+  form_changed: 'The form was updated. Reload the page and try again.',
+  account_required: 'Sign in to register for this event.',
+  not_authenticated: 'Sign in to continue.',
+  already_registered: 'This child is already registered for this event.',
+  invalid_token: 'That link has expired or was already used.',
+  already_signed: 'You already signed this waiver.',
+  network: 'You seem to be offline. Check your connection and try again.',
+  internal_error: 'Something went wrong on our side. Try again in a moment.',
+};
+export function registrationErrorMessage(code: unknown): string {
+  return (typeof code === 'string' && EDGE_ERRORS[code]) || 'Something went wrong. Try again.';
+}
+
+/** Whole-dollar price label for a registration event ("Free" when there is no price). */
+export function registrationPriceLabel(cents: number | null | undefined): string {
+  if (!cents) return 'Free';
+  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+}
+
+/** Slug suggestion for a new event title (the database enforces uniqueness). */
+export function suggestSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return base.length >= 6
+    ? base
+    : `${base || 'event'}-${Math.random().toString(36).slice(2, 6)}`.slice(0, 80);
+}

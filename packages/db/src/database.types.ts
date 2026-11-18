@@ -1249,8 +1249,9 @@ export type Database = {
           id: string
           last_error: string | null
           payload: Json
-          profile_id: string
+          profile_id: string | null
           read_at: string | null
+          recipient_email: string | null
           sent_at: string | null
           status: string
         }
@@ -1264,8 +1265,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           payload?: Json
-          profile_id: string
+          profile_id?: string | null
           read_at?: string | null
+          recipient_email?: string | null
           sent_at?: string | null
           status?: string
         }
@@ -1279,8 +1281,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           payload?: Json
-          profile_id?: string
+          profile_id?: string | null
           read_at?: string | null
+          recipient_email?: string | null
           sent_at?: string | null
           status?: string
         }
@@ -1435,7 +1438,9 @@ export type Database = {
           fee_config: Json | null
           fee_policy: string
           id: string
+          kind: string
           published_at: string | null
+          registration_event_id: string | null
           status: string
           team_id: string | null
           title: string
@@ -1456,7 +1461,9 @@ export type Database = {
           fee_config?: Json | null
           fee_policy?: string
           id?: string
+          kind?: string
           published_at?: string | null
+          registration_event_id?: string | null
           status?: string
           team_id?: string | null
           title: string
@@ -1477,7 +1484,9 @@ export type Database = {
           fee_config?: Json | null
           fee_policy?: string
           id?: string
+          kind?: string
           published_at?: string | null
+          registration_event_id?: string | null
           status?: string
           team_id?: string | null
           title?: string
@@ -1503,6 +1512,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_registration_event_id_fkey"
+            columns: ["registration_event_id"]
+            isOneToOne: false
+            referencedRelation: "registration_events"
             referencedColumns: ["id"]
           },
           {
@@ -1578,6 +1594,7 @@ export type Database = {
           paid_at: string | null
           payment_event_id: string
           player_id: string
+          registration_id: string | null
           status: string
           updated_at: string
           waived_at: string | null
@@ -1598,6 +1615,7 @@ export type Database = {
           paid_at?: string | null
           payment_event_id: string
           player_id: string
+          registration_id?: string | null
           status?: string
           updated_at?: string
           waived_at?: string | null
@@ -1618,6 +1636,7 @@ export type Database = {
           paid_at?: string | null
           payment_event_id?: string
           player_id?: string
+          registration_id?: string | null
           status?: string
           updated_at?: string
           waived_at?: string | null
@@ -1643,6 +1662,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
             referencedColumns: ["id"]
           },
           {
@@ -2080,6 +2106,7 @@ export type Database = {
           created_by: string | null
           eligibility: Json | null
           ends_on: string | null
+          filled_notified_at: string | null
           form_version_id: string | null
           id: string
           info_blocks: Json
@@ -2093,6 +2120,7 @@ export type Database = {
           roster_behavior: string
           slug: string
           sport: Database["public"]["Enums"]["sport"] | null
+          staff_digest_at: string | null
           starts_on: string | null
           status: string
           summary: string | null
@@ -2116,6 +2144,7 @@ export type Database = {
           created_by?: string | null
           eligibility?: Json | null
           ends_on?: string | null
+          filled_notified_at?: string | null
           form_version_id?: string | null
           id?: string
           info_blocks?: Json
@@ -2129,6 +2158,7 @@ export type Database = {
           roster_behavior?: string
           slug: string
           sport?: Database["public"]["Enums"]["sport"] | null
+          staff_digest_at?: string | null
           starts_on?: string | null
           status?: string
           summary?: string | null
@@ -2152,6 +2182,7 @@ export type Database = {
           created_by?: string | null
           eligibility?: Json | null
           ends_on?: string | null
+          filled_notified_at?: string | null
           form_version_id?: string | null
           id?: string
           info_blocks?: Json
@@ -2165,6 +2196,7 @@ export type Database = {
           roster_behavior?: string
           slug?: string
           sport?: Database["public"]["Enums"]["sport"] | null
+          staff_digest_at?: string | null
           starts_on?: string | null
           status?: string
           summary?: string | null
@@ -2274,6 +2306,44 @@ export type Database = {
             foreignKeyName: "registration_sensitive_answers_registration_id_fkey"
             columns: ["registration_id"]
             isOneToOne: true
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_verification_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+          registration_id: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          purpose: string
+          registration_id: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          registration_id?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_verification_tokens_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
             referencedRelation: "registrations"
             referencedColumns: ["id"]
           },
@@ -3180,6 +3250,15 @@ export type Database = {
         }[]
       }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
+      claim_registration_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          payload: Json
+          recipient_email: string
+        }[]
+      }
       clear_game_result: { Args: { p_event_id: string }; Returns: undefined }
       close_registration_event: {
         Args: { p_event_id: string }
@@ -3341,6 +3420,10 @@ export type Database = {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
       }
+      erase_registrant_data: {
+        Args: { p_registration_id: string }
+        Returns: undefined
+      }
       event_collection_detail: {
         Args: { p_event_id: string }
         Returns: {
@@ -3400,6 +3483,10 @@ export type Database = {
           no_reply: number
           not_going: number
         }[]
+      }
+      export_registrant_data: {
+        Args: { p_registration_id: string }
+        Returns: Json
       }
       export_registrations: {
         Args: { p_event_id: string; p_include_sensitive?: boolean }
@@ -3696,6 +3783,10 @@ export type Database = {
           type: string
         }[]
       }
+      link_registration_player: {
+        Args: { p_player_id: string; p_registration_id: string }
+        Returns: string
+      }
       list_documents: {
         Args: {
           p_club_id?: string
@@ -3925,6 +4016,16 @@ export type Database = {
           withdrawn: number
         }[]
       }
+      registration_payment_status: {
+        Args: { p_registration_id: string }
+        Returns: {
+          amount_cents: number
+          payment_request_id: string
+          refundable: boolean
+          request_display_id: string
+          request_status: string
+        }[]
+      }
       remove_participant: {
         Args: { p_profile_id: string; p_thread_id: string }
         Returns: undefined
@@ -4023,6 +4124,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      svc_acceptance_context: {
+        Args: { p_acceptance_id: string }
+        Returns: Json
+      }
       svc_attach_payment_intent: {
         Args: { p_payment_id: string; p_pi: string }
         Returns: undefined
@@ -4039,7 +4144,19 @@ export type Database = {
         Args: { p_acceptance_id: string; p_path: string }
         Returns: undefined
       }
+      svc_claim_registration: {
+        Args: { p_token_hash: string; p_user_id: string }
+        Returns: string
+      }
       svc_cleanup_rate_limits: { Args: never; Returns: number }
+      svc_consume_verification_token: {
+        Args: { p_token_hash: string }
+        Returns: {
+          display_id: string
+          registration_id: string
+          status: string
+        }[]
+      }
       svc_create_registration: {
         Args: {
           p_answers: Json
@@ -4074,8 +4191,43 @@ export type Database = {
         Returns: string
       }
       svc_fail_refund: { Args: { p_refund_id: string }; Returns: undefined }
+      svc_find_pending_registration: {
+        Args: {
+          p_date_of_birth: string
+          p_email: string
+          p_event_id: string
+          p_first_name: string
+          p_last_name: string
+        }
+        Returns: string
+      }
       svc_finish_event: {
         Args: { p_error?: string; p_event_id: string; p_final?: boolean }
+        Returns: undefined
+      }
+      svc_issue_claim_token: {
+        Args: {
+          p_registration_id: string
+          p_token_hash: string
+          p_ttl_minutes?: number
+        }
+        Returns: undefined
+      }
+      svc_issue_sign_token: {
+        Args: {
+          p_registration_id: string
+          p_token_hash: string
+          p_ttl_minutes?: number
+        }
+        Returns: undefined
+      }
+      svc_issue_verification_token: {
+        Args: {
+          p_keep_existing?: boolean
+          p_registration_id: string
+          p_token_hash: string
+          p_ttl_minutes?: number
+        }
         Returns: undefined
       }
       svc_ledger_event: {
@@ -4114,6 +4266,10 @@ export type Database = {
         Args: { p_stale?: string }
         Returns: Json
       }
+      svc_record_evidence: {
+        Args: { p_acceptance_id: string; p_ip: unknown; p_user_agent: string }
+        Returns: undefined
+      }
       svc_record_waiver_acceptance: {
         Args: {
           p_consent: boolean
@@ -4136,12 +4292,24 @@ export type Database = {
         }
         Returns: string
       }
+      svc_registration_signing_state: {
+        Args: { p_registration_id: string }
+        Returns: Json
+      }
       svc_release_payment: {
         Args: { p_payment_id: string }
         Returns: undefined
       }
       svc_reserve_payment: {
         Args: { p_request_ids: string[]; p_uid: string }
+        Returns: Json
+      }
+      svc_resolve_sign_token: {
+        Args: { p_token_hash: string }
+        Returns: string
+      }
+      svc_run_registration_retention: {
+        Args: { p_months?: number; p_sensitive_days?: number }
         Returns: Json
       }
       svc_set_account_status: {
