@@ -1,31 +1,18 @@
 'use client';
 
-import { contextPath } from '@athleit/core';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
+import { HomeDashboard } from '@/components/home/home-dashboard';
 import { Button, Card, PageHeader } from '@/components/ui';
 
-/** Sends the user to their last-used context, or onboards them if they have none yet. */
+/** Home dashboard for the active place, or onboarding when the user has none yet. */
 export default function HomePage() {
   const { active, displayName, addActions } = useApp();
   const router = useRouter();
 
-  useEffect(() => {
-    if (active) router.replace(contextPath(active));
-  }, [active, router]);
-
-  if (active)
-    return (
-      <>
-        <PageHeader title="Home" subtitle={`Opening ${active.title}…`} />
-        <p className={styles.muted} role="status">
-          Opening {active.title}…
-        </p>
-      </>
-    );
+  if (active) return <HomeDashboard />;
 
   const href = {
     'add-family': '/family/children/new',

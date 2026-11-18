@@ -1,0 +1,279 @@
+'use client';
+
+import {
+  capabilitiesForPlace,
+  describeEventTime,
+  payViewsFor,
+  previewOf,
+  teamForScreen,
+  type RsvpStatus,
+} from '@athleit/core';
+import { getJoinRequests, getRoster, getThreadList } from '@athleit/db/api';
+import { getNextUp } from '@athleit/db/scheduling';
+import Link from 'next/link';
+
+import { useApp } from '@/components/app/app-provider';
+import { DueCard, StaffPaymentsCard } from '@/components/payments/home-cards';
+import { RsvpControls } from '@/components/schedule/rsvp-controls';
+import { useViewerZone } from '@/components/schedule/use-viewer-zone';
+import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/ui';
+import { getClient } from '@/lib/supabase/browser';
+import { useLoad } from '@/lib/use-load';
+
+import styles from './home.module.css';
+
+const greeting = (d: Date) => {
+  const h = d.getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+};
+
+interface Child {
+  player_id: string;
+  first_name: string;
+  status: RsvpStatus | null;
+}
+
+/** "Next up": kicker, title, time and place, mono RSVP counts (staff) or Going / Can't go (parents). */
+function NextUpHero({ canManage }: { canManage: boolean }) {
+  const zone = useViewerZone();
+  const res = useLoad(() => getNextUp(getClient(), 1), []);
+  const top = res.data?.[0];
+  if (res.loading) return <Card className={styles.hero} aria-busy />;
+  if (!top) {
+    return (
+      <Card className={styles.heroText} data-testid="next-up">
+        <span className={styles.kicker}>Next up</span>
+        <p className={styles.meta}>Nothing is scheduled yet.</p>
+        <div>
+          <ButtonLink href="/schedule" variant="secondary">
+            {canManage ? 'Add an event' : 'Open schedule'}
+          </ButtonLink>
+        </div>
+      </Card>
+    );
+  }
+  const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, zone ?? 'UTC');
+  const place = top.location_name ?? top.location_text ?? null;
+  const children = (top.children as unknown as Child[]) ?? [];
+  return (
+    <Card className={styles.hero} data-testid="next-up">
+      <div className={styles.heroText}>
+        <span className={styles.kicker}>
+          Next up · {t.weekdayShort} {t.startLabel}
+        </span>
+        <Link href={`/events/${top.event_id}`} className={styles.heroTitle}>
+          {top.title}
+        </Link>
+        <p className={styles.meta}>
+          {t.dateLabel} · {t.startLabel}
+          {place ? ` · ${place}` : ''}
+        </p>
+        {top.is_staff ? (
+          <div className={styles.counts} role="group" aria-label="RSVP counts">
+            {[
+              { v: top.going, l: 'Going' },
+              { v: top.not_going, l: 'Can’t go' },
+              { v: top.no_reply, l: 'No reply' },
+            ].map((c) => (
+              <div key={c.l} className={styles.count}>
+                <span className={styles.countValue} aria-label={`${c.v} ${c.l}`}>
+                  {c.v}
+                </span>
+                <span className={styles.countLabel}>{c.l}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {children.map((c) => (
+          <RsvpControls
+            key={c.player_id}
+            eventId={top.event_id}
+            child={c}
+            showName={children.length > 1}
+          />
+        ))}
+      </div>
+      {place ? (
+        <div className={styles.tile}>
+          <span className={styles.pin}>
+            <Icon name="map-pin" weight="fill" size="lg" />
+          </span>
+          <Text variant="bodyBold">{place}</Text>
+          <a
+            className={styles.mapLink}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open in Maps
+          </a>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+function MessagesCard({ teamId }: { teamId: string }) {
+  const res = useLoad(() => getThreadList(getClient(), teamId), [teamId]);
+  const rows = (res.data ?? []).slice(0, 3);
+  return (
+    <Card className={styles.card} data-testid="home-messages">
+      <div className={styles.cardHead}>
+        <Text variant="bodyBold">Messages</Text>
+        <Link href="/messages" className={styles.cardLink}>
+          Open
+        </Link>
+      </div>
+      {rows.length === 0 ? (
+        <p className={styles.empty}>No conversations yet.</p>
+      ) : (
+        <ul className={styles.threads} aria-label="Recent conversations">
+          {rows.map((r) => {
+            const unread = r.unread_count > 0;
+            return (
+              <li key={r.thread_id}>
+                <Link href={`/messages/${r.thread_id}`} className={styles.thread}>
+                  <span className={styles.threadText}>
+                    <span className={styles.threadTitle}>
+                      {r.title ?? r.other_name ?? 'Message'}
+                    </span>
+                    <span className={styles.threadPreview}>
+                      {previewOf(
+                        r.last_body === null && !r.last_hidden && !r.last_deleted
+                          ? null
+                          : {
+                              body: r.last_body ?? '',
+                              deleted: r.last_deleted,
+                              hidden: r.last_hidden,
+                            },
+                      )}
+                    </span>
+                  </span>
+                  {unread ? <span className={styles.dot} aria-label="Unread" /> : null}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function RosterCard({ teamId, staff }: { teamId: string; staff: boolean }) {
+  const roster = useLoad(() => getRoster(getClient(), teamId), [teamId]);
+  const pending = useLoad(
+    () =>
+      staff
+        ? getJoinRequests(getClient(), teamId)
+        : Promise.resolve({ data: [] as { status: string }[], error: null }),
+    [teamId, staff],
+  );
+  const rows = (roster.data ?? []) as { first_name: string; status?: string }[];
+  const active = rows.filter((r) => r.status === undefined || r.status === 'active');
+  const waiting = (pending.data ?? []).filter((r) => r.status === 'pending').length;
+  return (
+    <Card className={styles.card} data-testid="home-roster">
+      <div className={styles.cardHead}>
+        <Text variant="bodyBold">Roster</Text>
+        <Link href="/roster" className={styles.cardLink}>
+          Open
+        </Link>
+      </div>
+      <div className={styles.stats}>
+        <div className={styles.count}>
+          <span className={styles.countValue}>{rows.length}</span>
+          <span className={styles.countLabel}>Players</span>
+        </div>
+        {staff ? (
+          <>
+            <div className={styles.count}>
+              <span className={styles.countValue}>{active.length}</span>
+              <span className={styles.countLabel}>Active</span>
+            </div>
+            <div className={styles.count}>
+              <span className={styles.countValue}>{waiting}</span>
+              <span className={styles.countLabel}>Pending</span>
+            </div>
+          </>
+        ) : null}
+      </div>
+      <div className={styles.stack} aria-hidden>
+        {rows.slice(0, 5).map((r, i) => (
+          <Avatar key={`${r.first_name}${i}`} name={r.first_name} size="sm" />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Web Home. Blocks follow capabilities, not roles: staff see RSVP counts, collection and the full
+ * roster stats; parents see Going / Can't go for their children and what they owe; someone who is
+ * both sees both.
+ */
+export function HomeDashboard() {
+  const { active, contexts, displayName } = useApp();
+  const team = teamForScreen(contexts, active);
+  const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : new Set<string>();
+  const views = payViewsFor(contexts, active);
+  const now = new Date();
+  const first = displayName?.split(' ')[0];
+  const staff = Boolean(team?.isStaff);
+  const clubAdmin = contexts.find((c) => c.kind === 'club');
+
+  return (
+    <div className={styles.page}>
+      <PageHeader
+        title={`${greeting(now)}${first ? `, ${first}` : ''}`}
+        titleTestId="display-name"
+        subtitle={now.toLocaleDateString(undefined, {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })}
+        actions={
+          staff ? (
+            <ButtonLink href="/schedule">
+              <Icon name="plus" size="sm" /> New event
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/schedule" variant="secondary">
+              Schedule
+            </ButtonLink>
+          )
+        }
+      />
+      <NextUpHero canManage={staff} />
+      <div className={styles.row3}>
+        {team ? <MessagesCard teamId={team.id} /> : null}
+        {views.payer || views.staff ? (
+          <div className={styles.card} data-testid="home-payments">
+            {views.payer ? <DueCard /> : null}
+            {views.staff && caps.has('payments.view') ? (
+              <StaffPaymentsCard
+                owner={
+                  views.staff.kind === 'team'
+                    ? { teamId: views.staff.id }
+                    : { clubId: views.staff.id }
+                }
+                href="/pay"
+              />
+            ) : null}
+          </div>
+        ) : null}
+        {team && caps.has('roster.viewLimited') ? (
+          <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />
+        ) : null}
+        {!team && clubAdmin ? (
+          <Card className={styles.card}>
+            <Text variant="bodyBold">{clubAdmin.title}</Text>
+            <Link href={`/clubs/${clubAdmin.id}`} className={styles.cardLink}>
+              Open club
+            </Link>
+          </Card>
+        ) : null}
+      </div>
+    </div>
+  );
+}

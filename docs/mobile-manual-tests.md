@@ -143,3 +143,11 @@ Run each with the team as the last-used place (switch to the team, close and reo
 3. **Staff and parent**: Pay shows two segments, "My payments" and "Team collection"; it opens on the one matching the active place.
 4. **Messages as a parent** with the family active: the team's conversations still show (the first team is used).
 5. **Dual-role Messages**: an Admin who is also a Parent sees the staff-only controls (announcements, hide message) in the team's threads.
+
+## Places, switcher and Roster (polish, Item 1/4)
+
+1. **One place.** A user who is Admin and Parent of a single team sees one pill, "Athleit FC / Admin · Parent", with no caret; tapping it does nothing.
+2. **Two places.** Join or create a second team: the pill gets a caret and opens a "Switch team" sheet listing teams and clubs (not the household).
+3. **Add.** More lists Add a team / Create a club / Join a team (and Add a family without a household) even with a single place.
+4. **Old saved place.** Update from a build that stored `team:<id>:<role>`: the app opens the same team (no reset to the first place).
+5. **Roster.** More > Roster opens the active team's roster. Staff: statuses, guardian contacts, add and edit. Parent or player: first name, jersey number and position only. The team screen's Overview tab links to it.

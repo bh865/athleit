@@ -1,4 +1,4 @@
-# Polish plan: Items 3 and 4 (not started; wait for approval of the context-switcher proposal)
+# Polish plan: Items 3 and 4 (implemented after approval of the context-switcher proposal)
 
 Both depend on the place/capability model in [context-switcher-proposal.md](context-switcher-proposal.md).
 

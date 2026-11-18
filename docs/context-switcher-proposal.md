@@ -1,6 +1,6 @@
 # Context switcher: proposal
 
-Status: **proposal, not implemented.** Waiting for approval (see "Questions").
+Status: **Option B approved and implemented** (places model, static header, account-menu add actions). Defaults taken for the open questions: household is not a switcher entry when a team or club exists; label "Admin · Parent"; add actions in the account menu / More sheet; one active place at a time.
 
 ## 1. How it works today
 
