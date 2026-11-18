@@ -58,8 +58,18 @@ export const placesRequestSchema = z.discriminatedUnion('action', [
 ]);
 export type PlacesRequest = z.infer<typeof placesRequestSchema>;
 
+/** A UUID v4. Uses crypto.randomUUID when the runtime has it (React Native's Hermes may not). */
+function uuidV4(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = Math.floor(Math.random() * 16);
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 /** A UUID v4 for a Google session; use one per typing session and a new one after each pick. */
-export function newSessionToken(random: () => string = () => crypto.randomUUID()): string {
+export function newSessionToken(random: () => string = uuidV4): string {
   return random();
 }
 

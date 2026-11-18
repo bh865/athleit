@@ -58,6 +58,9 @@ select is((select count(*)::int from public.locations), 1, 'staff read only thei
 select is((select name from public.locations), 'Field 3', 'and it is the right one');
 select lives_ok($$ insert into public.locations (team_id, name, address, lat, lng) values ('a1000000-0000-0000-0000-00000000000a', 'Riverside Park', '9 River Rd', 40.1, -73.9) $$, 'staff add a location');
 select throws_ok($$ insert into public.locations (team_id, name) values ('a2000000-0000-0000-0000-00000000000b', 'Sneaky') $$, '42501', null, 'staff cannot add a location to another team');
+select lives_ok($$ insert into public.locations (team_id, name, address, lat, lng, place_id) values ('a1000000-0000-0000-0000-00000000000a', 'Placed', '2 Park Rd', 40.2, -73.8, 'ChIJtest2') $$, 'staff save a place id with the coordinates');
+select throws_ok($$ insert into public.locations (team_id, name, place_id) values ('a1000000-0000-0000-0000-00000000000a', 'Empty id', '') $$, '23514', null, 'a blank place id is rejected');
+select is(pg_temp.n($q$update public.locations set place_id = 'ChIJnew' where name = 'Placed'$q$), 1, 'staff update the place id');
 select throws_ok($$ insert into public.locations (team_id, name, lat) values ('a1000000-0000-0000-0000-00000000000a', 'Half coords', 40.1) $$, '23514', null, 'lat and lng must be given together');
 select throws_ok($$ insert into public.locations (team_id, name) values ('a1000000-0000-0000-0000-00000000000a', '   ') $$, '23514', null, 'blank name rejected');
 select is(pg_temp.n($q$update public.locations set name = 'Field 3 (north)' where id = '10c00000-0000-0000-0000-00000000000a'$q$), 1, 'staff rename a location');
@@ -65,6 +68,7 @@ select is(pg_temp.n($q$update public.locations set name = 'Hijack' where id = '1
 select throws_ok($$ update public.locations set team_id = 'a2000000-0000-0000-0000-00000000000b' where id = '10c00000-0000-0000-0000-00000000000a' $$, '42501', null, 'a location cannot be moved between teams');
 select is(pg_temp.n($q$delete from public.locations where id = '10c00000-0000-0000-0000-00000000000b'$q$), 0, 'staff cannot delete another team''s location');
 select is(pg_temp.n($q$delete from public.locations where name = 'Riverside Park'$q$), 1, 'staff delete their own location');
+select is(pg_temp.n($q$delete from public.locations where name = 'Placed'$q$), 1, 'and the one with a place id');
 reset role; select set_config('request.jwt.claims', '{"sub":"a2222222-2222-2222-2222-222222222222","role":"authenticated"}', true); set local role authenticated;
 select is((select count(*)::int from public.locations), 2, 'a parent reads the locations of every team her children are rostered on');
 select throws_ok($$ insert into public.locations (team_id, name) values ('a1000000-0000-0000-0000-00000000000a', 'Parent spot') $$, '42501', null, 'parents cannot add locations');

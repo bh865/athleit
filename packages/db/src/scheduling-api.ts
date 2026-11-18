@@ -238,10 +238,22 @@ export const recordGameResult = (
 export const clearGameResult = (client: Client, eventId: string) =>
   scalar<null>(call(client)('clear_game_result', { p_event_id: eventId }));
 
-export const addLocation = (
-  client: Client,
-  l: { team_id: string; name: string; address?: string | null; notes?: string | null },
-) =>
+export type LocationInput = {
+  name: string;
+  address?: string | null;
+  notes?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  place_id?: string | null;
+};
+
+// lat and lng travel together (the table checks it), so a half pair is dropped rather than rejected.
+const geo = (l: LocationInput) => {
+  const both = l.lat != null && l.lng != null;
+  return { lat: both ? l.lat! : null, lng: both ? l.lng! : null, place_id: l.place_id ?? null };
+};
+
+export const addLocation = (client: Client, l: LocationInput & { team_id: string }) =>
   one<LocationRow>(
     client
       .from('locations')
@@ -250,7 +262,22 @@ export const addLocation = (
         name: l.name,
         address: l.address ?? null,
         notes: l.notes ?? null,
+        ...geo(l),
       })
+      .select()
+      .then((r) => ({ data: r.data ? [r.data] : [], error: r.error }) as never),
+  );
+export const updateLocation = (client: Client, id: string, l: LocationInput) =>
+  one<LocationRow>(
+    client
+      .from('locations')
+      .update({
+        name: l.name,
+        address: l.address ?? null,
+        notes: l.notes ?? null,
+        ...geo(l),
+      })
+      .eq('id', id)
       .select()
       .then((r) => ({ data: r.data ? [r.data] : [], error: r.error }) as never),
   );

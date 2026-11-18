@@ -48,7 +48,7 @@ insert into public.team_players (id, team_id, player_id, jersey_number, status) 
   ('d5000000-0000-0000-0000-000000000005', 'a2000000-0000-0000-0000-00000000000b', '95000000-0000-0000-0000-000000000005', 8, 'active');
 
 reset role;
-insert into public.locations (id, team_id, name, address) values ('10c00000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'Field 3', '1 Park Rd');
+insert into public.locations (id, team_id, name, address, lat, lng, place_id) values ('10c00000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'Field 3', '1 Park Rd', 40.1, -73.9, 'ChIJtest1');
 insert into public.events (id, team_id, type, title, starts_at, ends_at, timezone, location_id) values
   ('e1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-00000000000a', 'practice', 'A soon', now() + interval '2 days', now() + interval '2 days 1 hour', 'America/New_York', '10c00000-0000-0000-0000-00000000000a'),
   ('e1000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-00000000000a', 'game', 'A last week', now() - interval '7 days', now() - interval '7 days' + interval '2 hours', 'UTC', null),
@@ -74,10 +74,11 @@ select is((select count(*)::int from public.calendar_feed_events('a9999999-9999-
 select is((select location_name || '/' || location_address || '/' || team_name from public.calendar_feed_events('a1111111-1111-1111-1111-111111111111') where title = 'A soon'), 'Field 3/1 Park Rd/Team A', 'location and team name are joined in');
 select is((select status || '/' || cancelled_reason from public.calendar_feed_events('a1111111-1111-1111-1111-111111111111') where title = 'A cancelled'), 'cancelled/Rain', 'cancelled events carry the reason');
 select is((select count(*)::int from information_schema.columns where table_name = 'calendar_feed_events'), 0, 'the output has no table columns');
-select is((select string_agg(a, ',') from (select unnest(proargnames) a from pg_proc where proname = 'calendar_feed_events') x), 'p_profile_id,id,team_name,type,title,starts_at,ends_at,timezone,location_name,location_address,location_text,opponent_name,home_away,notes,arrive_early_minutes,status,cancelled_reason,revision,updated_at', 'it returns no RSVP data and no player names');
+select is((select string_agg(a, ',') from (select unnest(proargnames) a from pg_proc where proname = 'calendar_feed_events') x), 'p_profile_id,id,team_name,type,title,starts_at,ends_at,timezone,location_name,location_address,location_lat,location_lng,location_place_id,location_text,opponent_name,home_away,notes,arrive_early_minutes,status,cancelled_reason,revision,updated_at', 'it returns no RSVP data and no player names');
 reset role;
 update public.team_players set status = 'inactive' where id = 'd2000000-0000-0000-0000-000000000002';
 set local role service_role;
 select is((select count(*)::int from public.calendar_feed_events('a3333333-3333-3333-3333-333333333333')), 0, 'a family whose child is inactive on the roster gets nothing');
+select is((select location_lat || '/' || location_lng || '/' || location_place_id from public.calendar_feed_events('a1111111-1111-1111-1111-111111111111') where title = 'A soon'), '40.1/-73.9/ChIJtest1', 'the feed carries coordinates and place id for GEO');
 select * from finish();
 rollback;

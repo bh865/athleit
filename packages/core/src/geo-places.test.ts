@@ -114,3 +114,24 @@ describe('maps urls', () => {
     expect(directionsUrl({})).toBeNull();
   });
 });
+
+import { locationInputSchema } from './schemas/scheduling';
+
+describe('locationInputSchema', () => {
+  const team_id = '11111111-1111-4111-8111-111111111111';
+  it('carries address, coordinates and place id', () => {
+    const r = locationInputSchema.safeParse({
+      team_id,
+      name: 'Field 3',
+      address: '1 Park Rd',
+      lat: 1,
+      lng: 2,
+      place_id: 'ChIJ1',
+    });
+    expect(r.success && r.data.place_id).toBe('ChIJ1');
+  });
+  it('still needs lat and lng together and a non-empty place id', () => {
+    expect(locationInputSchema.safeParse({ team_id, name: 'x', lat: 1 }).success).toBe(false);
+    expect(locationInputSchema.safeParse({ team_id, name: 'x', place_id: '' }).success).toBe(false);
+  });
+});
