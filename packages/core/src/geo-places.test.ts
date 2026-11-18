@@ -5,6 +5,8 @@ import {
   createPlaceSearcher,
   createPlaceSession,
   directionsUrl,
+  locationFromSelection,
+  placeText,
   mapsUrl,
   placeSelectionSchema,
   placesRequestSchema,
@@ -133,5 +135,38 @@ describe('locationInputSchema', () => {
   it('still needs lat and lng together and a non-empty place id', () => {
     expect(locationInputSchema.safeParse({ team_id, name: 'x', lat: 1 }).success).toBe(false);
     expect(locationInputSchema.safeParse({ team_id, name: 'x', place_id: '' }).success).toBe(false);
+  });
+});
+
+describe('place helpers', () => {
+  const p = {
+    placeId: 'ChIJ1',
+    name: 'Riverside Park',
+    formattedAddress: '1 Park Rd, Austin, TX 78701, USA',
+    lat: 30.2,
+    lng: -97.7,
+    components: {
+      line1: '1 Park Rd',
+      city: 'Austin',
+      region: 'TX',
+      postal_code: '78701',
+      country: 'US',
+    },
+  };
+  it('builds a location row from a pick, with an optional name override', () => {
+    expect(locationFromSelection(p)).toEqual({
+      name: 'Riverside Park',
+      address: p.formattedAddress,
+      lat: 30.2,
+      lng: -97.7,
+      place_id: 'ChIJ1',
+    });
+    expect(locationFromSelection(p, ' Field 3 ').name).toBe('Field 3');
+    expect(locationFromSelection({ ...p, name: '' }).name).toBe('1 Park Rd');
+  });
+  it('one-off text is name plus address, capped at 200', () => {
+    expect(placeText(p)).toBe('Riverside Park, 1 Park Rd, Austin, TX 78701, USA');
+    expect(placeText({ ...p, name: '1 Park Rd' })).toBe(p.formattedAddress);
+    expect(placeText({ ...p, formattedAddress: 'x'.repeat(300) })).toHaveLength(200);
   });
 });

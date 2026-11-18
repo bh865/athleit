@@ -1,6 +1,6 @@
 'use client';
 
-import { friendlyError } from '@athleit/core';
+import { friendlyError, locationFromSelection, type PlaceSelection } from '@athleit/core';
 import {
   addLocation,
   addOpponent,
@@ -12,7 +12,16 @@ import {
 import { useState } from 'react';
 
 import { FormMessage, LoadState } from '@/components/app/states';
-import { Button, IconButton, ListGroup, ListRow, Sheet, Text, TextField } from '@/components/ui';
+import {
+  Button,
+  IconButton,
+  ListGroup,
+  ListRow,
+  PlaceAutocomplete,
+  Sheet,
+  Text,
+  TextField,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -38,6 +47,7 @@ export function PlacesManager({
   );
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [picked, setPicked] = useState<PlaceSelection | null>(null);
   const [opp, setOpp] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -88,11 +98,21 @@ export function PlacesManager({
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
         />
-        <TextField
+        <PlaceAutocomplete
           label="Address (optional)"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          maxLength={300}
+          verified={picked !== null}
+          onChange={setAddress}
+          onSelect={(p) => {
+            setPicked(p);
+            setAddress(p.formattedAddress);
+            // Fill the name from the suggestion only when it is still empty.
+            setName((n) => (n.trim() ? n : p.name.slice(0, 100)));
+          }}
+          onClear={() => {
+            setPicked(null);
+            setAddress('');
+          }}
         />
         <Button
           variant="secondary"
@@ -101,12 +121,14 @@ export function PlacesManager({
             void run(
               addLocation(getClient(), {
                 team_id: teamId,
-                name: name.trim(),
-                address: address.trim() || null,
+                ...(picked
+                  ? locationFromSelection(picked, name)
+                  : { name: name.trim(), address: address.trim() || null }),
               }),
               () => {
                 setName('');
                 setAddress('');
+                setPicked(null);
                 places.reload();
               },
             )

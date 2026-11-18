@@ -173,3 +173,23 @@ export function directionsUrl(t: MapsTarget): string | null {
   const base = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`;
   return t.placeId ? `${base}&destination_place_id=${encodeURIComponent(t.placeId)}` : base;
 }
+
+/** The fields of a saved `locations` row for a picked place. */
+export function locationFromSelection(p: PlaceSelection, name?: string) {
+  return {
+    name: (name?.trim() || p.name || p.components.line1 || p.formattedAddress).slice(0, 100),
+    address: p.formattedAddress.slice(0, 300),
+    lat: p.lat,
+    lng: p.lng,
+    place_id: p.placeId,
+  };
+}
+
+/** One-off place text for an event (events.location_text, 200 max): "Name, address", or just the address. */
+export function placeText(p: PlaceSelection): string {
+  const text =
+    p.name && !p.formattedAddress.toLowerCase().startsWith(p.name.toLowerCase())
+      ? `${p.name}, ${p.formattedAddress}`
+      : p.formattedAddress;
+  return text.slice(0, 200);
+}
