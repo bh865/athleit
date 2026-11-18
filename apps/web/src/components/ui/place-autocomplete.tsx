@@ -173,7 +173,7 @@ export function PlaceAutocomplete({
         open={open}
         onClose={() => setOpen(false)}
         anchor={anchor}
-        label={`${label} suggestions`}
+        label="Address suggestions"
       >
         <div style={{ width }}>
           {status === 'loading' ? <p className={styles.status}>Searching…</p> : null}
@@ -187,7 +187,7 @@ export function PlaceAutocomplete({
             <ul
               id={listId}
               role="listbox"
-              aria-label={`${label} suggestions`}
+              aria-label="Address suggestions"
               className={styles.listbox}
             >
               {items.map((s, i) => (
