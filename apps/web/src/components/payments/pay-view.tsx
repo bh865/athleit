@@ -56,9 +56,6 @@ export function PayView() {
 
   return (
     <div className={styles.layout}>
-      <Text variant="title" as="h1">
-        Pay
-      </Text>
       <SegmentedControl
         label="Pay sections"
         value={tab}

@@ -16,7 +16,9 @@ import { useState, type FormEvent } from 'react';
 import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage, LoadState } from '@/components/app/states';
-import { Badge, Button, Card, TextField } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import { Badge, Button, Card, DatePicker, PageHeader, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -85,17 +87,14 @@ export default function ChildPage() {
 
   return (
     <>
-      <Link href="/family" className={styles.link}>
-        ← Family
-      </Link>
+      <PageHeader
+        title={c ? `${c.first_name} ${c.last_name}` : 'Child'}
+        subtitle={c ? `${ageOn(c.date_of_birth)} years old` : undefined}
+        back={{ href: '/family', label: 'Family' }}
+      />
       <LoadState loading={child.loading} error={child.error} onRetry={child.reload}>
         {c && (
           <>
-            <h1 className={styles.title}>
-              {c.first_name} {c.last_name}
-            </h1>
-            <p className={styles.muted}>{ageOn(c.date_of_birth)} years old</p>
-
             <Card className={styles.row}>
               {photo.data ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -138,11 +137,12 @@ export default function ChildPage() {
                   defaultValue={c.last_name}
                   error={errors.lastName}
                 />
-                <TextField
+                <DatePicker
                   name="dateOfBirth"
-                  type="date"
                   label="Date of birth"
                   defaultValue={c.date_of_birth}
+                  max={todayIso()}
+                  yearSpan={{ before: 25, after: 0 }}
                   error={errors.dateOfBirth}
                 />
                 {ownLoginAllowed ? (

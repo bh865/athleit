@@ -18,3 +18,5 @@ export * from './schemas/payments';
 export * from './capabilities';
 export * from './context';
 export * from './errors';
+export * from './pay-views';
+export * from './places';

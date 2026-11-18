@@ -1,3 +1,4 @@
+import { payViewsFor } from '@athleit/core';
 import { space } from '@athleit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
@@ -6,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Backdrop, Button, Sheet, TabBar, Text, ThemeToggle, type TabItem } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
+
+import { ADD } from './context-switcher';
 import { useAuth } from '@/lib/auth';
 import { useUnread } from '@/lib/use-unread';
 
@@ -18,7 +21,7 @@ const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts, userId } = useApp();
+  const { status, contexts, userId, addActions } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -27,6 +30,8 @@ export function AppScreen({ children }: { children: ReactNode }) {
 
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const hasTeam = contexts.some((c) => c.kind === 'team');
+  const pv = payViewsFor(contexts, null);
+  const showPay = pv.payer || pv.staff !== null;
   const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
@@ -36,9 +41,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
     ...(hasTeam
       ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
       : []),
-    ...(hasFamily || contexts.some((c) => c.kind === 'team' || c.kind === 'club')
-      ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem]
-      : []),
+    ...(showPay ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem] : []),
     ...(hasFamily ? [{ key: 'family', label: 'Family', icon: 'house-line' } as TabItem] : []),
     { key: 'more', label: 'More', icon: 'dots-three-circle' },
   ];
@@ -104,6 +107,17 @@ export function AppScreen({ children }: { children: ReactNode }) {
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">
         <Text variant="heading">More</Text>
+        {hasTeam ? (
+          <Button
+            title="Roster"
+            variant="secondary"
+            icon="users-three"
+            onPress={() => {
+              setMore(false);
+              router.push('/roster' as never);
+            }}
+          />
+        ) : null}
         {hasFamily ? (
           <Button
             title="Family"
@@ -123,6 +137,18 @@ export function AppScreen({ children }: { children: ReactNode }) {
             router.push('/notifications' as never);
           }}
         />
+        {addActions.map((a) => (
+          <Button
+            key={a}
+            title={ADD[a].label}
+            variant="ghost"
+            icon="plus"
+            onPress={() => {
+              setMore(false);
+              router.push(ADD[a].href as never);
+            }}
+          />
+        ))}
         <ThemeToggle />
         <Button title="Sign out" variant="ghost" icon="sign-out" onPress={() => void signOut()} />
       </Sheet>

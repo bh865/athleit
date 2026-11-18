@@ -7,6 +7,7 @@ import {
   capabilitiesFor,
   friendlyError,
   pickContext,
+  switcherPlaces,
   type ContextSource,
 } from './index';
 
@@ -19,23 +20,75 @@ const src: ContextSource = {
   clubs: [{ club_id: 'c1', role: 'admin', name: 'Riverside' }],
 };
 
-describe('contexts', () => {
-  it('builds one context per role and place, family first', () => {
-    const ctx = buildContexts(src);
-    expect(ctx.map((c) => c.key)).toEqual([
-      'family:h1',
-      'team:t1:coach',
-      'team:t2:parent',
-      'club:c1:admin',
-    ]);
-    expect(ctx[1]?.subtitle).toBe('Coach, Fall 2026');
-    expect(ctx[3]?.subtitle).toBe('Admin, club');
+describe('contexts (places)', () => {
+  it('builds one context per place; roles in one team merge', () => {
+    const ctx = buildContexts({
+      ...src,
+      teams: [
+        ...src.teams,
+        {
+          team_id: 't1',
+          role: 'parent',
+          name: 'U10 Hawks',
+          sport: 'soccer',
+          season_label: 'Fall 2026',
+        },
+      ],
+    });
+    expect(ctx.map((c) => c.key)).toEqual(['family:h1', 'team:t1', 'team:t2', 'club:c1']);
+    const t1 = ctx.find((c) => c.key === 'team:t1')!;
+    expect(t1.roles).toEqual(['coach', 'parent']);
+    expect(t1.subtitle).toBe('Coach · Parent');
+    expect(ctx.find((c) => c.key === 'club:c1')?.subtitle).toBe('Admin');
   });
 
-  it('restores the last-used context or falls back', () => {
+  it('admin + parent of one team is one place with the union of capabilities', () => {
+    const [, team] = buildContexts({
+      households: [{ id: 'h1', name: 'Blake family' }],
+      teams: [
+        {
+          team_id: 't1',
+          role: 'parent',
+          name: 'Athleit FC',
+          sport: 'soccer',
+          season_label: 'Fall 2026',
+        },
+        {
+          team_id: 't1',
+          role: 'admin',
+          name: 'Athleit FC',
+          sport: 'soccer',
+          season_label: 'Fall 2026',
+        },
+      ],
+      clubs: [],
+    });
+    expect(team!.subtitle).toBe('Admin · Parent');
+    expect(can(team!, 'members.manage')).toBe(true);
+    expect(can(team!, 'schedule.rsvpOwn')).toBe(true);
+  });
+
+  it('switcher lists teams and clubs; the household only when it is the only place', () => {
+    expect(switcherPlaces(buildContexts(src)).map((c) => c.key)).toEqual([
+      'team:t1',
+      'team:t2',
+      'club:c1',
+    ]);
+    expect(
+      switcherPlaces(buildContexts({ ...src, teams: [], clubs: [] })).map((c) => c.key),
+    ).toEqual(['family:h1']);
+    expect(switcherPlaces([])).toEqual([]);
+  });
+
+  it('restores the last-used place, maps legacy per-role keys, or falls back to a team', () => {
     const ctx = buildContexts(src);
-    expect(pickContext(ctx, 'club:c1:admin')?.id).toBe('c1');
-    expect(pickContext(ctx, 'gone')?.key).toBe('family:h1');
+    expect(pickContext(ctx, 'club:c1')?.id).toBe('c1');
+    expect(pickContext(ctx, 'club:c1:admin')?.id).toBe('c1'); // legacy key
+    expect(pickContext(ctx, 'team:t2:parent')?.id).toBe('t2');
+    expect(pickContext(ctx, 'gone')?.key).toBe('team:t1');
+    expect(pickContext(buildContexts({ ...src, teams: [], clubs: [] }), null)?.key).toBe(
+      'family:h1',
+    );
     expect(pickContext([], 'x')).toBeNull();
   });
 

@@ -6,7 +6,9 @@ import { useState } from 'react';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { FormMessage, H1, Notice } from '@/components/app/kit';
-import { Button, Card, TextField } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import { Button, Card, DatePicker, TextField } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { supabase } from '@/lib/supabase';
 
@@ -59,13 +61,12 @@ export default function AddChildScreen() {
           autoComplete="off"
           error={errors.lastName}
         />
-        <TextField
+        <DatePicker
           label="Date of birth"
-          hint="YYYY-MM-DD"
           value={dob}
-          onChangeText={setDob}
-          keyboardType="numbers-and-punctuation"
-          autoComplete="off"
+          onChange={setDob}
+          max={todayIso()}
+          yearSpan={{ before: 25, after: 0 }}
           error={errors.dateOfBirth}
         />
         <FormMessage error={error} />

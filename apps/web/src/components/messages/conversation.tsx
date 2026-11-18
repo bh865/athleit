@@ -6,6 +6,7 @@ import {
   groupMessages,
   memberCountLabel,
   type ChatMessage,
+  isTeamStaff,
 } from '@athleit/core';
 import {
   deleteMessage,
@@ -54,10 +55,7 @@ export function Conversation({ threadId }: { threadId: string }) {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const team = t.thread
-    ? contexts.find((c) => c.kind === 'team' && c.id === t.thread!.team_id)
-    : null;
-  const isStaff = team ? ['admin', 'coach', 'manager'].includes(team.role) : false;
+  const isStaff = t.thread ? isTeamStaff(contexts, t.thread.team_id) : false;
   const isAnnouncement = t.thread?.type === 'announcement';
   const archived = Boolean(t.thread?.archived_at);
   const canPost = isAnnouncement ? isStaff : true;

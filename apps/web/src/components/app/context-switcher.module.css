@@ -63,3 +63,20 @@
   letter-spacing: var(--text-label-tracking);
   text-transform: uppercase;
 }
+
+/* Fixed-size slot so every "+" lines up regardless of the label. */
+.addIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--size-sidebar-item-height);
+  height: var(--space-6);
+}
+.option:has(.addIcon) {
+  padding-left: 0;
+}
+
+.static {
+  cursor: default;
+}

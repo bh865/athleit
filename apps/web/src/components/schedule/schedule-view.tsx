@@ -23,8 +23,8 @@ import {
   Glass,
   Icon,
   IconButton,
+  PageHeader,
   SegmentedControl,
-  Text,
   useToast,
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
@@ -58,10 +58,14 @@ const dayHeading = (key: string) => {
 /** The Schedule screen: Week/Month, rows with a date block, and the right-hand event drawer. */
 export function ScheduleView({
   scope,
-  title = 'Schedule',
+  subtitle,
+  embedded = false,
 }: {
   scope: ScheduleScope;
-  title?: string;
+  /** Line under the page title, e.g. the team name. */
+  subtitle?: string;
+  /** Inside a team page that already has a heading: render only the controls. */
+  embedded?: boolean;
 }) {
   const viewerZone = useViewerZone() ?? 'UTC';
   const router = useRouter();
@@ -126,32 +130,35 @@ export function ScheduleView({
   const listDays = mode === 'week' ? weekKeys : pickedDay ? [pickedDay] : [];
   const emptyWeek = mode === 'week' && weekKeys.length === 0;
 
+  const headerControls = (
+    <div className={styles.controls}>
+      <SegmentedControl
+        label="View"
+        value={mode}
+        onChange={(v) => {
+          setMode(v);
+          setPickedDay(null);
+        }}
+        options={[
+          { value: 'month', label: 'Month' },
+          { value: 'week', label: 'Week' },
+        ]}
+      />
+      {canManage ? (
+        <Button onClick={() => setCreating(true)} data-testid="new-event">
+          <Icon name="plus" size="sm" /> New event
+        </Button>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className={styles.layout}>
-      <div className={styles.head}>
-        <Text variant="title" as="h1">
-          {title}
-        </Text>
-        <div className={styles.controls}>
-          <SegmentedControl
-            label="View"
-            value={mode}
-            onChange={(v) => {
-              setMode(v);
-              setPickedDay(null);
-            }}
-            options={[
-              { value: 'month', label: 'Month' },
-              { value: 'week', label: 'Week' },
-            ]}
-          />
-          {canManage ? (
-            <Button onClick={() => setCreating(true)} data-testid="new-event">
-              <Icon name="plus" size="sm" /> New event
-            </Button>
-          ) : null}
-        </div>
-      </div>
+      {embedded ? (
+        <div className={styles.head}>{headerControls}</div>
+      ) : (
+        <PageHeader title="Schedule" subtitle={subtitle} actions={headerControls} />
+      )}
 
       <div className={styles.head}>
         <div className={styles.nav}>

@@ -1,18 +1,28 @@
 'use client';
 
+import { payViewsFor } from '@athleit/core';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getUnreadTotal, subscribeToNotifications } from '@athleit/db/api';
 
 import { signOut } from '@/app/(auth)/actions';
-import { Badge, Button, Glass, Icon, Logo, ThemeToggle } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Glass,
+  Icon,
+  IconButton,
+  Logo,
+  Popover,
+  ThemeToggle,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { useApp } from './app-provider';
-import { ContextSwitcher } from './context-switcher';
+import { ADD_LABEL, ContextSwitcher } from './context-switcher';
 import styles from './sidebar.module.css';
 
 interface NavItem {
@@ -24,9 +34,24 @@ interface NavItem {
 
 /** Glass sidebar: 248 wide on desktop; collapses to a top bar on narrow screens. */
 export function Sidebar() {
-  const { status, contexts, displayName, userId } = useApp();
+  const { status, contexts, displayName, userId, addActions } = useApp();
+  const addRef = useRef<HTMLButtonElement>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
+  // Open for one path only: navigating closes the drawer without a setState-in-effect.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const open = openAt === pathname;
+  const setOpen = (v: boolean | ((o: boolean) => boolean)) =>
+    setOpenAt((cur) => ((typeof v === 'function' ? v(cur === pathname) : v) ? pathname : null));
+
+  // Narrow screens: the sidebar is a drawer; close it after navigating or on Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpenAt(null);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
   const hasTeam = contexts.some((c) => c.kind === 'team');
 
   // Live unread badge for Messages.
@@ -39,6 +64,8 @@ export function Sidebar() {
     return subscribeToNotifications(client, userId, refresh);
   }, [userId, hasTeam]);
   const hasFamily = contexts.some((c) => c.kind === 'family');
+  const pv = payViewsFor(contexts, null);
+  const showPay = pv.payer || pv.staff !== null;
   const items: NavItem[] = [
     { href: '/', label: 'Home', icon: 'house' },
     ...(hasTeam
@@ -51,10 +78,11 @@ export function Sidebar() {
           } as NavItem,
         ]
       : []),
+    ...(hasTeam ? [{ href: '/roster', label: 'Roster', icon: 'users-three' } as NavItem] : []),
     ...(contexts.length > 0
       ? [{ href: '/schedule', label: 'Schedule', icon: 'calendar-blank' } as NavItem]
       : []),
-    ...(hasFamily ? [{ href: '/pay', label: 'Pay', icon: 'credit-card' } as NavItem] : []),
+    ...(showPay ? [{ href: '/pay', label: 'Pay', icon: 'credit-card' } as NavItem] : []),
     { href: '/notifications', label: 'Alerts', icon: 'bell' },
     ...(hasFamily ? [{ href: '/family', label: 'Family', icon: 'house-line' } as NavItem] : []),
   ];
@@ -62,38 +90,100 @@ export function Sidebar() {
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <Glass as="aside" level="bar" className={styles.sidebar} aria-label="Main">
-      <Link href="/" className={styles.brand} aria-label="Athleit home">
-        <Logo variant="lockup" size="md" />
-      </Link>
-      <div className={styles.switcher}>{status === 'ready' && <ContextSwitcher />}</div>
-      <nav className={styles.nav} aria-label="Primary">
-        {items.map((i) => (
-          <Link
-            key={i.href}
-            href={i.href}
-            className={`${styles.item} ${isActive(i.href) ? styles.active : ''}`}
-            aria-current={isActive(i.href) ? 'page' : undefined}
-          >
-            <Icon name={i.icon} weight={isActive(i.href) ? 'fill' : 'regular'} size="lg" />
-            <span className={styles.label}>{i.label}</span>
-            {i.badge ? <Badge tone="count">{i.badge}</Badge> : null}
-          </Link>
-        ))}
-      </nav>
-      <div className={styles.footer}>
-        <ThemeToggle />
-        <form action={signOut}>
-          <Button
-            type="submit"
-            variant="ghost"
-            fullWidth
-            aria-label={`Sign out ${displayName ?? ''}`.trim()}
-          >
-            <Icon name="sign-out" size="sm" /> Sign out
-          </Button>
-        </form>
+    <>
+      <div className={styles.topbar}>
+        <Link href="/" className={styles.brand} aria-label="Athleit home">
+          <Logo variant="lockup" size="md" />
+        </Link>
+        <IconButton
+          icon={open ? 'x' : 'list'}
+          label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          aria-controls="app-nav"
+          onClick={() => setOpen((o) => !o)}
+        />
       </div>
-    </Glass>
+      {open ? <div className={styles.scrim} onClick={() => setOpen(false)} aria-hidden /> : null}
+      <Glass
+        as="aside"
+        level="bar"
+        id="app-nav"
+        data-open={open ? 'true' : 'false'}
+        className={styles.sidebar}
+        aria-label="Main"
+      >
+        <Link
+          href="/"
+          className={`${styles.brand} ${styles.drawerBrand}`}
+          aria-label="Athleit home"
+        >
+          <Logo variant="lockup" size="md" />
+        </Link>
+        <div className={styles.switcher}>{status === 'ready' && <ContextSwitcher />}</div>
+        <nav className={styles.nav} aria-label="Primary">
+          {items.map((i) => (
+            <Link
+              key={i.href}
+              href={i.href}
+              className={`${styles.item} ${isActive(i.href) ? styles.active : ''}`}
+              aria-current={isActive(i.href) ? 'page' : undefined}
+            >
+              <Icon name={i.icon} weight={isActive(i.href) ? 'fill' : 'regular'} size="lg" />
+              <span className={styles.label}>{i.label}</span>
+              {i.badge ? <Badge tone="count">{i.badge}</Badge> : null}
+            </Link>
+          ))}
+        </nav>
+        <div className={styles.footer}>
+          <div className={styles.addWrap}>
+            <Button
+              ref={addRef}
+              variant="secondary"
+              fullWidth
+              aria-haspopup="menu"
+              aria-expanded={addOpen}
+              onClick={() => setAddOpen((o) => !o)}
+              data-testid="account-add"
+            >
+              <Icon name="plus" size="sm" /> Add or join
+            </Button>
+            <Popover
+              open={addOpen}
+              onClose={() => setAddOpen(false)}
+              anchor={addRef}
+              label="Add a team, club or family"
+            >
+              <ul className={styles.addList}>
+                {addActions.map((a) => (
+                  <li key={a}>
+                    <Link
+                      href={ADD_LABEL[a].href}
+                      className={styles.addItem}
+                      onClick={() => setAddOpen(false)}
+                    >
+                      <span className={styles.addIcon}>
+                        <Icon name="plus" size="sm" />
+                      </span>
+                      {ADD_LABEL[a].label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Popover>
+          </div>
+          <ThemeToggle />
+          <form action={signOut}>
+            <Button
+              type="submit"
+              variant="ghost"
+              fullWidth
+              aria-label={`Sign out ${displayName ?? ''}`.trim()}
+            >
+              <Icon name="sign-out" size="sm" /> Sign out
+            </Button>
+          </form>
+        </div>
+      </Glass>
+    </>
   );
 }

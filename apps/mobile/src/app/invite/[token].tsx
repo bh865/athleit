@@ -33,7 +33,7 @@ function Landing({ token }: { token: string }) {
     await refresh();
     const id = (joined.team_id ?? joined.club_id ?? joined.household_id) as string;
     const kind = joined.team_id ? 'team' : joined.club_id ? 'club' : 'family';
-    setActive(kind === 'family' ? `family:${id}` : `${kind}:${id}:${joined.role}`);
+    setActive(kind === 'family' ? `family:${id}` : `${kind}:${id}`);
     router.replace(contextPath({ kind, id } as never) as never);
   }
 

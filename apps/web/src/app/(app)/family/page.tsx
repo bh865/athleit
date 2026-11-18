@@ -11,7 +11,7 @@ import { InvitePanel } from '@/components/app/invite-panel';
 import { FormMessage, LoadState } from '@/components/app/states';
 import { DueCard } from '@/components/payments/home-cards';
 import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Avatar, Badge, Button, Card, Icon } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Card, Icon, PageHeader } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -33,14 +33,17 @@ export default function FamilyPage() {
 
   return (
     <>
+      <PageHeader
+        title={family?.title ?? 'Your family'}
+        subtitle="Children and their teams"
+        actions={
+          <ButtonLink href="/family/children/new">
+            <Icon name="plus" size="sm" /> Add a child
+          </ButtonLink>
+        }
+      />
       <NextUpCard />
       <DueCard />
-      <div className={`${styles.row} ${styles.between}`}>
-        <h1 className={styles.title}>{family?.title ?? 'Your family'}</h1>
-        <Link href="/family/children/new" className={styles.link}>
-          <Icon name="plus" /> Add a child
-        </Link>
-      </div>
 
       <p className={styles.notice}>
         Children under 13 never have their own login. A parent or guardian manages everything for

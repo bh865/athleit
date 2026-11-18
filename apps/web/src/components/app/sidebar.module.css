@@ -56,3 +56,92 @@
     height: calc(100dvh - var(--space-8));
   }
 }
+
+/* Below 900px the sidebar is a glass drawer opened from a top bar, so content gets the full width. */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.scrim {
+  display: none;
+}
+@media (max-width: 899px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: var(--space-1) 0;
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    z-index: 44;
+    inset: 0;
+    background: var(--color-scrim);
+  }
+  .sidebar.sidebar {
+    position: fixed;
+    z-index: 45;
+    top: var(--space-4);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    width: min(var(--size-sidebar-width), calc(100vw - var(--space-8)));
+    overflow-y: auto;
+    visibility: hidden;
+    transform: translateX(calc(-100% - var(--space-8)));
+    transition:
+      transform 0.2s ease,
+      visibility 0.2s;
+  }
+  .sidebar.sidebar[data-open='true'] {
+    visibility: visible;
+    transform: none;
+  }
+  .drawerBrand {
+    display: none;
+  }
+}
+@media (min-width: 900px) {
+  .topbar {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar.sidebar {
+    transition: none;
+  }
+}
+
+.addWrap {
+  position: relative;
+}
+.addList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: calc(var(--size-sidebar-width) - var(--space-8));
+}
+.addItem {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-button-height);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  font-weight: var(--text-body-bold-weight);
+  text-decoration: none;
+}
+.addItem:hover {
+  background: var(--color-line);
+}
+.addIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--size-sidebar-item-height);
+}

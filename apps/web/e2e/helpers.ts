@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Browser, type Page } from '@playwright/test';
 
 /** Every e2e user and what they created, so teardown can remove it. */
@@ -14,6 +14,19 @@ const admin = () =>
   url && serviceKey
     ? createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
     : null;
+
+/** Every auth user, across pages (a single page misses newer users once the project has many). */
+export async function listAllUsers(client: {
+  auth: { admin: Pick<SupabaseClient['auth']['admin'], 'listUsers'> };
+}) {
+  const all: { id: string; email?: string }[] = [];
+  for (let page = 1; page < 100; page++) {
+    const { data } = await client.auth.admin.listUsers({ page, perPage: 200 });
+    all.push(...data.users);
+    if (data.users.length < 200) break;
+  }
+  return all;
+}
 
 export const canClean = () => admin() !== null;
 
@@ -42,8 +55,7 @@ export async function signUp(page: Page, who: string, name: string, next?: strin
       throw new Error(
         'Email confirmation is on: set E2E_SUPABASE_SERVICE_ROLE_KEY or turn confirmations off.',
       );
-    const { data } = await a.auth.admin.listUsers({ perPage: 200 });
-    const user = data.users.find((u) => u.email === email);
+    const user = (await listAllUsers(a)).find((u) => u.email === email);
     if (!user) throw new Error(`user ${email} not found`);
     await a.auth.admin.updateUserById(user.id, { email_confirm: true });
     await page.goto(next ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in');
@@ -63,8 +75,7 @@ export async function cleanup() {
     );
     return;
   }
-  const { data } = await a.auth.admin.listUsers({ perPage: 200 });
-  const users = data.users.filter((u) => u.email && created.has(u.email));
+  const users = (await listAllUsers(a)).filter((u) => u.email && created.has(u.email));
   const ids = users.map((u) => u.id);
   if (ids.length === 0) return;
   const { data: households } = await a
@@ -81,4 +92,52 @@ export async function cleanup() {
       (households ?? []).map((h) => h.household_id),
     );
   for (const id of ids) await a.auth.admin.deleteUser(id);
+}
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** Choose a date (YYYY-MM-DD) in a <DatePicker> by its label: year, month, then the day. */
+export async function pickDate(page: Page, label: string, iso: string) {
+  const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
+  await dialog.getByRole('button', { name: /choose month and year/ }).click();
+  await dialog.getByRole('button', { name: String(y), exact: true }).click();
+  await dialog.getByRole('button', { name: MONTHS[m - 1]!.slice(0, 3), exact: true }).click();
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  await dialog.getByRole('button', { name: `${weekday}, ${MONTHS[m - 1]} ${d}, ${y}` }).click();
+}
+
+/** Choose a time (HH:MM, 24 hour) in a <TimePicker>; minutes must be a multiple of 5. */
+export async function pickTime(page: Page, label: string, hhmm: string) {
+  const [h, min] = hhmm.split(':').map(Number) as [number, number];
+  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
+  await dialog
+    .getByRole('group', { name: 'Hour' })
+    .getByRole('button', { name: String(h % 12 === 0 ? 12 : h % 12), exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'Minute' })
+    .getByRole('button', { name: String(min).padStart(2, '0'), exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'AM or PM' })
+    .getByRole('button', { name: h < 12 ? 'AM' : 'PM', exact: true })
+    .click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
 }

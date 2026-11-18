@@ -122,3 +122,32 @@ Apple Pay certificate step (the iOS simulator can show the sheet but cannot comp
 7. **Household.** Another guardian in the same household pays first: your Pay list shows the request as paid and the retry says it can't be paid.
 8. **Staff.** As a team admin: Pay tab > Payouts "Set up payouts" opens Stripe in the in-app browser and returns; "New payment request" sends to the roster; "Send reminder" works once per 24 h; a coach sees status but no setup button.
 9. **Accessibility.** VoiceOver reads "Jersey fee, $45.00, due Nov 30, Unpaid" on each request and "45 dollars" for amounts; tap targets are 44pt or larger.
+
+## Date and time pickers (polish)
+
+1. **Child date of birth.** Family > Add a child: the Date of birth field shows a calendar icon and "Select a date". Tap it: a glass sheet slides up. Tap the "Month Year" title, choose a year (newest first), a month, then a day: the sheet closes and the field reads like "Apr 2, 2016". Future days are muted and do nothing.
+2. **Edit child.** The field shows the saved date; open it: that day is filled lime and today is ringed.
+3. **Event date and times.** Schedule > New event: Date opens the calendar; Starts and Ends open hour / minute / AM-PM columns and need "Done" (Cancel keeps the old value). The zone note under them is unchanged.
+4. **Due date.** Pay (staff) > New payment request: Due date refuses days before today.
+5. **Quiet hours.** Notification settings: From and Until use the time sheet; Save quiet hours stores the 24-hour value.
+6. **Accessibility.** VoiceOver: each day reads "Monday, November 30, 2026" (plus ", today" / selected / dimmed); the header reads "November 2026, choose month and year"; day targets are 44pt or larger.
+7. **Reduce Transparency / dark mode.** Turn on Settings > Accessibility > Display > Reduce Transparency: the sheet becomes solid and stays readable. Repeat in dark mode.
+8. **Backdrop blobs.** Home in dark mode: the green and blue corner glows are faint (about 13% and 22% at their centres), not solid colour.
+
+## Pay views by capability (polish)
+
+Run each with the team as the last-used place (switch to the team, close and reopen the app).
+
+1. **Parent only** (member of a team as Parent, has a household with a rostered child): Pay shows the child's requests, "Amount due", Pay and Receipts. No "Team collection" segment, never "No payment requests yet" when requests exist.
+2. **Staff only** (team admin or coach, no household): Pay shows payouts, "New payment request" and collection. No "My payments" segment.
+3. **Staff and parent**: Pay shows two segments, "My payments" and "Team collection"; it opens on the one matching the active place.
+4. **Messages as a parent** with the family active: the team's conversations still show (the first team is used).
+5. **Dual-role Messages**: an Admin who is also a Parent sees the staff-only controls (announcements, hide message) in the team's threads.
+
+## Places, switcher and Roster (polish, Item 1/4)
+
+1. **One place.** A user who is Admin and Parent of a single team sees one pill, "Athleit FC / Admin · Parent", with no caret; tapping it does nothing.
+2. **Two places.** Join or create a second team: the pill gets a caret and opens a "Switch team" sheet listing teams and clubs (not the household).
+3. **Add.** More lists Add a team / Create a club / Join a team (and Add a family without a household) even with a single place.
+4. **Old saved place.** Update from a build that stored `team:<id>:<role>`: the app opens the same team (no reset to the first place).
+5. **Roster.** More > Roster opens the active team's roster. Staff: statuses, guardian contacts, add and edit. Parent or player: first name, jersey number and position only. The team screen's Overview tab links to it.

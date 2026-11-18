@@ -83,3 +83,7 @@ Stripe **test mode** only. Watch the function logs (`stripe-webhook`, `create-pa
 ### Before live mode
 
 - [ ] Work through [payments-go-live.md](payments-go-live.md) and [payments-compliance.md](payments-compliance.md); wipe the old test data from the Stripe sandbox
+
+## Pay views by capability
+
+`apps/web/e2e/pay-views.spec.ts` (needs `E2E_SUPABASE_SERVICE_ROLE_KEY`, no Stripe account) covers parent-only, staff-only and staff-plus-parent with the team as the last-used place. Unit coverage: `packages/core/src/pay-views.test.ts`. Not yet run against the hosted project.
