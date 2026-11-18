@@ -53,7 +53,9 @@ export async function processWebhook(
     if (outcome === 'unknown_payment') {
       const age = now - Number(event.created ?? 0) * 1000;
       // Only objects carrying OUR payment id can be a payment we have not recorded yet; anything else is not ours.
-      const ours = typeof obj?.metadata?.athleit_payment_id === 'string';
+      const ours = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        String(obj?.metadata?.athleit_payment_id ?? ''),
+      );
       const giveUp = !ours || age > (d.giveUpAfterMs ?? 3_600_000);
       await d.store.finishEvent(event.id, 'unknown_payment', giveUp);
       d.log('warn', 'webhook.unknown_payment', { id: event.id, type: event.type, giveUp });

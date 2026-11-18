@@ -1187,3 +1187,32 @@ describe('CORS', () => {
     ).toBe('null');
   });
 });
+
+describe('webhook ownership check', () => {
+  it('only a real payment-id uuid in metadata counts as ours (a fake id is acknowledged, not retried)', async () => {
+    const store = fakeStore({ paymentSucceeded: vi.fn(async () => 'unknown_payment') });
+    const stripe = fakeStripe({});
+    const e = {
+      id: 'evt_f',
+      type: 'payment_intent.succeeded',
+      account: 'acct_X',
+      livemode: false,
+      created: Math.floor(Date.now() / 1000),
+      data: {
+        object: {
+          id: 'pi_f',
+          status: 'succeeded',
+          metadata: { athleit_payment_id: 'itest-123-visa' },
+        },
+      },
+    };
+    const { raw, header } = await signed(e);
+    const r = await processWebhook(raw, header, {
+      secrets: [SECRET],
+      store,
+      stripe: stripe as any,
+      log: quiet,
+    });
+    expect(r.status).toBe(200);
+  });
+});
