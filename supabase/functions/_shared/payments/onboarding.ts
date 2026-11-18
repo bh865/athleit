@@ -5,6 +5,8 @@ import { applyAccount } from './handlers.ts';
 import type { Owner, Store } from './store.ts';
 import type { StripeApi } from './stripe.ts';
 
+export const ACCOUNT_CONFIG_VERSION = 'v2-full-dashboard';
+
 export interface OnboardingDeps {
   store: Store;
   stripe: Pick<StripeApi, 'get' | 'post'>;
@@ -40,7 +42,9 @@ export async function connectOnboarding(
   if (!(await d.canManage(o))) throw new Error('not_authorized');
   let acct = await d.store.getConnectedAccount(o);
   if (!acct) {
-    const key = `athleit:acct:${o.teamId ? 'team' : 'club'}:${o.teamId ?? o.clubId}`;
+    // Bump ACCOUNT_CONFIG_VERSION whenever the account parameters change: Stripe refuses to reuse an idempotency key with different
+    // parameters. The unique owner constraint still guarantees one account per team or club.
+    const key = `athleit:acct:${ACCOUNT_CONFIG_VERSION}:${o.teamId ? 'team' : 'club'}:${o.teamId ?? o.clubId}`;
     const created = await d.stripe.post(
       '/v1/accounts',
       {

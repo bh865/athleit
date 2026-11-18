@@ -749,7 +749,7 @@ describe('connect onboarding', () => {
       capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
     });
     expect(create.params.metadata).toEqual({ athleit_owner: `team:${owner.teamId}` });
-    expect(create.key).toBe(`athleit:acct:team:${owner.teamId}`);
+    expect(create.key).toBe(`athleit:acct:v2-full-dashboard:team:${owner.teamId}`);
     expect(store.insertConnectedAccount).toHaveBeenCalledWith(owner, 'acct_new', 'u');
     const link = s.calls.find((c) => c.path === '/v1/account_links')!;
     expect(link.params.return_url).toBe(`athleit://payments/connect/return?team=${owner.teamId}`);
