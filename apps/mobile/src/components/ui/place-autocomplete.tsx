@@ -8,7 +8,7 @@ import {
 } from '@athleit/core';
 import { getPlaceDetails, searchPlaces } from '@athleit/db/places';
 import { space } from '@athleit/tokens';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
@@ -59,7 +59,7 @@ export function PlaceAutocomplete({
   const [status, setStatus] = useState<Status>('idle');
   const [pickError, setPickError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const session = useRef(createPlaceSession());
+  const [session] = useState(() => createPlaceSession());
   const countries = countryCodes?.join(',');
 
   const searcher = useMemo(
@@ -68,7 +68,7 @@ export function PlaceAutocomplete({
         fetcher: async (query) => {
           const r = await searchPlaces(supabase, {
             query,
-            sessionToken: session.current.token,
+            sessionToken: session.token,
             countryCodes: countries ? countries.split(',') : undefined,
           });
           if (r.error) throw new Error(r.error.message);
@@ -84,7 +84,7 @@ export function PlaceAutocomplete({
           setStatus('idle');
         },
       }),
-    [countries],
+    [countries, session],
   );
   useEffect(() => () => searcher.cancel(), [searcher]);
 
@@ -95,10 +95,10 @@ export function PlaceAutocomplete({
     setPickError(null);
     const r = await getPlaceDetails(supabase, {
       placeId: s.placeId,
-      sessionToken: session.current.token,
+      sessionToken: session.token,
       name: s.name,
     });
-    session.current.reset();
+    session.reset();
     if (r.error) return setPickError(friendlyError(r.error));
     onSelect(r.data.selection);
   }

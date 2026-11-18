@@ -61,7 +61,7 @@ export function PlaceAutocomplete({
   const [active, setActive] = useState(-1);
   const [pickError, setPickError] = useState<string | null>(null);
   const [width, setWidth] = useState<number | undefined>();
-  const session = useRef(createPlaceSession());
+  const [session] = useState(() => createPlaceSession());
   const countries = countryCodes?.join(',');
 
   const searcher = useMemo(
@@ -70,7 +70,7 @@ export function PlaceAutocomplete({
         fetcher: async (query) => {
           const r = await searchPlaces(getClient(), {
             query,
-            sessionToken: session.current.token,
+            sessionToken: session.token,
             countryCodes: countries ? countries.split(',') : undefined,
           });
           if (r.error) throw new Error(r.error.message);
@@ -87,7 +87,7 @@ export function PlaceAutocomplete({
           setStatus('idle');
         },
       }),
-    [countries],
+    [countries, session],
   );
   useEffect(() => () => searcher.cancel(), [searcher]);
 
@@ -97,10 +97,10 @@ export function PlaceAutocomplete({
     setPickError(null);
     const r = await getPlaceDetails(getClient(), {
       placeId: s.placeId,
-      sessionToken: session.current.token,
+      sessionToken: session.token,
       name: s.name,
     });
-    session.current.reset();
+    session.reset();
     if (r.error) {
       setPickError(friendlyError(r.error));
       return;
