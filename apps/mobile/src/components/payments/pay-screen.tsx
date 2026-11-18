@@ -286,7 +286,7 @@ function Checkout({
 }
 
 /** Parent Pay: "Amount due" over a 56px mono total, request cards, a lime Pay pill; Receipts tab. */
-export function PayScreen() {
+export function PayScreen({ embedded = false }: { embedded?: boolean }) {
   const { request } = useLocalSearchParams<{ request?: string }>();
   const { theme } = useTheme();
   const [tab, setTab] = useState<'due' | 'receipts'>('due');
@@ -309,7 +309,7 @@ export function PayScreen() {
 
   return (
     <View style={{ gap: space[4] }}>
-      <H1>Pay</H1>
+      {embedded ? null : <H1>Pay</H1>}
       <SegmentedControl
         label="Pay sections"
         value={tab}

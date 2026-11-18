@@ -76,3 +76,36 @@ export function paymentRequestStatusLabel(s: PaymentRequestStatus): string {
       return 'Cancelled';
   }
 }
+
+export type CollectionState = 'open' | 'due_soon' | 'overdue' | 'closed';
+
+/** Days ahead that count as "due soon" on the staff Pay list. */
+export const DUE_SOON_DAYS = 7;
+
+/**
+ * Where a payment request stands for staff: closed (not published any more, or nothing left to collect),
+ * overdue (past due with money outstanding), due soon (within a week), else open.
+ */
+export function collectionState(
+  a: { status: string; dueAt: string; outstandingCents: number; totalRequests: number },
+  now: Date = new Date(),
+): { state: CollectionState; daysLeft: number } {
+  const due = new Date(a.dueAt);
+  const daysLeft = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
+  if (a.status !== 'published' || (a.totalRequests > 0 && a.outstandingCents <= 0))
+    return { state: 'closed', daysLeft };
+  if (due.getTime() < now.getTime()) return { state: 'overdue', daysLeft };
+  if (daysLeft <= DUE_SOON_DAYS) return { state: 'due_soon', daysLeft };
+  return { state: 'open', daysLeft };
+}
+
+export function collectionStateLabel(state: CollectionState, daysLeft: number): string {
+  if (state === 'closed') return 'Closed';
+  if (state === 'overdue') return 'Overdue';
+  if (state === 'due_soon')
+    return daysLeft <= 0 ? 'Due today' : `Due in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`;
+  return 'Open';
+}
+
+export const audienceLabel = (audience: string) =>
+  audience === 'selected_players' ? 'Selected players' : 'Active roster';
