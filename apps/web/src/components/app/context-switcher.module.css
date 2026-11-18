@@ -76,3 +76,7 @@
 .option:has(.addIcon) {
   padding-left: 0;
 }
+
+.static {
+  cursor: default;
+}

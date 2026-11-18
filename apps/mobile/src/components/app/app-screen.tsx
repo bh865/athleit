@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Backdrop, Button, Sheet, TabBar, Text, ThemeToggle, type TabItem } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
+
+import { ADD } from './context-switcher';
 import { useAuth } from '@/lib/auth';
 import { useUnread } from '@/lib/use-unread';
 
@@ -19,7 +21,7 @@ const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts, userId } = useApp();
+  const { status, contexts, userId, addActions } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -124,6 +126,18 @@ export function AppScreen({ children }: { children: ReactNode }) {
             router.push('/notifications' as never);
           }}
         />
+        {addActions.map((a) => (
+          <Button
+            key={a}
+            title={ADD[a].label}
+            variant="ghost"
+            icon="plus"
+            onPress={() => {
+              setMore(false);
+              router.push(ADD[a].href as never);
+            }}
+          />
+        ))}
         <ThemeToggle />
         <Button title="Sign out" variant="ghost" icon="sign-out" onPress={() => void signOut()} />
       </Sheet>

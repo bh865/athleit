@@ -1,6 +1,6 @@
 'use client';
 
-import { contextPath, type AddRoleAction } from '@athleit/core';
+import { contextPath, switcherPlaces, type AddRoleAction } from '@athleit/core';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -9,16 +9,21 @@ import { Glass, Icon } from '@/components/ui';
 import { useApp } from './app-provider';
 import styles from './context-switcher.module.css';
 
-const ADD_LABEL: Record<AddRoleAction, { label: string; href: string }> = {
+export const ADD_LABEL: Record<AddRoleAction, { label: string; href: string }> = {
   'add-family': { label: 'Add a family', href: '/family/children/new' },
   'create-team': { label: 'Create a team', href: '/teams/new' },
   'create-club': { label: 'Create a club', href: '/clubs/new' },
   'join-team': { label: 'Join a team', href: '/join' },
 };
 
-/** Switch between roles and places ("Parent, family", "Coach, U10 Hawks", "Admin, Riverside"). */
+/**
+ * Switch between PLACES (teams and clubs). Roles show as a label ("Admin · Parent"). With exactly one
+ * place there is nothing to switch, so it is a static header with no dropdown; "Add a team / club /
+ * family" also lives in the account menu so single-place users can still reach it.
+ */
 export function ContextSwitcher() {
   const { contexts, active, setActive, addActions } = useApp();
+  const places = switcherPlaces(contexts);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -39,6 +44,21 @@ export function ContextSwitcher() {
     };
   }, [open]);
 
+  if (places.length <= 1) {
+    return (
+      <div className={styles.root}>
+        <div className={`${styles.trigger} ${styles.static}`} data-testid="context-switcher">
+          <span className={styles.text}>
+            <span className={styles.title}>{active?.title ?? 'Get started'}</span>
+            <span className={styles.subtitle}>
+              {active?.subtitle ?? 'Add a team or family below'}
+            </span>
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.root} ref={root}>
       <button
@@ -57,7 +77,7 @@ export function ContextSwitcher() {
       </button>
       {open && (
         <Glass solid level="modal" className={styles.menu} role="menu">
-          {contexts.map((c) => (
+          {places.map((c) => (
             <button
               key={c.key}
               type="button"
@@ -77,7 +97,7 @@ export function ContextSwitcher() {
               {c.key === active?.key && <Icon name="check" weight="fill" size="sm" />}
             </button>
           ))}
-          <p className={styles.heading}>Add a role</p>
+          <p className={styles.heading}>Add</p>
           {addActions.map((a) => (
             <button
               key={a}

@@ -35,7 +35,7 @@ export default function NewClubPage() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`club:${res.data}:admin`);
+    setActive(`club:${res.data}`);
     router.push(`/clubs/${res.data}`);
   }
 

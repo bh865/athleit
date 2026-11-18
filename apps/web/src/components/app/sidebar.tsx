@@ -4,16 +4,25 @@ import { payViewsFor } from '@athleit/core';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getUnreadTotal, subscribeToNotifications } from '@athleit/db/api';
 
 import { signOut } from '@/app/(auth)/actions';
-import { Badge, Button, Glass, Icon, IconButton, Logo, ThemeToggle } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Glass,
+  Icon,
+  IconButton,
+  Logo,
+  Popover,
+  ThemeToggle,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { useApp } from './app-provider';
-import { ContextSwitcher } from './context-switcher';
+import { ADD_LABEL, ContextSwitcher } from './context-switcher';
 import styles from './sidebar.module.css';
 
 interface NavItem {
@@ -25,7 +34,9 @@ interface NavItem {
 
 /** Glass sidebar: 248 wide on desktop; collapses to a top bar on narrow screens. */
 export function Sidebar() {
-  const { status, contexts, displayName, userId } = useApp();
+  const { status, contexts, displayName, userId, addActions } = useApp();
+  const addRef = useRef<HTMLButtonElement>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   // Open for one path only: navigating closes the drawer without a setState-in-effect.
@@ -123,6 +134,42 @@ export function Sidebar() {
           ))}
         </nav>
         <div className={styles.footer}>
+          <div className={styles.addWrap}>
+            <Button
+              ref={addRef}
+              variant="secondary"
+              fullWidth
+              aria-haspopup="menu"
+              aria-expanded={addOpen}
+              onClick={() => setAddOpen((o) => !o)}
+              data-testid="account-add"
+            >
+              <Icon name="plus" size="sm" /> Add or join
+            </Button>
+            <Popover
+              open={addOpen}
+              onClose={() => setAddOpen(false)}
+              anchor={addRef}
+              label="Add a team, club or family"
+            >
+              <ul className={styles.addList}>
+                {addActions.map((a) => (
+                  <li key={a}>
+                    <Link
+                      href={ADD_LABEL[a].href}
+                      className={styles.addItem}
+                      onClick={() => setAddOpen(false)}
+                    >
+                      <span className={styles.addIcon}>
+                        <Icon name="plus" size="sm" />
+                      </span>
+                      {ADD_LABEL[a].label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Popover>
+          </div>
           <ThemeToggle />
           <form action={signOut}>
             <Button

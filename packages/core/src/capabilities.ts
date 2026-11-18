@@ -93,12 +93,17 @@ const BY_ROLE: Record<string, Capability[]> = {
   ],
 };
 
-export function capabilitiesFor(ctx: Pick<AppContext, 'kind' | 'role'>): ReadonlySet<Capability> {
-  return new Set(BY_ROLE[`${ctx.kind}:${ctx.role}`] ?? []);
+export function capabilitiesFor(
+  ctx: Pick<AppContext, 'kind' | 'role'> & { roles?: readonly AppContext['role'][] },
+): ReadonlySet<Capability> {
+  const out = new Set<Capability>();
+  for (const r of ctx.roles ?? [ctx.role])
+    for (const c of BY_ROLE[`${ctx.kind}:${r}`] ?? []) out.add(c);
+  return out;
 }
 
 export function can(
-  ctx: Pick<AppContext, 'kind' | 'role'> | null,
+  ctx: (Pick<AppContext, 'kind' | 'role'> & { roles?: readonly AppContext['role'][] }) | null,
   capability: Capability,
 ): boolean {
   return ctx ? capabilitiesFor(ctx).has(capability) : false;
@@ -106,7 +111,9 @@ export function can(
 
 /** Union of capabilities across every role the user holds for one team/club/family. */
 export function capabilitiesForPlace(
-  contexts: readonly Pick<AppContext, 'kind' | 'role' | 'id'>[],
+  contexts: readonly (Pick<AppContext, 'kind' | 'role' | 'id'> & {
+    roles?: readonly AppContext['role'][];
+  })[],
   kind: AppContext['kind'],
   id: string,
 ): ReadonlySet<Capability> {

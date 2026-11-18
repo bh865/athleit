@@ -60,7 +60,7 @@ export default function NewTeamScreen() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`team:${res.data}:admin`);
+    setActive(`team:${res.data}`);
     router.replace(`/teams/${res.data}`);
   }
 

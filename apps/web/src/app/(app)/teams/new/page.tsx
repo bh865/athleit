@@ -68,7 +68,7 @@ export default function NewTeamPage() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`team:${res.data}:admin`);
+    setActive(`team:${res.data}`);
     router.push(`/teams/${res.data}`);
   }
 
