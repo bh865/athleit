@@ -9,6 +9,7 @@ import {
 import { iconNames } from '@athleit/ui-core';
 import { useState } from 'react';
 
+import { HomeGallery } from '@/components/home/gallery-parts';
 import { PayGallery, PayStaffGallery, PayStatesGallery } from '@/components/payments/gallery-parts';
 import {
   RegistrationDocsGallery,
@@ -343,6 +344,9 @@ function ThemePanel({ name }: { name: string }) {
       </Section>
       <Section title="Registration · waivers and documents">
         <RegistrationDocsGallery />
+      </Section>
+      <Section title="Home · attention and tiles">
+        <HomeGallery />
       </Section>
       <Section title="Sidebar · sheet · toast">
         <div className={styles.navDemo}>

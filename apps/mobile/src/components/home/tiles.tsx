@@ -36,7 +36,7 @@ interface LoadResult {
 }
 
 /** Skeleton while loading, retryable error, nothing at all when empty. One tile failing never blanks Home. */
-function Tile({
+export function Tile({
   id,
   title,
   res,
@@ -80,7 +80,7 @@ function Tile({
   );
 }
 
-function Stat({ v, l }: { v: number; l: string }) {
+export function Stat({ v, l }: { v: number; l: string }) {
   return (
     <View accessibilityLabel={`${v} ${l}`}>
       <Mono>{v}</Mono>

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ScrollView, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { HomeGallery } from '@/components/home/gallery-parts';
+
 import {
   Avatar,
   Backdrop,
@@ -223,6 +225,9 @@ function Panel({ name }: { name: string }) {
             <Card>
               <LoadingSkeleton />
             </Card>
+          </Section>
+          <Section title="Home · attention and tiles">
+            <HomeGallery />
           </Section>
           <Section title="Tab bar">
             <View style={{ height: space[12] * 2 }}>

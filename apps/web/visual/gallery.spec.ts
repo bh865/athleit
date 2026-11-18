@@ -35,6 +35,7 @@ for (const theme of ['light', 'dark'] as const) {
         'Registration · public page',
         'Registration · staff',
         'Registration · waivers and documents',
+        'Home · attention and tiles',
         'Sidebar · sheet · toast',
       ]) {
         await expect(panel.getByRole('region', { name })).toHaveScreenshot(
