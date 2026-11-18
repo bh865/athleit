@@ -49,18 +49,22 @@ insert into public.registration_notes (registration_id, author_id, body) values
 reset role;
 insert into public.registration_events (id, team_id, title, slug, status, capacity, waitlist_enabled, form_version_id, price_cents, payment_timing, payment_hold_minutes, opens_at, closes_at)
   values ('e5000000-0000-0000-0000-000000000005', 'a1000000-0000-0000-0000-00000000000a', 'Paid camp', 'paid-camp-aaa', 'open', 1, true, 'f2000000-0000-0000-0000-000000000001', 2500, 'at_submission', 30, now() - interval '1 day', now() + interval '9 days');
+insert into public.players (id, household_id, first_name, last_name, date_of_birth) values
+  ('91000000-0000-0000-0000-000000000001', '11000000-0000-0000-0000-000000000001', 'Ava', 'Adams', date '2016-05-05'),
+  ('92000000-0000-0000-0000-000000000002', '22000000-0000-0000-0000-000000000002', 'Pia', 'Park', date '2016-06-06');
+insert into public.connected_accounts (team_id, stripe_account_id, charges_enabled, details_submitted, payouts_enabled, onboarding_status) values ('a1000000-0000-0000-0000-00000000000a', 'acct_rules1', true, true, true, 'ready');
 select throws_ok($$ select * from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'gina@example.test', '555-0100', 'Father', 'Kid', 'Kidson', date '2016-05-05', null, null, '{"shirt":"s"}'::jsonb, '{}'::jsonb) $$, '23514', 'account_required', 'a paid at_submission event refuses anonymous submissions');
-select lives_ok($$ select * from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'gina@example.test', '555-0100', 'Father', 'Kid', 'Kidson', date '2016-05-05', null, 'a4444444-4444-4444-4444-444444444444', '{"shirt":"s"}'::jsonb, '{}'::jsonb) $$, 'a signed-in guardian can submit');
+select lives_ok($$ select * from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'gina@example.test', '555-0100', 'Father', 'Kid', 'Kidson', date '2016-05-05', '91000000-0000-0000-0000-000000000001', 'a4444444-4444-4444-4444-444444444444', '{"shirt":"s"}'::jsonb, '{}'::jsonb) $$, 'a signed-in guardian can submit');
 select is((select (hold_expires_at between now() + interval '29 minutes' and now() + interval '31 minutes')::text from public.registrations where registration_event_id = 'e5000000-0000-0000-0000-000000000005'), 'true', 'an unpaid hold is set from payment_hold_minutes');
 select is(private.registration_taken('e5000000-0000-0000-0000-000000000005'), 1, 'a running hold takes a spot');
-select is((select status from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'second@example.test', '555-0100', 'Father', 'Second', 'Kidson', date '2016-05-05', null, 'a8888888-8888-8888-8888-888888888888', '{"shirt":"s"}'::jsonb, '{}'::jsonb)), 'waitlisted', 'the next one is waitlisted when the held spot fills capacity');
-select is((select waitlist_position from public.registrations where player_first_name = 'Second'), 1, 'with position 1');
+select is((select status from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'second@example.test', '555-0100', 'Father', 'Pia', 'Kidson', date '2016-05-05', '92000000-0000-0000-0000-000000000002', 'a8888888-8888-8888-8888-888888888888', '{"shirt":"s"}'::jsonb, '{}'::jsonb)), 'waitlisted', 'the next one is waitlisted when the held spot fills capacity');
+select is((select waitlist_position from public.registrations where player_first_name = 'Pia' and registration_event_id = 'e5000000-0000-0000-0000-000000000005'), 1, 'with position 1');
 update public.registrations set hold_expires_at = now() - interval '1 minute' where registration_event_id = 'e5000000-0000-0000-0000-000000000005' and status = 'submitted';
 select is(private.registration_taken('e5000000-0000-0000-0000-000000000005'), 0, 'an expired hold stops taking a spot');
 update public.registrations set hold_expires_at = null where registration_event_id = 'e5000000-0000-0000-0000-000000000005' and status = 'submitted';
 select is(private.registration_taken('e5000000-0000-0000-0000-000000000005'), 1, 'a paid hold (no expiry) keeps its spot');
 update public.registration_events set waitlist_enabled = false where id = 'e5000000-0000-0000-0000-000000000005';
-select throws_ok($$ select * from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'third@example.test', '555-0100', 'Father', 'Third', 'Kidson', date '2016-05-05', null, 'a4444444-4444-4444-4444-444444444444', '{"shirt":"s"}'::jsonb, '{}'::jsonb) $$, '23514', 'registration_full', 'a full event without a waitlist refuses');
+select throws_ok($$ select * from public.svc_create_registration('e5000000-0000-0000-0000-000000000005', 'f2000000-0000-0000-0000-000000000001', 'Gina Guardian', 'third@example.test', '555-0100', 'Father', 'Kid', 'Kidson', date '2016-05-05', '91000000-0000-0000-0000-000000000001', 'a4444444-4444-4444-4444-444444444444', '{"shirt":"s"}'::jsonb, '{}'::jsonb) $$, '23514', 'registration_full', 'a full event without a waitlist refuses');
 
 select * from finish();
 rollback;
