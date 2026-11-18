@@ -9,6 +9,7 @@ import {
   previewOf,
   teamForScreen,
   type RsvpStatus,
+  mapsUrl,
 } from '@athleit/core';
 import { getJoinRequests, getRoster, getThreadList } from '@athleit/db/api';
 import { getNextUp } from '@athleit/db/scheduling';
@@ -77,6 +78,13 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
   }
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, zone ?? 'UTC');
   const place = top.location_name ?? top.location_text ?? null;
+  const mapHref = mapsUrl({
+    placeId: top.location_place_id,
+    lat: top.location_lat,
+    lng: top.location_lng,
+    address: top.location_address,
+    name: place,
+  });
   const children = (top.children as unknown as Child[]) ?? [];
   return (
     <Card className={styles.hero} data-testid="next-up">
@@ -141,7 +149,7 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
           <Text variant="bodyBold">{place}</Text>
           <a
             className={styles.mapLink}
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`}
+            href={mapHref ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
           >
