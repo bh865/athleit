@@ -69,6 +69,7 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/title_required/, 'Give this thread a title.'],
   [/thread_archived/, 'This conversation is archived.'],
   [/rate_limited/, 'You are sending messages too quickly. Wait a moment and try again.'],
+  [/places_unavailable|not_configured/, 'Address search is not available right now. You can still type the address.'],
   [/empty_message/, 'Write a message or attach a file.'],
   [/body_too_long/, 'That message is too long.'],
   [/message_removed/, 'That message was removed.'],

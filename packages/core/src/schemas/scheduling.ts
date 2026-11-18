@@ -151,6 +151,7 @@ export const locationInputSchema = z
     notes: z.string().trim().max(500).nullish(),
     lat: z.number().min(-90).max(90).nullish(),
     lng: z.number().min(-180).max(180).nullish(),
+    place_id: z.string().trim().min(1).max(300).nullish(),
   })
   .refine((l) => (l.lat == null) === (l.lng == null), {
     message: 'Give both latitude and longitude, or neither',

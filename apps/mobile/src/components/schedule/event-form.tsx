@@ -5,6 +5,8 @@ import {
   createEventSchema,
   friendlyError,
   localDateKey,
+  locationFromSelection,
+  type PlaceSelection,
   zonedTimeToInstant,
   type EventType,
 } from '@athleit/core';
@@ -22,7 +24,16 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { Choice, FormMessage } from '@/components/app/kit';
-import { Button, Chip, DatePicker, Sheet, Text, TextField, TimePicker } from '@/components/ui';
+import {
+  Button,
+  Chip,
+  DatePicker,
+  PlaceAutocomplete,
+  Sheet,
+  Text,
+  TextField,
+  TimePicker,
+} from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { viewerZone } from '@/lib/viewer-zone';
 
@@ -71,6 +82,8 @@ function Body({
   const [end, setEnd] = useState('19:00');
   const [loc, setLoc] = useState(NONE);
   const [locText, setLocText] = useState('');
+  // A suggestion picked for "New place…" (null when only typed): saved with its full address and coordinates.
+  const [picked, setPicked] = useState<PlaceSelection | null>(null);
   const [opp, setOpp] = useState(NONE);
   const [oppName, setOppName] = useState('');
   const [homeAway, setHomeAway] = useState<'none' | 'home' | 'away'>('none');
@@ -109,7 +122,10 @@ function Body({
       let locationId = loc && loc !== TYPED ? loc : null;
       const locationText = loc === TYPED ? locText.trim() || null : null;
       if (loc === TYPED && locationText) {
-        const r = await addLocation(supabase, { team_id: teamId, name: locationText });
+        const r = await addLocation(supabase, {
+          team_id: teamId,
+          ...(picked ? locationFromSelection(picked) : { name: locationText.slice(0, 100) }),
+        });
         if (r.error) return setError(friendlyError(r.error));
         locationId = r.data?.id ?? null;
       }
@@ -189,7 +205,20 @@ function Body({
           ]}
         />
         {loc === TYPED ? (
-          <TextField label="Place name" value={locText} onChangeText={setLocText} maxLength={100} />
+          <PlaceAutocomplete
+            label="Place name or address"
+            value={locText}
+            verified={picked !== null}
+            onChange={setLocText}
+            onSelect={(p) => {
+              setPicked(p);
+              setLocText(p.formattedAddress);
+            }}
+            onClear={() => {
+              setPicked(null);
+              setLocText('');
+            }}
+          />
         ) : null}
         {type === 'game' ? (
           <>

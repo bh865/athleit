@@ -5,6 +5,7 @@ import {
   describeEventTime,
   queryRangeForDays,
   localDateKey,
+  mapsUrl,
   type RsvpStatus,
 } from '@athleit/core';
 import {
@@ -244,6 +245,13 @@ export function EventDetailView({
   const t = describeEventTime(event.starts_at, event.ends_at, event.timezone, viewerZone);
   const cancelled = event.status === 'cancelled';
   const isGame = event.type === 'game';
+  const mapHref = mapsUrl({
+    placeId: event.location_place_id,
+    lat: event.location_lat,
+    lng: event.location_lng,
+    address: event.location_address,
+    name: event.location_name ?? event.location_text,
+  });
   const ended = new Date(event.ends_at) < new Date();
   const started = new Date(event.starts_at) <= new Date();
   const counts = summary
@@ -299,14 +307,10 @@ export function EventDetailView({
             <Icon name="map-pin" />
             <span>
               {event.location_name ?? event.location_text}
-              {event.location_address ? (
+              {mapHref ? (
                 <>
                   {' '}
-                  <a
-                    href={`https://maps.apple.com/?q=${encodeURIComponent(event.location_address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={mapHref} target="_blank" rel="noreferrer">
                     Open in Maps
                   </a>
                 </>

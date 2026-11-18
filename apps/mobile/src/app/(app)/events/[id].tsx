@@ -4,6 +4,7 @@ import {
   localDateKey,
   queryRangeForDays,
   type RsvpStatus,
+  mapsUrl,
 } from '@athleit/core';
 import {
   getEvent,
@@ -17,7 +18,7 @@ import {
 import { componentTokens, radius, space } from '@athleit/tokens';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { Notice } from '@/components/app/kit';
@@ -145,6 +146,13 @@ export default function EventScreen() {
   const ended = new Date(event.ends_at) < new Date();
   const started = new Date(event.starts_at) <= new Date();
   const place = event.location_name ?? event.location_text;
+  const mapHref = mapsUrl({
+    placeId: event.location_place_id,
+    lat: event.location_lat,
+    lng: event.location_lng,
+    address: event.location_address,
+    name: place,
+  });
   const counts = summary
     ? [
         { v: summary.going, l: 'Going' },
@@ -193,6 +201,7 @@ export default function EventScreen() {
             icon="map-pin"
             text={place}
             sub={event.location_address ?? undefined}
+            mapHref={mapHref}
             last={!event.opponent_name}
           />
         ) : null}
@@ -322,15 +331,26 @@ function Fact({
   text,
   sub,
   last,
+  mapHref,
 }: {
   icon: 'calendar-blank' | 'map-pin' | 'flag';
   text: string;
   sub?: string | undefined;
   last?: boolean;
+  /** Makes the row open the place in Maps. */
+  mapHref?: string | null;
 }) {
   const { theme } = useTheme();
+  const Row = mapHref ? Pressable : View;
   return (
-    <View
+    <Row
+      {...(mapHref
+        ? {
+            accessibilityRole: 'link' as const,
+            accessibilityLabel: `${text}, open in Maps`,
+            onPress: () => void Linking.openURL(mapHref),
+          }
+        : {})}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -349,7 +369,12 @@ function Fact({
             {sub}
           </Text>
         ) : null}
+        {mapHref ? (
+          <Text variant="caption" style={{ textDecorationLine: 'underline' }}>
+            Open in Maps
+          </Text>
+        ) : null}
       </View>
-    </View>
+    </Row>
   );
 }

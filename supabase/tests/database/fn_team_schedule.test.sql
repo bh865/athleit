@@ -48,7 +48,7 @@ insert into public.team_players (id, team_id, player_id, jersey_number, status) 
   ('d5000000-0000-0000-0000-000000000005', 'a2000000-0000-0000-0000-00000000000b', '95000000-0000-0000-0000-000000000005', 8, 'active');
 
 reset role;
-insert into public.locations (id, team_id, name, address) values ('10c00000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'Field 3', '1 Park Rd');
+insert into public.locations (id, team_id, name, address, lat, lng, place_id) values ('10c00000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'Field 3', '1 Park Rd', 40.1, -73.9, 'ChIJtest1');
 insert into public.opponents (id, team_id, name) values ('10a00000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'Hawks');
 insert into public.events (id, team_id, type, title, starts_at, ends_at, timezone, location_id, opponent_id, home_away) values
   ('e1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-00000000000a', 'game', 'Past game', now() - interval '3 days', now() - interval '3 days' + interval '2 hours', 'UTC', '10c00000-0000-0000-0000-00000000000a', '10a00000-0000-0000-0000-00000000000a', 'home'),
@@ -65,6 +65,7 @@ reset role; select set_config('request.jwt.claims', '{"sub":"a2222222-2222-2222-
 select is((select string_agg(title, ',' order by starts_at) from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'upcoming')), 'Soon,Cancelled,Later', 'upcoming: soonest first, cancelled events stay visible');
 select is((select string_agg(title, ',') from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'past')), 'Past game', 'past events are listed separately');
 select is((select location_name || '/' || opponent_name || '/' || our_score || '-' || their_score || '/' || outcome from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'past')), 'Field 3/Hawks/2-1/win', 'joined location, opponent and result');
+select is((select location_lat || '/' || location_lng || '/' || location_place_id from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'past')), '40.1/-73.9/ChIJtest1', 'the place coordinates and id come through');
 select is((select going || '/' || no_reply from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'upcoming') where title = 'Soon'), '1/2', 'RSVP counts are included');
 select is((select cancelled_reason from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'upcoming') where title = 'Cancelled'), 'Rain', 'the cancelled reason is shown');
 select is((select count(*)::int from public.team_schedule('a1000000-0000-0000-0000-00000000000a', 'upcoming', 2, 0)), 2, 'paging: limit');

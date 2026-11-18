@@ -175,3 +175,13 @@ Phase 4 Pay and Collection screens).
 
 Note on `ListGroup`: it renders a `<ul>`, so every `ListRow` inside it must be wrapped in an `<li>` (the row separators are styled on `li`). The
 registration screens follow that; axe flags a bare row as a `list` violation.
+
+## Home dashboard (attention strip and tiles)
+
+| Screen / component                               | Composed from                           | Notes                                                                                                                                                                                                              |
+| ------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Attention strip (web, mobile)                    | Icon, Text, caret, Sheet for "+N more"  | Only the first chip is lime; every chip pairs an icon with text. Built locally in `components/home` from tokens. **Deviation:** not yet promoted to a ui-core `Chip` variant; do that if a second screen needs it. |
+| Home tile frame (`TileShell` web, `Tile` mobile) | Card, Text, LoadingSkeleton, ErrorState | Skeleton, retryable error, hides when empty.                                                                                                                                                                       |
+| Stat row                                         | Mono numerals and caption in one row    | Existing tokens only (`mono`).                                                                                                                                                                                     |
+
+Tile visibility is `homeTileIds(contexts, active)` in `packages/core/src/home-tiles.ts`, from `capabilitiesForPlace`; the strip is derived by `buildAttentionItems` + `deriveAttention`. Not built yet: amount due and collection in the new frame, announcement, documents, family, places, members, calendar, notification health, setup checklist, and the "For your team / For your family" grouping.

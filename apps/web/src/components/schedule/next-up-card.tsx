@@ -1,6 +1,6 @@
 'use client';
 
-import { describeEventTime, type RsvpStatus } from '@athleit/core';
+import { describeEventTime, mapsUrl, type RsvpStatus } from '@athleit/core';
 import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
@@ -32,6 +32,13 @@ export function NextUpCard() {
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, viewerZone);
   const children = (top.children as unknown as Child[]) ?? [];
   const place = top.location_name ?? top.location_text ?? null;
+  const mapHref = mapsUrl({
+    placeId: top.location_place_id,
+    lat: top.location_lat,
+    lng: top.location_lng,
+    address: top.location_address,
+    name: place,
+  });
   return (
     <div className={styles.layout} data-testid="next-up">
       <Card className={styles.layout}>
@@ -42,7 +49,19 @@ export function NextUpCard() {
         <Link href={`/events/${top.event_id}`} className={styles.detailTitle}>
           {top.title}
         </Link>
-        {place ? <span className={styles.meta}>{place}</span> : null}
+        {place ? (
+          <span className={styles.meta}>
+            {place}
+            {mapHref ? (
+              <>
+                {' · '}
+                <a href={mapHref} target="_blank" rel="noopener noreferrer">
+                  Open in Maps
+                </a>
+              </>
+            ) : null}
+          </span>
+        ) : null}
         {children.map((c) => (
           <RsvpControls
             key={c.player_id}

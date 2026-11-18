@@ -191,3 +191,38 @@ because calendar apps cannot send a JWT; the token is the credential).
   limits, token never logged); `fn_calendar_feed_events` and `fn_calendar_feed_tokens` cover the database side; the e2e test
   hits the deployed function. Subscribe by pasting the link into Apple Calendar (File > New Calendar Subscription) or Google
   Calendar (Other calendars > From URL).
+
+## Address search (Google Places)
+
+Every place or address a coach types (saved places, an event's "Add a new place…", a registration event's Location) uses
+`PlaceAutocomplete` (web: `apps/web/src/components/ui/place-autocomplete.tsx`, mobile: `apps/mobile/src/components/ui/place-autocomplete.tsx`).
+Picking a suggestion saves the formatted address, latitude, longitude and Google place id; typing without picking still saves
+(the coordinates and place id stay empty, so "Open in Maps" falls back to a text search).
+
+- **Edge Function `places`** (`supabase/functions/places`, logic in `_shared/places/google.ts`) proxies Google Places API (New):
+  `autocomplete` (min 3 characters, 120 max, `includedRegionCodes` defaults to `["us"]`, overridable with `countryCodes`) and
+  `details`. It needs a signed-in user (`verify_jwt = true`) and is rate limited per user (60 a minute, the shared `api_rate_limits`
+  bucket). One session token (UUID v4) covers a typing session: the same token goes on every autocomplete call and the final
+  details call, and a new token starts after each pick. Details asks for the single field mask `id,formattedAddress,location,addressComponents`
+  (no displayName, photos or reviews), the cheapest Details SKU; the suggested place name is the prediction's main text.
+- **Secret:** `GOOGLE_PLACES_API_KEY` is a Supabase Edge Function secret only. It is not in any `.env.example`, any `NEXT_PUBLIC_*` or
+  `EXPO_PUBLIC_*` value, or any client bundle. Set it with `pnpm supabase secrets set GOOGLE_PLACES_API_KEY=<key> --project-ref <ref>`
+  and deploy with `pnpm supabase functions deploy places`. In Google Cloud enable "Places API (New)", restrict the key to that API,
+  and set a daily quota. Without the key the function answers `not_configured` and the forms say search is unavailable; typing still works.
+  For local web development, `ALLOWED_ORIGINS` (or `APP_URL`) must list the web origin, like the payment functions.
+- **Data stored:** `locations.address`, `lat`, `lng` and the new `place_id` (migration `20260401000000_locations_place_id`), and
+  `events.location_text` / registration `location_text` as plain text. Nothing else from Google is stored. The schedule reads
+  (`team_schedule`, `household_schedule`, `next_up`, the range reads, `get_event`, `calendar_feed_events`) return `location_lat`,
+  `location_lng` and `location_place_id`.
+- **Maps links:** `mapsUrl()` in `@athleit/core` builds `https://www.google.com/maps/search/?api=1&query=<address>&query_place_id=<id>`
+  (text search when there is no place id) and is used by Home, the event page, both next-up cards and the mobile event screen. The ICS
+  feed puts the full address in `LOCATION` and adds `GEO` when coordinates exist.
+- **Attribution:** suggestions show "Powered by Google" because they appear without a Google map.
+- **Terms to verify (not legal advice):** Google's Places terms limit caching Places content, with `place_id` explicitly allowed to be
+  stored; latitude and longitude are only allowed to be cached for a limited time. Persisting the lat/lng of a place the user chose, as
+  their own data, is the part to confirm against the current Google Maps Platform Service Specific Terms. The mitigation is that
+  `place_id` is the durable key: if coordinates must expire, null `lat`/`lng` (they are optional) and the map link keeps working from
+  the place id and address.
+- **Not built yet (phase 2):** the public registration `address` field. It is logged-out traffic (abuse and cost) and parents' home
+  addresses (see `registration-privacy.md`), so it needs Turnstile or IP rate limiting and a decision on whether typed queries should go
+  to Google at all.

@@ -26,3 +26,4 @@ export {
   type DatePickerProps,
   type TimePickerProps,
 } from './date-picker';
+export { PlaceAutocomplete, type PlaceAutocompleteProps } from './place-autocomplete';

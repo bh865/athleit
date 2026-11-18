@@ -1,8 +1,8 @@
-import { describeEventTime } from '@athleit/core';
+import { describeEventTime, mapsUrl } from '@athleit/core';
 import { getNextUp } from '@athleit/db/scheduling';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { ListGroup, Text, useTheme } from '@/components/ui';
 import { ListItem } from '@/components/app/kit';
@@ -24,6 +24,13 @@ export function NextUpCard() {
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, viewerZone());
   const kids = (top.children as unknown as ChildRsvp[]) ?? [];
   const place = top.location_name ?? top.location_text;
+  const mapHref = mapsUrl({
+    placeId: top.location_place_id,
+    lat: top.location_lat,
+    lng: top.location_lng,
+    address: top.location_address,
+    name: place,
+  });
   return (
     <View style={{ gap: space[4] }} testID="next-up">
       <View
@@ -44,9 +51,17 @@ export function NextUpCard() {
           <Text variant="heading">{top.title}</Text>
         </Pressable>
         {place ? (
-          <Text variant="caption" muted>
-            {place}
-          </Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={`${place}, open in Maps`}
+            disabled={!mapHref}
+            onPress={() => mapHref && void Linking.openURL(mapHref)}
+          >
+            <Text variant="caption" muted>
+              {place}
+              {mapHref ? ' · Open in Maps' : ''}
+            </Text>
+          </Pressable>
         ) : null}
         {kids.length > 0 ? <RsvpActions eventId={top.event_id} kids={kids} compact /> : null}
         {top.is_staff ? (

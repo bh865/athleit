@@ -947,6 +947,7 @@ export type Database = {
           lng: number | null
           name: string
           notes: string | null
+          place_id: string | null
           team_id: string
           updated_at: string
         }
@@ -959,6 +960,7 @@ export type Database = {
           lng?: number | null
           name: string
           notes?: string | null
+          place_id?: string | null
           team_id: string
           updated_at?: string
         }
@@ -971,6 +973,7 @@ export type Database = {
           lng?: number | null
           name?: string
           notes?: string | null
+          place_id?: string | null
           team_id?: string
           updated_at?: string
         }
@@ -3219,7 +3222,10 @@ export type Database = {
           home_away: string
           id: string
           location_address: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           notes: string
           opponent_name: string
@@ -3512,7 +3518,10 @@ export type Database = {
           is_staff: boolean
           location_address: string
           location_id: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           notes: string
           opponent_id: string
@@ -3734,7 +3743,10 @@ export type Database = {
           event_id: string
           home_away: string
           location_address: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           opponent_name: string
           our_score: number
@@ -3763,7 +3775,10 @@ export type Database = {
           event_id: string
           home_away: string
           location_address: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           opponent_name: string
           our_score: number
@@ -3885,7 +3900,10 @@ export type Database = {
           home_away: string
           is_staff: boolean
           location_address: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           maybe: number
           no_reply: number
@@ -4354,7 +4372,10 @@ export type Database = {
           id: string
           location_address: string
           location_id: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           maybe: number
           no_reply: number
@@ -4387,7 +4408,10 @@ export type Database = {
           id: string
           location_address: string
           location_id: string
+          location_lat: number
+          location_lng: number
           location_name: string
+          location_place_id: string
           location_text: string
           maybe: number
           no_reply: number

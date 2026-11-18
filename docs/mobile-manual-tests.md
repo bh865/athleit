@@ -182,3 +182,17 @@ Run each with the team as the last-used place (switch to the team, close and reo
 3. **Add.** More lists Add a team / Create a club / Join a team (and Add a family without a household) even with a single place.
 4. **Old saved place.** Update from a build that stored `team:<id>:<role>`: the app opens the same team (no reset to the first place).
 5. **Roster.** More > Roster opens the active team's roster. Staff: statuses, guardian contacts, add and edit. Parent or player: first name, jersey number and position only. The team screen's Overview tab links to it.
+
+## Home dashboard (attention chips and tiles)
+
+Chips and tiles come from `homeTileIds` and the attention builder in `packages/core`; no new backend.
+
+1. **Parent.** A game within 48 hours with no RSVP for a child shows a chip "RSVP for <child>" (first chip is lime). An unpaid request shows a payment chip; a registration awaiting a waiver shows "Sign waiver". Each chip has an icon and text and opens the right screen.
+2. **Caught up.** With nothing open, the strip is replaced by one quiet line, "You're all caught up".
+3. **Overflow.** With more than four open actions, the last chip reads "+N more" and opens a sheet listing all of them.
+4. **Coach or admin.** "This week" shows going and no-reply counts; "Join requests" lists pending requests (first name of the child only) and opens the requests screen; "Waivers" shows signed and missing counts and first names, never signed text.
+5. **Admin and parent.** Both sets of chips and tiles appear in one place.
+6. **Player (13+).** No join requests, waiver counts or staff chips.
+7. **Parent not yet on a roster.** No schedule or team tiles; amount due and family remain.
+8. **Failure.** Turn on airplane mode and pull to refocus: a tile that fails shows "Couldn't load this" with Try again while the rest of Home stays up.
+9. **Freshness.** Answer an RSVP elsewhere, return to Home: the chip is gone (refetch on focus).

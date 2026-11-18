@@ -25,12 +25,15 @@ export function RsvpControls({
   showName,
   disabled,
   onChanged,
+  layout = 'stack',
 }: {
   eventId: string;
   child: ChildRsvp;
   showName: boolean;
   disabled?: boolean;
   onChanged?: () => void;
+  /** "row": name and status pill on top, Going / Can't go / Maybe in one row (Home). */
+  layout?: 'stack' | 'row';
 }) {
   const [status, setStatus] = useState<RsvpStatus | null>(child.status);
   const [error, setError] = useState<{ message: string; next: RsvpStatus } | null>(null);
@@ -56,6 +59,54 @@ export function RsvpControls({
   }
 
   const current = status ? RSVP_LABELS[status] : 'No reply yet';
+  if (layout === 'row') {
+    const opts: { key: RsvpStatus; label: string; icon?: 'check-circle' }[] = [
+      { key: 'going', label: 'Going', icon: 'check-circle' },
+      { key: 'not_going', label: 'Can’t go' },
+      { key: 'maybe', label: 'Maybe' },
+    ];
+    return (
+      <div className={styles.rsvpBlock} data-testid="rsvp-controls" data-player={child.first_name}>
+        <div className={styles.rsvpHead}>
+          <span className={styles.childName}>{child.first_name}</span>
+          <span className={styles.statusPill} role="status" aria-live="polite">
+            <Icon name={status ? 'check-circle' : 'question'} weight="fill" size="sm" />
+            <span className={styles.srOnly}>{child.first_name}: </span>
+            {current}
+          </span>
+        </div>
+        <div
+          className={styles.rsvpButtons}
+          role="group"
+          aria-label={`RSVP for ${child.first_name}`}
+        >
+          {opts.map((o) => (
+            <Button
+              key={o.key}
+              variant={status === o.key ? 'primary' : 'secondary'}
+              aria-pressed={status === o.key}
+              aria-label={`${child.first_name}: ${o.label}`}
+              disabled={disabled || pending}
+              onClick={() => choose(o.key)}
+            >
+              {o.icon ? (
+                <Icon name={o.icon} weight={status === o.key ? 'fill' : 'regular'} />
+              ) : null}{' '}
+              {o.label}
+            </Button>
+          ))}
+        </div>
+        {error ? (
+          <p className={styles.banner} role="alert">
+            {error.message}{' '}
+            <Button variant="secondary" onClick={() => choose(error.next)}>
+              Retry
+            </Button>
+          </p>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className={styles.child} data-testid="rsvp-controls" data-player={child.first_name}>
       {showName ? <span className={styles.childName}>{child.first_name}</span> : null}

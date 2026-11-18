@@ -23,6 +23,9 @@ export interface FeedEvent {
   timezone: string;
   location_name: string | null;
   location_address: string | null;
+  /** Present when the place was picked from address search; adds a GEO property. */
+  location_lat?: number | null;
+  location_lng?: number | null;
   location_text: string | null;
   opponent_name: string | null;
   home_away: string | null;
@@ -225,6 +228,8 @@ function eventLines(e: FeedEvent, useTz: boolean, appUrl?: string): string[] {
     `SUMMARY:${escapeText(e.title)}`,
   ];
   if (place) lines.push(`LOCATION:${escapeText(place)}`);
+  if (place && e.location_lat != null && e.location_lng != null)
+    lines.push(`GEO:${e.location_lat.toFixed(6)};${e.location_lng.toFixed(6)}`);
   lines.push(
     `DESCRIPTION:${escapeText(desc.join('\n'))}`,
     `CATEGORIES:${escapeText(e.type.toUpperCase())}`,

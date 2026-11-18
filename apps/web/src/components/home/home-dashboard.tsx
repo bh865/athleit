@@ -2,25 +2,49 @@
 
 import {
   capabilitiesForPlace,
+  homeTileIds,
+  rolesLabel,
   describeEventTime,
   payViewsFor,
   previewOf,
   teamForScreen,
   type RsvpStatus,
+  mapsUrl,
 } from '@athleit/core';
 import { getJoinRequests, getRoster, getThreadList } from '@athleit/db/api';
 import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
-import { DueCard, StaffPaymentsCard } from '@/components/payments/home-cards';
+import { StaffPaymentsCard } from '@/components/payments/home-cards';
 import { RsvpControls } from '@/components/schedule/rsvp-controls';
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
+import {
+  AnnouncementTile,
+  CalendarTile,
+  DueTile,
+  DocumentsTile,
+  FamilyTile,
+  NotificationHealthTile,
+  PayoutsTile,
+  PlacesTile,
+  SetupTile,
+} from './more-tiles';
+import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile, WeekTile } from './tiles';
+import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
+import { useHomeData } from './use-home-data';
+
+/** "2m", "1h", "3d". */
+const ago = (iso: string) => {
+  const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+  return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`;
+};
 
 const greeting = (d: Date) => {
   const h = d.getHours();
@@ -54,6 +78,13 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
   }
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, zone ?? 'UTC');
   const place = top.location_name ?? top.location_text ?? null;
+  const mapHref = mapsUrl({
+    placeId: top.location_place_id,
+    lat: top.location_lat,
+    lng: top.location_lng,
+    address: top.location_address,
+    name: place,
+  });
   const children = (top.children as unknown as Child[]) ?? [];
   return (
     <Card className={styles.hero} data-testid="next-up">
@@ -64,10 +95,26 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
         <Link href={`/events/${top.event_id}`} className={styles.heroTitle}>
           {top.title}
         </Link>
-        <p className={styles.meta}>
-          {t.dateLabel} · {t.startLabel}
-          {place ? ` · ${place}` : ''}
-        </p>
+        <ul className={styles.metaRow}>
+          <li>
+            <Icon name="clock" size="sm" /> {t.startLabel}
+          </li>
+          {place ? (
+            <li>
+              <Icon name="map-pin" size="sm" /> {place}
+            </li>
+          ) : null}
+          {top.home_away ? (
+            <li>
+              <Icon name="house" size="sm" /> {top.home_away === 'home' ? 'Home' : 'Away'}
+            </li>
+          ) : null}
+        </ul>
+        {top.arrive_early_minutes ? (
+          <p className={styles.info}>
+            <Icon name="info" size="sm" /> Arrive {top.arrive_early_minutes} min early for warm-up
+          </p>
+        ) : null}
         {top.is_staff ? (
           <div className={styles.counts} role="group" aria-label="RSVP counts">
             {[
@@ -90,6 +137,7 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
             eventId={top.event_id}
             child={c}
             showName={children.length > 1}
+            layout="row"
           />
         ))}
       </div>
@@ -101,7 +149,7 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
           <Text variant="bodyBold">{place}</Text>
           <a
             className={styles.mapLink}
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`}
+            href={mapHref ?? undefined}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -133,8 +181,23 @@ function MessagesCard({ teamId }: { teamId: string }) {
             return (
               <li key={r.thread_id}>
                 <Link href={`/messages/${r.thread_id}`} className={styles.thread}>
+                  <span className={styles.threadIcon} aria-hidden>
+                    <Icon
+                      name={
+                        r.type === 'announcement'
+                          ? 'megaphone'
+                          : r.type === 'group'
+                            ? 'users-three'
+                            : 'user'
+                      }
+                      size="md"
+                    />
+                  </span>
                   <span className={styles.threadText}>
-                    <span className={styles.threadTitle}>
+                    {r.type === 'announcement' ? (
+                      <span className={styles.threadKicker}>Announcement</span>
+                    ) : null}
+                    <span className={unread ? styles.threadTitleUnread : styles.threadTitle}>
                       {r.title ?? r.other_name ?? 'Message'}
                     </span>
                     <span className={styles.threadPreview}>
@@ -149,7 +212,10 @@ function MessagesCard({ teamId }: { teamId: string }) {
                       )}
                     </span>
                   </span>
-                  {unread ? <span className={styles.dot} aria-label="Unread" /> : null}
+                  {r.last_message_at ? (
+                    <span className={styles.ago}>{ago(r.last_message_at)}</span>
+                  ) : null}
+                  {unread ? <span className={styles.dot} role="img" aria-label="Unread" /> : null}
                 </Link>
               </li>
             );
@@ -221,6 +287,19 @@ export function HomeDashboard() {
   const first = displayName?.split(' ')[0];
   const staff = Boolean(team?.isStaff);
   const clubAdmin = contexts.find((c) => c.kind === 'club');
+  const { attention } = useHomeData(contexts, active);
+  const tiles = new Set(homeTileIds(contexts, active));
+  const teamId = team?.id ?? null;
+  const staffReg = Boolean(staff && caps.has('registration.view'));
+  const showTeamGroup = Boolean(staff || views.staff || (clubAdmin && !team) || tiles.has('setup'));
+  const showFamilyGroup = Boolean(
+    views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup),
+  );
+  const teamRoles = team
+    ? (contexts.find((c) => c.kind === 'team' && c.id === team.id)?.roles ?? [])
+    : [];
+  const teamScope = team ? `${team.title} · ${rolesLabel(teamRoles)}` : (clubAdmin?.title ?? '');
+  const familyScope = contexts.find((c) => c.kind === 'family')?.title ?? '';
 
   return (
     <div className={styles.page}>
@@ -239,18 +318,42 @@ export function HomeDashboard() {
             </ButtonLink>
           ) : (
             <ButtonLink href="/schedule" variant="secondary">
-              Schedule
+              <Icon name="calendar-blank" size="sm" /> Schedule
             </ButtonLink>
           )
         }
       />
-      <NextUpHero canManage={staff} />
+      <AttentionStrip shown={attention.shown} more={attention.more} />
+      <div className={styles.heroRow}>
+        <NextUpHero canManage={staff} />
+        {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
+      </div>
+      <div className={styles.heroRow}>
+        {tiles.has('thisWeek') ? (
+          <WeekTile teamId={teamId} staff={staff} family={views.payer} />
+        ) : null}
+        {views.payer && !showTeamGroup ? <DueTile id="home-payments" /> : null}
+      </div>
       <div className={styles.row3}>
+        {views.payer && !showTeamGroup && tiles.has('waivers') ? (
+          <WaiversTile teamId={teamId} staff={false} family />
+        ) : null}
         {team ? <MessagesCard teamId={team.id} /> : null}
-        {views.payer || views.staff ? (
-          <div className={styles.card} data-testid="home-payments">
-            {views.payer ? <DueCard /> : null}
-            {views.staff && caps.has('payments.view') ? (
+        {tiles.has('announcement') && teamId ? <AnnouncementTile teamId={teamId} /> : null}
+      </div>
+      {showTeamGroup ? (
+        <Group id="team" label="For your team" scope={teamScope} showHead={showFamilyGroup}>
+          {tiles.has('approvals') && teamId && caps.has('joinRequests.decide') ? (
+            <ApprovalsTile teamId={teamId} />
+          ) : null}
+          {staffReg && tiles.has('waivers') ? (
+            <WaiversTile teamId={teamId} staff family={false} />
+          ) : null}
+          {staffReg && tiles.has('registrations') ? (
+            <RegistrationsTile teamId={teamId} staff />
+          ) : null}
+          {views.staff && caps.has('payments.view') ? (
+            <div className={styles.card} data-testid="home-payments">
               <StaffPaymentsCard
                 owner={
                   views.staff.kind === 'team'
@@ -259,21 +362,85 @@ export function HomeDashboard() {
                 }
                 href="/pay"
               />
-            ) : null}
-          </div>
-        ) : null}
-        {team && caps.has('roster.viewLimited') ? (
-          <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />
-        ) : null}
-        {!team && clubAdmin ? (
-          <Card className={styles.card}>
-            <Text variant="bodyBold">{clubAdmin.title}</Text>
-            <Link href={`/clubs/${clubAdmin.id}`} className={styles.cardLink}>
-              Open club
-            </Link>
-          </Card>
-        ) : null}
-      </div>
+            </div>
+          ) : null}
+          {views.staff && tiles.has('payouts') ? (
+            <PayoutsTile
+              owner={
+                views.staff.kind === 'team'
+                  ? { teamId: views.staff.id }
+                  : { clubId: views.staff.id }
+              }
+            />
+          ) : null}
+          {team && caps.has('roster.viewLimited') ? (
+            <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />
+          ) : null}
+          {tiles.has('setup') && teamId ? <SetupTile teamId={teamId} /> : null}
+          {tiles.has('notificationHealth') && teamId && caps.has('members.manage') ? (
+            <NotificationHealthTile teamId={teamId} />
+          ) : null}
+          {!team && clubAdmin ? (
+            <Card className={styles.card}>
+              <Text variant="bodyBold">{clubAdmin.title}</Text>
+              <Link href={`/clubs/${clubAdmin.id}`} className={styles.cardLink}>
+                Open club
+              </Link>
+            </Card>
+          ) : null}
+        </Group>
+      ) : null}
+      {views.payer || (team && caps.has('roster.viewLimited') && !showTeamGroup) ? (
+        <Group id="family" label="For your family" scope={familyScope} showHead={showTeamGroup}>
+          {views.payer && showTeamGroup ? <DueTile id="home-due" /> : null}
+          {views.payer && showTeamGroup && tiles.has('waivers') ? (
+            <WaiversTile teamId={teamId} staff={false} family />
+          ) : null}
+          {views.payer && tiles.has('registrations') ? (
+            <RegistrationsTile teamId={teamId} staff={false} />
+          ) : null}
+          {tiles.has('family') ? <FamilyTile /> : null}
+          {team && caps.has('roster.viewLimited') && !showTeamGroup ? (
+            <RosterCard teamId={team.id} staff={false} />
+          ) : null}
+        </Group>
+      ) : null}
+      <Group id="more" label="More" scope="" showHead>
+        {tiles.has('documents') && teamId ? <DocumentsTile teamId={teamId} /> : null}
+        {tiles.has('calendar') ? <CalendarTile /> : null}
+        {tiles.has('places') ? <PlacesTile places={contexts} /> : null}
+      </Group>
     </div>
+  );
+}
+
+/** A labelled group of tiles with a scope line ("U12 Falcons · Admin"). Hidden when it holds no tile. */
+function Group({
+  id,
+  label,
+  scope,
+  showHead,
+  children,
+}: {
+  id: string;
+  label: string;
+  scope: string;
+  showHead: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-labelledby={`home-group-${id}`}
+      className={styles.group}
+      data-testid={`home-group-${id}`}
+    >
+      <div className={showHead ? styles.groupHead : styles.srOnly}>
+        <h2 id={`home-group-${id}`} className={styles.kicker}>
+          {label}
+        </h2>
+        {scope ? <span className={styles.scope}>{scope}</span> : null}
+      </div>
+      <div className={styles.row3}>{children}</div>
+    </section>
   );
 }

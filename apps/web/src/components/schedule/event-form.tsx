@@ -8,6 +8,9 @@ import {
   friendlyError,
   localDateKey,
   localTimeKey,
+  locationFromSelection,
+  placeText,
+  type PlaceSelection,
   zonedTimeToInstant,
   type EditScope,
   type EventType,
@@ -30,6 +33,7 @@ import { FormMessage } from '@/components/app/states';
 import {
   Button,
   Chip,
+  PlaceAutocomplete,
   SegmentedControl,
   Select,
   Sheet,
@@ -124,6 +128,8 @@ function EventFormBody({
   const [locations, setLocations] = useState<LocationRow[]>([]);
   const [opponents, setOpponents] = useState<OpponentRow[]>([]);
   const [saveLoc, setSaveLoc] = useState(false);
+  // A suggestion the user picked for "Add a new place…" (null when they only typed).
+  const [picked, setPicked] = useState<PlaceSelection | null>(null);
   const [newOpp, setNewOpp] = useState('');
   const [repeat, setRepeat] = useState(false);
   const [days, setDays] = useState<number[]>([]);
@@ -164,9 +170,14 @@ function EventFormBody({
     try {
       // Saved location / opponent first, so the event can reference them.
       let locationId: string | null = f.loc && f.loc !== TYPED ? f.loc : null;
-      let locationText: string | null = f.loc === TYPED ? f.locText.trim() || null : null;
+      let locationText: string | null =
+        f.loc === TYPED ? (picked ? placeText(picked) : f.locText.trim() || null) : null;
       if (f.loc === TYPED && saveLoc && locationText) {
-        const r = await addLocation(client, { team_id: teamId, name: locationText });
+        // A picked place keeps its full address and coordinates; typed text saves as a name only.
+        const r = await addLocation(client, {
+          team_id: teamId,
+          ...(picked ? locationFromSelection(picked) : { name: locationText.slice(0, 100) }),
+        });
         if (r.error) return setError(friendlyError(r.error));
         locationId = r.data?.id ?? null;
         locationText = null;
@@ -315,11 +326,19 @@ function EventFormBody({
         />
         {f.loc === TYPED ? (
           <>
-            <TextField
+            <PlaceAutocomplete
               label="Place name or address"
               value={f.locText}
-              onChange={(e) => set('locText', e.target.value)}
-              maxLength={200}
+              verified={picked !== null}
+              onChange={(text) => set('locText', text)}
+              onSelect={(p) => {
+                setPicked(p);
+                set('locText', p.formattedAddress);
+              }}
+              onClear={() => {
+                setPicked(null);
+                set('locText', '');
+              }}
             />
             {!editing ? (
               <div className={styles.chips}>

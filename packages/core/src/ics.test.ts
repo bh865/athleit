@@ -259,3 +259,19 @@ describe('buildCalendar', () => {
     expect(events(parse(buildCalendar([])))).toHaveLength(0);
   });
 });
+
+describe('GEO', () => {
+  const base = {
+    id: 'g1',
+    starts_at: '2027-03-02T22:30:00Z',
+    ends_at: '2027-03-03T00:00:00Z',
+    location_name: 'Field 3',
+    location_address: '1 Park Rd, Austin',
+  };
+  it('adds GEO after LOCATION only when coordinates exist', () => {
+    const withGeo = buildCalendar([ev({ ...base, location_lat: 30.2, location_lng: -97.7 })]);
+    expect(withGeo).toContain('LOCATION:Field 3\\, 1 Park Rd\\, Austin');
+    expect(withGeo).toContain('GEO:30.200000;-97.700000');
+    expect(buildCalendar([ev(base)])).not.toContain('GEO:');
+  });
+});
