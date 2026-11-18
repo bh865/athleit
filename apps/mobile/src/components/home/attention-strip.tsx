@@ -9,10 +9,10 @@ import { Badge, Card, Icon, ListGroup, Sheet, Text, useTheme } from '@/component
 import { ListItem } from '@/components/app/kit';
 
 const ICON: Record<AttentionKind, IconName> = {
-  rsvp: 'calendar-blank',
+  rsvp: 'question',
   result: 'flag',
   payment: 'credit-card',
-  waiver: 'clipboard-text',
+  waiver: 'warning',
   registrationStep: 'receipt',
   joinRequests: 'users-three',
   loginClaims: 'user',

@@ -9,6 +9,7 @@ import {
 import {
   getHouseholdScheduleRange,
   getTeamRecord,
+  getTeamSchedule,
   getTeamScheduleRange,
 } from '@athleit/db/scheduling';
 import { space } from '@athleit/tokens';
@@ -183,14 +184,37 @@ export function WeekTile({ teamId, staff }: { teamId: string | null; staff: bool
 
 /** Season record. Hidden until a game has been played. */
 export function RecordTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getTeamRecord(supabase, teamId), [teamId]);
-  const r = res.data;
+  const res = useLoad(async (): Promise<Result<RecordView | null>> => {
+    const [rec, past] = await Promise.all([
+      getTeamRecord(supabase, teamId),
+      getTeamSchedule(supabase, teamId, 'past', 10),
+    ]);
+    if (rec.error) return rec;
+    if (!rec.data) return { data: null, error: null };
+    const last = (past.data ?? []).find(
+      (e) =>
+        e.type === 'game' &&
+        e.status !== 'cancelled' &&
+        e.our_score != null &&
+        e.their_score != null,
+    );
+    return {
+      data: {
+        record: rec.data,
+        last: last
+          ? `${last.our_score! > last.their_score! ? 'W' : last.our_score! < last.their_score! ? 'L' : 'T'} ${last.our_score}–${last.their_score}${last.opponent_name ? ` vs. ${last.opponent_name}` : ''}`
+          : null,
+      },
+      error: null,
+    };
+  }, [teamId]);
+  const r = res.data?.record;
   return (
     <Tile
       id="home-record"
-      title="Team record"
+      title={r ? `${r.season_label} · Record` : 'Team record'}
       res={res}
-      hasData={r !== null}
+      hasData={r !== undefined}
       empty={!r || r.games === 0}
     >
       {r ? (
@@ -202,12 +226,18 @@ export function RecordTile({ teamId }: { teamId: string }) {
             {r.wins}–{r.losses}–{r.ties}
           </Text>
           <Text variant="caption" muted>
-            {r.season_label} · Wins · Losses · Ties
+            Wins · Losses · Ties
           </Text>
+          {res.data?.last ? <Badge>{res.data.last}</Badge> : null}
         </>
       ) : null}
     </Tile>
   );
+}
+
+interface RecordView {
+  record: { wins: number; losses: number; ties: number; games: number; season_label: string };
+  last: string | null;
 }
 
 interface WaiverView {
