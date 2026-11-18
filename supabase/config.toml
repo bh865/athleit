@@ -480,3 +480,7 @@ verify_jwt = false
 
 [functions.claim-registration]
 verify_jwt = false
+
+# Address search: signed-in users only (the platform checks the JWT; the function re-checks and rate limits). Secret: GOOGLE_PLACES_API_KEY.
+[functions.places]
+verify_jwt = true
