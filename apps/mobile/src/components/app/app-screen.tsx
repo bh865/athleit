@@ -107,6 +107,17 @@ export function AppScreen({ children }: { children: ReactNode }) {
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">
         <Text variant="heading">More</Text>
+        {hasTeam ? (
+          <Button
+            title="Roster"
+            variant="secondary"
+            icon="users-three"
+            onPress={() => {
+              setMore(false);
+              router.push('/roster' as never);
+            }}
+          />
+        ) : null}
         {hasFamily ? (
           <Button
             title="Family"
