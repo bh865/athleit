@@ -1,6 +1,6 @@
 # Payments (Phase 4)
 
-Stripe Connect (Express accounts), **test mode only** until [payments-go-live.md](payments-go-live.md) is executed.
+Stripe Connect (accounts with the full Stripe Dashboard), **test mode only** until [payments-go-live.md](payments-go-live.md) is executed.
 Webhooks are the source of truth for payment status; the client success screen is only a hint.
 Part A (this document's scope so far) is the database, the fee module and RLS. Edge Functions follow in Part B.
 
@@ -9,7 +9,7 @@ Part A (this document's scope so far) is the database, the fee module and RLS. E
 | Table                   | Purpose                                                                                                                                              | Written by                                   |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | `fee_config`            | One active row (history kept): Athleit flat + bps, Stripe estimate (for pass-through only), refund flags. Edited via `private.admin_set_fee_config`. | service role / DB owner                      |
-| `connected_accounts`    | One Stripe Express account per team **or** club (`num_nonnulls = 1`), status mirrored from Stripe, `default_fee_policy`.                             | Edge Functions                               |
+| `connected_accounts`    | One Stripe connected account per team **or** club (`num_nonnulls = 1`), status mirrored from Stripe, `default_fee_policy`.                           | Edge Functions                               |
 | `payment_events`        | What is being collected: issuer, title, per-player `amount_cents`, `due_at`, audience, fee policy, frozen `fee_config` snapshot, status.             | `create/update/publish/cancel_payment_event` |
 | `payment_requests`      | One per player per event, with `household_id`, `display_id` (`PR-3317`), status, reminder bookkeeping, `disputed`.                                   | functions                                    |
 | `payments`              | One Stripe PaymentIntent (id attached after creation): fee split, estimated vs actual Stripe fee, `receipt_display_id` (`RCP-20481`).                | Edge Functions                               |
@@ -92,14 +92,14 @@ never a linked team's own events.
 
 Edge Functions (all in `supabase/functions/`, logic in `_shared/payments/`, Zod-validated, per-user rate limited, structured logs with redaction):
 
-| Function                | Caller                  | What it does                                                                                              |
-| ----------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `connect-onboarding`    | issuer admin (JWT)      | Creates the Express account once, returns a single-use Account Link (URLs from config), or syncs status.  |
-| `create-payment-intent` | guardian (JWT)          | Request ids only. Reserves the payment, creates the intent (idempotent), returns the client secret.       |
-| `stripe-webhook`        | Stripe (signature)      | Raw-body signature check, ledger first, idempotent handlers. Platform and Connect endpoints, two secrets. |
-| `refund-payment`        | issuer admin (JWT)      | `prepare_refund` (policy amounts) then Stripe refunds with `reverse_transfer`; webhook finalizes.         |
-| `reconcile-payments`    | pg_cron (shared secret) | Repairs stuck / abandoned / canceled intents, missing fees, accounts, stuck events.                       |
-| `export-payments`       | event staff (JWT)       | CSV of one event (no card data, formula-safe cells).                                                      |
+| Function                | Caller                  | What it does                                                                                                                                   |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connect-onboarding`    | issuer admin (JWT)      | Creates the connected account (full dashboard, account pays fees) once, returns a single-use Account Link (URLs from config), or syncs status. |
+| `create-payment-intent` | guardian (JWT)          | Request ids only. Reserves the payment, creates the intent (idempotent), returns the client secret.                                            |
+| `stripe-webhook`        | Stripe (signature)      | Raw-body signature check, ledger first, idempotent handlers. Platform and Connect endpoints, two secrets.                                      |
+| `refund-payment`        | issuer admin (JWT)      | `prepare_refund` (policy amounts) then Stripe refunds with `reverse_transfer`; webhook finalizes.                                              |
+| `reconcile-payments`    | pg_cron (shared secret) | Repairs stuck / abandoned / canceled intents, missing fees, accounts, stuck events.                                                            |
+| `export-payments`       | event staff (JWT)       | CSV of one event (no card data, formula-safe cells).                                                                                           |
 
 Edge Function secrets: `STRIPE_SECRET_KEY` (test), `STRIPE_WEBHOOK_SECRET` (platform endpoint), `STRIPE_CONNECT_WEBHOOK_SECRET` (Connect endpoint),
 `RECONCILE_SECRET`, `APP_URL`, `APP_SCHEME`, optional `ALLOWED_ORIGINS`. Platform-provided: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
@@ -115,7 +115,7 @@ admins are told; a webhook that beats the intent-id attach resolves by our payme
 application fee must equal what was reserved or the event is refused (`payment_mismatch`).
 
 Known gaps (documented, not hidden): disputes are debited from the connected account by Stripe (Athleit is not liable) and flagged/audited here, with
-refunds blocked while disputed; `refund_application_fee` semantics and the account configuration need a test-mode check
+refunds blocked while disputed; `refund_application_fee` semantics need a test-mode check
 (`scripts/payments-integration.mjs`); any staff member can publish an event (decision pending).
 
 ## Part C: UI

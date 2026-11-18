@@ -44,12 +44,13 @@ export async function connectOnboarding(
     const created = await d.stripe.post(
       '/v1/accounts',
       {
-        // Accounts that pay their OWN Stripe fees (Athleit never does) and whose losses sit with Stripe, with the lightweight
-        // Express dashboard and Stripe-hosted onboarding. Fixed at creation; cannot be changed later.
+        // Accounts that pay their OWN Stripe fees (Athleit never does) and whose losses sit with Stripe. Stripe REQUIRES the full
+        // dashboard for that combination (an Express dashboard forces the platform to collect fees and bear losses). Stripe-hosted
+        // onboarding. Fixed at creation; cannot be changed later.
         controller: {
           fees: { payer: 'account' },
           losses: { payments: 'stripe' },
-          stripe_dashboard: { type: 'express' },
+          stripe_dashboard: { type: 'full' },
           requirement_collection: 'stripe',
         },
         country: 'US',

@@ -742,7 +742,7 @@ describe('connect onboarding', () => {
       controller: {
         fees: { payer: 'account' },
         losses: { payments: 'stripe' },
-        stripe_dashboard: { type: 'express' },
+        stripe_dashboard: { type: 'full' },
         requirement_collection: 'stripe',
       },
       country: 'US',

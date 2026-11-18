@@ -9,7 +9,7 @@ Owner rule: **Athleit does not pay Stripe's fee. The team pays it (absorb) or th
 Stripe's docs: destination charges (with or without `on_behalf_of`) are always billed to the platform, so they cannot satisfy this rule. The supported
 way is **direct charges on connected accounts created with `controller.fees.payer = account`** (Stripe deducts its fee from the connected account;
 `application_fee_amount` then contains only Athleit's own fee) and `controller.losses.payments = stripe` (Stripe, not Athleit, covers negative balances).
-Accounts keep Stripe-hosted onboarding and the lightweight Express Dashboard (`controller.stripe_dashboard.type = express`).
+Accounts use Stripe-hosted onboarding and the **full Stripe Dashboard** (`controller.stripe_dashboard.type = full`, the Standard-style configuration). Confirmed by Stripe's API in test mode: _"When `stripe_dashboard[type]=express`, your platform must collect fees and be liable for negative balances"_, so an Express dashboard cannot be combined with "the account pays its own fees". Consequence: teams manage payouts, refunds and disputes in their own Stripe Dashboard (volunteer admins sign in to Stripe), which is the price of Athleit paying no Stripe fees.
 
 | Question                    | Chosen: direct charge, account pays fees                                                                                              | Rejected: destination charge (+`on_behalf_of`)                           |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -20,9 +20,7 @@ Accounts keep Stripe-hosted onboarding and the lightweight Express Dashboard (`c
 | Refunds                     | Issued on the connected account and debited from its balance (pending if short; fails after 45 days).                                 | Platform balance, with transfer reversal.                                |
 | Where objects live          | On the connected account: every Stripe call carries `Stripe-Account`; events arrive on the **Connect** endpoint with `event.account`. | On the platform.                                                         |
 
-Trade-off to know: Stripe's own guide discourages direct charges on Express accounts where the _platform_ is liable for losses. This configuration
-makes Stripe liable, which is the supported combination; but the integration script must be run once in test mode to confirm Stripe accepts
-`fees.payer=account` together with the `express` dashboard (see Open items).
+Trade-off to know: the full dashboard is heavier for volunteer admins than Express. The alternative that keeps Express makes the platform pay Stripe's fees and bear losses, which the owner ruled out.
 
 ## What it means for the fee module (Part A rules unchanged)
 
@@ -52,9 +50,8 @@ estimated and actual Stripe fee is the **team's** under both policies (as in Par
 
 ## Open items to confirm in test mode
 
-1. That Stripe accepts `controller.fees.payer=account` + `losses.payments=stripe` + `stripe_dashboard.type=express` together, and exactly how much of
-   the application fee `refund_application_fee` returns on a partial vs full refund (run `scripts/payments-integration.mjs`).
-2. Current Connect pricing for Express accounts (monthly active-account and payout fees are paid by the platform). Not confirmed from the docs
+1. Exactly how much of the application fee `refund_application_fee` returns on a partial vs full refund (run `scripts/payments-integration.mjs`).
+2. Current Connect pricing (with `fees.payer=account`, Stripe's docs say it charges no Connect fees to the account or to the platform). Not confirmed from the docs
    read; check the Stripe pricing page before setting `fee_config`.
 3. Stripe now recommends controller properties / Accounts v2 over the legacy `type: express` for new platforms; the brief asked for Express, which
    remains supported. Revisit before live mode.

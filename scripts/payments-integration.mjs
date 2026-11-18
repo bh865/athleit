@@ -3,7 +3,7 @@
 //
 //   STRIPE_SECRET_KEY=sk_test_... CONNECTED_ACCOUNT=acct_... node scripts/payments-integration.mjs
 //
-// CONNECTED_ACCOUNT must be an Express test account that finished onboarding in test mode (charges_enabled).
+// CONNECTED_ACCOUNT must be a test account created by connect-onboarding that finished onboarding in test mode (charges_enabled).
 // It exercises exactly what create-payment-intent / refund-payment send: a DIRECT charge created on the connected account
 // (Stripe-Account header) with an application fee that is only the Athleit charge, then verifies the actual Stripe fee on
 // the connected account's balance transaction (paid by the account, not Athleit), a decline, 3D Secure, and refunds.
