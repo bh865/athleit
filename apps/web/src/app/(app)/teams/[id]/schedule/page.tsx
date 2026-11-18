@@ -10,7 +10,7 @@ function TeamSchedule() {
   const { team, caps } = useTeam();
   return (
     <ScheduleView
-      title="Schedule"
+      embedded
       scope={{
         kind: 'team',
         teamId: team.id,

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { RUN, cleanup, newSession, signUp } from './helpers';
+import { RUN, cleanup, newSession, pickDate, signUp } from './helpers';
 
 /** Club affiliation (request → approval, read-only visibility) and the 13+ player login claim. */
 test.describe.serial('club links and player logins', () => {
@@ -68,7 +68,7 @@ test.describe.serial('club links and player logins', () => {
     await guardian.getByRole('button', { name: 'Add my child' }).click();
     await guardian.getByLabel('First name').fill('Teddy');
     await guardian.getByLabel('Last name').fill('Teen');
-    await guardian.getByLabel('Date of birth').fill('2011-01-01');
+    await pickDate(guardian, 'Date of birth', '2011-01-01');
     await guardian.getByRole('button', { name: 'Add child' }).click();
     await guardian.getByRole('link', { name: /Teddy Teen/ }).click();
     await guardian.waitForURL(/\/family\/children\/[0-9a-f-]{36}/);
@@ -96,7 +96,7 @@ test.describe.serial('club links and player logins', () => {
     await guardian.goto('/family/children/new');
     await guardian.getByLabel('First name').fill('Riley');
     await guardian.getByLabel('Last name').fill('Review');
-    await guardian.getByLabel('Date of birth').fill('2012-02-02');
+    await pickDate(guardian, 'Date of birth', '2012-02-02');
     await guardian.getByRole('button', { name: 'Add child' }).click();
     await guardian.getByRole('link', { name: /Riley Review/ }).click();
     await guardian.waitForURL(/\/family\/children\/[0-9a-f-]{36}/);
@@ -117,7 +117,7 @@ test.describe.serial('club links and player logins', () => {
     await guardian.goto('/family/children/new');
     await guardian.getByLabel('First name').fill('Little');
     await guardian.getByLabel('Last name').fill('Kid');
-    await guardian.getByLabel('Date of birth').fill('2020-03-03');
+    await pickDate(guardian, 'Date of birth', '2020-03-03');
     await guardian.getByRole('button', { name: 'Add child' }).click();
     await guardian.getByRole('link', { name: /Little Kid/ }).click();
     await expect(guardian.getByText('Children under 13 have no login')).toBeVisible();

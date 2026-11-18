@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { cleanup, newSession, signUp } from './helpers';
+import { cleanup, newSession, pickDate, signUp } from './helpers';
 
 /**
  * Phase 1 happy path across four separate sessions:
@@ -32,7 +32,7 @@ test.describe.serial('people, teams and rosters', () => {
     await expect(parent.getByText('never have their own login')).toBeVisible();
     await parent.getByLabel('First name').fill('Ava');
     await parent.getByLabel('Last name').fill('Adams');
-    await parent.getByLabel('Date of birth').fill('2016-04-02');
+    await pickDate(parent, 'Date of birth', '2016-04-02');
     await parent.getByRole('button', { name: 'Add child' }).click();
     await expect(parent.getByTestId('children-list')).toContainText('Ava Adams');
     await expect(parent.getByTestId('children-list')).toContainText('Not on a team yet');
@@ -93,7 +93,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('staff place the child on the roster and see guardian contacts', async () => {
-    await coach.goto(teamUrl);
+    await coach.goto('/roster');
     const form = coach.getByTestId('place-form');
     await form.getByLabel('Jersey number').fill('7');
     await form.getByLabel('Position').fill('Forward');
@@ -107,7 +107,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('the parent now sees the limited roster only', async () => {
-    await parent.goto(teamUrl);
+    await parent.goto('/roster');
     const limited = parent.getByTestId('roster-limited');
     await expect(limited).toContainText('#7');
     await expect(limited).toContainText('Ava');

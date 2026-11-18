@@ -16,7 +16,9 @@ import { Image, View } from 'react-native';
 import { AppScreen } from '@/components/app/app-screen';
 import { WEB_ORIGIN } from '@/components/app/invite-panel';
 import { Badge, FormMessage, H1, H2, ListItem, LoadState, Notice } from '@/components/app/kit';
-import { Button, Card, Text, TextField } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import { Button, Card, DatePicker, Text, TextField } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
@@ -64,11 +66,12 @@ function ChildForm({ c, onSaved }: { c: Child; onSaved: () => void }) {
         error={errors.firstName}
       />
       <TextField label="Last name" value={last} onChangeText={setLast} error={errors.lastName} />
-      <TextField
+      <DatePicker
         label="Date of birth"
-        hint="YYYY-MM-DD"
         value={dob}
-        onChangeText={setDob}
+        onChange={setDob}
+        max={todayIso()}
+        yearSpan={{ before: 25, after: 0 }}
         error={errors.dateOfBirth}
       />
       {canHaveOwnLogin(dob) ? (

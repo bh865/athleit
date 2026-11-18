@@ -5,7 +5,7 @@ import { startConnectOnboarding } from '@athleit/db/payments';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-import { ErrorState, LoadingSkeleton } from '@/components/ui';
+import { ErrorState, LoadingSkeleton, PageHeader } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 /** Stripe sends people back here after hosted onboarding (or the link expired). Sync the status, then go to Payments. */
@@ -24,10 +24,15 @@ function Return() {
       else router.replace(dest);
     });
   }, [team, club, router]);
-  return error ? (
-    <ErrorState message={error} onRetry={() => router.refresh()} />
-  ) : (
-    <LoadingSkeleton />
+  return (
+    <>
+      <PageHeader title="Payments" subtitle="Checking your payout status…" />
+      {error ? (
+        <ErrorState message={error} onRetry={() => router.refresh()} />
+      ) : (
+        <LoadingSkeleton />
+      )}
+    </>
   );
 }
 

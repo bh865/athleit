@@ -22,7 +22,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { Choice, FormMessage } from '@/components/app/kit';
-import { Button, Chip, Sheet, Text, TextField } from '@/components/ui';
+import { Button, Chip, DatePicker, Sheet, Text, TextField, TimePicker } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { viewerZone } from '@/lib/viewer-zone';
 
@@ -103,7 +103,7 @@ function Body({
       !/^\d{2}:\d{2}$/.test(start) ||
       !/^\d{2}:\d{2}$/.test(end)
     )
-      return setError('Use YYYY-MM-DD for the date and HH:MM (24 hour) for the times.');
+      return setError('Choose a date and start and end times.');
     setBusy(true);
     try {
       let locationId = loc && loc !== TYPED ? loc : null;
@@ -160,29 +160,19 @@ function Body({
           options={EVENT_TYPES.map((t) => ({ value: t, label: EVENT_TYPE_LABELS[t] }))}
         />
         <TextField label="Title" value={title} onChangeText={setTitle} maxLength={120} />
-        <TextField
-          label="Date (YYYY-MM-DD)"
+        <DatePicker
+          label="Date"
           value={date}
-          onChangeText={setDate}
-          autoCapitalize="none"
-          keyboardType="numbers-and-punctuation"
+          onChange={setDate}
+          required
+          yearSpan={{ before: 1, after: 3 }}
         />
         <View style={{ flexDirection: 'row', gap: space[3] }}>
           <View style={{ flex: 1 }}>
-            <TextField
-              label="Starts (HH:MM)"
-              value={start}
-              onChangeText={setStart}
-              keyboardType="numbers-and-punctuation"
-            />
+            <TimePicker label="Starts" value={start} onChange={setStart} required />
           </View>
           <View style={{ flex: 1 }}>
-            <TextField
-              label="Ends (HH:MM)"
-              value={end}
-              onChangeText={setEnd}
-              keyboardType="numbers-and-punctuation"
-            />
+            <TimePicker label="Ends" value={end} onChange={setEnd} required />
           </View>
         </View>
         <Text variant="caption" muted>

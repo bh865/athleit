@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
-import { cleanup, newSession, signUp } from './helpers';
+import { cleanup, newSession, pickDate, pickTime, signUp } from './helpers';
 
 /**
  * Phase 5 end to end: an admin builds a form, a waiver and a registration in the UI and publishes it; a visitor
@@ -68,8 +68,10 @@ test.describe.serial('registration (end to end)', () => {
     await admin.getByLabel('Title', { exact: true }).fill('E2E Spring League');
     await admin.getByLabel('Web address').fill(slug);
     // Publishing needs an open window.
-    await admin.getByLabel('Opens', { exact: true }).fill('2020-01-01T09:00');
-    await admin.getByLabel('Closes', { exact: true }).fill('2099-01-01T09:00');
+    await pickDate(admin, 'Opens (date)', '2020-01-01');
+    await pickTime(admin, 'Opens (time)', '09:00');
+    await pickDate(admin, 'Closes (date)', '2040-01-01');
+    await pickTime(admin, 'Closes (time)', '09:00');
     await admin.getByLabel('Spots (leave blank for no limit)').fill('1');
     await admin.getByLabel('Registration form').selectOption({ index: 1 });
     await admin.getByLabel('Liability waiver').check();
@@ -89,7 +91,7 @@ test.describe.serial('registration (end to end)', () => {
     await expect(visitor.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/); // link-only by default
     await visitor.getByLabel('Child’s first name').fill('Ava');
     await visitor.getByLabel('Child’s last name').fill('Adams');
-    await visitor.getByLabel('Child’s date of birth').fill('2016-04-02');
+    await pickDate(visitor, 'Child’s date of birth', '2016-04-02');
     await visitor.getByLabel('Your name').fill('Pat Parent');
     await visitor
       .getByLabel('Your email')

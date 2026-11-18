@@ -1,28 +1,18 @@
 'use client';
 
-import { contextPath } from '@athleit/core';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
-import { Button, Card } from '@/components/ui';
+import { HomeDashboard } from '@/components/home/home-dashboard';
+import { Button, Card, PageHeader } from '@/components/ui';
 
-/** Sends the user to their last-used context, or onboards them if they have none yet. */
+/** Home dashboard for the active place, or onboarding when the user has none yet. */
 export default function HomePage() {
   const { active, displayName, addActions } = useApp();
   const router = useRouter();
 
-  useEffect(() => {
-    if (active) router.replace(contextPath(active));
-  }, [active, router]);
-
-  if (active)
-    return (
-      <p className={styles.muted} role="status">
-        Opening {active.title}…
-      </p>
-    );
+  if (active) return <HomeDashboard />;
 
   const href = {
     'add-family': '/family/children/new',
@@ -38,23 +28,26 @@ export default function HomePage() {
   } as const;
 
   return (
-    <Card className={styles.stack}>
-      <h1 className={styles.title} data-testid="display-name">
-        Welcome{displayName ? `, ${displayName}` : ''}
-      </h1>
-      <p className={styles.muted}>How will you use Athleit? You can add more roles any time.</p>
-      <div className={styles.stack}>
-        {addActions.map((a, i) => (
-          <Button
-            key={a}
-            variant={i === 0 ? 'primary' : 'secondary'}
-            fullWidth
-            onClick={() => router.push(href[a])}
-          >
-            {label[a]}
-          </Button>
-        ))}
-      </div>
-    </Card>
+    <>
+      <PageHeader
+        titleTestId="display-name"
+        title={`Welcome${displayName ? `, ${displayName}` : ''}`}
+        subtitle="How will you use Athleit? You can add more roles any time."
+      />
+      <Card className={styles.stack}>
+        <div className={styles.stack}>
+          {addActions.map((a, i) => (
+            <Button
+              key={a}
+              variant={i === 0 ? 'primary' : 'secondary'}
+              fullWidth
+              onClick={() => router.push(href[a])}
+            >
+              {label[a]}
+            </Button>
+          ))}
+        </div>
+      </Card>
+    </>
   );
 }

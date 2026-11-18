@@ -3,7 +3,7 @@
 import { visibleFields, type FormField, type FormSchema } from '@athleit/core';
 import { useId } from 'react';
 
-import { TextArea, TextField, Select } from '@/components/ui';
+import { DatePicker, TextArea, TextField, Select } from '@/components/ui';
 
 import styles from './registration.module.css';
 
@@ -185,12 +185,7 @@ function Field({
       );
     case 'date':
       return (
-        <TextField
-          {...common}
-          type="date"
-          value={String(value ?? '')}
-          onChange={(e) => set(e.target.value)}
-        />
+        <DatePicker {...common} value={String(value ?? '')} onChange={set} />
       );
     case 'email':
       return (

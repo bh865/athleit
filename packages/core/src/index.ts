@@ -20,3 +20,5 @@ export * from './context';
 export * from './errors';
 export * from './schemas/registration';
 export * from './registration';
+export * from './pay-views';
+export * from './places';

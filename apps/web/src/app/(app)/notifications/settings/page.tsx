@@ -13,12 +13,11 @@ import {
   saveNotificationPreference,
   saveQuietHours,
 } from '@athleit/db/api';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
 import { LoadState } from '@/components/app/states';
-import { Button, Card, Icon, Select, Text, TextField, useToast } from '@/components/ui';
+import { Button, Card, PageHeader, Select, Text, TimePicker, useToast } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 import {
@@ -121,14 +120,10 @@ export default function NotificationSettings() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.head}>
-        <Link href="/notifications" className={styles.back} aria-label="Back to alerts">
-          <Icon name="caret-left" />
-        </Link>
-        <Text variant="title" as="h1">
-          Notification settings
-        </Text>
-      </div>
+      <PageHeader
+        title="Notification settings"
+        back={{ href: '/notifications', label: 'Alerts' }}
+      />
 
       <LoadState loading={prefs.loading} error={prefs.error} onRetry={prefs.reload}>
         <Card className={styles.card}>
@@ -182,18 +177,12 @@ export default function NotificationSettings() {
             Notifications that arrive during quiet hours wait and are delivered when they end.
           </Text>
           <div className={styles.fields}>
-            <TextField
+            <TimePicker
               label="From"
-              type="time"
               value={q.start}
-              onChange={(e) => setQuiet({ ...q, start: e.target.value })}
+              onChange={(v) => setQuiet({ ...q, start: v })}
             />
-            <TextField
-              label="Until"
-              type="time"
-              value={q.end}
-              onChange={(e) => setQuiet({ ...q, end: e.target.value })}
-            />
+            <TimePicker label="Until" value={q.end} onChange={(v) => setQuiet({ ...q, end: v })} />
           </div>
           <Select
             label="Timezone"

@@ -51,6 +51,7 @@ import {
   ScheduleRowsDemo,
   StaffDetailDemo,
 } from './schedule-gallery';
+import { PickerGallery } from './picker-gallery';
 
 const TYPE_SAMPLES: [TextVariant, string][] = [
   ['display', 'Display 44/800'],
@@ -305,6 +306,10 @@ function ThemePanel({ name }: { name: string }) {
             <LoadingSkeleton rows={3} />
           </Card>
         </div>
+      </Section>
+
+      <Section title="Pickers">
+        <PickerGallery />
       </Section>
 
       <Section title="Schedule · rows and month">

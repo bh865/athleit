@@ -40,7 +40,7 @@ export default function NewClubScreen() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`club:${res.data}:admin`);
+    setActive(`club:${res.data}`);
     router.replace(`/clubs/${res.data}`);
   }
 
