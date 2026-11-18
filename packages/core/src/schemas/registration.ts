@@ -1,0 +1,293 @@
+import { z } from 'zod';
+
+/**
+ * Phase 5 schemas. The database validates the same rules (private.validate_form_schema and friends): these
+ * exist so the builder, the public form and the Edge Functions give early, friendly errors. The database stays
+ * the authority.
+ */
+
+const uuid = z.uuid();
+const isoDate = z.iso.date();
+
+// ---------------------------------------------------------------------------------------------- form schema
+export const FORM_FIELD_TYPES = [
+  'short_text',
+  'long_text',
+  'email',
+  'phone',
+  'number',
+  'date',
+  'single_choice',
+  'multiple_choice',
+  'dropdown',
+  'checkbox',
+  'consent_checkbox',
+  'address',
+] as const;
+export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
+
+export const CHOICE_FIELD_TYPES: readonly FormFieldType[] = [
+  'single_choice',
+  'multiple_choice',
+  'dropdown',
+];
+
+export const MAX_FORM_FIELDS = 60;
+export const MAX_FIELD_OPTIONS = 50;
+export const MAX_ANSWERS_BYTES = 50_000;
+
+/** Labels and help text that ask for government ids, SSNs or card data are refused (mirrors the SQL regex). */
+const FORBIDDEN =
+  /\b(ssn|social security|social sec|passport|drivers? licen[sc]e|driver s licen[sc]e|driving licen[sc]e|government id|govt id|national id|tax id|taxpayer|credit card|debit card|card number|cvv|cvc|routing number|bank account|iban)\b/;
+
+export function isForbiddenFieldText(text: string | null | undefined): boolean {
+  return FORBIDDEN.test((text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' '));
+}
+
+export const FORBIDDEN_FIELD_MESSAGE =
+  'Forms cannot ask for government ID numbers, Social Security numbers or card data.';
+
+export const formFieldIdSchema = z.string().regex(/^[a-z][a-z0-9_]{0,39}$/, 'Use lower-case letters, numbers and underscores');
+
+export const formOptionSchema = z.strictObject({
+  value: z.string().trim().min(1).max(100),
+  label: z.string().trim().min(1).max(100),
+});
+
+export const showIfSchema = z.union([
+  z.strictObject({ field: formFieldIdSchema, equals: z.union([z.string(), z.number(), z.boolean()]) }),
+  z.strictObject({ field: formFieldIdSchema, in: z.array(z.string()).min(1).max(MAX_FIELD_OPTIONS) }),
+]);
+export type ShowIf = z.infer<typeof showIfSchema>;
+
+export const fieldValidationSchema = z.strictObject({
+  min_length: z.number().int().min(0).max(10_000).optional(),
+  max_length: z.number().int().min(1).max(10_000).optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+});
+
+export const formFieldSchema = z
+  .strictObject({
+    id: formFieldIdSchema,
+    type: z.enum(FORM_FIELD_TYPES),
+    label: z.string().trim().min(1, 'Add a label').max(200),
+    help: z.string().max(500).optional(),
+    required: z.boolean().optional(),
+    options: z.array(formOptionSchema).min(1).max(MAX_FIELD_OPTIONS).optional(),
+    validation: fieldValidationSchema.optional(),
+    show_if: showIfSchema.optional(),
+    sensitive: z.boolean().optional(),
+  })
+  .superRefine((f, ctx) => {
+    if (isForbiddenFieldText(f.label) || isForbiddenFieldText(f.help)) {
+      ctx.addIssue({ code: 'custom', path: ['label'], message: FORBIDDEN_FIELD_MESSAGE });
+    }
+    const choice = CHOICE_FIELD_TYPES.includes(f.type);
+    if (choice && !f.options) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Add at least one option' });
+    if (!choice && f.options) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Only choice fields have options' });
+    if (f.options && new Set(f.options.map((o) => o.value)).size !== f.options.length) {
+      ctx.addIssue({ code: 'custom', path: ['options'], message: 'Option values must be unique' });
+    }
+  });
+export type FormField = z.infer<typeof formFieldSchema>;
+
+export const formSchemaSchema = z
+  .strictObject({ fields: z.array(formFieldSchema).max(MAX_FORM_FIELDS) })
+  .superRefine((form, ctx) => {
+    const seen = new Set<string>();
+    form.fields.forEach((f, i) => {
+      if (seen.has(f.id)) ctx.addIssue({ code: 'custom', path: ['fields', i, 'id'], message: 'Duplicate field id' });
+      // A condition may only reference an EARLIER field.
+      if (f.show_if && !seen.has(f.show_if.field)) {
+        ctx.addIssue({ code: 'custom', path: ['fields', i, 'show_if'], message: 'Show-if can only use an earlier field' });
+      }
+      seen.add(f.id);
+    });
+  });
+export type FormSchema = z.infer<typeof formSchemaSchema>;
+
+// ------------------------------------------------------------------------------------------------ info blocks
+const text = (max: number) => z.string().trim().max(max);
+export const infoBlockSchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('key_facts'),
+    items: z.array(z.strictObject({ label: text(60).min(1), value: text(200).min(1) })).max(12),
+  }),
+  z.strictObject({ type: z.literal('description'), title: text(120).optional(), body: text(8000) }),
+  z.strictObject({
+    type: z.literal('agenda'),
+    title: text(120).optional(),
+    items: z.array(z.strictObject({ time: text(40).optional(), label: text(200).min(1) })).max(40),
+  }),
+  z.strictObject({ type: z.literal('what_to_bring'), items: z.array(text(200).min(1)).max(40) }),
+  z.strictObject({
+    type: z.literal('faq'),
+    items: z.array(z.strictObject({ question: text(200).min(1), answer: text(2000).min(1) })).max(30),
+  }),
+]);
+export type InfoBlock = z.infer<typeof infoBlockSchema>;
+export const infoBlocksSchema = z.array(infoBlockSchema).max(40);
+
+// -------------------------------------------------------------------------------------- registration event
+export const REGISTRATION_KINDS = ['season', 'tryout', 'camp', 'clinic', 'other'] as const;
+export const REGISTRATION_VISIBILITIES = ['public', 'link_only', 'members_only'] as const;
+export const PAYMENT_TIMINGS = ['none', 'at_submission', 'after_acceptance'] as const;
+export const ROSTER_BEHAVIORS = ['none', 'propose_placement'] as const;
+export const REGISTRATION_STATUSES = [
+  'pending_verification',
+  'submitted',
+  'waitlisted',
+  'accepted',
+  'declined',
+  'withdrawn',
+  'placed',
+] as const;
+export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
+
+export const eligibilitySchema = z.union([
+  z
+    .strictObject({ type: z.literal('birth_date'), min: isoDate.optional(), max: isoDate.optional() })
+    .refine((v) => v.min || v.max, 'Set at least one bound'),
+  z
+    .strictObject({
+      type: z.literal('age'),
+      min: z.number().int().min(0).max(99).optional(),
+      max: z.number().int().min(0).max(99).optional(),
+      as_of: isoDate.optional(),
+    })
+    .refine((v) => v.min !== undefined || v.max !== undefined, 'Set at least one bound'),
+]);
+
+/** Keys accepted by create_registration_event / update_registration_event (everything else is refused). */
+export const registrationEventDataSchema = z
+  .strictObject({
+    title: z.string().trim().min(1, 'Add a title').max(120),
+    slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Lower-case letters, numbers and dashes').min(6).max(80),
+    kind: z.enum(REGISTRATION_KINDS),
+    sport: z.string().nullable(),
+    summary: z.string().trim().max(500).nullable(),
+    info_blocks: infoBlocksSchema,
+    starts_on: isoDate.nullable(),
+    ends_on: isoDate.nullable(),
+    location_text: z.string().trim().max(200).nullable(),
+    opens_at: z.iso.datetime({ offset: true }).nullable(),
+    closes_at: z.iso.datetime({ offset: true }).nullable(),
+    capacity: z.number().int().min(1).max(100_000).nullable(),
+    waitlist_enabled: z.boolean(),
+    auto_promote_waitlist: z.boolean(),
+    visibility: z.enum(REGISTRATION_VISIBILITIES),
+    eligibility: eligibilitySchema.nullable(),
+    price_cents: z.number().int().min(50).max(5_000_000).nullable(),
+    payment_timing: z.enum(PAYMENT_TIMINGS),
+    payment_hold_minutes: z.number().int().min(5).max(10_080),
+    target_team_id: uuid.nullable(),
+    roster_behavior: z.enum(ROSTER_BEHAVIORS),
+    form_version_id: uuid.nullable(),
+    waiver_version_ids: z.array(uuid).max(10),
+    cover_image_path: z.string().max(300).nullable(),
+    contact_email: z.email().max(254).nullable(),
+    confirmation_message: z.string().trim().max(1000).nullable(),
+  })
+  .partial()
+  .superRefine((v, ctx) => {
+    if (v.price_cents != null && v.payment_timing === 'none') {
+      ctx.addIssue({ code: 'custom', path: ['payment_timing'], message: 'Choose when to collect payment' });
+    }
+    if (v.opens_at && v.closes_at && new Date(v.closes_at) <= new Date(v.opens_at)) {
+      ctx.addIssue({ code: 'custom', path: ['closes_at'], message: 'Closing must be after opening' });
+    }
+  });
+export type RegistrationEventData = z.infer<typeof registrationEventDataSchema>;
+
+// ---------------------------------------------------------------------------------------------- registration
+export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const person = {
+  guardianName: z.string().trim().min(1, 'Enter your name').max(120),
+  guardianEmail: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  guardianPhone: z.string().trim().max(40).optional(),
+  guardianRelationship: z.string().trim().min(1, 'Choose your relationship').max(40),
+  playerFirstName: z.string().trim().min(1, "Enter the child's first name").max(60),
+  playerLastName: z.string().trim().min(1, "Enter the child's last name").max(60),
+  playerDateOfBirth: isoDate,
+};
+
+/** Body of submit-registration. `website` is the honeypot: real people never fill it. */
+export const submitRegistrationSchema = z.strictObject({
+  slug: z.string().max(80),
+  formVersionId: uuid,
+  ...person,
+  playerId: uuid.optional(),
+  guardianAttestation: z.literal(true, { error: 'Confirm you are the parent or legal guardian' }),
+  answers: z.record(z.string(), z.unknown()).default({}),
+  captchaToken: z.string().min(1).max(4096).optional(),
+  website: z.string().max(0).optional(),
+});
+export type SubmitRegistrationInput = z.infer<typeof submitRegistrationSchema>;
+
+export const DECISIONS = ['accept', 'waitlist', 'decline'] as const;
+export const decideRegistrationSchema = z.strictObject({
+  registrationId: uuid,
+  decision: z.enum(DECISIONS),
+  message: z.string().trim().max(1000).optional(),
+});
+
+export const placeRegisteredPlayerSchema = z.strictObject({
+  registrationId: uuid,
+  teamId: uuid,
+  jerseyNumber: z.number().int().min(0).max(99).optional(),
+  position: z.string().trim().max(40).optional(),
+});
+
+export const registrationNoteSchema = z.strictObject({
+  registrationId: uuid,
+  body: z.string().trim().min(1).max(4000),
+});
+
+// ------------------------------------------------------------------------------------------------- waivers
+export const waiverInputSchema = z.strictObject({
+  title: z.string().trim().min(1, 'Add a title').max(150),
+  body: z.string().max(50_000),
+  requiresResignAfterDays: z.number().int().min(1).max(3650).nullable().optional(),
+});
+
+/** Typed signature. Consent to electronic records is required (ESIGN/UETA style record). */
+export const waiverAcceptanceSchema = z.strictObject({
+  waiverVersionId: uuid,
+  registrationId: uuid.optional(),
+  playerId: uuid.optional(),
+  signerName: z.string().trim().min(1, 'Type your full name').max(120),
+  signerRelationship: z.string().trim().min(1, 'Choose your relationship').max(40),
+  signerEmail: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+  electronicConsent: z.literal(true, { error: 'You must agree to sign electronically' }),
+});
+
+// ----------------------------------------------------------------------------------------------- documents
+export const DOCUMENT_CATEGORIES = ['rules', 'schedule', 'tournament', 'forms', 'other'] as const;
+export const DOCUMENT_VISIBILITIES = ['staff_only', 'team_members'] as const;
+export const DOCUMENT_MAX_BYTES = 20 * 1024 * 1024;
+export const DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+] as const;
+
+export const documentMetadataSchema = z.strictObject({
+  title: z.string().trim().min(1, 'Add a title').max(150),
+  description: z.string().trim().max(1000).optional(),
+  category: z.enum(DOCUMENT_CATEGORIES),
+  visibility: z.enum(DOCUMENT_VISIBILITIES),
+  pinned: z.boolean().default(false),
+  mimeType: z.enum(DOCUMENT_MIME_TYPES),
+  sizeBytes: z.number().int().min(1).max(DOCUMENT_MAX_BYTES),
+});

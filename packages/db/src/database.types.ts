@@ -281,6 +281,82 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          archived_at: string | null
+          category: string
+          club_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          mime_type: string
+          pinned: boolean
+          size_bytes: number
+          storage_path: string
+          team_id: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          visibility: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string
+          club_id?: string | null
+          created_at?: string
+          description?: string | null
+          id: string
+          mime_type: string
+          pinned?: boolean
+          size_bytes: number
+          storage_path: string
+          team_id?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visibility?: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          club_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          mime_type?: string
+          pinned?: boolean
+          size_bytes?: number
+          storage_path?: string
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_series: {
         Row: {
           created_at: string
@@ -507,6 +583,106 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_versions: {
+        Row: {
+          form_id: string
+          id: string
+          published_at: string
+          published_by: string | null
+          schema: Json
+          version: number
+        }
+        Insert: {
+          form_id: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          schema: Json
+          version: number
+        }
+        Update: {
+          form_id?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          schema?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_versions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          archived_at: string | null
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          draft_schema: Json
+          id: string
+          name: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          draft_schema?: Json
+          id?: string
+          name: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          draft_schema?: Json
+          id?: string
+          name?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forms_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1832,6 +2008,417 @@ export type Database = {
           },
         ]
       }
+      registration_capability_grants: {
+        Row: {
+          capability: string
+          club_id: string | null
+          created_at: string
+          granted_by: string | null
+          id: string
+          profile_id: string
+          team_id: string | null
+        }
+        Insert: {
+          capability: string
+          club_id?: string | null
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          profile_id: string
+          team_id?: string | null
+        }
+        Update: {
+          capability?: string
+          club_id?: string | null
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          profile_id?: string
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_capability_grants_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_capability_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_capability_grants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_capability_grants_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_events: {
+        Row: {
+          auto_promote_waitlist: boolean
+          capacity: number | null
+          closes_at: string | null
+          club_id: string | null
+          confirmation_message: string | null
+          contact_email: string | null
+          cover_image_path: string | null
+          created_at: string
+          created_by: string | null
+          eligibility: Json | null
+          ends_on: string | null
+          form_version_id: string | null
+          id: string
+          info_blocks: Json
+          kind: string
+          location_text: string | null
+          opens_at: string | null
+          payment_hold_minutes: number
+          payment_timing: string
+          price_cents: number | null
+          published_at: string | null
+          roster_behavior: string
+          slug: string
+          sport: Database["public"]["Enums"]["sport"] | null
+          starts_on: string | null
+          status: string
+          summary: string | null
+          target_team_id: string | null
+          team_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+          waitlist_enabled: boolean
+          waiver_version_ids: string[]
+        }
+        Insert: {
+          auto_promote_waitlist?: boolean
+          capacity?: number | null
+          closes_at?: string | null
+          club_id?: string | null
+          confirmation_message?: string | null
+          contact_email?: string | null
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          eligibility?: Json | null
+          ends_on?: string | null
+          form_version_id?: string | null
+          id?: string
+          info_blocks?: Json
+          kind?: string
+          location_text?: string | null
+          opens_at?: string | null
+          payment_hold_minutes?: number
+          payment_timing?: string
+          price_cents?: number | null
+          published_at?: string | null
+          roster_behavior?: string
+          slug: string
+          sport?: Database["public"]["Enums"]["sport"] | null
+          starts_on?: string | null
+          status?: string
+          summary?: string | null
+          target_team_id?: string | null
+          team_id?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+          waitlist_enabled?: boolean
+          waiver_version_ids?: string[]
+        }
+        Update: {
+          auto_promote_waitlist?: boolean
+          capacity?: number | null
+          closes_at?: string | null
+          club_id?: string | null
+          confirmation_message?: string | null
+          contact_email?: string | null
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          eligibility?: Json | null
+          ends_on?: string | null
+          form_version_id?: string | null
+          id?: string
+          info_blocks?: Json
+          kind?: string
+          location_text?: string | null
+          opens_at?: string | null
+          payment_hold_minutes?: number
+          payment_timing?: string
+          price_cents?: number | null
+          published_at?: string | null
+          roster_behavior?: string
+          slug?: string
+          sport?: Database["public"]["Enums"]["sport"] | null
+          starts_on?: string | null
+          status?: string
+          summary?: string | null
+          target_team_id?: string | null
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+          waitlist_enabled?: boolean
+          waiver_version_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_events_form_version_id_fkey"
+            columns: ["form_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_events_target_team_id_fkey"
+            columns: ["target_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          registration_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          registration_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          registration_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_notes_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_sensitive_answers: {
+        Row: {
+          answers: Json
+          created_at: string
+          registration_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          registration_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          registration_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_sensitive_answers_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: true
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registrations: {
+        Row: {
+          anonymized_at: string | null
+          answers: Json
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          display_id: string
+          form_version_id: string
+          guardian_email: string
+          guardian_name: string
+          guardian_phone: string | null
+          guardian_relationship: string
+          hold_expires_at: string | null
+          household_id: string | null
+          id: string
+          payment_request_id: string | null
+          player_date_of_birth: string
+          player_first_name: string
+          player_id: string | null
+          player_last_name: string
+          registration_event_id: string
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+          verified_at: string | null
+          waitlist_position: number | null
+        }
+        Insert: {
+          anonymized_at?: string | null
+          answers?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          display_id: string
+          form_version_id: string
+          guardian_email: string
+          guardian_name: string
+          guardian_phone?: string | null
+          guardian_relationship: string
+          hold_expires_at?: string | null
+          household_id?: string | null
+          id?: string
+          payment_request_id?: string | null
+          player_date_of_birth: string
+          player_first_name: string
+          player_id?: string | null
+          player_last_name: string
+          registration_event_id: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          waitlist_position?: number | null
+        }
+        Update: {
+          anonymized_at?: string | null
+          answers?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          display_id?: string
+          form_version_id?: string
+          guardian_email?: string
+          guardian_name?: string
+          guardian_phone?: string | null
+          guardian_relationship?: string
+          hold_expires_at?: string | null
+          household_id?: string | null
+          id?: string
+          payment_request_id?: string | null
+          player_date_of_birth?: string
+          player_first_name?: string
+          player_id?: string | null
+          player_last_name?: string
+          registration_event_id?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          waitlist_position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_form_version_id_fkey"
+            columns: ["form_version_id"]
+            isOneToOne: false
+            referencedRelation: "form_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_payment_request_id_fkey"
+            columns: ["payment_request_id"]
+            isOneToOne: false
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_registration_event_id_fkey"
+            columns: ["registration_event_id"]
+            isOneToOne: false
+            referencedRelation: "registration_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rsvps: {
         Row: {
           event_id: string
@@ -2121,6 +2708,49 @@ export type Database = {
           },
         ]
       }
+      team_required_waivers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          team_id: string
+          waiver_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          team_id: string
+          waiver_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          team_id?: string
+          waiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_required_waivers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_required_waivers_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_required_waivers_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: false
+            referencedRelation: "waivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           club_id: string | null
@@ -2262,6 +2892,218 @@ export type Database = {
           },
         ]
       }
+      waiver_acceptance_evidence: {
+        Row: {
+          acceptance_id: string
+          created_at: string
+          ip_address: unknown
+          user_agent: string | null
+        }
+        Insert: {
+          acceptance_id: string
+          created_at?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Update: {
+          acceptance_id?: string
+          created_at?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiver_acceptance_evidence_acceptance_id_fkey"
+            columns: ["acceptance_id"]
+            isOneToOne: true
+            referencedRelation: "waiver_acceptances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiver_acceptances: {
+        Row: {
+          accepted_at: string
+          electronic_consent: boolean
+          id: string
+          player_id: string | null
+          registration_id: string | null
+          signed_copy_path: string | null
+          signer_email: string
+          signer_name: string
+          signer_profile_id: string | null
+          signer_relationship: string
+          waiver_version_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          electronic_consent: boolean
+          id?: string
+          player_id?: string | null
+          registration_id?: string | null
+          signed_copy_path?: string | null
+          signer_email: string
+          signer_name: string
+          signer_profile_id?: string | null
+          signer_relationship: string
+          waiver_version_id: string
+        }
+        Update: {
+          accepted_at?: string
+          electronic_consent?: boolean
+          id?: string
+          player_id?: string | null
+          registration_id?: string | null
+          signed_copy_path?: string | null
+          signer_email?: string
+          signer_name?: string
+          signer_profile_id?: string | null
+          signer_relationship?: string
+          waiver_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiver_acceptances_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_acceptances_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_acceptances_signer_profile_id_fkey"
+            columns: ["signer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_acceptances_waiver_version_id_fkey"
+            columns: ["waiver_version_id"]
+            isOneToOne: false
+            referencedRelation: "waiver_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiver_versions: {
+        Row: {
+          body: string
+          content_hash: string
+          id: string
+          published_at: string
+          published_by: string | null
+          requires_resign_after_days: number | null
+          title: string
+          version: number
+          waiver_id: string
+        }
+        Insert: {
+          body: string
+          content_hash: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          requires_resign_after_days?: number | null
+          title: string
+          version: number
+          waiver_id: string
+        }
+        Update: {
+          body?: string
+          content_hash?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          requires_resign_after_days?: number | null
+          title?: string
+          version?: number
+          waiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiver_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_versions_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: false
+            referencedRelation: "waivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waivers: {
+        Row: {
+          archived_at: string | null
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          draft_body: string
+          draft_requires_resign_after_days: number | null
+          id: string
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          draft_body?: string
+          draft_requires_resign_after_days?: number | null
+          id?: string
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          draft_body?: string
+          draft_requires_resign_after_days?: number | null
+          id?: string
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waivers_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waivers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waivers_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2287,6 +3129,15 @@ export type Database = {
       }
       add_participant: {
         Args: { p_profile_id: string; p_role?: string; p_thread_id: string }
+        Returns: undefined
+      }
+      add_registration_note: {
+        Args: { p_body: string; p_registration_id: string }
+        Returns: string
+      }
+      archive_document: { Args: { p_document_id: string }; Returns: undefined }
+      archive_registration_event: {
+        Args: { p_event_id: string }
         Returns: undefined
       }
       calendar_feed_events: {
@@ -2330,6 +3181,10 @@ export type Database = {
       }
       claim_player_login: { Args: { p_player_id: string }; Returns: string }
       clear_game_result: { Args: { p_event_id: string }; Returns: undefined }
+      close_registration_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       connected_account_status: {
         Args: { p_club_id?: string; p_team_id?: string }
         Returns: {
@@ -2343,6 +3198,21 @@ export type Database = {
       }
       create_calendar_feed_token: { Args: never; Returns: string }
       create_club: { Args: { p_name: string; p_slug: string }; Returns: string }
+      create_document: {
+        Args: {
+          p_category?: string
+          p_club_id?: string
+          p_description?: string
+          p_mime_type?: string
+          p_pinned?: boolean
+          p_size_bytes?: number
+          p_storage_path?: string
+          p_team_id?: string
+          p_title?: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
       create_event: {
         Args: {
           p_arrive_early_minutes?: number
@@ -2365,6 +3235,15 @@ export type Database = {
           occurrences: number
           series_id: string
         }[]
+      }
+      create_form: {
+        Args: {
+          p_club_id?: string
+          p_name?: string
+          p_schema?: Json
+          p_team_id?: string
+        }
+        Returns: string
       }
       create_household_invite: {
         Args: {
@@ -2404,6 +3283,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_registration_event: {
+        Args: { p_club_id?: string; p_data?: Json; p_team_id?: string }
+        Returns: string
+      }
       create_team: {
         Args: {
           p_club_id?: string
@@ -2422,6 +3305,16 @@ export type Database = {
         }
         Returns: string
       }
+      create_waiver: {
+        Args: {
+          p_body?: string
+          p_club_id?: string
+          p_requires_resign_after_days?: number
+          p_team_id?: string
+          p_title?: string
+        }
+        Returns: string
+      }
       decide_club_link: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
@@ -2433,6 +3326,14 @@ export type Database = {
       decide_player_login_claim: {
         Args: { p_approve: boolean; p_claim_id: string }
         Returns: undefined
+      }
+      decide_registration: {
+        Args: {
+          p_decision: string
+          p_message?: string
+          p_registration_id: string
+        }
+        Returns: Json
       }
       delete_event: { Args: { p_event_id: string }; Returns: undefined }
       delete_message: { Args: { p_message_id: string }; Returns: undefined }
@@ -2499,6 +3400,10 @@ export type Database = {
           no_reply: number
           not_going: number
         }[]
+      }
+      export_registrations: {
+        Args: { p_event_id: string; p_include_sensitive?: boolean }
+        Returns: Json
       }
       find_club: {
         Args: { p_slug: string }
@@ -2624,6 +3529,15 @@ export type Database = {
           player_last_name: string
         }[]
       }
+      get_public_registration: { Args: { p_slug: string }; Returns: Json }
+      get_registration_detail: {
+        Args: { p_registration_id: string }
+        Returns: Json
+      }
+      get_sensitive_answers: {
+        Args: { p_registration_id: string }
+        Returns: Json
+      }
       get_team_members: {
         Args: { p_team_id: string }
         Returns: {
@@ -2677,6 +3591,16 @@ export type Database = {
         }[]
       }
       get_unread_total: { Args: never; Returns: number }
+      grant_registration_capability: {
+        Args: {
+          p_capability?: string
+          p_club_id?: string
+          p_granted?: boolean
+          p_profile_id?: string
+          p_team_id?: string
+        }
+        Returns: undefined
+      }
       hide_message: {
         Args: { p_message_id: string; p_reason?: string }
         Returns: undefined
@@ -2772,6 +3696,88 @@ export type Database = {
           type: string
         }[]
       }
+      list_documents: {
+        Args: {
+          p_club_id?: string
+          p_include_archived?: boolean
+          p_team_id?: string
+        }
+        Returns: {
+          archived_at: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          mime_type: string
+          pinned: boolean
+          size_bytes: number
+          storage_path: string
+          title: string
+          uploaded_by_name: string
+          visibility: string
+        }[]
+      }
+      list_my_registrations: {
+        Args: never
+        Returns: {
+          display_id: string
+          event_slug: string
+          event_title: string
+          id: string
+          next_step: string
+          payment_request_id: string
+          payment_timing: string
+          player_first_name: string
+          price_cents: number
+          status: string
+          submitted_at: string
+          waivers_required: number
+          waivers_signed: number
+        }[]
+      }
+      list_open_registration_events: {
+        Args: never
+        Returns: {
+          closes_at: string
+          issuer_name: string
+          kind: string
+          price_cents: number
+          slug: string
+          spots: string
+          starts_on: string
+          title: string
+        }[]
+      }
+      list_registrations: {
+        Args: {
+          p_event_id: string
+          p_limit?: number
+          p_missing_waivers?: boolean
+          p_offset?: number
+          p_search?: string
+          p_status?: string[]
+          p_unpaid?: boolean
+        }
+        Returns: {
+          decided_at: string
+          display_id: string
+          guardian_email: string
+          guardian_name: string
+          id: string
+          payment_request_id: string
+          payment_status: string
+          player_date_of_birth: string
+          player_first_name: string
+          player_last_name: string
+          status: string
+          submitted_at: string
+          total_count: number
+          waitlist_position: number
+          waitlist_rank: number
+          waivers_required: number
+          waivers_signed: number
+        }[]
+      }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
       mark_thread_read: {
         Args: { p_message_id: string; p_thread_id: string }
@@ -2832,6 +3838,15 @@ export type Database = {
         }
         Returns: string
       }
+      place_registered_player: {
+        Args: {
+          p_jersey_number?: number
+          p_position?: string
+          p_registration_id: string
+          p_team_id: string
+        }
+        Returns: string
+      }
       prepare_refund: {
         Args: {
           p_base_cents?: number
@@ -2851,7 +3866,14 @@ export type Database = {
           valid: boolean
         }[]
       }
+      promote_from_waitlist: { Args: { p_event_id: string }; Returns: string }
+      publish_form_version: { Args: { p_form_id: string }; Returns: string }
       publish_payment_event: { Args: { p_event_id: string }; Returns: number }
+      publish_registration_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
+      publish_waiver_version: { Args: { p_waiver_id: string }; Returns: string }
       record_game_result: {
         Args: {
           p_event_id: string
@@ -2866,6 +3888,18 @@ export type Database = {
         Args: { p_method: string; p_note?: string; p_request_id: string }
         Returns: undefined
       }
+      record_waiver_acceptance: {
+        Args: {
+          p_consent: boolean
+          p_player_id?: string
+          p_registration_id?: string
+          p_signer_email: string
+          p_signer_name: string
+          p_signer_relationship: string
+          p_waiver_version_id: string
+        }
+        Returns: string
+      }
       register_push_device: {
         Args: {
           p_label?: string
@@ -2874,6 +3908,22 @@ export type Database = {
           p_token: string
         }
         Returns: string
+      }
+      registration_capacity_summary: {
+        Args: { p_event_id: string }
+        Returns: {
+          accepted: number
+          capacity: number
+          declined: number
+          pending_verification: number
+          placed: number
+          spots_left: number
+          submitted: number
+          taken: number
+          waitlist_enabled: boolean
+          waitlisted: number
+          withdrawn: number
+        }[]
       }
       remove_participant: {
         Args: { p_profile_id: string; p_thread_id: string }
@@ -2912,6 +3962,19 @@ export type Database = {
       }
       rotate_calendar_feed_token: { Args: never; Returns: string }
       rotate_team_join_code: { Args: { p_team_id: string }; Returns: string }
+      save_form_draft: {
+        Args: { p_form_id: string; p_name?: string; p_schema: Json }
+        Returns: undefined
+      }
+      save_waiver_draft: {
+        Args: {
+          p_body: string
+          p_requires_resign_after_days?: number
+          p_title: string
+          p_waiver_id: string
+        }
+        Returns: undefined
+      }
       send_message: {
         Args: {
           p_attachments?: Json
@@ -2937,6 +4000,10 @@ export type Database = {
           p_player_id: string
           p_status: string
         }
+        Returns: undefined
+      }
+      set_team_required_waiver: {
+        Args: { p_required: boolean; p_team_id: string; p_waiver_id: string }
         Returns: undefined
       }
       set_thread_archived: {
@@ -2968,7 +4035,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      svc_attach_signed_copy: {
+        Args: { p_acceptance_id: string; p_path: string }
+        Returns: undefined
+      }
       svc_cleanup_rate_limits: { Args: never; Returns: number }
+      svc_create_registration: {
+        Args: {
+          p_answers: Json
+          p_event_id: string
+          p_form_version_id: string
+          p_guardian_email: string
+          p_guardian_name: string
+          p_guardian_phone: string
+          p_guardian_relationship: string
+          p_player_date_of_birth: string
+          p_player_first_name: string
+          p_player_id: string
+          p_player_last_name: string
+          p_sensitive: Json
+          p_submitted_by: string
+        }
+        Returns: {
+          display_id: string
+          id: string
+          status: string
+        }[]
+      }
       svc_dispute_event: {
         Args: {
           p_charge?: string
@@ -3021,6 +4114,19 @@ export type Database = {
         Args: { p_stale?: string }
         Returns: Json
       }
+      svc_record_waiver_acceptance: {
+        Args: {
+          p_consent: boolean
+          p_ip?: unknown
+          p_registration_id: string
+          p_signer_email: string
+          p_signer_name: string
+          p_signer_relationship: string
+          p_user_agent?: string
+          p_waiver_version_id: string
+        }
+        Returns: string
+      }
       svc_refund_event: {
         Args: {
           p_charge?: string
@@ -3047,6 +4153,10 @@ export type Database = {
           p_requirements?: Json
           p_stripe_account_id: string
         }
+        Returns: string
+      }
+      svc_verify_registration: {
+        Args: { p_registration_id: string }
         Returns: string
       }
       team_record: {
@@ -3135,6 +4245,17 @@ export type Database = {
         Returns: boolean
       }
       unlink_team_from_club: { Args: { p_team_id: string }; Returns: undefined }
+      update_document: {
+        Args: {
+          p_category: string
+          p_description: string
+          p_document_id: string
+          p_pinned: boolean
+          p_title: string
+          p_visibility: string
+        }
+        Returns: undefined
+      }
       update_event: {
         Args: { p_event_id: string; p_patch: Json; p_scope: string }
         Returns: number
@@ -3152,9 +4273,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_registration_event: {
+        Args: { p_data: Json; p_event_id: string }
+        Returns: undefined
+      }
       waive_request: {
         Args: { p_note?: string; p_request_id: string }
         Returns: undefined
+      }
+      waiver_compliance: {
+        Args: { p_team_id: string }
+        Returns: {
+          accepted_at: string
+          expires_at: string
+          first_name: string
+          jersey_number: number
+          last_name: string
+          player_id: string
+          status: string
+          waiver_id: string
+          waiver_title: string
+        }[]
+      }
+      withdraw_registration: {
+        Args: { p_registration_id: string }
+        Returns: Json
       }
     }
     Enums: {
