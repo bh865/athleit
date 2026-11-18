@@ -17,7 +17,16 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { ListItem } from '@/components/app/kit';
-import { Badge, Card, ErrorState, ListGroup, LoadingSkeleton, Mono, Text } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorState,
+  ListGroup,
+  LoadingSkeleton,
+  Mono,
+  Text,
+} from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 import { viewerZone } from '@/lib/viewer-zone';
@@ -160,8 +169,9 @@ export function WeekTile({ teamId, staff }: { teamId: string | null; staff: bool
           return (
             <ListItem
               key={e.key}
-              title={`${t.weekdayShort} ${t.startLabel} · ${e.title}`}
-              subtitle={e.meta}
+              title={e.title}
+              subtitle={`${t.weekdayShort} ${t.startLabel}${e.meta.includes(': ') ? ` · ${e.meta.split(': ')[0]}` : ''}`}
+              right={<Badge>{e.meta.split(': ').pop() ?? e.meta}</Badge>}
               onPress={() => router.push(`/events/${e.id}` as never)}
             />
           );
@@ -185,13 +195,14 @@ export function RecordTile({ teamId }: { teamId: string }) {
     >
       {r ? (
         <>
-          <View style={{ flexDirection: 'row', gap: space[6] }}>
-            <Stat v={r.wins} l="Wins" />
-            <Stat v={r.losses} l="Losses" />
-            <Stat v={r.ties} l="Ties" />
-          </View>
+          <Text
+            variant="monoXl"
+            accessibilityLabel={`${r.wins} wins, ${r.losses} losses, ${r.ties} ties`}
+          >
+            {r.wins}–{r.losses}–{r.ties}
+          </Text>
           <Text variant="caption" muted>
-            {r.season_label}
+            {r.season_label} · Wins · Losses · Ties
           </Text>
         </>
       ) : null}
@@ -267,16 +278,17 @@ export function WaiversTile({
           ))}
         </>
       ) : (
-        <ListGroup>
-          {d?.own.map((o, i) => (
-            <ListItem
-              key={`${o.name}${i}`}
-              title={`Sign ${o.name}’s waiver`}
-              subtitle={o.event}
-              onPress={() => router.push('/registrations' as never)}
-            />
+        <>
+          {d?.own.slice(0, 2).map((o, i) => (
+            <View key={`${o.name}${i}`} style={{ gap: space[2] }}>
+              <Text variant="bodyBold">Sign {o.name}’s waiver</Text>
+              <Text variant="caption" muted>
+                {o.event}
+              </Text>
+              <Button title="Sign waiver" onPress={() => router.push('/registrations' as never)} />
+            </View>
           ))}
-        </ListGroup>
+        </>
       )}
     </Tile>
   );

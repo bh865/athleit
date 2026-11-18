@@ -1,4 +1,4 @@
-import { previewOf, sumCents } from '@athleit/core';
+import { formatCents, previewOf, sumCents } from '@athleit/core';
 import {
   getNotificationFailures,
   getRoster,
@@ -21,7 +21,7 @@ import { View } from 'react-native';
 
 import { ListItem } from '@/components/app/kit';
 import { Amount, dueText } from '@/components/payments/money';
-import { Badge, ListGroup, Text } from '@/components/ui';
+import { Badge, Button, ListGroup, Text } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
@@ -118,29 +118,33 @@ export function FamilyTile() {
   );
 }
 
-/** Families: what is due and when. Hidden when nothing is open. */
+/** Families: big mono total, what it is for and when, one Pay button. Hidden when nothing is due. */
 export function DueTile() {
   const router = useRouter();
   const res = useLoad(() => getHouseholdPayments(supabase), []);
   const due = (res.data ?? []).filter((r) => r.can_pay);
   const first = [...due].sort((a, b) => a.due_at.localeCompare(b.due_at))[0];
+  const total = sumCents(due.map((r) => r.amount_cents));
   return (
-    <Tile
-      id="home-due"
-      title="Amount due"
-      res={res}
-      hasData={res.data !== null}
-      empty={due.length === 0}
-    >
+    <Tile id="home-due" title="Amount due" res={res} hasData={res.data !== null} empty={!first}>
       {first ? (
-        <ListGroup>
-          <ListItem
-            title={due.length === 1 ? first.title : `${due.length} payments due`}
-            subtitle={`Due ${dueText(first.due_at)}`}
-            right={<Amount cents={sumCents(due.map((r) => r.amount_cents))} />}
-            onPress={() => router.push('/pay' as never)}
-          />
-        </ListGroup>
+        <View style={{ gap: space[2], alignItems: 'flex-start' }}>
+          <Badge>{`${due.length} request${due.length === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={total} variant="monoXl" label="Amount due" />
+          <Text variant="caption" muted>
+            {due.length === 1
+              ? `${first.title}${first.player_first_name ? ` · ${first.player_first_name}` : ''}`
+              : `${due.length} payments`}
+            {' · due '}
+            {dueText(first.due_at)}
+          </Text>
+          <View style={{ alignSelf: 'stretch' }}>
+            <Button
+              title={`Pay ${formatCents(total)}`}
+              onPress={() => router.push('/pay' as never)}
+            />
+          </View>
+        </View>
       ) : null}
     </Tile>
   );

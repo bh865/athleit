@@ -117,10 +117,12 @@ export default function HomeScreen() {
           {tiles.has('announcement') && team ? <AnnouncementTile teamId={team.id} /> : null}
           {team?.isStaff || owner ? (
             <>
-              <GroupHead
-                label="For your team"
-                scope={team ? `${team.title} · ${rolesLabel(teamRoles)}` : ''}
-              />
+              {payer ? (
+                <GroupHead
+                  label="For your team"
+                  scope={team ? `${team.title} · ${rolesLabel(teamRoles)}` : ''}
+                />
+              ) : null}
               {tiles.has('approvals') && team && caps.has('joinRequests.decide') ? (
                 <ApprovalsTile teamId={team.id} />
               ) : null}
@@ -140,7 +142,7 @@ export default function HomeScreen() {
           ) : null}
           {payer ? (
             <>
-              <GroupHead label="For your family" />
+              {team?.isStaff || owner ? <GroupHead label="For your family" /> : null}
               <DueTile />
               {tiles.has('waivers') ? (
                 <WaiversTile teamId={team?.id ?? null} staff={false} family />

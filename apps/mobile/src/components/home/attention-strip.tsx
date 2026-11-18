@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Icon, ListGroup, Sheet, Text, useTheme } from '@/components/ui';
+import { Badge, Card, Icon, ListGroup, Sheet, Text, useTheme } from '@/components/ui';
 import { ListItem } from '@/components/app/kit';
 
 const ICON: Record<AttentionKind, IconName> = {
@@ -58,10 +58,13 @@ export function AttentionStrip({
     backgroundColor: primary ? c.accent : c.surface,
   });
   return (
-    <View style={{ gap: space[3] }} testID="home-attention" accessibilityRole="summary">
-      <Text variant="label" muted accessibilityRole="header">
-        NEEDS YOUR ATTENTION
-      </Text>
+    <Card style={{ gap: space[3] }} testID="home-attention">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+        <Text variant="label" muted accessibilityRole="header">
+          NEEDS YOUR ATTENTION
+        </Text>
+        <Badge tone="count">{String(shown.length + more.length)}</Badge>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -75,7 +78,18 @@ export function AttentionStrip({
             onPress={() => router.push(i.href as never)}
             style={chip(n === 0)}
           >
-            <Icon name={ICON[i.kind]} size="sm" color={n === 0 ? c.accentInk : c.ink} />
+            <View
+              style={{
+                width: componentTokens.iconButton.size * 0.7,
+                height: componentTokens.iconButton.size * 0.7,
+                borderRadius: radius.pill,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: c.surface,
+              }}
+            >
+              <Icon name={ICON[i.kind]} size="sm" color={c.ink} />
+            </View>
             <View>
               <Text variant="bodyBold" style={n === 0 ? { color: c.accentInk } : undefined}>
                 {i.label}
@@ -119,6 +133,6 @@ export function AttentionStrip({
           ))}
         </ListGroup>
       </Sheet>
-    </View>
+    </Card>
   );
 }
