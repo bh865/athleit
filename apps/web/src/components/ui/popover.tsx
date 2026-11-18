@@ -10,6 +10,8 @@ import {
   type RefObject,
 } from 'react';
 
+import { createPortal } from 'react-dom';
+
 import { Glass } from './glass';
 import styles from './popover.module.css';
 
@@ -33,23 +35,36 @@ export function Popover({
   align?: 'start' | 'end';
 }) {
   const panel = useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = useState<'below' | 'above'>('below');
-  const [shift, setShift] = useState(0);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   const close = useCallback(() => {
     onClose();
     anchor.current?.focus();
   }, [onClose, anchor]);
 
+  // Fixed + portalled so a popover is never clipped by a sheet or scroll container; re-placed on scroll.
   useLayoutEffect(() => {
-    if (!open || !panel.current || !anchor.current) return;
-    const a = anchor.current.getBoundingClientRect();
-    const p = panel.current.getBoundingClientRect();
-    const room = window.innerHeight - a.bottom;
-    setPlacement(room < p.height + 16 && a.top > room ? 'above' : 'below');
-    const overflow = a.left + p.width - (window.innerWidth - 8);
-    setShift(overflow > 0 ? -overflow : 0);
-  }, [open, anchor]);
+    if (!open) return;
+    const place = () => {
+      if (!panel.current || !anchor.current) return;
+      const a = anchor.current.getBoundingClientRect();
+      const p = panel.current.getBoundingClientRect();
+      const gap = 8;
+      const room = window.innerHeight - a.bottom;
+      const above = room < p.height + gap * 2 && a.top > room;
+      const top = above ? Math.max(gap, a.top - p.height - gap) : a.bottom + gap;
+      const wanted = align === 'end' ? a.right - p.width : a.left;
+      const left = Math.min(Math.max(gap, wanted), window.innerWidth - p.width - gap);
+      setPos({ top, left });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, anchor, align]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,18 +87,23 @@ export function Popover({
   }, [open, onClose, close, anchor]);
 
   if (!open) return null;
-  return (
+  return createPortal(
     <Glass
       solid
       level="modal"
-      ref={panel as never}
+      ref={panel}
       role="dialog"
       aria-label={label}
-      data-placement={placement}
-      className={[styles.popover, align === 'end' ? styles.end : ''].join(' ')}
-      style={{ translate: shift ? `${shift}px 0` : undefined }}
+      className={styles.popover}
+      style={{
+        top: pos?.top ?? 0,
+        left: pos?.left ?? 0,
+        opacity: pos ? 1 : 0,
+        pointerEvents: pos ? undefined : 'none',
+      }}
     >
       {children}
-    </Glass>
+    </Glass>,
+    document.body,
   );
 }
