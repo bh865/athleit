@@ -5,14 +5,14 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 280px;
+  max-height: calc(var(--size-list-row-height) * 4);
   overflow-y: auto;
 }
 .option {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 44px;
+  min-height: var(--size-icon-button-size);
   padding: var(--space-2) var(--space-3);
   cursor: pointer;
   color: var(--color-ink);
