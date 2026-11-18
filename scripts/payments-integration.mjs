@@ -26,12 +26,15 @@ const enc = (o, p = '') =>
       : [`${encodeURIComponent(p ? `${p}[${k}]` : k)}=${encodeURIComponent(v)}`],
   );
 async function api(method, path, params = {}, idem, onAccount = acct) {
-  const res = await fetch(`https://api.stripe.com${path}`, {
+  const qs = method === 'GET' && Object.keys(params).length ? `?${enc(params).join('&')}` : '';
+  const res = await fetch(`https://api.stripe.com${path}${qs}`, {
     method,
     headers: {
       authorization: `Bearer ${key}`,
       ...(method === 'POST' ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
       ...(idem ? { 'idempotency-key': idem } : {}),
+      // Direct charges live ON the connected account: every call for them carries Stripe-Account.
+      ...(onAccount ? { 'stripe-account': onAccount } : {}),
     },
     body: method === 'POST' ? enc(params).join('&') : undefined,
   });
@@ -58,8 +61,6 @@ async function charge(label, pm, total, appFee) {
       amount: total,
       currency: 'usd',
       application_fee_amount: appFee,
-      transfer_data: { destination: acct },
-      on_behalf_of: acct,
       payment_method: pm,
       confirm: 'true',
       automatic_payment_methods: { enabled: 'true', allow_redirects: 'never' },

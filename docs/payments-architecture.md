@@ -48,10 +48,20 @@ estimated and actual Stripe fee is the **team's** under both policies (as in Par
   a refund on the connected account, with `refund_application_fee` only when the policy returns the Athleit charge; the webhook finalizes status.
 - **Safety net** (`reconcile-payments`, pg_cron every 10 minutes): re-fetches stuck/abandoned/canceled intents, missing fees, accounts, stuck events.
 
-## Open items to confirm in test mode
+## Verified in Stripe test mode (scripts/payments-integration.mjs, all passing)
 
-1. Exactly how much of the application fee `refund_application_fee` returns on a partial vs full refund (run `scripts/payments-integration.mjs`).
-2. Current Connect pricing (with `fees.payer=account`, Stripe's docs say it charges no Connect fees to the account or to the platform). Not confirmed from the docs
-   read; check the Stripe pricing page before setting `fee_config`.
-3. Stripe now recommends controller properties / Accounts v2 over the legacy `type: express` for new platforms; the brief asked for Express, which
-   remains supported. Revisit before live mode.
+- A direct charge created with the `Stripe-Account` header on an account with `fees.payer=account`, `losses.payments=stripe`, full dashboard: succeeds
+  ($45.45 total, 45c application fee). The balance transaction on the connected account shows the Stripe fee (162c = 2.9% + 30c, exactly the estimate) and
+  the 45c application fee as separate lines: **the team bears Stripe's fee; Athleit pays none.** Net to the team 4338 = 4545 - 162 - 45.
+- Same idempotency key returns the same intent; 4000 0000 0000 9995 declines (insufficient funds); 4000 0025 0000 3155 requires authentication.
+- Refunds are issued on the connected account. A partial refund with `refund_application_fee=false` keeps the Athleit charge; the final refund with
+  `refund_application_fee=true` returned the whole 45c (application fee refunded: 45). This matches the policy flags.
+- Stripe rejects `stripe_dashboard.type=express` with `fees.payer=account` ("your platform must collect fees and be liable for negative balances"), hence
+  the full dashboard.
+
+## Open items
+
+1. Not yet exercised end to end: the Connect webhook endpoint (secret and endpoint registration), so payment status changes still need a run through
+   the real `stripe-webhook` function.
+2. Current Connect pricing: with `fees.payer=account` Stripe's docs say it charges no Connect fees to the account or the platform; confirm on the pricing page.
+3. Stripe recommends Accounts v2 for new platforms; v1 controller properties are used here and remain supported.
