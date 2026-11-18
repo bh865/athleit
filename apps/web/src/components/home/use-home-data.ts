@@ -65,12 +65,16 @@ export function useHomeData(
   );
   const joins = useLoad(
     () =>
-      staff && caps?.has('joinRequests.decide') ? getJoinRequests(getClient(), teamId) : none<never>(),
+      staff && caps?.has('joinRequests.decide')
+        ? getJoinRequests(getClient(), teamId)
+        : none<never>(),
     [staff, teamId, k],
   );
   const waivers = useLoad(
     () =>
-      staff && caps?.has('registration.view') ? getWaiverCompliance(getClient(), teamId) : none<never>(),
+      staff && caps?.has('registration.view')
+        ? getWaiverCompliance(getClient(), teamId)
+        : none<never>(),
     [staff, teamId, k],
   );
   const past = useLoad(

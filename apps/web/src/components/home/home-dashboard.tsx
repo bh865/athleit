@@ -2,6 +2,7 @@
 
 import {
   capabilitiesForPlace,
+  homeTileIds,
   describeEventTime,
   payViewsFor,
   previewOf,
@@ -20,6 +21,7 @@ import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/u
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
+import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile, WeekTile } from './tiles';
 import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
 import { useHomeData } from './use-home-data';
@@ -224,6 +226,8 @@ export function HomeDashboard() {
   const staff = Boolean(team?.isStaff);
   const clubAdmin = contexts.find((c) => c.kind === 'club');
   const { attention } = useHomeData(contexts, active);
+  const tiles = new Set(homeTileIds(contexts, active));
+  const teamId = team?.id ?? null;
 
   return (
     <div className={styles.page}>
@@ -250,7 +254,26 @@ export function HomeDashboard() {
       <AttentionStrip shown={attention.shown} more={attention.more} />
       <NextUpHero canManage={staff} />
       <div className={styles.row3}>
+        {tiles.has('thisWeek') ? (
+          <WeekTile teamId={teamId} staff={staff} family={views.payer} />
+        ) : null}
+        {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
+      </div>
+      <div className={styles.row3}>
         {team ? <MessagesCard teamId={team.id} /> : null}
+        {tiles.has('approvals') && teamId && caps.has('joinRequests.decide') ? (
+          <ApprovalsTile teamId={teamId} />
+        ) : null}
+        {tiles.has('waivers') ? (
+          <WaiversTile
+            teamId={teamId}
+            staff={staff && caps.has('registration.view')}
+            family={views.payer}
+          />
+        ) : null}
+        {tiles.has('registrations') ? (
+          <RegistrationsTile teamId={teamId} staff={staff && caps.has('registration.view')} />
+        ) : null}
         {views.payer || views.staff ? (
           <div className={styles.card} data-testid="home-payments">
             {views.payer ? <DueCard /> : null}
