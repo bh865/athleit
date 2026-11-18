@@ -265,6 +265,7 @@ export const addLocation = (client: Client, l: LocationInput & { team_id: string
         ...geo(l),
       })
       .select()
+      .single()
       .then((r) => ({ data: r.data ? [r.data] : [], error: r.error }) as never),
   );
 export const updateLocation = (client: Client, id: string, l: LocationInput) =>
@@ -279,6 +280,7 @@ export const updateLocation = (client: Client, id: string, l: LocationInput) =>
       })
       .eq('id', id)
       .select()
+      .single()
       .then((r) => ({ data: r.data ? [r.data] : [], error: r.error }) as never),
   );
 export const deleteLocation = (client: Client, id: string) =>
@@ -295,6 +297,7 @@ export const addOpponent = (client: Client, teamId: string, name: string) =>
       .from('opponents')
       .insert({ team_id: teamId, name })
       .select()
+      .single()
       .then((r) => ({ data: r.data ? [r.data] : [], error: r.error }) as never),
   );
 export const deleteOpponent = (client: Client, id: string) =>
