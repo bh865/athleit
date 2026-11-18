@@ -19,7 +19,9 @@ export default function CaptchaHandoffPage() {
       <Card>
         <div className={styles.stack}>
           <Heading as="h1">Quick check</Heading>
-          <Text as="p" muted>Confirm you’re a person to continue in the app.</Text>
+          <Text as="p" muted>
+            Confirm you’re a person to continue in the app.
+          </Text>
           <Captcha
             resetKey={0}
             onToken={(t) => {

@@ -35,6 +35,7 @@ export interface NotificationPayload {
   message_id?: string;
   event_id?: string;
   team_id?: string;
+  audience?: 'staff' | 'family';
   registration_event_id?: string;
   change?: string;
   /** Ready-to-show body for schedule notifications ("12 practices added"); never contains a child's name. */
@@ -107,7 +108,9 @@ export interface Transports {
 export function linkFor(p: NotificationPayload): string {
   if (p.thread_id) return `/messages/${p.thread_id}`;
   if (p.event_id) return `/events/${p.event_id}`;
-  if (p.registration_event_id) return `/registrations/${p.registration_event_id}`;
+  if (p.registration_event_id) return `/manage/registration/${p.registration_event_id}`;
+  if (p.kind === 'registration' && p.team_id)
+    return p.audience === 'staff' ? `/teams/${p.team_id}/compliance` : '/registrations';
   return '/';
 }
 

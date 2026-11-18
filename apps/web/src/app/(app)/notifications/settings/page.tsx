@@ -36,6 +36,7 @@ const LABEL = {
   announcements: 'Announcements',
   schedule: 'Schedule changes',
   payments: 'Payments',
+  registration: 'Registrations and waivers',
 } as const;
 const zones = (): string[] => {
   try {

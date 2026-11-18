@@ -63,5 +63,8 @@ select is((select count(*)::int from public.notification_outbox where category =
 select private.waiver_expiry_notices();
 select is((select count(*)::int from public.notification_outbox where category = 'registration' and channel = 'in_app'), 3, 'deduped: running again adds nothing');
 
+select is((select payload ->> 'audience' from public.notification_outbox where profile_id = 'a4444444-4444-4444-4444-444444444444' and category = 'registration' and channel = 'in_app'), 'family', 'the guardian notice is tagged for families');
+select is((select payload ->> 'audience' from public.notification_outbox where profile_id = 'a1111111-1111-1111-1111-111111111111' and category = 'registration' and channel = 'in_app'), 'staff', 'the staff notice is tagged for staff');
+
 select * from finish();
 rollback;
