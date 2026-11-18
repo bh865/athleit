@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { cleanup, newSession, signUp } from './helpers';
+import { cleanup, newSession, pickDate, signUp } from './helpers';
 
 /**
  * Visual regression of signed-in screens (home onboarding, add a child, family, team roster with
@@ -48,7 +48,7 @@ test.describe.serial('signed-in screens', () => {
     await page.goto('/family/children/new');
     await page.getByLabel('First name').fill('Sample');
     await page.getByLabel('Last name').fill('Child');
-    await page.getByLabel('Date of birth').fill('2016-04-02');
+    await pickDate(page, 'Date of birth', '2016-04-02');
     await page.getByRole('button', { name: 'Add child' }).click();
     await expect(page.getByTestId('children-list')).toBeVisible();
     for (const theme of ['light', 'dark'] as const) await shoot('family', theme);

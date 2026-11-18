@@ -127,3 +127,14 @@
   border-radius: var(--radius-pill);
   font-weight: var(--text-body-bold-weight);
 }
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  flex: 1 1 0;
+}
+.card.card {
+  padding: var(--space-4);
+  align-self: flex-start;
+}

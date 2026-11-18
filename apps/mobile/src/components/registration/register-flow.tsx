@@ -10,12 +10,13 @@ import {
 import { listChildren } from '@athleit/db/api';
 import { callRegistrationFn, type PublicRegistration } from '@athleit/db/registration';
 import { space } from '@athleit/tokens';
+import { parseIso, todayIso } from '@athleit/ui-core';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { Choice, FormMessage, H1, H2, Segmented } from '@/components/app/kit';
-import { Badge, Button, Card, Chip, Text, TextField } from '@/components/ui';
+import { Badge, Button, Card, Chip, DatePicker, Text, TextField } from '@/components/ui';
 import {
   accessToken,
   edgeConfig,
@@ -140,7 +141,7 @@ export function RegisterFlow({ event }: { event: PublicRegistration }) {
     if (s === 0) {
       if (!cFirst.trim()) e.first = 'Enter the child’s first name';
       if (!cLast.trim()) e.last = 'Enter the child’s last name';
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(cDob)) e.dob = 'Use YYYY-MM-DD';
+      if (!parseIso(cDob)) e.dob = 'Choose the child’s date of birth';
       if (!gName.trim()) e.gName = 'Enter your name';
       if (!/^\S+@\S+\.\S+$/.test(gEmail.trim())) e.gEmail = 'Enter a valid email';
     }
@@ -261,12 +262,12 @@ export function RegisterFlow({ event }: { event: PublicRegistration }) {
                 onChangeText={setLast}
                 error={errors.last}
               />
-              <TextField
+              <DatePicker
                 label="Child’s date of birth"
                 value={dob}
-                onChangeText={setDob}
-                placeholder="YYYY-MM-DD"
-                autoCapitalize="none"
+                onChange={setDob}
+                max={todayIso()}
+                yearSpan={{ before: 25, after: 0 }}
                 error={errors.dob}
               />
             </>

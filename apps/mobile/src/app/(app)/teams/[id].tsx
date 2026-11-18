@@ -1,5 +1,5 @@
 import { space } from '@athleit/tokens';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -11,11 +11,10 @@ import { StaffRegistrationsSection } from '@/components/registration/staff';
 import { InvitesSection } from '@/components/team/invites';
 import { MembersSection } from '@/components/team/members';
 import { RequestsSection } from '@/components/team/requests';
-import { RosterSection } from '@/components/team/roster';
 import { SettingsSection } from '@/components/team/settings';
 import { TeamProvider, useTeam } from '@/components/team/team-context';
 import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Text } from '@/components/ui';
+import { Button, Card, Text } from '@/components/ui';
 
 type Section =
   | 'roster'
@@ -29,10 +28,11 @@ type Section =
 
 function TeamBody() {
   const { team, caps } = useTeam();
+  const router = useRouter();
   const [section, setSection] = useState<Section>('roster');
   const tabs = (
     [
-      { value: 'roster', label: 'Roster', show: caps.has('roster.viewLimited') },
+      { value: 'roster', label: 'Overview', show: caps.has('roster.viewLimited') },
       { value: 'registrations', label: 'Registrations', show: caps.has('registration.view') },
       { value: 'waivers', label: 'Waivers', show: caps.has('registration.view') },
       { value: 'documents', label: 'Documents', show: caps.has('documents.view') },
@@ -54,7 +54,17 @@ function TeamBody() {
       </View>
       {caps.has('schedule.view') ? <NextUpCard /> : null}
       <Segmented value={current} options={tabs} onChange={setSection} />
-      {current === 'roster' && <RosterSection />}
+      {current === 'roster' && (
+        <Card style={{ gap: space[3] }}>
+          <Text variant="heading">Roster</Text>
+          <Text muted>The full list lives on the Roster screen.</Text>
+          <Button
+            title="Open roster"
+            icon="arrow-right"
+            onPress={() => router.push('/roster' as never)}
+          />
+        </Card>
+      )}
       {current === 'registrations' && <StaffRegistrationsSection owner={{ teamId: team.id }} />}
       {current === 'waivers' && <ComplianceSection teamId={team.id} />}
       {current === 'documents' && <DocumentsSection owner={{ teamId: team.id }} />}

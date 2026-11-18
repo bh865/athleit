@@ -22,7 +22,17 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { FormMessage } from '@/components/app/states';
-import { Button, Card, Heading, Select, Text, TextArea, TextField } from '@/components/ui';
+import {
+  Button,
+  Card,
+  DatePicker,
+  Heading,
+  Select,
+  Text,
+  TextArea,
+  TextField,
+  TimePicker,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -100,6 +110,33 @@ function stateFromBlocks(bs: InfoBlock[]): InfoState {
 }
 
 /** Event builder (web only). Create or edit a registration event; publishing is done from the management screen. */
+/** A date and a time as one local `date T time` string, built from the shared pickers. */
+function DateTimeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [date = '', time = ''] = value.split('T');
+  return (
+    <div className={styles.stack}>
+      <DatePicker
+        label={`${label} (date)`}
+        value={date}
+        onChange={(d) => onChange(d ? `${d}T${time || '09:00'}` : '')}
+      />
+      <TimePicker
+        label={`${label} (time)`}
+        value={time}
+        onChange={(t) => onChange(date ? `${date}T${t}` : '')}
+      />
+    </div>
+  );
+}
+
 export function EventBuilder({ eventId, owner }: { eventId: string | null; owner: Owner }) {
   const client = getClient();
   const router = useRouter();
@@ -309,18 +346,8 @@ export function EventBuilder({ eventId, owner }: { eventId: string | null; owner
             maxLength={500}
             hint="Shown in link previews."
           />
-          <TextField
-            label="Starts"
-            type="date"
-            value={startsOn}
-            onChange={(e) => setStartsOn(e.target.value)}
-          />
-          <TextField
-            label="Ends"
-            type="date"
-            value={endsOn}
-            onChange={(e) => setEndsOn(e.target.value)}
-          />
+          <DatePicker label="Starts" value={startsOn} onChange={setStartsOn} />
+          <DatePicker label="Ends" value={endsOn} onChange={setEndsOn} />
           <TextField
             label="Location"
             value={location}
@@ -378,18 +405,8 @@ export function EventBuilder({ eventId, owner }: { eventId: string | null; owner
       <Card>
         <div className={styles.stack}>
           <Heading as="h2">Who can register</Heading>
-          <TextField
-            label="Opens"
-            type="datetime-local"
-            value={opens}
-            onChange={(e) => setOpens(e.target.value)}
-          />
-          <TextField
-            label="Closes"
-            type="datetime-local"
-            value={closes}
-            onChange={(e) => setCloses(e.target.value)}
-          />
+          <DateTimeField label="Opens" value={opens} onChange={setOpens} />
+          <DateTimeField label="Closes" value={closes} onChange={setCloses} />
           <TextField
             label="Spots (leave blank for no limit)"
             inputMode="numeric"

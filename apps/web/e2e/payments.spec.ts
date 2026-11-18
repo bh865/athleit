@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { expect, test, type Page } from '@playwright/test';
 
-import { PASSWORD, cleanup, emailFor, newSession, signUp } from './helpers';
+import { PASSWORD, cleanup, emailFor, listAllUsers, newSession, signUp } from './helpers';
 
 /**
  * Phase 4 e2e in Stripe TEST mode. NOT RUN IN CI: it needs real test keys, a deployed stripe-webhook, and Stripe CLI forwarding.
@@ -14,7 +14,7 @@ import { PASSWORD, cleanup, emailFor, newSession, signUp } from './helpers';
  * (charges_enabled = true). Setup writes rows with the service role; every assertion goes through the real UI and webhook.
  */
 const enabled = process.env.STRIPE_E2E === '1';
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.E2E_SUPABASE_URL ?? '';
 const service = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY ?? '';
 const account = process.env.E2E_STRIPE_ACCOUNT ?? '';
 
@@ -29,8 +29,7 @@ test.describe('payments (Stripe test mode)', () => {
     const db = createClient(url, service, { auth: { persistSession: false } });
     const users = new Map<string, string>();
     for (const who of ['admin', 'parentA', 'parentB']) {
-      const { data } = await db.auth.admin.listUsers({ perPage: 200 });
-      const u = data.users.find((x) => x.email === emailFor(who));
+      const u = (await listAllUsers(db)).find((x) => x.email === emailFor(who));
       if (u) users.set(who, u.id);
     }
     const team = (

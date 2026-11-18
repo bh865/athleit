@@ -1,0 +1,7 @@
+.popover.popover {
+  position: fixed;
+  z-index: 60;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  max-width: calc(100vw - var(--space-4));
+}

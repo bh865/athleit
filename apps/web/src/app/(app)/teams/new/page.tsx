@@ -15,7 +15,7 @@ import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
-import { Button, Card, Select, TextField } from '@/components/ui';
+import { Button, Card, PageHeader, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 const SPORT_OPTIONS = SPORTS.map((s) => ({
@@ -68,41 +68,45 @@ export default function NewTeamPage() {
       return setError(friendlyError(res.error));
     }
     await refresh();
-    setActive(`team:${res.data}:admin`);
+    setActive(`team:${res.data}`);
     router.push(`/teams/${res.data}`);
   }
 
   return (
-    <Card>
-      <form onSubmit={onSubmit} noValidate className={styles.stack}>
-        <h1 className={styles.title}>Create a team</h1>
-        <p className={styles.muted}>You’ll be the team’s admin. Teams don’t need a club.</p>
-        <TextField name="name" label="Team name" error={errors.name} />
-        <Select
-          name="sport"
-          label="Sport"
-          options={SPORT_OPTIONS}
-          defaultValue="soccer"
-          error={errors.sport}
-        />
-        <TextField
-          name="seasonLabel"
-          label="Season"
-          hint="For example, Fall 2026"
-          error={errors.seasonLabel}
-        />
-        <TextField
-          name="clubSlug"
-          label="Club web address (optional)"
-          hint="If your team belongs to a club, enter its address. The club’s admin has to approve the link."
-          autoCapitalize="none"
-          error={errors.clubSlug}
-        />
-        <FormMessage error={error} />
-        <Button type="submit" loading={busy}>
-          Create team
-        </Button>
-      </form>
-    </Card>
+    <>
+      <PageHeader
+        title="Create a team"
+        subtitle="You’ll be the team’s admin. Teams don’t need a club."
+      />
+      <Card>
+        <form onSubmit={onSubmit} noValidate className={styles.stack}>
+          <TextField name="name" label="Team name" error={errors.name} />
+          <Select
+            name="sport"
+            label="Sport"
+            options={SPORT_OPTIONS}
+            defaultValue="soccer"
+            error={errors.sport}
+          />
+          <TextField
+            name="seasonLabel"
+            label="Season"
+            hint="For example, Fall 2026"
+            error={errors.seasonLabel}
+          />
+          <TextField
+            name="clubSlug"
+            label="Club web address (optional)"
+            hint="If your team belongs to a club, enter its address. The club’s admin has to approve the link."
+            autoCapitalize="none"
+            error={errors.clubSlug}
+          />
+          <FormMessage error={error} />
+          <Button type="submit" loading={busy}>
+            Create team
+          </Button>
+        </form>
+      </Card>
+    </>
   );
 }

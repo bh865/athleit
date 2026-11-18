@@ -3,7 +3,7 @@ import { space } from '@athleit/tokens';
 import { View } from 'react-native';
 
 import { Choice } from '@/components/app/kit';
-import { Chip, Text, TextField } from '@/components/ui';
+import { Chip, DatePicker, Text, TextField } from '@/components/ui';
 
 export type Answers = Record<string, unknown>;
 const ADDRESS_PARTS = [
@@ -154,15 +154,7 @@ function One({
         />
       );
     case 'date':
-      return (
-        <TextField
-          {...common}
-          placeholder="YYYY-MM-DD"
-          autoCapitalize="none"
-          value={String(value ?? '')}
-          onChangeText={set}
-        />
-      );
+      return <DatePicker {...common} value={String(value ?? '')} onChange={set} />;
     case 'email':
       return (
         <TextField

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { cleanup, newSession, signUp } from './helpers';
+import { cleanup, newSession, pickTime, signUp } from './helpers';
 
 // 1x1 transparent PNG
 const PNG = Buffer.from(
@@ -170,14 +170,17 @@ test.describe.serial('messaging', () => {
     const messagesEmail = parent.getByLabel('Messages by email');
     await expect(messagesEmail).toBeChecked();
     await messagesEmail.uncheck();
-    await parent.getByLabel('From').fill('21:00');
-    await parent.getByLabel('Until').fill('07:00');
+    // The preference save reloads the form; wait for it so the time popover isn't remounted mid-pick.
+    await parent.waitForLoadState('networkidle');
+    await expect(messagesEmail).not.toBeChecked();
+    await pickTime(parent, 'From', '21:00');
+    await pickTime(parent, 'Until', '07:00');
     await parent.getByLabel('Timezone').selectOption('America/New_York');
     await parent.getByRole('button', { name: 'Save quiet hours' }).click();
     await expect(parent.getByText('Quiet hours saved')).toBeVisible();
     await parent.reload();
     await expect(parent.getByLabel('Messages by email')).not.toBeChecked();
-    await expect(parent.getByLabel('From')).toHaveValue('21:00');
+    await expect(parent.getByRole('button', { name: /^From/ })).toContainText('9:00 PM');
     await expect(parent.getByLabel('Timezone')).toHaveValue('America/New_York');
     await expect(parent.getByText('No devices registered for push yet.')).toBeVisible();
   });

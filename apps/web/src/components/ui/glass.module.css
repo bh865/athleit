@@ -26,6 +26,14 @@
   -webkit-backdrop-filter: var(--glass-modal-filter);
   backdrop-filter: var(--glass-modal-filter);
 }
+/* Menus and popovers over text: opaque, no blur (see Glass `solid`). */
+.glass.solid {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  box-shadow: var(--glass-modal-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 /* Reduced transparency makes the tint solid, so give it a visible edge. */
 :root[data-reduce-transparency='true'] .glass {
   border-color: var(--color-line);

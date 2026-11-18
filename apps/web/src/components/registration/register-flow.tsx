@@ -9,10 +9,11 @@ import {
 } from '@athleit/core';
 import { listChildren } from '@athleit/db/api';
 import { callRegistrationFn, type PublicRegistration } from '@athleit/db/registration';
+import { todayIso } from '@athleit/ui-core';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Card, Heading, Select, Text, TextField } from '@/components/ui';
+import { Button, Card, DatePicker, Heading, Select, Text, TextField } from '@/components/ui';
 import { currentAccessToken, edgeConfig, RELATIONSHIPS } from '@/lib/registration';
 import { getClient } from '@/lib/supabase/browser';
 
@@ -225,11 +226,12 @@ export function RegisterFlow({ event }: { event: PublicRegistration }) {
                   onChange={(e) => setLast(e.target.value)}
                   error={errors.last}
                 />
-                <TextField
+                <DatePicker
                   label="Child’s date of birth"
-                  type="date"
                   value={dob}
-                  onChange={(e) => setDob(e.target.value)}
+                  onChange={setDob}
+                  max={todayIso()}
+                  yearSpan={{ before: 25, after: 0 }}
                   error={errors.dob}
                 />
               </>

@@ -8,14 +8,18 @@ import styles from '@/components/app/app.module.css';
 import { TeamProvider, useTeam } from '@/components/app/team-context';
 import { StaffPaymentsCard } from '@/components/payments/home-cards';
 import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Badge } from '@/components/ui';
+import { Badge, PageHeader } from '@/components/ui';
 
 function TeamHeader() {
   const { team, caps } = useTeam();
   const pathname = usePathname();
   const base = `/teams/${team.id}`;
   const tabs = [
-    { href: base, label: 'Roster', show: caps.has('roster.viewLimited') },
+    {
+      href: base,
+      label: 'Overview',
+      show: caps.has('team.view') || caps.has('roster.viewLimited'),
+    },
     { href: `${base}/schedule`, label: 'Schedule', show: caps.has('schedule.view') },
     { href: `${base}/payments`, label: 'Payments', show: caps.has('payments.view') },
     { href: `${base}/registrations`, label: 'Registrations', show: caps.has('registration.view') },
@@ -32,18 +36,20 @@ function TeamHeader() {
   ].filter((t) => t.show);
   return (
     <>
-      <div className={`${styles.stack} ${styles.tight}`}>
-        <h1 className={styles.title}>{team.name}</h1>
-        <p className={styles.muted}>
-          <span className={styles.capitalize}>{team.sport}</span> · {team.season_label}
-          {!caps.has('roster.edit') && caps.has('roster.viewFull') && (
-            <>
-              {' '}
-              <Badge>Read only</Badge>
-            </>
-          )}
-        </p>
-      </div>
+      <PageHeader
+        title={team.name}
+        subtitle={
+          <>
+            <span className={styles.capitalize}>{team.sport}</span> · {team.season_label}
+            {!caps.has('roster.edit') && caps.has('roster.viewFull') && (
+              <>
+                {' '}
+                <Badge>Read only</Badge>
+              </>
+            )}
+          </>
+        }
+      />
       <nav className={styles.tabs} aria-label="Team sections">
         {tabs.map((t) => (
           <Link
