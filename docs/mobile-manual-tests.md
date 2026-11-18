@@ -122,3 +122,14 @@ Apple Pay certificate step (the iOS simulator can show the sheet but cannot comp
 7. **Household.** Another guardian in the same household pays first: your Pay list shows the request as paid and the retry says it can't be paid.
 8. **Staff.** As a team admin: Pay tab > Payouts "Set up payouts" opens Stripe in the in-app browser and returns; "New payment request" sends to the roster; "Send reminder" works once per 24 h; a coach sees status but no setup button.
 9. **Accessibility.** VoiceOver reads "Jersey fee, $45.00, due Nov 30, Unpaid" on each request and "45 dollars" for amounts; tap targets are 44pt or larger.
+
+## Date and time pickers (polish)
+
+1. **Child date of birth.** Family > Add a child: the Date of birth field shows a calendar icon and "Select a date". Tap it: a glass sheet slides up. Tap the "Month Year" title, choose a year (newest first), a month, then a day: the sheet closes and the field reads like "Apr 2, 2016". Future days are muted and do nothing.
+2. **Edit child.** The field shows the saved date; open it: that day is filled lime and today is ringed.
+3. **Event date and times.** Schedule > New event: Date opens the calendar; Starts and Ends open hour / minute / AM-PM columns and need "Done" (Cancel keeps the old value). The zone note under them is unchanged.
+4. **Due date.** Pay (staff) > New payment request: Due date refuses days before today.
+5. **Quiet hours.** Notification settings: From and Until use the time sheet; Save quiet hours stores the 24-hour value.
+6. **Accessibility.** VoiceOver: each day reads "Monday, November 30, 2026" (plus ", today" / selected / dimmed); the header reads "November 2026, choose month and year"; day targets are 44pt or larger.
+7. **Reduce Transparency / dark mode.** Turn on Settings > Accessibility > Display > Reduce Transparency: the sheet becomes solid and stays readable. Repeat in dark mode.
+8. **Backdrop blobs.** Home in dark mode: the green and blue corner glows are faint (about 13% and 22% at their centres), not solid colour.

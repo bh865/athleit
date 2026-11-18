@@ -19,3 +19,10 @@ export { TextField, type TextFieldProps } from './text-field';
 export { ThemeProvider, ThemeScope, useTheme } from './theme';
 export { ThemeToggle } from './theme-toggle';
 export { ToastProvider, useToast } from './toast';
+export {
+  CalendarSheetBody,
+  DatePicker,
+  TimePicker,
+  type DatePickerProps,
+  type TimePickerProps,
+} from './date-picker';

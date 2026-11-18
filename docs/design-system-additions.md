@@ -121,3 +121,12 @@ ring with a mono percent, status dots). Everything below is NOT in the system; e
 New tokens and icons: text variant `monoXl` (56 / 60, 500, -0.03em) for the Pay and receipt amounts; icons `receipt`, `bank`, `download-simple`.
 Gallery and baselines: "Payments · pay and receipt", "Payments · staff", "Payments · states" in light and dark (`apps/web/visual/`).
 Not built: edit-draft (drafts are created and sent in one step), a payment event detail page, a separate payer-history screen on mobile beyond Receipts.
+
+## Polish pass (date pickers, popovers, headings)
+
+| Piece | Composed from | Notes |
+| --- | --- | --- |
+| Date and time pickers (web popover, mobile glass sheet) | TextField look (icon + friendly text), `Popover` (web), `Sheet` level modal (mobile), IconButton (month arrows), lime selected day, ringed today, chips-style month and year chooser | Select a day and it commits at once (no Done); time needs Done because it takes three choices. Date logic is shared in `packages/ui-core/src/dates.ts` (date-only ISO strings, never a local `Date`). |
+| Solid popovers (`Glass solid`) | Glass modal shadow + `surface` fill, no blur | **Deviation:** the design shows menus as glass. A backdrop-filter nested inside another backdrop-filter (e.g. a menu inside the glass sidebar) blurs nothing in Chromium, so sidebar labels showed through. Menus, popovers and pickers that sit over text are therefore opaque `surface`. |
+| Page heading | `PageHeader`: 36px/800 title, muted subtitle, actions slot at right | Used by every authenticated page. **Deviation (Messages):** the design puts the "Messages" title inside the thread-list card; the app puts the page heading above the two-column layout like every other page. |
+| Backdrop blobs on mobile | Same blob tokens as web | Rendering fix only (alpha as `stopOpacity`, farthest-corner sizing); token values unchanged. |
