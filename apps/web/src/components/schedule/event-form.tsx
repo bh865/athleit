@@ -35,7 +35,9 @@ import {
   Sheet,
   Text,
   TextArea,
+  DatePicker,
   TextField,
+  TimePicker,
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
@@ -280,29 +282,17 @@ function EventFormBody({
           maxLength={120}
         />
         {!multi ? (
-          <TextField
+          <DatePicker
             label="Date"
-            type="date"
             value={f.date}
-            onChange={(e) => set('date', e.target.value)}
+            onChange={(v) => set('date', v)}
             required
+            yearSpan={{ before: 1, after: 3 }}
           />
         ) : null}
         <div className={styles.twoCols}>
-          <TextField
-            label="Starts"
-            type="time"
-            value={f.start}
-            onChange={(e) => set('start', e.target.value)}
-            required
-          />
-          <TextField
-            label="Ends"
-            type="time"
-            value={f.end}
-            onChange={(e) => set('end', e.target.value)}
-            required
-          />
+          <TimePicker label="Starts" value={f.start} onChange={(v) => set('start', v)} required />
+          <TimePicker label="Ends" value={f.end} onChange={(v) => set('end', v)} required />
         </div>
         {!multi ? (
           <Select
@@ -439,11 +429,11 @@ function EventFormBody({
                     hint={`Up to ${MAX_SERIES_OCCURRENCES} events, within one year.`}
                   />
                 ) : (
-                  <TextField
+                  <DatePicker
                     label="Last date"
-                    type="date"
                     value={until}
-                    onChange={(e) => setUntil(e.target.value)}
+                    onChange={setUntil}
+                    yearSpan={{ before: 0, after: 3 }}
                   />
                 )}
               </>

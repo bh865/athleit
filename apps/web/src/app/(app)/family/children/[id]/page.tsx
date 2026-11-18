@@ -16,7 +16,9 @@ import { useState, type FormEvent } from 'react';
 import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage, LoadState } from '@/components/app/states';
-import { Badge, Button, Card, TextField } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import { Badge, Button, Card, DatePicker, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -138,11 +140,12 @@ export default function ChildPage() {
                   defaultValue={c.last_name}
                   error={errors.lastName}
                 />
-                <TextField
+                <DatePicker
                   name="dateOfBirth"
-                  type="date"
                   label="Date of birth"
                   defaultValue={c.date_of_birth}
+                  max={todayIso()}
+                  yearSpan={{ before: 25, after: 0 }}
                   error={errors.dateOfBirth}
                 />
                 {ownLoginAllowed ? (

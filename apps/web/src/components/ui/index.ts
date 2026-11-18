@@ -24,3 +24,6 @@ export { TextField, type TextFieldProps } from './text-field';
 export { ThemeProvider, useTheme } from './theme-provider';
 export { ThemeToggle } from './theme-toggle';
 export { ToastProvider, useToast } from './toast';
+export { Calendar, DatePicker, type DatePickerProps } from './date-picker';
+export { Popover } from './popover';
+export { TimePicker, type TimePickerProps } from './time-picker';

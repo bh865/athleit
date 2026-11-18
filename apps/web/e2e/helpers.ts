@@ -82,3 +82,51 @@ export async function cleanup() {
     );
   for (const id of ids) await a.auth.admin.deleteUser(id);
 }
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** Choose a date (YYYY-MM-DD) in a <DatePicker> by its label: year, month, then the day. */
+export async function pickDate(page: Page, label: string, iso: string) {
+  const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
+  await dialog.getByRole('button', { name: /choose month and year/ }).click();
+  await dialog.getByRole('button', { name: String(y), exact: true }).click();
+  await dialog.getByRole('button', { name: MONTHS[m - 1]!.slice(0, 3), exact: true }).click();
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  await dialog.getByRole('button', { name: `${weekday}, ${MONTHS[m - 1]} ${d}, ${y}` }).click();
+}
+
+/** Choose a time (HH:MM, 24 hour) in a <TimePicker>; minutes must be a multiple of 5. */
+export async function pickTime(page: Page, label: string, hhmm: string) {
+  const [h, min] = hhmm.split(':').map(Number) as [number, number];
+  await page.getByRole('button', { name: new RegExp(`^${label}\\b`) }).click();
+  const dialog = page.getByRole('dialog', { name: `Choose ${label}` });
+  await dialog
+    .getByRole('group', { name: 'Hour' })
+    .getByRole('button', { name: String(h % 12 === 0 ? 12 : h % 12), exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'Minute' })
+    .getByRole('button', { name: String(min).padStart(2, '0'), exact: true })
+    .click();
+  await dialog
+    .getByRole('group', { name: 'AM or PM' })
+    .getByRole('button', { name: h < 12 ? 'AM' : 'PM', exact: true })
+    .click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+}

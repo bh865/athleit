@@ -9,7 +9,16 @@ import type { ScheduleItem } from '@/components/schedule/items';
 import { MonthGrid } from '@/components/schedule/month-grid';
 import styles from '@/components/schedule/schedule.module.css';
 import { ScopePicker } from '@/components/schedule/scope-picker';
-import { Button, Chip, SegmentedControl, Select, Text, TextArea, TextField } from '@/components/ui';
+import {
+  Button,
+  Chip,
+  SegmentedControl,
+  Select,
+  Text,
+  TextArea,
+  TextField,
+  TimePicker,
+} from '@/components/ui';
 
 // Fixed fixtures so the baselines never change with the clock. Placeholder names only.
 const ZONE = 'America/New_York';
@@ -210,8 +219,8 @@ export function FlowPartsDemo() {
       />
       <TextField label="Title" defaultValue="Game vs. Hawks" readOnly />
       <div className={styles.twoCols}>
-        <TextField label="Starts" type="time" defaultValue="10:00" readOnly />
-        <TextField label="Ends" type="time" defaultValue="12:00" readOnly />
+        <TimePicker label="Starts" defaultValue="10:00" />
+        <TimePicker label="Ends" defaultValue="12:00" />
       </div>
       <Select
         label="Location"

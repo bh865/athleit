@@ -9,7 +9,9 @@ import { useApp } from '@/components/app/app-provider';
 import styles from '@/components/app/app.module.css';
 import { formText } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
-import { Button, Card, TextField } from '@/components/ui';
+import { todayIso } from '@athleit/ui-core';
+
+import { Button, Card, DatePicker, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 export default function AddChildPage() {
@@ -57,11 +59,11 @@ export default function AddChildPage() {
           error={errors.firstName}
         />
         <TextField name="lastName" label="Last name" autoComplete="off" error={errors.lastName} />
-        <TextField
+        <DatePicker
           name="dateOfBirth"
-          type="date"
           label="Date of birth"
-          autoComplete="off"
+          max={todayIso()}
+          yearSpan={{ before: 25, after: 0 }}
           error={errors.dateOfBirth}
         />
         <FormMessage error={error} />
