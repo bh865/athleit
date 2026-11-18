@@ -15,6 +15,17 @@ const admin = () =>
     ? createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
     : null;
 
+/** Every auth user, across pages (a single page misses newer users once the project has many). */
+export async function listAllUsers(client: ReturnType<typeof createClient>) {
+  const all: { id: string; email?: string }[] = [];
+  for (let page = 1; page < 100; page++) {
+    const { data } = await client.auth.admin.listUsers({ page, perPage: 200 });
+    all.push(...data.users);
+    if (data.users.length < 200) break;
+  }
+  return all;
+}
+
 export const canClean = () => admin() !== null;
 
 /** Open a fresh, isolated browser session (its own cookies), like a second person's device. */
@@ -42,8 +53,7 @@ export async function signUp(page: Page, who: string, name: string, next?: strin
       throw new Error(
         'Email confirmation is on: set E2E_SUPABASE_SERVICE_ROLE_KEY or turn confirmations off.',
       );
-    const { data } = await a.auth.admin.listUsers({ perPage: 200 });
-    const user = data.users.find((u) => u.email === email);
+    const user = (await listAllUsers(a)).find((u) => u.email === email);
     if (!user) throw new Error(`user ${email} not found`);
     await a.auth.admin.updateUserById(user.id, { email_confirm: true });
     await page.goto(next ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in');
@@ -63,8 +73,7 @@ export async function cleanup() {
     );
     return;
   }
-  const { data } = await a.auth.admin.listUsers({ perPage: 200 });
-  const users = data.users.filter((u) => u.email && created.has(u.email));
+  const users = (await listAllUsers(a)).filter((u) => u.email && created.has(u.email));
   const ids = users.map((u) => u.id);
   if (ids.length === 0) return;
   const { data: households } = await a

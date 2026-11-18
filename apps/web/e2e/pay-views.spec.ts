@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { expect, test } from '@playwright/test';
 
-import { cleanup, emailFor, newSession, signUp } from './helpers';
+import { cleanup, emailFor, listAllUsers, newSession, signUp } from './helpers';
 
 /**
  * Regression for "No payment requests yet" on the Pay tab: the view follows what the person can do,
@@ -28,8 +28,8 @@ test.describe('Pay views by capability', () => {
     await signUp(sessions.both.page, 'pvBoth', 'Bo Both');
 
     const db = createClient(url, service, { auth: { persistSession: false } });
-    const { data: all } = await db.auth.admin.listUsers({ perPage: 200 });
-    const uid = (who: string) => all.users.find((u) => u.email === emailFor(who))!.id;
+    const all = await listAllUsers(db);
+    const uid = (who: string) => all.find((u) => u.email === emailFor(who))!.id;
 
     const team = (
       await db
