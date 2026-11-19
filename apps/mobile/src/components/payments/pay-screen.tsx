@@ -12,6 +12,7 @@ import { useLoad } from '@/lib/use-load';
 
 import { Checkout } from './checkout';
 import { DueTab } from './due-tab';
+import { PlansPanel } from './plans-panel';
 import { ReceiptsTab } from './receipts-tab';
 
 /**
@@ -22,6 +23,8 @@ export function PayScreen({ embedded = false }: { embedded?: boolean }) {
   const { request } = useLocalSearchParams<{ request?: string }>();
   const [tab, setTab] = useState<'due' | 'receipts'>('due');
   const [checkout, setCheckout] = useState<string[] | null>(null);
+  const [installments, setInstallments] = useState<string[] | null>(null);
+  const [plansKey, setPlansKey] = useState(0);
   const due = useLoad(() => getHouseholdPayments(supabase), []);
   const receipts = useLoad(() => getHouseholdReceipts(supabase), []);
   const open = useLoad(() => getOpenPayments(supabase), []);
@@ -42,6 +45,7 @@ export function PayScreen({ embedded = false }: { embedded?: boolean }) {
           { value: 'receipts', label: 'Receipts' },
         ]}
       />
+      {tab === 'due' ? <PlansPanel onPay={setInstallments} refreshKey={plansKey} /> : null}
       {tab === 'due' ? (
         <DueTab
           data={due.data}
@@ -65,16 +69,20 @@ export function PayScreen({ embedded = false }: { embedded?: boolean }) {
           onRetry={receipts.reload}
         />
       )}
-      {checkout ? (
+      {checkout || installments ? (
         <Checkout
-          ids={checkout}
+          ids={(installments ?? checkout)!}
+          mode={installments ? 'installments' : 'requests'}
           rows={(due.data ?? []) as unknown as PayRow[]}
           onClose={() => {
             setCheckout(null);
+            setInstallments(null);
+            setPlansKey((k) => k + 1);
             due.reload();
             open.reload();
           }}
           onFinished={() => {
+            setPlansKey((k) => k + 1);
             due.reload();
             receipts.reload();
             open.reload();
