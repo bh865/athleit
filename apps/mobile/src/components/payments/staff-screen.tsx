@@ -1,3 +1,4 @@
+import { PlanSheet } from './plan-sheet';
 import {
   audienceLabel,
   collectionState,
@@ -242,7 +243,7 @@ const groupOf = (s: string): Group =>
     ? 'paid'
     : s === 'waived'
       ? 'waived'
-      : s === 'unpaid' || s === 'processing'
+      : s === 'unpaid' || s === 'processing' || s === 'partially_paid'
         ? 'unpaid'
         : 'all';
 const shortDate = (iso: string | null) =>
@@ -272,6 +273,7 @@ function Detail({
   const [q, setQ] = useState('');
   const [limit, setLimit] = useState(8);
   const [acting, setActing] = useState<CollectionRow | null>(null);
+  const [planRow, setPlanRow] = useState<CollectionRow | null>(null);
   const reload = () => {
     setTick((t) => t + 1);
     onChanged();
@@ -433,14 +435,15 @@ function Detail({
                 : r.status === 'waived'
                   ? 'minus-circle'
                   : 'circle-dashed';
-            const unpaid = r.status === 'unpaid';
+            const plan = r.plan_count !== null;
+            const unpaid = r.status === 'unpaid' && !plan;
             return (
               <Pressable
                 key={r.request_id}
                 accessibilityRole="button"
-                accessibilityLabel={`${r.player_name}, ${r.status}${unpaid && canSend ? ', actions' : ''}`}
-                disabled={!unpaid || !canSend}
-                onPress={() => setActing(r)}
+                accessibilityLabel={`${r.player_name}, ${r.status}${(unpaid || plan) && canSend ? ', actions' : ''}${plan ? `, ${r.installments_paid} of ${r.plan_count} paid` : ''}`}
+                disabled={!(unpaid || plan) || !canSend}
+                onPress={() => (plan ? setPlanRow(r) : setActing(r))}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -460,13 +463,15 @@ function Detail({
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: space[1] }}>
                   <StatusPill tone={tone} icon={icon}>
-                    {r.status === 'unpaid'
-                      ? 'Unpaid'
-                      : r.status === 'waived'
-                        ? 'Waived'
-                        : g === 'paid'
-                          ? 'Paid'
-                          : r.status}
+                    {plan
+                      ? `${r.installments_paid} of ${r.plan_count} paid${r.overdue ? ' · overdue' : ''}`
+                      : r.status === 'unpaid'
+                        ? 'Unpaid'
+                        : r.status === 'waived'
+                          ? 'Waived'
+                          : g === 'paid'
+                            ? 'Paid'
+                            : r.status}
                   </StatusPill>
                   <Amount cents={r.amount_cents} variant="monoSm" />
                 </View>
@@ -484,6 +489,15 @@ function Detail({
         </LoadState>
       </Card>
 
+      {planRow ? (
+        <PlanSheet
+          key={planRow.request_id}
+          row={planRow}
+          canManage={canSend}
+          onClose={() => setPlanRow(null)}
+          onChanged={reload}
+        />
+      ) : null}
       <Sheet open={!!acting} onClose={() => setActing(null)} title="Player actions">
         {acting ? (
           <View style={{ gap: space[3] }}>
