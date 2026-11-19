@@ -37,7 +37,7 @@ import { viewerZone } from '@/lib/viewer-zone';
 import { MapEmbed } from './map-embed';
 import { RsvpActions } from './rsvp-actions';
 
-const MAP_HEIGHT = 120;
+const MAP_HEIGHT = 168;
 const seenKey = (id: string) => `athleit.event-revision.${id}`;
 
 /**

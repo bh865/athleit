@@ -128,7 +128,7 @@
 .map {
   position: relative;
   align-self: stretch;
-  min-height: calc(var(--size-sidebar-width) * 1.4);
+  min-height: calc(var(--size-sidebar-width) * 1.8);
   border-top: var(--size-card-border) solid var(--color-line);
 }
 .frame {
