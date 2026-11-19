@@ -1,19 +1,12 @@
 'use client';
 
-import { can, previewOf, sumCents, teamTabHref, type AppContext } from '@athleit/core';
-import {
-  getNotificationFailures,
-  getRoster,
-  getThreadList,
-  listChildren,
-  type Result,
-} from '@athleit/db/api';
-import { getConnectedAccountStatus, getHouseholdPayments } from '@athleit/db/payments';
+import { sumCents, teamTabHref } from '@athleit/core';
+import { getRoster, listChildren, type Result } from '@athleit/db/api';
+import { getHouseholdPayments } from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
-import { getFeedTokenStatus, getNextUp } from '@athleit/db/scheduling';
+import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
-import { useApp } from '@/components/app/app-provider';
 import { Amount, dueText } from '@/components/payments/money';
 import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
@@ -21,32 +14,6 @@ import { useLoad } from '@/lib/use-load';
 
 import styles from './home.module.css';
 import { TileShell } from './tile-shell';
-
-/** Latest announcement in the team's announcement thread. Read counts are staff-only and not shown here. */
-export function AnnouncementTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getThreadList(getClient(), teamId), [teamId]);
-  const row = (res.data ?? []).find((t) => t.type === 'announcement' && t.last_body !== null);
-  return (
-    <TileShell
-      id="home-announcement"
-      title="Latest announcement"
-      href={row ? `/messages/${row.thread_id}` : '/messages'}
-      res={res}
-      empty={!row}
-      hasData={res.data !== null}
-    >
-      {row ? (
-        <Text as="p">
-          {previewOf({
-            body: row.last_body ?? '',
-            deleted: row.last_deleted,
-            hidden: row.last_hidden,
-          })}
-        </Text>
-      ) : null}
-    </TileShell>
-  );
-}
 
 /** Pinned or recent documents. Read-only for families; uploading lives on the documents page. */
 export function DocumentsTile({ teamId }: { teamId: string }) {
@@ -114,72 +81,6 @@ export function FamilyTile() {
   );
 }
 
-/** Payout account status: an icon and a word, never colour alone. Coach and manager see status only. */
-export function PayoutsTile({ owner }: { owner: { teamId?: string; clubId?: string } }) {
-  const res = useLoad(
-    () => getConnectedAccountStatus(getClient(), owner),
-    [owner.teamId, owner.clubId],
-  );
-  const s = res.data;
-  const ready = Boolean(s?.charges_enabled && s?.payouts_enabled);
-  return (
-    <TileShell
-      id="home-payouts"
-      title="Payouts"
-      href="/pay"
-      res={res}
-      empty={false}
-      hasData={res.data !== null || !res.loading}
-    >
-      {ready ? (
-        <Badge tone="success">Ready</Badge>
-      ) : s?.exists_account ? (
-        <Badge tone="warning">Needs information</Badge>
-      ) : (
-        <Badge tone="warning">Not set up</Badge>
-      )}
-    </TileShell>
-  );
-}
-
-/** Families can subscribe once; the tile disappears after the first feed link exists. */
-export function CalendarTile() {
-  const res = useLoad(() => getFeedTokenStatus(getClient()), []);
-  return (
-    <TileShell
-      id="home-calendar"
-      title="Add to your calendar"
-      href="/schedule"
-      linkLabel="Get link"
-      res={res}
-      empty={(res.data ?? []).length > 0}
-      hasData={res.data !== null}
-    >
-      <Text muted as="p">
-        One link keeps games and practices in sync with your phone calendar.
-      </Text>
-    </TileShell>
-  );
-}
-
-/** Admin only: failed notification deliveries. Hidden when there are none. */
-export function NotificationHealthTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getNotificationFailures(getClient(), teamId), [teamId]);
-  const n = (res.data ?? []).length;
-  return (
-    <TileShell
-      id="home-notification-health"
-      title="Notification health"
-      href="/notifications/settings"
-      res={res}
-      empty={n === 0}
-      hasData={res.data !== null}
-    >
-      <Badge tone="danger">{`${n} failed ${n === 1 ? 'delivery' : 'deliveries'}`}</Badge>
-    </TileShell>
-  );
-}
-
 /** New-team checklist for admins and managers. Dismisses itself once everything is done. */
 export function SetupTile({ teamId }: { teamId: string }) {
   const res = useLoad(async (): Promise<Result<{ players: number; events: number }>> => {
@@ -218,56 +119,6 @@ export function SetupTile({ teamId }: { teamId: string }) {
                 <span className={styles.threadTitle}>{s.label}</span>
               </span>
             </Link>
-          </li>
-        ))}
-      </ul>
-    </TileShell>
-  );
-}
-
-/** Two or more places: quick jumps. Hidden with a single place. */
-export function PlacesTile({
-  places,
-}: {
-  places: readonly Pick<
-    AppContext,
-    'key' | 'title' | 'subtitle' | 'kind' | 'id' | 'role' | 'roles'
-  >[];
-}) {
-  const { setActive } = useApp();
-  if (places.length < 2) return null;
-  const href = (p: { kind: string; id: string }) =>
-    p.kind === 'team' ? `/teams/${p.id}` : p.kind === 'club' ? `/clubs/${p.id}` : '/family';
-  return (
-    <TileShell
-      id="home-places"
-      title="Your places"
-      res={{ loading: false, error: null, reload: () => undefined }}
-      empty={false}
-      hasData
-    >
-      <ul className={styles.threads}>
-        {places.slice(0, 5).map((p) => (
-          <li key={p.key}>
-            {p.kind === 'team' && !can(p, 'team.details') ? (
-              <button
-                type="button"
-                className={`${styles.thread} ${styles.threadButton}`}
-                onClick={() => setActive(p.key)}
-              >
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>{p.title}</span>
-                  <span className={styles.threadPreview}>{p.subtitle}</span>
-                </span>
-              </button>
-            ) : (
-              <Link href={href(p)} className={styles.thread}>
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>{p.title}</span>
-                  <span className={styles.threadPreview}>{p.subtitle}</span>
-                </span>
-              </Link>
-            )}
           </li>
         ))}
       </ul>

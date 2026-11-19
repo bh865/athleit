@@ -1,6 +1,6 @@
 'use client';
 
-import { describeEventTime, teamTabHref } from '@athleit/core';
+import { teamTabHref } from '@athleit/core';
 import { getJoinRequests, type Result } from '@athleit/db/api';
 import {
   getCapacitySummary,
@@ -8,160 +8,15 @@ import {
   listMyRegistrations,
   listRegistrationEvents,
 } from '@athleit/db/registration';
-import {
-  getHouseholdScheduleRange,
-  getTeamRecord,
-  getTeamSchedule,
-  getTeamScheduleRange,
-} from '@athleit/db/scheduling';
+import { getTeamRecord, getTeamSchedule } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
 import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
-import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 import styles from './home.module.css';
 import { TileShell } from './tile-shell';
-
-const DAY = 24 * 60 * 60 * 1000;
-const RSVP_LABEL: Record<string, string> = {
-  going: 'Going',
-  not_going: 'Can’t go',
-  maybe: 'Maybe',
-};
-
-interface WeekRow {
-  key: string;
-  id: string;
-  title: string;
-  starts_at: string;
-  ends_at: string;
-  timezone: string;
-  where: string;
-  pill: string;
-  who: string;
-}
-
-/** "This week": the next 7 days. Staff see the team's events with RSVP counts; families see each child's RSVP. */
-export function WeekTile({
-  teamId,
-  staff,
-  family,
-}: {
-  teamId: string | null;
-  staff: boolean;
-  family: boolean;
-}) {
-  const zone = useViewerZone();
-  const res = useLoad(async (): Promise<Result<WeekRow[]>> => {
-    const from = new Date();
-    const to = new Date(from.getTime() + 7 * DAY);
-    if (staff && teamId) {
-      const r = await getTeamScheduleRange(
-        getClient(),
-        teamId,
-        from.toISOString(),
-        to.toISOString(),
-      );
-      if (r.error) return r;
-      return {
-        data: r.data.map((e) => ({
-          key: e.id,
-          id: e.id,
-          title: e.title,
-          starts_at: e.starts_at,
-          ends_at: e.ends_at,
-          timezone: e.timezone,
-          where: e.location_name ?? e.location_text ?? '',
-          pill: e.status === 'cancelled' ? 'Cancelled' : `${e.going} going`,
-          who: '',
-        })),
-        error: null,
-      };
-    }
-    const r = await getHouseholdScheduleRange(getClient(), from.toISOString(), to.toISOString());
-    if (r.error) return r;
-    return {
-      data: r.data.map((e) => ({
-        key: `${e.event_id}:${e.player_id}`,
-        id: e.event_id,
-        title: e.title,
-        starts_at: e.starts_at,
-        ends_at: e.ends_at,
-        timezone: e.timezone,
-        where: e.location_name ?? e.location_text ?? '',
-        pill:
-          e.status === 'cancelled'
-            ? 'Cancelled'
-            : e.rsvp_status
-              ? (RSVP_LABEL[e.rsvp_status] ?? e.rsvp_status)
-              : 'No reply',
-        who: e.player_first_name,
-      })),
-      error: null,
-    };
-  }, [teamId, staff, family]);
-  const rows = (res.data ?? []).slice(0, 6);
-  const names = [...new Set(rows.map((r) => r.who).filter(Boolean))];
-  const title = names.length === 1 ? `This week · ${names[0]}` : 'This week';
-  return (
-    <TileShell
-      id="home-week"
-      title={title}
-      href="/schedule"
-      linkLabel="See full schedule"
-      res={res}
-      empty={rows.length === 0}
-      hasData={res.data !== null}
-    >
-      <ul className={styles.threads}>
-        {rows.map((e) => {
-          const t = describeEventTime(e.starts_at, e.ends_at, e.timezone, zone ?? 'UTC');
-          const day = new Intl.DateTimeFormat('en-US', {
-            day: 'numeric',
-            timeZone: zone ?? e.timezone,
-          }).format(new Date(e.starts_at));
-          return (
-            <li key={e.key}>
-              <Link
-                href={`/events/${e.id}`}
-                className={styles.weekRow}
-                aria-label={`${e.title}, ${t.weekdayShort} ${t.startLabel}${e.who ? `, ${e.who}` : ''}: ${e.pill}`}
-              >
-                <span className={styles.weekDate} aria-hidden>
-                  <span className={styles.weekDay}>{t.weekdayShort}</span>
-                  <span className={styles.weekNum}>{day}</span>
-                </span>
-                <span className={styles.weekText}>
-                  <span className={styles.threadTitle}>{e.title}</span>
-                  <span className={styles.threadPreview}>
-                    {t.startLabel}
-                    {e.where ? ` · ${e.where}` : ''}
-                  </span>
-                </span>
-                <span className={styles.pill}>
-                  <Icon
-                    name={
-                      e.pill === 'Going'
-                        ? 'check-circle'
-                        : e.pill === 'Cancelled'
-                          ? 'x-circle'
-                          : 'question'
-                    }
-                    weight="fill"
-                    size="sm"
-                  />
-                  {e.pill}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </TileShell>
-  );
-}
 
 /** Season record shown big beside Next up, with the last result. Hidden until a game has been played. */
 export function RecordTile({ teamId }: { teamId: string }) {

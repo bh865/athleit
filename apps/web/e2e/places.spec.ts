@@ -38,7 +38,7 @@ test.describe.serial('places, home and roster', () => {
     await page.goto('/');
     await expect(page.getByTestId('display-name')).toContainText('Pia');
     await expect(page.getByTestId('next-up')).toBeVisible();
-    await expect(page.getByTestId('home-messages')).toBeVisible();
+    await expect(page.getByTestId('home-attention')).toBeVisible();
     await expect(page.getByTestId('home-roster')).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
   });

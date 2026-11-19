@@ -145,9 +145,31 @@ test.describe('Home by capability', () => {
     await parent.goto('/');
     await expect(parent.getByTestId('home-attention')).toContainText('RSVP for hmParentKid');
     await expect(parent.getByTestId('due-card')).toBeVisible();
-    await parent.getByTestId('next-up').getByRole('button', { name: /Going/ }).first().click();
-    await expect(parent.getByTestId('next-up').getByRole('status')).toContainText('Going');
     await expect(parent.getByTestId('home-approvals')).toHaveCount(0);
+    // The tiles that Home round 2 removed are gone for good.
+    for (const id of [
+      'home-week',
+      'home-messages',
+      'home-announcement',
+      'home-payouts',
+      'home-calendar',
+      'home-notifications',
+      'home-places',
+    ])
+      await expect(parent.getByTestId(id)).toHaveCount(0);
+    await expect(parent.getByText('Your places')).toHaveCount(0);
+    // RSVP resolves in place from the attention row ...
+    const row = parent
+      .getByTestId('home-attention')
+      .getByRole('button', { name: 'hmParentKid: Going' });
+    await row.click();
+    await expect(
+      parent.getByTestId('home-attention').getByRole('button', { name: 'hmParentKid: Going' }),
+    ).toHaveCount(0);
+    // ... and Next up still offers Going / Can't go per child.
+    await expect(
+      parent.getByTestId('next-up').getByRole('group', { name: /RSVP for hmParentKid/ }),
+    ).toBeVisible();
 
     // Coach: RSVP counts and pending join requests; no amount due.
     const coach = sessions.hmCoach.page;
@@ -170,5 +192,10 @@ test.describe('Home by capability', () => {
     await expect(player.getByRole('group', { name: 'RSVP counts' })).toHaveCount(0);
     await expect(player.getByRole('link', { name: /New event/ })).toHaveCount(0);
     expect(ev.id).toBeTruthy();
+
+    // Staff approve the join request in place from the attention row.
+    await expect(coach.getByTestId('home-attention')).toContainText('1 join request');
+    await coach.getByTestId('home-attention').getByRole('button', { name: 'Approve' }).click();
+    await expect(coach.getByTestId('home-attention')).not.toContainText('join request');
   });
 });

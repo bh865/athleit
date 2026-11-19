@@ -10,9 +10,14 @@ import {
   type AppContext,
   type AttentionResult,
 } from '@athleit/core';
-import { getJoinRequests, type Result } from '@athleit/db/api';
+import {
+  getJoinRequests,
+  getLinkRequests,
+  getPlayerLoginClaims,
+  type Result,
+} from '@athleit/db/api';
+import { getConnectedAccountStatus, getHouseholdPayments } from '@athleit/db/payments';
 import { listMyRegistrations, getWaiverCompliance } from '@athleit/db/registration';
-import { getHouseholdPayments } from '@athleit/db/payments';
 import { getNextUp, getTeamSchedule } from '@athleit/db/scheduling';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -26,8 +31,9 @@ const none = <T>(): Promise<Result<T[]>> =>
   Promise.resolve({ data: [] as T[], error: null } as Result<T[]>);
 
 /**
- * One set of Home queries for the attention strip. Each source loads independently, so one failure only
- * drops its own chips. Sources the person cannot see are never requested.
+ * One set of Home queries for "Needs your attention". Each source loads independently and sources the person
+ * cannot see are never requested. A failed source sets `error` (the section offers a retry) but never drops the
+ * items the other sources produced. `now` ticks every minute so chips stay current without re-fetching.
  */
 export function useHomeData(
   contexts: readonly Ctx[],
@@ -35,13 +41,26 @@ export function useHomeData(
 ) {
   const team = teamForScreen(contexts, active);
   const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : null;
+  const club = contexts.find((c) => c.kind === 'club') ?? null;
+  const clubCaps = club ? capabilitiesForPlace(contexts, 'club', club.id) : null;
   const views = payViewsFor(contexts, active);
+  const staffCaps = views.staff
+    ? capabilitiesForPlace(contexts, views.staff.kind, views.staff.id)
+    : null;
   const sched = Boolean(caps?.has('schedule.view'));
   const staff = Boolean(team?.isStaff);
   const teamId = team?.id ?? '';
+  const clubId = club?.id ?? '';
+  const owner = views.staff
+    ? views.staff.kind === 'team'
+      ? { teamId: views.staff.id }
+      : { clubId: views.staff.id }
+    : null;
+  const payoutsAdmin = Boolean(owner && staffCaps?.has('payments.setup'));
+  const linkAdmin = Boolean(clubCaps?.has('club.decideLink'));
 
   const [now, setNow] = useState(() => new Date());
-  // Refetch when the tab becomes visible again (no polling).
+  // Refetch when the tab becomes visible again (no polling); the clock alone ticks each minute.
   const [visibleTick, setVisibleTick] = useState(0);
   useEffect(() => {
     const on = () => {
@@ -51,7 +70,11 @@ export function useHomeData(
       }
     };
     document.addEventListener('visibilitychange', on);
-    return () => document.removeEventListener('visibilitychange', on);
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', on);
+      clearInterval(timer);
+    };
   }, []);
 
   const k = visibleTick;
@@ -64,12 +87,20 @@ export function useHomeData(
     () => (views.payer ? listMyRegistrations(getClient()) : none<never>()),
     [views.payer, k],
   );
+  const claims = useLoad(
+    () => (views.payer ? getPlayerLoginClaims(getClient()) : none<never>()),
+    [views.payer, k],
+  );
   const joins = useLoad(
     () =>
       staff && caps?.has('joinRequests.decide')
         ? getJoinRequests(getClient(), teamId)
         : none<never>(),
     [staff, teamId, k],
+  );
+  const links = useLoad(
+    () => (linkAdmin ? getLinkRequests(getClient(), { clubId }) : none<never>()),
+    [linkAdmin, clubId, k],
   );
   const waivers = useLoad(
     () =>
@@ -82,20 +113,56 @@ export function useHomeData(
     () => (staff ? getTeamSchedule(getClient(), teamId, 'past', 10) : none<never>()),
     [staff, teamId, k],
   );
+  const payout = useLoad(
+    () =>
+      payoutsAdmin && owner
+        ? getConnectedAccountStatus(getClient(), owner)
+        : Promise.resolve({ data: null, error: null } as never),
+    [payoutsAdmin, owner?.teamId, owner?.clubId, k],
+  );
 
-  const loading = [nextUp, pay, regs, joins, waivers, past].some((r) => r.loading);
+  const sources = [nextUp, pay, regs, claims, joins, links, waivers, past, payout];
+  const loading = sources.some((r) => r.loading);
+  const error = sources.find((r) => r.error)?.error ?? null;
+  const reload = () => sources.forEach((r) => r.error && r.reload());
+
+  // A merged list (the person is staff somewhere and a parent somewhere) tags each row with its place.
+  const dual = Boolean(views.payer && (staff || owner || linkAdmin));
+  const tags = dual
+    ? { family: 'Household', team: team?.title ?? club?.title ?? 'Your team' }
+    : undefined;
 
   const attention: AttentionResult = useMemo(() => {
     const games = (past.data ?? []).filter(
       (e) => e.type === 'game' && e.status !== 'cancelled' && e.our_score == null,
     );
+    const pendingJoins = (joins.data ?? []).filter((r) => r.status === 'pending');
+    const pendingClaims = claims.data ?? [];
+    const payoutStatus = payout.data as {
+      exists_account?: boolean;
+      charges_enabled?: boolean;
+      payouts_enabled?: boolean;
+    } | null;
     return deriveAttention(
       buildAttentionItems({
         now,
         nextUp: (nextUp.data ?? []) as never,
         payments: pay.data ?? [],
         registrations: regs.data ?? [],
-        pendingJoinRequests: (joins.data ?? []).filter((r) => r.status === 'pending').length,
+        pendingJoinRequests: pendingJoins.length,
+        singleJoinRequestId: pendingJoins.length === 1 ? pendingJoins[0]!.id : null,
+        loginClaims: {
+          count: pendingClaims.length,
+          singleId: pendingClaims.length === 1 ? pendingClaims[0]!.claim_id : null,
+        },
+        linkRequests: {
+          count: (links.data ?? []).filter((r) => r.status === 'pending').length,
+          href: `/clubs/${clubId}`,
+        },
+        payoutsNeedAction: Boolean(
+          payoutStatus?.exists_account &&
+          !(payoutStatus.charges_enabled && payoutStatus.payouts_enabled),
+        ),
         waiversNeedingAction: (waivers.data ?? []).filter(
           (w) => normalizeWaiverStatus(w.status) !== 'signed',
         ).length,
@@ -104,9 +171,27 @@ export function useHomeData(
           title: g.title,
           starts_at: g.starts_at,
         })),
+        ...(tags ? { tags } : {}),
       }),
+      now,
     );
-  }, [now, nextUp.data, pay.data, regs.data, joins.data, waivers.data, past.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    now,
+    nextUp.data,
+    pay.data,
+    regs.data,
+    claims.data,
+    joins.data,
+    links.data,
+    waivers.data,
+    past.data,
+    payout.data,
+    dual,
+    clubId,
+    team?.title,
+  ]);
 
-  return { attention, loading };
+  const refresh = () => setVisibleTick((t) => t + 1);
+  return { attention, loading, error, reload, refresh, now };
 }

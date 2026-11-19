@@ -1,6 +1,6 @@
 'use client';
 
-import type { AttentionItem } from '@athleit/core';
+import { deriveAttention, type AttentionItem } from '@athleit/core';
 
 import { Badge, ButtonLink, Text } from '@/components/ui';
 
@@ -8,31 +8,73 @@ import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
 import { TileShell } from './tile-shell';
 
+const NOW = new Date('2026-11-19T17:00:00Z');
 const ITEMS: AttentionItem[] = [
-  { kind: 'rsvp', key: 'a', label: 'RSVP for Maya', detail: 'Game Sat 10:00 AM', href: '#' },
-  { kind: 'waiver', key: 'b', label: 'Sign Maya’s waiver', detail: 'Expired Nov 15', href: '#' },
+  {
+    kind: 'waiver',
+    key: 'b',
+    label: 'Sign Maya’s waiver',
+    detail: 'Liability waiver expired',
+    href: '#',
+    dueAt: '2026-11-15T17:00:00Z',
+    dueMode: 'expired',
+    placeTag: 'Household',
+  },
+  {
+    kind: 'rsvp',
+    key: 'a',
+    label: 'RSVP for Maya',
+    href: '#',
+    dueAt: '2026-11-21T15:00:00Z',
+    dueMode: 'event',
+    eventNoun: 'Game',
+    placeTag: 'Household',
+    action: { type: 'rsvp', eventId: 'e1', playerId: 'p1', firstName: 'Maya' },
+  },
   {
     kind: 'payment',
     key: 'c',
     label: 'Pay jersey fee',
-    detail: '$45.00 · due in 3 days',
+    detail: '$45.00',
     href: '#',
+    dueAt: '2026-11-22T17:00:00Z',
+    placeTag: 'Household',
   },
-];
-const MORE: AttentionItem[] = [
-  { kind: 'joinRequests', key: 'd', label: '2 join requests', href: '#' },
+  {
+    kind: 'joinRequests',
+    key: 'd',
+    label: '2 join requests',
+    detail: 'Approve or decline',
+    href: '#',
+    count: 2,
+    placeTag: 'U12 Falcons',
+  },
+  { kind: 'setup', key: 'e', label: 'Finish team setup', href: '#', placeTag: 'U12 Falcons' },
 ];
 const OK = { loading: false, error: null, reload: () => undefined };
-const WEEK = [
-  ['THU', '19', 'Practice', '5:30 PM · Field 2', 'Going'],
-  ['SAT', '21', 'Game vs. Hawks', '10:00 AM · Field 3', 'No reply'],
-] as const;
+const NONE = { shown: [], more: [], all: [], lead: null };
+const noop = () => undefined;
 
 /** Static fixtures only (no network) so the visual baselines never move with data. */
 export function HomeGallery() {
   return (
     <div className={styles.page}>
-      <AttentionStrip shown={ITEMS} more={MORE} />
+      <AttentionStrip
+        attention={deriveAttention(ITEMS, NOW)}
+        loading={false}
+        error={null}
+        onRetry={noop}
+        onResolved={noop}
+        now={NOW}
+      />
+      <AttentionStrip
+        attention={NONE}
+        loading={false}
+        error={null}
+        onRetry={noop}
+        onResolved={noop}
+        now={NOW}
+      />
       <div className={styles.heroRow}>
         <TileShell id="g-hero" title="Next up" res={OK} empty={false} hasData>
           <Text variant="heading">Game vs. Hawks</Text>
@@ -45,32 +87,7 @@ export function HomeGallery() {
           </Text>
         </TileShell>
       </div>
-      <div className={styles.row3}>
-        <TileShell
-          id="g-week"
-          title="This week · Maya"
-          href="#"
-          linkLabel="See full schedule"
-          res={OK}
-          empty={false}
-          hasData
-        >
-          <ul className={styles.threads}>
-            {WEEK.map(([d, n, t, w, pill]) => (
-              <li key={n} className={styles.weekRow}>
-                <span className={styles.weekDate}>
-                  <span className={styles.weekDay}>{d}</span>
-                  <span className={styles.weekNum}>{n}</span>
-                </span>
-                <span className={styles.weekText}>
-                  <span className={styles.threadTitle}>{t}</span>
-                  <span className={styles.threadPreview}>{w}</span>
-                </span>
-                <Badge tone="neutral">{pill}</Badge>
-              </li>
-            ))}
-          </ul>
-        </TileShell>
+      <div className={styles.tiles}>
         <TileShell id="g-due" title="Amount due" res={OK} empty={false} hasData>
           <div className={styles.amount}>
             <Badge tone="neutral">1 request</Badge>
