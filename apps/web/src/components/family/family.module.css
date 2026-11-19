@@ -1,0 +1,106 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+}
+.card:hover {
+  background: var(--color-surface-alt);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.cardName {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.name {
+  font-weight: var(--text-body-bold-weight);
+  overflow-wrap: anywhere;
+}
+.mono {
+  font-family: var(--font-mono);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--size-button-height);
+  color: var(--color-ink);
+  font-weight: var(--text-label-weight);
+}
+.addCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 8rem;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-line);
+  color: var(--color-ink);
+  font-weight: var(--text-body-bold-weight);
+  text-decoration: none;
+}
+.addCard:hover {
+  background: var(--color-surface-alt);
+}
+.rowActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.counter {
+  font-family: var(--font-mono);
+  text-align: right;
+}
+.dialogActions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.stretch {
+  color: inherit;
+  text-decoration: none;
+}
+.stretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+}
+.above {
+  position: relative;
+  z-index: 1;
+}
+.problem {
+  margin: 0;
+  color: var(--color-danger);
+}
