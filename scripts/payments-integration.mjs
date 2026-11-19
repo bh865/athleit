@@ -202,8 +202,8 @@ check('the card is saved on the connected account customer', savedPm.customer ==
 check('card expiry is readable from Stripe (we store ids only)', Number.isInteger(savedPm.card?.exp_year) && Number.isInteger(savedPm.card?.exp_month));
 const fee1 = await feeOf(p1);
 
-// Installments 2 and 3: the scheduler charges the saved card off-session, key = installment id + attempt.
-const offSession = (n, pm = savedPm.id, customer = cus.id, attempt = 0) =>
+// Installments 2 and 3: the scheduler charges the saved card off-session, key = installment id + the attempt's payment id.
+const offSession = (n, pm = savedPm.id, customer = cus.id, tag = 'a') =>
   api(
     'POST',
     '/v1/payment_intents',
@@ -218,7 +218,7 @@ const offSession = (n, pm = savedPm.id, customer = cus.id, attempt = 0) =>
       description: `integration plan installment ${n} of 3`,
       metadata: { athleit_payment_id: `itest-${run}-plan${n}` },
     },
-    `athleit:inst:itest-${run}-${n}:${attempt}`,
+    `athleit:inst:itest-${run}-${n}:${tag}`,
   );
 const p2 = await offSession(2);
 check('installment 2 is charged off-session', p2.status === 'succeeded', p2.status);
@@ -240,7 +240,7 @@ check('retrying the same installment attempt returns the same intent', p2again.i
 const cusBad = await api('POST', '/v1/customers', { metadata: { athleit_household_id: `itest-${run}-bad` } }, `itest:${run}:cusbad`);
 const bad = await api('POST', '/v1/payment_methods/pm_card_chargeCustomerFail/attach', { customer: cusBad.id }, `itest:${run}:attachbad`);
 try {
-  await offSession(2, bad.id, cusBad.id, 0);
+  await offSession(2, bad.id, cusBad.id, 'bad');
   check('a declined saved card is declined off-session', false);
 } catch (e) {
   check(
@@ -258,7 +258,7 @@ const cusSca = await api('POST', '/v1/customers', { metadata: { athleit_househol
 try {
   const scaPm = await api('POST', '/v1/payment_methods/pm_card_authenticationRequired/attach', { customer: cusSca.id }, `itest:${run}:attachsca`);
   try {
-    const r = await offSession(3, scaPm.id, cusSca.id, 0);
+    const r = await offSession(3, scaPm.id, cusSca.id, 'sca');
     console.log(`     info: off-session charge ${r.status} (expected by Stripe's docs for a card that was set up first)`);
     if (r.status === 'succeeded') await api('POST', '/v1/refunds', { payment_intent: r.id }, `itest:${run}:scarefund`);
   } catch (e) {

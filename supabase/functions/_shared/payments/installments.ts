@@ -3,8 +3,10 @@
 // connected account, confirmed off-session with the saved card. A declined card or an authentication-required response is
 // recorded as a failed attempt (dunning lives in the database): it never cancels the request or the player.
 //
-// Idempotency: the Stripe key is derived from the installment id AND its attempt number, so a crashed run that is retried makes
-// the same PaymentIntent, never a second charge; the database refuses a second live payment for the installment (unique index).
+// Idempotency: the Stripe key is derived from the installment id AND the id of the payment reserved for this attempt. A crashed
+// run that is retried reuses the same open payment, so it makes the same PaymentIntent and never a second charge; the next
+// attempt after a failure (or a staff retry) has a new payment and so a new key. (An attempt NUMBER is not enough: Stripe
+// replays a remembered decline for 24 hours, and a staff retry lowers the attempt count.) the database refuses a second live payment for the installment (unique index).
 import type { Logger } from './log.ts';
 import type { Store } from './store.ts';
 import { StripeError, type StripeApi } from './stripe.ts';
@@ -54,7 +56,7 @@ export async function chargeDueInstallments(
               display_ids: (r.display_ids ?? []).join(','),
             },
           },
-          `athleit:inst:${item.installment_id}:${item.attempt}`,
+          `athleit:inst:${item.installment_id}:${r.payment_id}`,
           r.stripe_account_id,
         );
         await d.store.attachPaymentIntent(r.payment_id, pi.id);

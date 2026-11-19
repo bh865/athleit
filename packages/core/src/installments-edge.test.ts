@@ -102,28 +102,31 @@ describe('chargeDueInstallments', () => {
       off_session: true,
       confirm: true,
     });
-    expect(key).toBe(`athleit:inst:${uuid(1)}:0`);
+    expect(key).toBe(`athleit:inst:${uuid(1)}:${uuid(10)}`);
     expect(acct).toBe('acct_team');
     expect(JSON.stringify(params)).not.toMatch(/Ava|Adams|@/); // ids only in metadata
     expect(store.attachPaymentIntent).toHaveBeenCalledWith(uuid(10), 'pi_x');
   });
-  it('a retry uses a new key (the attempt number moved), so a declined charge can be tried again', async () => {
+  it('every new attempt has a new key (a new payment), so a staff retry is never a replayed decline', async () => {
     const store = fakeStore({
-      claimDueInstallments: vi.fn().mockResolvedValue([
-        {
-          installment_id: uuid(1),
-          request_id: uuid(4),
-          payer: uuid(5),
-          household_id: uuid(2),
-          customer: 'cus_1',
-          payment_method: 'pm_1',
-          attempt: 1,
-        },
-      ]),
+      reserveInstallments: vi
+        .fn()
+        .mockResolvedValueOnce(reserve({ payment_id: uuid(10) }))
+        .mockResolvedValueOnce(reserve({ payment_id: uuid(11) })),
     });
     const post = vi.fn().mockResolvedValue({ id: 'pi_y', status: 'succeeded' });
     await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
-    expect(post.mock.calls[0]![2]).toBe(`athleit:inst:${uuid(1)}:1`);
+    await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
+    expect(post.mock.calls[0]![2]).toBe(`athleit:inst:${uuid(1)}:${uuid(10)}`);
+    expect(post.mock.calls[1]![2]).toBe(`athleit:inst:${uuid(1)}:${uuid(11)}`);
+    expect(post.mock.calls[0]![2]).not.toBe(post.mock.calls[1]![2]);
+  });
+  it('a crashed run retried on the same open payment reuses the same key (no second charge)', async () => {
+    const store = fakeStore();
+    const post = vi.fn().mockResolvedValue({ id: 'pi_y', status: 'succeeded' });
+    await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
+    await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
+    expect(post.mock.calls[0]![2]).toBe(post.mock.calls[1]![2]);
   });
   it('a declined card is recorded as a failed attempt and never throws or cancels anything', async () => {
     const store = fakeStore();
