@@ -168,8 +168,16 @@
   align-items: flex-start;
   gap: var(--space-2);
 }
+.amount {
+  flex: 1 1 auto;
+}
 .amount > a {
   align-self: stretch;
+  /* Buttons sit at the bottom so side-by-side cards line them up. */
+  margin-top: auto;
+}
+.bottomButton {
+  margin-top: auto;
 }
 .srOnly {
   position: absolute;

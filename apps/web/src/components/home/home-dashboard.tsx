@@ -68,7 +68,7 @@ function RosterCard({ teamId, staff }: { teamId: string; staff: boolean }) {
           <Avatar key={`${r.first_name}${i}`} name={r.first_name} size="sm" />
         ))}
       </div>
-      <ButtonLink href="/roster" variant="secondary">
+      <ButtonLink href="/roster" variant="secondary" className={styles.bottomButton}>
         View roster
       </ButtonLink>
     </Card>
