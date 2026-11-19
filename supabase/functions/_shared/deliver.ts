@@ -110,7 +110,7 @@ export function linkFor(p: NotificationPayload): string {
   if (p.event_id) return `/events/${p.event_id}`;
   if (p.registration_event_id) return `/manage/registration/${p.registration_event_id}`;
   if (p.kind === 'registration' && p.team_id)
-    return p.audience === 'staff' ? `/teams/${p.team_id}/compliance` : '/registrations';
+    return p.audience === 'staff' ? `/teams/${p.team_id}/waivers` : '/registrations';
   return '/';
 }
 

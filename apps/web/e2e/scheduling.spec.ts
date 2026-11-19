@@ -70,7 +70,7 @@ test.describe.serial('scheduling', () => {
     await signUp(parentB, 'sc-b', 'Bo Parent');
     await addChildAndRequest(parentB, 'Ben', 'Brown', code);
 
-    await coach.goto(`${teamUrl}/requests`);
+    await coach.goto(`${teamUrl}/people?view=requests`);
     const queue = coach.getByTestId('join-requests');
     for (const name of ['Pat Parent', 'Bo Parent']) {
       await queue.locator('li', { hasText: name }).getByRole('button', { name: 'Approve' }).click();

@@ -3065,6 +3065,62 @@ export type Database = {
           },
         ]
       }
+      waiver_reminders: {
+        Row: {
+          id: string
+          player_id: string
+          sent_at: string
+          sent_by: string | null
+          team_id: string
+          waiver_id: string
+        }
+        Insert: {
+          id?: string
+          player_id: string
+          sent_at?: string
+          sent_by?: string | null
+          team_id: string
+          waiver_id: string
+        }
+        Update: {
+          id?: string
+          player_id?: string
+          sent_at?: string
+          sent_by?: string | null
+          team_id?: string
+          waiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiver_reminders_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_reminders_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_reminders_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiver_reminders_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: false
+            referencedRelation: "waivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       waiver_versions: {
         Row: {
           body: string
@@ -3209,8 +3265,17 @@ export type Database = {
         Returns: string
       }
       archive_document: { Args: { p_document_id: string }; Returns: undefined }
+      cancel_open_payment: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
+      archive_form: { Args: { p_form_id: string }; Returns: undefined }
       archive_registration_event: {
         Args: { p_event_id: string }
+        Returns: undefined
+      }
+      archive_waiver: {
+        Args: { p_archived?: boolean; p_waiver_id: string }
         Returns: undefined
       }
       calendar_feed_events: {
@@ -3701,6 +3766,16 @@ export type Database = {
         Args: { p_message_id: string; p_reason?: string }
         Returns: undefined
       }
+      household_open_payments: {
+        Args: never
+        Returns: {
+          payment_id: string
+          request_ids: string[]
+          status: string
+          total_cents: number
+          updated_at: string
+        }[]
+      }
       household_payments: {
         Args: { p_household_id?: string }
         Returns: {
@@ -4043,6 +4118,10 @@ export type Database = {
           request_display_id: string
           request_status: string
         }[]
+      }
+      remind_waiver_signers: {
+        Args: { p_player_id?: string; p_team_id: string; p_waiver_id?: string }
+        Returns: number
       }
       remove_participant: {
         Args: { p_profile_id: string; p_thread_id: string }
@@ -4436,6 +4515,7 @@ export type Database = {
         Args: { p_emoji: string; p_message_id: string }
         Returns: boolean
       }
+      unarchive_form: { Args: { p_form_id: string }; Returns: undefined }
       unlink_team_from_club: { Args: { p_team_id: string }; Returns: undefined }
       update_document: {
         Args: {

@@ -1,6 +1,6 @@
 'use client';
 
-import { previewOf, sumCents, type AppContext } from '@athleit/core';
+import { can, previewOf, sumCents, teamTabHref, type AppContext } from '@athleit/core';
 import {
   getNotificationFailures,
   getRoster,
@@ -13,6 +13,7 @@ import { listDocuments } from '@athleit/db/registration';
 import { getFeedTokenStatus, getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
+import { useApp } from '@/components/app/app-provider';
 import { Amount, dueText } from '@/components/payments/money';
 import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
@@ -195,7 +196,7 @@ export function SetupTile({ teamId }: { teamId: string }) {
   const steps = [
     { done: (d?.players ?? 0) > 0, label: 'Add your first player', href: '/roster' },
     { done: (d?.events ?? 0) > 0, label: 'Schedule your first event', href: '/schedule' },
-    { done: false, label: 'Invite families', href: `/teams/${teamId}/invites` },
+    { done: false, label: 'Invite families', href: teamTabHref(teamId, 'people', 'invites') },
   ];
   const open = steps.filter((s) => !s.done);
   // "Invite families" cannot be detected; show it only while the first two are open.
@@ -228,8 +229,12 @@ export function SetupTile({ teamId }: { teamId: string }) {
 export function PlacesTile({
   places,
 }: {
-  places: readonly Pick<AppContext, 'key' | 'title' | 'subtitle' | 'kind' | 'id'>[];
+  places: readonly Pick<
+    AppContext,
+    'key' | 'title' | 'subtitle' | 'kind' | 'id' | 'role' | 'roles'
+  >[];
 }) {
+  const { setActive } = useApp();
   if (places.length < 2) return null;
   const href = (p: { kind: string; id: string }) =>
     p.kind === 'team' ? `/teams/${p.id}` : p.kind === 'club' ? `/clubs/${p.id}` : '/family';
@@ -244,12 +249,25 @@ export function PlacesTile({
       <ul className={styles.threads}>
         {places.slice(0, 5).map((p) => (
           <li key={p.key}>
-            <Link href={href(p)} className={styles.thread}>
-              <span className={styles.threadText}>
-                <span className={styles.threadTitle}>{p.title}</span>
-                <span className={styles.threadPreview}>{p.subtitle}</span>
-              </span>
-            </Link>
+            {p.kind === 'team' && !can(p, 'team.details') ? (
+              <button
+                type="button"
+                className={`${styles.thread} ${styles.threadButton}`}
+                onClick={() => setActive(p.key)}
+              >
+                <span className={styles.threadText}>
+                  <span className={styles.threadTitle}>{p.title}</span>
+                  <span className={styles.threadPreview}>{p.subtitle}</span>
+                </span>
+              </button>
+            ) : (
+              <Link href={href(p)} className={styles.thread}>
+                <span className={styles.threadText}>
+                  <span className={styles.threadTitle}>{p.title}</span>
+                  <span className={styles.threadPreview}>{p.subtitle}</span>
+                </span>
+              </Link>
+            )}
           </li>
         ))}
       </ul>

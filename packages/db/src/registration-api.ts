@@ -195,7 +195,7 @@ export async function listRegistrationEvents(c: Client, o: Owner) {
   let q = c
     .from('registration_events')
     .select(
-      'id, title, slug, status, kind, capacity, price_cents, opens_at, closes_at, visibility, starts_on, team_id, club_id',
+      'id, title, slug, status, kind, capacity, price_cents, opens_at, closes_at, visibility, starts_on, ends_on, team_id, club_id, form_version_id, eligibility',
     )
     .order('created_at', { ascending: false });
   if (o.teamId) q = q.eq('team_id', o.teamId);
@@ -301,15 +301,22 @@ export async function setRegistrationEventState(
   const { error } = await c.rpc(fn, { p_event_id: id });
   return error ? fail(error) : ok(null);
 }
-export async function listForms(c: Client, o: Owner) {
+export async function listForms(c: Client, o: Owner, includeArchived = false) {
   let q = c
     .from('forms')
-    .select('id, name, team_id, club_id, updated_at, form_versions(version)')
+    .select(
+      'id, name, team_id, club_id, updated_at, archived_at, draft_schema, form_versions(id, version)',
+    )
     .order('updated_at', { ascending: false });
   if (o.teamId) q = q.eq('team_id', o.teamId);
   if (o.clubId) q = q.eq('club_id', o.clubId);
+  if (!includeArchived) q = q.is('archived_at', null);
   const { data, error } = await q;
   return error ? fail(error) : ok(data ?? []);
+}
+export async function archiveForm(c: Client, id: string, archived = true) {
+  const { error } = await c.rpc(archived ? 'archive_form' : 'unarchive_form', { p_form_id: id });
+  return error ? fail(error) : ok(null);
 }
 export async function getForm(c: Client, id: string) {
   const { data, error } = await c
@@ -340,20 +347,25 @@ export async function publishFormVersion(c: Client, id: string) {
   const { data, error } = await c.rpc('publish_form_version', { p_form_id: id });
   return error ? fail(error) : ok(data);
 }
-export async function listWaivers(c: Client, o: Owner) {
+export async function listWaivers(c: Client, o: Owner, includeArchived = false) {
   let q = c
     .from('waivers')
-    .select('id, title, team_id, club_id, updated_at, waiver_versions(version)')
+    .select(
+      'id, title, team_id, club_id, updated_at, archived_at, draft_body, draft_requires_resign_after_days, waiver_versions(id, version, published_at, body, requires_resign_after_days)',
+    )
     .order('updated_at', { ascending: false });
   if (o.teamId) q = q.eq('team_id', o.teamId);
   if (o.clubId) q = q.eq('club_id', o.clubId);
+  if (!includeArchived) q = q.is('archived_at', null);
   const { data, error } = await q;
   return error ? fail(error) : ok(data ?? []);
 }
 export async function getWaiver(c: Client, id: string) {
   const { data, error } = await c
     .from('waivers')
-    .select('*, waiver_versions(id, version, published_at, title, body)')
+    .select(
+      '*, waiver_versions(id, version, published_at, title, body, content_hash, requires_resign_after_days)',
+    )
     .eq('id', id)
     .single();
   return error ? fail(error) : ok(data);
@@ -466,5 +478,58 @@ export async function uploadDocumentFile(
   const { error } = await c.storage
     .from('documents')
     .upload(path, file, { contentType: mime, upsert: false });
+  return error ? fail(error) : ok(null);
+}
+
+// ------------------------------------------------------------------------------------------- waiver reminders
+/** Remind guardians whose required waiver is missing or expired. Returns how many players were reminded; 24-hour limit per player and waiver. */
+export async function remindWaiverSigners(
+  c: Client,
+  teamId: string,
+  o: { waiverId?: string; playerId?: string } = {},
+): Promise<Result<number>> {
+  const { data, error } = await c.rpc('remind_waiver_signers', {
+    p_team_id: teamId,
+    ...(o.waiverId ? { p_waiver_id: o.waiverId } : {}),
+    ...(o.playerId ? { p_player_id: o.playerId } : {}),
+  });
+  return error ? fail(error) : ok(data ?? 0);
+}
+/** When each player/waiver pair was last reminded, as `playerId:waiverId` to ISO time. */
+export async function listWaiverReminders(
+  c: Client,
+  teamId: string,
+): Promise<Result<Map<string, string>>> {
+  const since = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  const { data, error } = await c
+    .from('waiver_reminders')
+    .select('player_id, waiver_id, sent_at')
+    .eq('team_id', teamId)
+    .gte('sent_at', since);
+  if (error) return fail(error);
+  const m = new Map<string, string>();
+  for (const r of data ?? []) {
+    const k = `${r.player_id}:${r.waiver_id}`;
+    if (!m.has(k) || (m.get(k) ?? '') < r.sent_at) m.set(k, r.sent_at);
+  }
+  return ok(m);
+}
+export async function archiveWaiver(c: Client, id: string, archived = true) {
+  const { error } = await c.rpc('archive_waiver', { p_waiver_id: id, p_archived: archived });
+  return error ? fail(error) : ok(null);
+}
+export async function updateDocument(
+  c: Client,
+  id: string,
+  d: { title: string; description: string; category: string; visibility: string; pinned: boolean },
+) {
+  const { error } = await c.rpc('update_document', {
+    p_document_id: id,
+    p_title: d.title,
+    p_description: d.description,
+    p_category: d.category,
+    p_visibility: d.visibility,
+    p_pinned: d.pinned,
+  });
   return error ? fail(error) : ok(null);
 }

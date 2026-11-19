@@ -22,11 +22,14 @@ export function FormRenderer({
   answers,
   errors,
   onChange,
+  compact = false,
 }: {
   schema: FormSchema;
   answers: Answers;
   errors: Record<string, string>;
   onChange: (next: Answers) => void;
+  /** One column, like a phone: half-width questions stack. Used by the builder's mobile preview. */
+  compact?: boolean;
 }) {
   const set = (id: string, v: unknown) => {
     const next = { ...answers, [id]: v };
@@ -36,15 +39,11 @@ export function FormRenderer({
     onChange(next);
   };
   return (
-    <div className={styles.stack}>
+    <div className={compact ? styles.stack : styles.formGrid}>
       {visibleFields(schema, answers).map((f) => (
-        <Field
-          key={f.id}
-          f={f}
-          value={answers[f.id]}
-          error={errors[f.id]}
-          set={(v) => set(f.id, v)}
-        />
+        <div key={f.id} className={f.width === 'half' && !compact ? styles.half : styles.fullCol}>
+          <Field f={f} value={answers[f.id]} error={errors[f.id]} set={(v) => set(f.id, v)} />
+        </div>
       ))}
     </div>
   );
@@ -63,7 +62,12 @@ function Field({
 }) {
   const id = useId();
   const label = `${f.label}${f.required ? '' : ' (optional)'}`;
-  const common = { label, error, ...(f.help ? { hint: f.help } : {}) };
+  const common = {
+    label,
+    error,
+    ...(f.help ? { hint: f.help } : {}),
+    ...(f.placeholder ? { placeholder: f.placeholder } : {}),
+  };
   switch (f.type) {
     case 'long_text':
       return (

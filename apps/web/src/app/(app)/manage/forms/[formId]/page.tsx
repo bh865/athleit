@@ -1,10 +1,19 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { FormBuilder } from '@/components/registration/form-builder';
+import { FormBuilder } from '@/components/builders/form-builder';
 
-export default function EditFormPage() {
+function Inner() {
   const { formId } = useParams<{ formId: string }>();
-  return <FormBuilder formId={formId} owner={{}} />;
+  const q = useSearchParams();
+  return <FormBuilder formId={formId} owner={{}} returnTo={q.get('returnTo')} />;
+}
+export default function EditFormPage() {
+  return (
+    <Suspense fallback={null}>
+      <Inner />
+    </Suspense>
+  );
 }

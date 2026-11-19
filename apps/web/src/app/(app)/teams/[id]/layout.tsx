@@ -1,39 +1,27 @@
 'use client';
 
-import { useParams, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { TEAM_TABS, visibleTeamTabs, type TeamTab } from '@athleit/core';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useEffect, type ReactNode } from 'react';
 
 import styles from '@/components/app/app.module.css';
 import { TeamProvider, useTeam } from '@/components/app/team-context';
-import { StaffPaymentsCard } from '@/components/payments/home-cards';
-import { NextUpCard } from '@/components/schedule/next-up-card';
+import { TabRow } from '@/components/team/tab-row';
+import { HeaderSlot, TeamHubProvider, useTeamHub } from '@/components/team/team-hub';
+import teamStyles from '@/components/team/team.module.css';
 import { Badge, PageHeader } from '@/components/ui';
 
-function TeamHeader() {
+/** Which tab a path belongs to. Anything that is not a tab (e.g. a legacy redirect) is null. */
+function tabFor(pathname: string, base: string): TeamTab | null {
+  if (pathname === base) return 'overview';
+  const seg = pathname.slice(base.length + 1).split('/')[0];
+  return (TEAM_TABS as readonly string[]).includes(seg ?? '') ? (seg as TeamTab) : null;
+}
+
+function TeamHeader({ active }: { active: TeamTab | null }) {
   const { team, caps } = useTeam();
-  const pathname = usePathname();
-  const base = `/teams/${team.id}`;
-  const tabs = [
-    {
-      href: base,
-      label: 'Overview',
-      show: caps.has('team.view') || caps.has('roster.viewLimited'),
-    },
-    { href: `${base}/schedule`, label: 'Schedule', show: caps.has('schedule.view') },
-    { href: `${base}/payments`, label: 'Payments', show: caps.has('payments.view') },
-    { href: `${base}/registrations`, label: 'Registrations', show: caps.has('registration.view') },
-    { href: `${base}/compliance`, label: 'Waivers', show: caps.has('registration.view') },
-    { href: `${base}/documents`, label: 'Documents', show: caps.has('documents.view') },
-    { href: `${base}/requests`, label: 'Requests', show: caps.has('joinRequests.decide') },
-    { href: `${base}/invites`, label: 'Invites', show: caps.has('invites.createFamily') },
-    { href: `${base}/members`, label: 'Members', show: caps.has('members.view') },
-    {
-      href: `${base}/settings`,
-      label: 'Settings',
-      show: caps.has('team.edit') || caps.has('team.view'),
-    },
-  ].filter((t) => t.show);
+  const hub = useTeamHub();
+  const tabs = visibleTeamTabs(caps);
   return (
     <>
       <PageHeader
@@ -49,24 +37,40 @@ function TeamHeader() {
             )}
           </>
         }
+        actions={<HeaderSlot className={teamStyles.slot} />}
       />
-      <nav className={styles.tabs} aria-label="Team sections">
-        {tabs.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`${styles.tab} ${pathname === t.href ? styles.tabActive : ''}`}
-            aria-current={pathname === t.href ? 'page' : undefined}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
-      {pathname === base && caps.has('schedule.view') ? <NextUpCard /> : null}
-      {pathname === base && caps.has('payments.view') ? (
-        <StaffPaymentsCard owner={{ teamId: team.id }} href={`${base}/payments`} />
-      ) : null}
+      <TabRow teamId={team.id} tabs={tabs} active={active ?? 'overview'} counts={hub.counts} />
     </>
+  );
+}
+
+/**
+ * The team details area is for staff (and the linked club admin, read-only). Everyone else already has
+ * Roster, Schedule, Messages and Pay in the main navigation, so they are sent home. The one exception is
+ * the Documents shelf: parents and players reach it from Home and have nowhere else to open it.
+ */
+function TeamGate({ children }: { children: ReactNode }) {
+  const { team, caps } = useTeam();
+  const pathname = usePathname();
+  const router = useRouter();
+  const base = `/teams/${team.id}`;
+  const staff = caps.has('team.details');
+  const documentsOnly = !staff && caps.has('documents.view') && pathname === `${base}/documents`;
+  const active = tabFor(pathname, base);
+  // A staff member who cannot see a tab (e.g. no payments access) is sent to the Overview, never a dead end.
+  const hidden = staff && active !== null && !visibleTeamTabs(caps).includes(active);
+  const allowed = (staff && !hidden) || documentsOnly;
+  useEffect(() => {
+    if (hidden) router.replace(base);
+    else if (!allowed) router.replace('/');
+  }, [allowed, hidden, base, router]);
+  if (!allowed) return null;
+  if (!staff) return <>{children}</>;
+  return (
+    <TeamHubProvider>
+      <TeamHeader active={active} />
+      {children}
+    </TeamHubProvider>
   );
 }
 
@@ -74,8 +78,7 @@ export default function TeamLayout({ children }: { children: ReactNode }) {
   const { id } = useParams<{ id: string }>();
   return (
     <TeamProvider teamId={id}>
-      <TeamHeader />
-      {children}
+      <TeamGate>{children}</TeamGate>
     </TeamProvider>
   );
 }

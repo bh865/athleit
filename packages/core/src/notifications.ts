@@ -66,7 +66,7 @@ export function notificationSummary(
       href: p.registration_event_id
         ? `/manage/registration/${p.registration_event_id}`
         : p.team_id && p.audience === 'staff'
-          ? `/teams/${p.team_id}/compliance`
+          ? `/teams/${p.team_id}/waivers`
           : '/registrations',
     };
   }

@@ -1,4 +1,4 @@
-import { describeEventTime } from '@athleit/core';
+import { describeEventTime, teamTabParams } from '@athleit/core';
 import { getJoinRequests, type Result } from '@athleit/db/api';
 import {
   getCapacitySummary,
@@ -343,7 +343,12 @@ export function ApprovalsTile({ teamId }: { teamId: string }) {
             key={r.id}
             title={r.requester_name}
             subtitle={`Parent of ${r.player_first_name}`}
-            onPress={() => router.push(`/teams/${teamId}/requests` as never)}
+            onPress={() =>
+              router.push({
+                pathname: '/teams/[id]',
+                params: { id: teamId, ...teamTabParams('people', 'requests') },
+              } as never)
+            }
           />
         ))}
       </ListGroup>

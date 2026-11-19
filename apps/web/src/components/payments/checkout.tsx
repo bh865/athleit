@@ -1,7 +1,8 @@
 'use client';
 
-import { friendlyError, formatCents } from '@athleit/core';
+import { friendlyError, formatCents, type PayRow } from '@athleit/core';
 import {
+  cancelOpenPayment,
   createPaymentIntent,
   getCheckoutQuote,
   getHouseholdPayments,
@@ -13,12 +14,12 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Icon, Sheet, Text } from '@/components/ui';
+import { Button, Icon, IconButton, Sheet, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { stripeAppearance } from './appearance';
 import { Amount } from './money';
-import styles from './payments.module.css';
+import styles from './parent-pay.module.css';
 import { ReceiptView } from './receipt';
 
 type Step =
@@ -26,7 +27,9 @@ type Step =
   | { kind: 'pay'; clientSecret: string; stripe: Promise<Stripe | null> }
   | { kind: 'processing'; slow: boolean }
   | { kind: 'done'; receipt: HouseholdReceiptRow | null }
-  | { kind: 'error'; message: string; retry: 'review' | 'pay' };
+  | { kind: 'error'; message: string; retry: 'review' | 'pay'; cause?: ErrorCause };
+
+type ErrorCause = 'declined' | 'bank' | 'connection' | 'generic';
 
 const PUBLISHABLE = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const POLL_MS = 2000;
@@ -46,13 +49,49 @@ export function paymentErrorMessage(
   return 'The payment didn’t go through. Your card was not charged.';
 }
 
+/** Which illustration and title an error gets. The wording itself always comes from paymentErrorMessage. */
+export function paymentErrorCause(e: { type?: string; code?: string } | undefined): ErrorCause {
+  if (!e) return 'generic';
+  if (e.code === 'card_declined' || e.type === 'card_error') return 'declined';
+  if (e.code === 'payment_intent_authentication_failure') return 'bank';
+  if (e.type === 'api_connection_error') return 'connection';
+  return 'generic';
+}
+const CAUSE: Record<ErrorCause, { icon: Parameters<typeof Icon>[0]['name']; title: string }> = {
+  declined: { icon: 'credit-card', title: 'Your card was declined' },
+  bank: { icon: 'bank', title: 'We couldn’t verify your bank' },
+  connection: { icon: 'wifi-slash', title: 'Connection lost' },
+  generic: { icon: 'warning-circle', title: 'That didn’t go through' },
+};
+
+const STEPS = ['Review', 'Pay', 'Done'] as const;
+/** Review / Pay / Done. The step machine below decides which one is current; this only draws it. */
+function StepHeader({ at }: { at: 0 | 1 | 2 | 3 }) {
+  return (
+    <ol className={styles.steps} aria-label="Checkout steps">
+      {STEPS.map((label, i) => (
+        <li
+          key={label}
+          className={`${styles.step} ${i === at ? styles.stepOn : ''}`}
+          aria-current={i === at ? 'step' : undefined}
+        >
+          <span className={`${styles.stepDot} ${i < at ? styles.stepDone : ''}`}>
+            {i < at ? <Icon name="check" size="sm" /> : i + 1}
+          </span>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function PayForm({
   onSubmitted,
   onError,
   total,
 }: {
   onSubmitted: () => void;
-  onError: (m: string) => void;
+  onError: (m: string, cause: ErrorCause) => void;
   total: number;
 }) {
   const stripe = useStripe();
@@ -71,7 +110,7 @@ function PayForm({
           confirmParams: { return_url: `${window.location.origin}/pay?returned=1` },
         });
         setBusy(false);
-        if (error) onError(paymentErrorMessage(error));
+        if (error) onError(paymentErrorMessage(error), paymentErrorCause(error));
         else onSubmitted();
       }}
     >
@@ -81,7 +120,7 @@ function PayForm({
         />
       </div>
       <Button type="submit" size="lg" fullWidth loading={busy} disabled={!stripe || !elements}>
-        Pay {formatCents(total)}
+        <Icon name="lock-simple" size="sm" /> Pay {formatCents(total)}
       </Button>
     </form>
   );
@@ -93,10 +132,12 @@ function PayForm({
  */
 function CheckoutBody({
   requestIds,
+  rows,
   onClose,
   onFinished,
 }: {
   requestIds: string[];
+  rows: readonly PayRow[];
   onClose: () => void;
   onFinished: () => void;
 }) {
@@ -106,6 +147,8 @@ function CheckoutBody({
   const [loadingQuote, setLoadingQuote] = useState(true);
   const [starting, setStarting] = useState(false);
   const polling = useRef(false);
+  // The payment opened at the server, so it can be let go if the parent leaves before entering a card.
+  const paymentId = useRef<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -162,6 +205,7 @@ function CheckoutBody({
     setStarting(false);
     if (r.error)
       return setStep({ kind: 'error', message: friendlyError(r.error), retry: 'review' });
+    paymentId.current = r.data.paymentId;
     if (r.data.status === 'succeeded' || !r.data.clientSecret)
       return void waitForWebhook(requestIds);
     if (!PUBLISHABLE) {
@@ -181,119 +225,176 @@ function CheckoutBody({
 
   const close = () => {
     polling.current = false;
+    // Leaving before a card was confirmed: free the requests so nothing is left "processing". The server only
+    // cancels a payment that has no confirmed card, so a payment already in flight is never touched.
+    const unfinished = step.kind === 'pay' || (step.kind === 'error' && step.retry === 'pay');
+    if (unfinished && paymentId.current) {
+      void cancelOpenPayment(getClient(), paymentId.current).finally(onFinished);
+    }
     onClose();
   };
 
+  const at: 0 | 1 | 2 | 3 =
+    step.kind === 'done'
+      ? 3
+      : step.kind === 'review' || (step.kind === 'error' && step.retry === 'review')
+        ? 0
+        : step.kind === 'pay' || step.kind === 'error'
+          ? 1
+          : 2;
+  const byId = new Map(rows.map((r) => [r.request_id, r]));
+  // Server lines, grouped under the child they belong to. Amounts are the server's; this only arranges them.
+  const itemGroups = new Map<string, NonNullable<typeof quote>['lines']>();
+  for (const l of quote?.lines ?? []) {
+    if (l.kind !== 'item') continue;
+    const child = (l.request_id && byId.get(l.request_id)?.player_first_name) || '';
+    itemGroups.set(child, [...(itemGroups.get(child) ?? []), l]);
+  }
+  const extras = (quote?.lines ?? []).filter((l) => l.kind !== 'item');
+  const payee = rows.find((r) => requestIds.includes(r.request_id))?.issuer_name;
+
   return (
-    <Sheet open={open} onClose={close} title="Confirm payment" level="modal">
-      {step.kind === 'review' || (step.kind === 'error' && step.retry === 'review') ? (
-        <div className={styles.stack}>
+    <Sheet open={open} onClose={close} title="Checkout" level="modal" placement="side">
+      <div className={styles.stack}>
+        <div className={`${styles.row} ${styles.between}`}>
           <Text variant="heading" as="h2">
-            Confirm payment
+            Checkout
           </Text>
-          {step.kind === 'error' ? (
-            <p role="alert" className={`${styles.notice} ${styles.noticeBad}`}>
-              {step.message}
-            </p>
-          ) : null}
-          {loadingQuote ? <Text muted>Loading…</Text> : null}
-          {quote ? (
-            <>
-              <div className={styles.lines} data-testid="quote-lines">
-                {quote.lines.map((l, i) => (
-                  <div key={`${l.kind}-${i}`} className={styles.line}>
-                    <Text muted>
-                      {l.label}
-                      {l.display_id ? ` · ${l.display_id}` : ''}
-                    </Text>
-                    <Amount cents={l.amount_cents} />
+          <IconButton icon="x" label="Close checkout" onClick={close} />
+        </div>
+        <StepHeader at={at} />
+
+        {step.kind === 'review' || (step.kind === 'error' && step.retry === 'review') ? (
+          <div className={styles.stack}>
+            {step.kind === 'error' ? (
+              <p role="alert" className={styles.strip}>
+                <Icon name="warning-circle" size="sm" /> {step.message}
+              </p>
+            ) : null}
+            {loadingQuote ? (
+              <Text muted role="status">
+                Loading…
+              </Text>
+            ) : null}
+            {quote ? (
+              <>
+                <div className={styles.stack} data-testid="quote-lines">
+                  {[...itemGroups].map(([child, lines]) => (
+                    <section key={child} className={styles.lines} aria-label={child || 'Items'}>
+                      <span className={styles.kicker}>{child}</span>
+                      {lines.map((l, i) => (
+                        <div key={`${l.kind}-${i}`} className={styles.line}>
+                          <Text>{l.label}</Text>
+                          <Amount cents={l.amount_cents} />
+                        </div>
+                      ))}
+                    </section>
+                  ))}
+                  <div className={styles.lines}>
+                    {extras.map((l, i) => (
+                      <div key={`${l.kind}-${i}`} className={`${styles.line} ${styles.lineQuiet}`}>
+                        <span>{l.label}</span>
+                        <Amount cents={l.amount_cents} />
+                      </div>
+                    ))}
+                    <div className={`${styles.line} ${styles.lineTotal}`}>
+                      <span>Total</span>
+                      <Amount cents={quote.total_cents} variant="monoLg" label="Total" />
+                    </div>
                   </div>
-                ))}
-                <div className={`${styles.line} ${styles.total}`}>
-                  <Text variant="bodyBold">Total</Text>
-                  <Amount cents={quote.total_cents} variant="monoLg" label="Total" />
                 </div>
-              </div>
-              <Button size="lg" fullWidth loading={starting} onClick={start}>
-                Continue to payment
+                <Button size="lg" fullWidth loading={starting} onClick={start}>
+                  Continue to payment <Icon name="arrow-right" size="sm" />
+                </Button>
+              </>
+            ) : step.kind === 'error' ? (
+              <Button variant="secondary" onClick={close}>
+                Close
               </Button>
-            </>
-          ) : step.kind === 'error' ? (
-            <Button variant="secondary" onClick={close}>
-              Close
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {step.kind === 'pay' && quote ? (
-        <div className={styles.stack}>
-          <Text variant="heading" as="h2">
-            Payment
-          </Text>
-          <Elements
-            stripe={step.stripe}
-            options={{ clientSecret: step.clientSecret, appearance: stripeAppearance() }}
-          >
-            <PayForm
-              total={quote.total_cents}
-              onSubmitted={() => void waitForWebhook(requestIds)}
-              onError={(message) => setStep({ kind: 'error', message, retry: 'pay' })}
-            />
-          </Elements>
-        </div>
-      ) : null}
-
-      {step.kind === 'error' && step.retry === 'pay' ? (
-        <div className={styles.center} data-testid="pay-error">
-          <span className={styles.success} aria-hidden>
-            <Icon name="warning-circle" size="xl" />
-          </span>
-          <Text variant="heading" as="h2">
-            Payment didn’t go through
-          </Text>
-          <Text muted as="p" role="alert">
-            {step.message}
-          </Text>
-          <Button size="lg" fullWidth onClick={() => void start()}>
-            Try again
-          </Button>
-        </div>
-      ) : null}
-
-      {step.kind === 'processing' ? (
-        <div className={styles.center} data-testid="processing">
-          <Text variant="heading" as="h2">
-            Processing
-          </Text>
-          <Text muted as="p" role="status">
-            {step.slow
-              ? 'This is taking longer than usual. You can close this: we’ll send your receipt as soon as the payment is confirmed. You won’t be charged twice.'
-              : 'Waiting for confirmation. Please don’t close this window.'}
-          </Text>
-          {step.slow ? (
-            <Button variant="secondary" onClick={close}>
-              Close
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {step.kind === 'done' ? (
-        step.receipt ? (
-          <ReceiptView receipt={step.receipt} onDone={close} />
-        ) : (
-          <div className={styles.center}>
-            <Text variant="title" as="h2">
-              Paid
-            </Text>
-            <Text muted>Your receipt will be in Receipts shortly.</Text>
-            <Button size="lg" fullWidth onClick={close}>
-              Done
-            </Button>
+            ) : null}
           </div>
-        )
-      ) : null}
+        ) : null}
+
+        {step.kind === 'pay' && quote ? (
+          <div className={styles.stack}>
+            <div className={`${styles.row} ${styles.between}`}>
+              <Text muted>Paying {payee ?? 'your team'}</Text>
+              <Amount cents={quote.total_cents} variant="monoLg" label="Total" />
+            </div>
+            <Elements
+              stripe={step.stripe}
+              options={{ clientSecret: step.clientSecret, appearance: stripeAppearance() }}
+            >
+              <PayForm
+                total={quote.total_cents}
+                onSubmitted={() => void waitForWebhook(requestIds)}
+                onError={(message, cause) =>
+                  setStep({ kind: 'error', message, retry: 'pay', cause })
+                }
+              />
+            </Elements>
+          </div>
+        ) : null}
+
+        {step.kind === 'error' && step.retry === 'pay' ? (
+          <div className={styles.center} data-testid="pay-error">
+            <span className={styles.bad} aria-hidden>
+              <Icon name={CAUSE[step.cause ?? 'generic'].icon} size="xl" />
+            </span>
+            <Text variant="heading" as="h2">
+              {CAUSE[step.cause ?? 'generic'].title}
+            </Text>
+            <Text muted as="p" role="alert">
+              {step.message}
+            </Text>
+            <div className={styles.row}>
+              <Button size="lg" onClick={() => void start()}>
+                <Icon name="arrow-clockwise" size="sm" /> Try again
+              </Button>
+              <Button variant="secondary" size="lg" onClick={close}>
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {step.kind === 'processing' ? (
+          <div className={styles.center} data-testid="processing">
+            <Text variant="heading" as="h2">
+              {step.slow ? 'This is taking longer than usual' : 'Confirming your payment'}
+            </Text>
+            <Text muted as="p" role="status">
+              {step.slow
+                ? 'This is taking longer than usual. You can close this: we’ll send your receipt as soon as the payment is confirmed. You won’t be charged twice.'
+                : 'Waiting for confirmation. Please don’t close this window.'}
+            </Text>
+            {step.slow ? (
+              <Button variant="secondary" onClick={close}>
+                Close
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step.kind === 'done' ? (
+          step.receipt ? (
+            <ReceiptView receipt={step.receipt} onDone={close} />
+          ) : (
+            <div className={styles.center}>
+              <span className={styles.ok} aria-hidden>
+                <Icon name="check" size="xl" weight="fill" />
+              </span>
+              <Text variant="title" as="h2">
+                Paid
+              </Text>
+              <Text muted>Your receipt will be in Receipts shortly.</Text>
+              <Button size="lg" fullWidth onClick={close}>
+                Done
+              </Button>
+            </div>
+          )
+        ) : null}
+      </div>
     </Sheet>
   );
 }
@@ -301,10 +402,12 @@ function CheckoutBody({
 /** Mount per request set so every checkout starts from a clean review step. */
 export function CheckoutSheet({
   requestIds,
+  rows,
   onClose,
   onFinished,
 }: {
   requestIds: string[] | null;
+  rows: readonly PayRow[];
   onClose: () => void;
   onFinished: () => void;
 }) {
@@ -313,6 +416,7 @@ export function CheckoutSheet({
     <CheckoutBody
       key={requestIds.join(',')}
       requestIds={requestIds}
+      rows={rows}
       onClose={onClose}
       onFinished={onFinished}
     />

@@ -4,6 +4,7 @@ import {
   addRoleActions,
   buildContexts,
   can,
+  CLUB_ADMIN_TEAM_VIEW,
   capabilitiesFor,
   friendlyError,
   pickContext,
@@ -111,6 +112,14 @@ describe('capabilities (docs/permissions.md)', () => {
       expect(can(team(r), 'contacts.view')).toBe(false);
       expect(can(team(r), 'roster.viewLimited')).toBe(true);
     }
+  });
+  it('only staff (and the linked club admin, read-only) open the team details area', () => {
+    for (const r of ['admin', 'coach', 'manager']) expect(can(team(r), 'team.details')).toBe(true);
+    for (const r of ['parent', 'player']) {
+      expect(can(team(r), 'team.details')).toBe(false);
+      expect(can(team(r), 'documents.view')).toBe(true);
+    }
+    expect(CLUB_ADMIN_TEAM_VIEW.has('team.details')).toBe(true);
   });
   it('only team admins manage members, staff invites and club affiliation', () => {
     expect(can(team('admin'), 'members.manage')).toBe(true);

@@ -171,8 +171,31 @@ export const unlinkTeamFromClub = (client: Client, teamId: string) =>
 const CHILD_SELECT =
   'id, household_id, first_name, last_name, date_of_birth, profile_id, photo_path, login_invite_email, team_players(id, team_id, jersey_number, position, status, teams(id, name, sport, season_label))' as const;
 
-export const listChildren = (client: Client) =>
-  run(client.from('players').select(CHILD_SELECT).order('first_name'), []);
+/**
+ * The signed-in user's own family: players in households where they are a guardian, plus their
+ * own player record. RLS also lets team staff read their rostered players, so this must filter
+ * explicitly or coaches and admins would see other families' children.
+ */
+export async function listChildren(client: Client) {
+  const { data: session } = await client.auth.getSession();
+  const uid = session.session?.user.id;
+  if (!uid) return ok([] as Data<ReturnType<typeof childrenQuery>>);
+  const { data: hms, error } = await client
+    .from('household_members')
+    .select('household_id')
+    .eq('profile_id', uid)
+    .eq('relationship', 'guardian');
+  if (error) return fail<Data<ReturnType<typeof childrenQuery>>>(error);
+  const ids = (hms ?? []).map((h) => h.household_id);
+  const mine =
+    ids.length > 0
+      ? `household_id.in.(${ids.join(',')}),profile_id.eq.${uid}`
+      : `profile_id.eq.${uid}`;
+  return run(childrenQuery(client).or(mine), []);
+}
+
+const childrenQuery = (client: Client) =>
+  client.from('players').select(CHILD_SELECT).order('first_name');
 
 export const getChild = (client: Client, id: string) =>
   run(client.from('players').select(CHILD_SELECT).eq('id', id).single());

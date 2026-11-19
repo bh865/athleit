@@ -9,8 +9,10 @@ import {
 import { iconNames } from '@athleit/ui-core';
 import { useState } from 'react';
 
+import { WaiversDocumentsGallery } from '@/components/documents/gallery-parts';
 import { HomeGallery } from '@/components/home/gallery-parts';
 import { PayGallery, PayStaffGallery, PayStatesGallery } from '@/components/payments/gallery-parts';
+import { ParentPayGallery } from '@/components/payments/parent-gallery-parts';
 import {
   RegistrationDocsGallery,
   RegistrationPublicGallery,
@@ -336,6 +338,9 @@ function ThemePanel({ name }: { name: string }) {
       <Section title="Payments · states">
         <PayStatesGallery />
       </Section>
+      <Section title="Payments · parent Pay (due, checkout, receipts)">
+        <ParentPayGallery />
+      </Section>
       <Section title="Registration · public page">
         <RegistrationPublicGallery />
       </Section>
@@ -344,6 +349,9 @@ function ThemePanel({ name }: { name: string }) {
       </Section>
       <Section title="Registration · waivers and documents">
         <RegistrationDocsGallery />
+      </Section>
+      <Section title="Waivers and documents · compliance, library, builder, upload">
+        <WaiversDocumentsGallery />
       </Section>
       <Section title="Home · attention and tiles">
         <HomeGallery />

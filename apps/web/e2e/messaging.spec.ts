@@ -35,7 +35,7 @@ test.describe.serial('messaging', () => {
     await coach.getByRole('button', { name: 'Create team' }).click();
     await expect(coach.getByRole('heading', { name: 'Msg Hawks' })).toBeVisible();
     const teamUrl = new URL(coach.url()).pathname;
-    await coach.goto(`${teamUrl}/invites`);
+    await coach.goto(`${teamUrl}/people?view=invites`);
     await coach.getByLabel('Role').selectOption('parent');
     await coach.getByRole('button', { name: 'Create invite link' }).click();
     const link = (await coach.getByTestId('invite-link').textContent())?.trim() ?? '';

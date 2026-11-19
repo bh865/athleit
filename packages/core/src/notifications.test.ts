@@ -99,7 +99,7 @@ describe('registration notifications', () => {
   });
   it('sends staff waiver notices to the tracker and families to their registrations', () => {
     expect(notificationSummary('registration', { team_id: 't1', audience: 'staff' }).href).toBe(
-      '/teams/t1/compliance',
+      '/teams/t1/waivers',
     );
     expect(notificationSummary('registration', { team_id: 't1', audience: 'family' }).href).toBe(
       '/registrations',

@@ -117,17 +117,15 @@ test.describe('Pay views by capability', () => {
     await expect(parent.getByRole('radio', { name: 'Team collection' })).toHaveCount(0);
     await expect(parent.getByText('No payment requests yet')).toHaveCount(0);
 
-    const staff = sessions.staff.page;
-    await staff.goto('/pay');
-    await expect(staff.getByText('New payment request')).toBeVisible();
-    await expect(staff.getByRole('radio', { name: 'My payments' })).toHaveCount(0);
-
+    // /pay is "My payments" only: no toggle, no collection. Staff collect from the team's Payments tab.
     const both = sessions.both.page;
     await both.goto('/pay');
-    await expect(both.getByRole('radio', { name: 'My payments' })).toBeVisible();
-    await expect(both.getByRole('radio', { name: 'Team collection' })).toBeVisible();
-    await expect(both.getByText('New payment request')).toBeVisible();
-    await both.getByRole('radio', { name: 'My payments' }).click();
     await expect(both.getByText('PV jersey fee')).toBeVisible();
+    await expect(both.getByRole('radio', { name: 'Team collection' })).toHaveCount(0);
+    await expect(both.getByText('New payment request')).toHaveCount(0);
+
+    const staff = sessions.staff.page;
+    await staff.goto(`/teams/${team.id}/payments`);
+    await expect(staff.getByText('New payment request')).toBeVisible();
   });
 });

@@ -1,5 +1,6 @@
 import {
   buildAttentionItems,
+  normalizeWaiverStatus,
   capabilitiesForPlace,
   deriveAttention,
   payViewsFor,
@@ -91,7 +92,9 @@ export function useHomeData(
         payments: pay.data ?? [],
         registrations: regs.data ?? [],
         pendingJoinRequests: (joins.data ?? []).filter((r) => r.status === 'pending').length,
-        waiversNeedingAction: (waivers.data ?? []).filter((w) => w.status !== 'signed').length,
+        waiversNeedingAction: (waivers.data ?? []).filter(
+          (w) => normalizeWaiverStatus(w.status) !== 'signed',
+        ).length,
         gamesWithoutResult: games.map((g) => ({
           event_id: g.id,
           title: g.title,

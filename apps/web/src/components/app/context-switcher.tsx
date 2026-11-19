@@ -1,7 +1,7 @@
 'use client';
 
 import { contextPath, switcherPlaces, type AddRoleAction } from '@athleit/core';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { Glass, Icon } from '@/components/ui';
@@ -22,9 +22,10 @@ export const ADD_LABEL: Record<AddRoleAction, { label: string; href: string }> =
  * family" also lives in the account menu so single-place users can still reach it.
  */
 export function ContextSwitcher() {
-  const { contexts, active, setActive, addActions } = useApp();
+  const { contexts, active, setActive } = useApp();
   const places = switcherPlaces(contexts);
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -87,32 +88,17 @@ export function ContextSwitcher() {
               onClick={() => {
                 setActive(c.key);
                 setOpen(false);
-                router.push(contextPath(c));
+                // Teams: stay on the current screen, which re-reads the newly active team. Only a page
+                // that belongs to one specific team/club (its URL would fight the switch) goes Home.
+                if (c.kind !== 'team') router.push(contextPath(c));
+                else if (pathname.startsWith('/teams/') || pathname.startsWith('/clubs/'))
+                  router.push('/');
               }}
             >
               <span className={styles.text}>
                 <span className={styles.title}>{c.title}</span>
                 <span className={styles.subtitle}>{c.subtitle}</span>
               </span>
-              {c.key === active?.key && <Icon name="check" weight="fill" size="sm" />}
-            </button>
-          ))}
-          <p className={styles.heading}>Add</p>
-          {addActions.map((a) => (
-            <button
-              key={a}
-              type="button"
-              role="menuitem"
-              className={styles.option}
-              onClick={() => {
-                setOpen(false);
-                router.push(ADD_LABEL[a].href);
-              }}
-            >
-              <span className={styles.addIcon}>
-                <Icon name="plus" size="sm" />
-              </span>
-              <span className={styles.title}>{ADD_LABEL[a].label}</span>
             </button>
           ))}
         </Glass>
