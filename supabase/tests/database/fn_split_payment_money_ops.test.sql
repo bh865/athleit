@@ -64,7 +64,7 @@ select is((select count(*)::int from public.refunds where payment_id = (select i
 select is((select r.base_cents from public.refunds r join public.payment_items i on i.id = r.payment_item_id join public.payment_request_installments n on n.id = i.installment_id where n.sequence = 3), 1000, 'installment 3 is refunded first, in full');
 select is((select r.base_cents from public.refunds r join public.payment_items i on i.id = r.payment_item_id join public.payment_request_installments n on n.id = i.installment_id where n.sequence = 2), 500, 'then installment 2, for the rest');
 select pg_temp.login('a8888888-8888-8888-8888-888888888888');
-select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 100) $$, '23514', 'payment_disputed', 'an allocation that reaches the disputed payment is refused');
+select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 600) $$, '23514', 'payment_disputed', 'an allocation that reaches the disputed payment is refused');
 reset role;
 select pg_temp.login('a2222222-2222-2222-2222-222222222222');
 select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 100) $$, '42501', 'not_authorized', 'a parent cannot refund');
