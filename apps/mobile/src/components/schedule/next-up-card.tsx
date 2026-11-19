@@ -1,6 +1,5 @@
 import {
   buildNextUpViews,
-  describeEventTime,
   eventNoun,
   hasUpdate,
   mapEmbedUrl,
@@ -22,12 +21,10 @@ import {
   ErrorState,
   Glass,
   Icon,
-  ListGroup,
   LoadingSkeleton,
   Text,
   useTheme,
 } from '@/components/ui';
-import { ListItem } from '@/components/app/kit';
 import { kv } from '@/lib/kv';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
@@ -56,7 +53,6 @@ export function NextUpCard({
   reloadKey?: number;
 }) {
   const now = useNow();
-  const router = useRouter();
   const res = useLoad(async () => {
     const [next, up, past] = await Promise.all([
       getNextUp(supabase, 6),
@@ -96,40 +92,7 @@ export function NextUpCard({
       </Card>
     );
   if (!view) return null;
-  const rest = (data ?? [])
-    .filter(
-      (v) =>
-        v.event.eventId !== view.event.eventId &&
-        v.event.status !== 'cancelled' &&
-        Date.parse(v.event.startsAt) > now.getTime(),
-    )
-    .sort((a, b) => Date.parse(a.event.startsAt) - Date.parse(b.event.startsAt))
-    .slice(0, 3);
-  return (
-    <View style={{ gap: space[4] }}>
-      <Game key={view.event.eventId} view={view} now={now} />
-      {rest.length > 0 ? (
-        <ListGroup>
-          {rest.map((r) => {
-            const rt = describeEventTime(
-              r.event.startsAt,
-              r.event.endsAt,
-              r.event.timezone,
-              viewerZone(),
-            );
-            return (
-              <ListItem
-                key={r.event.eventId}
-                title={r.event.title}
-                subtitle={`${rt.dateLabel} · ${rt.startLabel}${r.place ? ` · ${r.place}` : ''}`}
-                onPress={() => router.push(`/events/${r.event.eventId}` as never)}
-              />
-            );
-          })}
-        </ListGroup>
-      ) : null}
-    </View>
-  );
+  return <Game key={view.event.eventId} view={view} now={now} />;
 }
 
 function Game({ view, now }: { view: NextUpView; now: Date }) {
