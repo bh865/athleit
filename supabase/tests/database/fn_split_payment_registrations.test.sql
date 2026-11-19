@@ -69,6 +69,19 @@ select is(public.payer_plan_quote((select id from req1)) -> 'sizes', '[1,2]'::js
 reset role;
 update public.registration_events set starts_on = current_date + 60 where id = 'e1000000-0000-0000-0000-000000000001';
 
+-- The deadline does not depend on the session time zone.
+update public.registration_events set starts_on = current_date + 14 where id = 'e1000000-0000-0000-0000-000000000001';
+set local timezone = 'Pacific/Kiritimati';
+select pg_temp.login('a4444444-4444-4444-4444-444444444444');
+create temp table tz1 as select public.payer_plan_quote((select id from req1)) -> 'sizes' as sizes;
+reset role;
+set local timezone = 'Pacific/Pago_Pago';
+select pg_temp.login('a4444444-4444-4444-4444-444444444444');
+select is(public.payer_plan_quote((select id from req1)) -> 'sizes', (select sizes from tz1), 'the same sizes are offered from the far east and the far west');
+reset role;
+set local timezone = 'UTC';
+update public.registration_events set starts_on = current_date + 60 where id = 'e1000000-0000-0000-0000-000000000001';
+
 -- Installment 1 satisfies the spot hold --------------------------------------------------------------------------------
 select isnt((select hold_expires_at from public.registrations where id = 'd1000000-0000-0000-0000-000000000001'), null, 'the spot is held until paid');
 create temp table p1 as select public.svc_reserve_plan('a4444444-4444-4444-4444-444444444444', (select id from req1), 3, false, 'v1') as j;
@@ -96,6 +109,9 @@ reset role;
 update public.registrations set status = 'declined', decision_note = 'Full' where id = 'd1000000-0000-0000-0000-000000000001';
 select is((select array_agg(status order by sequence) from public.payment_request_installments where request_id = (select id from req1)), array['paid', 'cancelled', 'cancelled'], 'open installments cancelled, the paid one stays');
 select is((select status from public.payment_requests where id = (select id from req1)), 'cancelled', 'the request follows');
+select pg_temp.login('a1111111-1111-1111-1111-111111111111');
+select is((select refundable from public.registration_payment_status('d1000000-0000-0000-0000-000000000001')), true, 'a declined registration with a paid installment is offered a refund');
+reset role;
 -- An expired hold withdraws an unpaid registration and cancels its request.
 update public.registrations set hold_expires_at = now() - interval '1 hour' where id = 'd2000000-0000-0000-0000-000000000002';
 select is(private.expire_registration_holds(), 1, 'one expired hold');

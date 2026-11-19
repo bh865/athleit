@@ -43,6 +43,7 @@ export interface Store {
   repairInstallments(): Promise<number>;
   cardsToCheck(now?: string | null): Promise<CardToCheck[]>;
   warnCardExpiring(installmentId: string): Promise<string>;
+  markCardChecked(installmentId: string): Promise<void>;
   attachPaymentIntent(paymentId: string, pi: string): Promise<void>;
   releasePayment(paymentId: string): Promise<void>;
   paymentSucceeded(a: {
@@ -186,6 +187,8 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
     repairInstallments: () => call('svc_repair_installments'),
     cardsToCheck: (now = null) =>
       call('svc_cards_to_check', { p_now: now ?? new Date().toISOString() }),
+    markCardChecked: async (id) =>
+      void (await call('svc_mark_card_checked', { p_installment_id: id })),
     warnCardExpiring: (id) => call('svc_warn_card_expiring', { p_installment_id: id }),
     installmentChargeFailed: (id) => call('svc_installment_charge_failed', { p_payment_id: id }),
     attachPaymentIntent: async (id, pi) =>

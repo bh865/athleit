@@ -115,8 +115,8 @@ select is((select (due_at > now() + interval '2 days') from public.payment_reque
 create temp table r5 as select public.svc_reserve_plan('a3333333-3333-3333-3333-333333333333', 'b5000000-0000-0000-0000-000000000005', 2, false, 'v1') as j;
 select pg_temp.settle('pi_b5', (select j from r5));
 insert into public.team_players (team_id, player_id, jersey_number, status) values ('a1000000-0000-0000-0000-00000000000a', '95000000-0000-0000-0000-000000000005', 11, 'active');
-update public.team_players set status = 'inactive' where player_id = '95000000-0000-0000-0000-000000000005';
-select is((select status from public.payment_request_installments where request_id = 'b5000000-0000-0000-0000-000000000005' and sequence = 2), 'cancelled', 'leaving the roster cancels the open installment');
+delete from public.team_players where player_id = '95000000-0000-0000-0000-000000000005';
+select is((select status from public.payment_request_installments where request_id = 'b5000000-0000-0000-0000-000000000005' and sequence = 2), 'cancelled', 'removing the player from the roster cancels the open installment');
 select is((select status from public.payment_request_installments where request_id = 'b5000000-0000-0000-0000-000000000005' and sequence = 1), 'paid', 'a paid installment is left for staff to refund');
 select is((select status from public.payment_requests where id = 'b5000000-0000-0000-0000-000000000005'), 'cancelled', 'the request follows');
 

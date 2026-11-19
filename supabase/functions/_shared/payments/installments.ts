@@ -24,19 +24,21 @@ export interface ChargeSummary {
   errors: number;
 }
 
+const CONCURRENCY = 5;
+
 export async function chargeDueInstallments(
   d: ChargeDeps,
   opts: { now?: string | null; limit?: number } = {},
 ): Promise<ChargeSummary> {
   const out: ChargeSummary = { claimed: 0, charged: 0, failed: 0, skipped: 0, errors: 0 };
-  const due = await d.store.claimDueInstallments(opts.now ?? null, opts.limit ?? 25);
+  const due = await d.store.claimDueInstallments(opts.now ?? null, opts.limit ?? 50);
   out.claimed = due.length;
-  for (const item of due) {
+  const one = async (item: (typeof due)[number]) => {
     try {
       const r = await d.store.reserveInstallments(item.payer, [item.installment_id], true);
       if (r.stripe_payment_intent_id) {
         out.skipped++; // a charge for this attempt already exists: the webhook or reconcile settles it
-        continue;
+        return;
       }
       try {
         const pi = await d.stripe.post(
@@ -79,7 +81,14 @@ export async function chargeDueInstallments(
         reason: String((e as Error)?.message ?? e).slice(0, 60),
       });
     }
-  }
+  };
+  // A bounded pool: a due date with hundreds of installments is not charged one at a time, and Stripe is not flooded either.
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, due.length) }, async () => {
+      while (next < due.length) await one(due[next++]!);
+    }),
+  );
   return out;
 }
 
@@ -101,6 +110,8 @@ export async function warnExpiringCards(
       );
       const card = pm.card as { exp_month?: number; exp_year?: number } | undefined;
       out.checked++;
+      // One Stripe read per installment per day: a healthy card is not fetched again on every run.
+      await d.store.markCardChecked?.(c.installment_id);
       if (!card?.exp_month || !card.exp_year) continue;
       // A card is valid through the END of its expiry month (UTC).
       const validThrough = Date.UTC(card.exp_year, card.exp_month, 1);

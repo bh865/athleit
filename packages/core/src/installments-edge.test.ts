@@ -49,6 +49,7 @@ function fakeStore(over: Record<string, unknown> = {}) {
     getCustomer: vi.fn().mockResolvedValue(null),
     saveCustomer: vi.fn().mockResolvedValue(undefined),
     reservePayment: vi.fn(),
+    markCardChecked: vi.fn().mockResolvedValue(undefined),
     ...over,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a partial fake of the Store interface
   } as any;
@@ -171,7 +172,7 @@ describe('chargeDueInstallments', () => {
       { store, stripe: { get: vi.fn(), post: vi.fn() }, log },
       { now: '2027-01-01T00:00:00Z' },
     );
-    expect(store.claimDueInstallments).toHaveBeenCalledWith('2027-01-01T00:00:00Z', 25);
+    expect(store.claimDueInstallments).toHaveBeenCalledWith('2027-01-01T00:00:00Z', 50);
   });
 });
 
@@ -302,4 +303,57 @@ it('the autopay consent version shown to families is the one the server records'
     await import('../../../supabase/functions/_shared/payments/schemas');
   const { AUTOPAY_CONSENT_VERSION: client } = await import('./payment-plans');
   expect(client).toBe(server);
+});
+
+describe('charger concurrency and card checks', () => {
+  it('charges many installments with a bounded number in flight', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      installment_id: uuid(100 + i),
+      request_id: uuid(4),
+      payer: uuid(5),
+      household_id: uuid(2),
+      customer: 'cus_1',
+      payment_method: 'pm_1',
+      attempt: 0,
+    }));
+    let inFlight = 0;
+    let peak = 0;
+    const store = fakeStore({
+      claimDueInstallments: vi.fn().mockResolvedValue(many),
+      reserveInstallments: vi
+        .fn()
+        .mockImplementation(async (_u: string, ids: string[]) => reserve({ payment_id: ids[0] })),
+    });
+    const post = vi.fn().mockImplementation(async () => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return { id: 'pi_x', status: 'succeeded' };
+    });
+    const out = await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
+    expect(out).toMatchObject({ claimed: 12, charged: 12, errors: 0 });
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(5);
+    expect(new Set(post.mock.calls.map((c) => c[2])).size).toBe(12); // a distinct key per installment
+  });
+  it('marks every card it reads as checked, warned or not', async () => {
+    const store = fakeStore({
+      cardsToCheck: vi
+        .fn()
+        .mockResolvedValue([
+          {
+            installment_id: uuid(1),
+            due_at: '2027-04-10T00:00:00Z',
+            payment_method: 'pm_1',
+            stripe_account_id: 'acct_team',
+          },
+        ]),
+      warnCardExpiring: vi.fn(),
+    });
+    const get = vi.fn().mockResolvedValue({ id: 'pm_1', card: { exp_month: 12, exp_year: 2030 } });
+    await warnExpiringCards({ store, stripe: { get, post: vi.fn() }, log });
+    expect(store.markCardChecked).toHaveBeenCalledWith(uuid(1));
+    expect(store.warnCardExpiring).not.toHaveBeenCalled();
+  });
 });
