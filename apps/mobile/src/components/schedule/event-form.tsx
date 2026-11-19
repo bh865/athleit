@@ -21,7 +21,8 @@ import {
 } from '@athleit/db/scheduling';
 import { space } from '@athleit/tokens';
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Choice, FormMessage } from '@/components/app/kit';
 import {
@@ -161,12 +162,23 @@ function Body({
     }
   }
 
+  // Fill the available height (screen minus safe areas and the sheet's own margin, padding and grabber)
+  // so the form only scrolls when it truly doesn't fit.
+  const { height: winH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const scrollMax = Math.max(
+    240,
+    winH - insets.top - insets.bottom - space[4] * 2 - space[6] * 2 - 56,
+  );
+
   return (
     <Sheet open onClose={onClose} title="New event">
       <ScrollView
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ gap: space[4] }}
-        style={{ maxHeight: 560 }}
+        style={{ maxHeight: scrollMax }}
       >
         <Text variant="heading">New event</Text>
         <Choice

@@ -144,6 +144,8 @@ export function WaiverSigner({
         {progress}
         <Text variant="heading">{current.title}</Text>
         <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           nestedScrollEnabled
           onScroll={onScroll}
           scrollEventThrottle={64}

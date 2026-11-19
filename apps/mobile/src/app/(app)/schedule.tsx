@@ -1,9 +1,9 @@
 import { capabilitiesForPlace } from '@athleit/core';
 import { getHouseholdSchedule, getTeamSchedule } from '@athleit/db/scheduling';
-import { space } from '@athleit/tokens';
+import { componentTokens, radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { H1, LoadState } from '@/components/app/kit';
@@ -11,7 +11,7 @@ import { CalendarFeedSheet } from '@/components/schedule/calendar-feed';
 import { EventCard } from '@/components/schedule/event-card';
 import { EventFormSheet } from '@/components/schedule/event-form';
 import { fromHouseholdRows, fromTeamRows } from '@/components/schedule/items';
-import { Button, SegmentedControl, useToast } from '@/components/ui';
+import { Button, Icon, SegmentedControl, useTheme, useToast } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
@@ -21,6 +21,8 @@ export default function ScheduleScreen() {
   const { active, contexts } = useApp();
   const router = useRouter();
   const toast = useToast();
+  const { theme } = useTheme();
+  const c = theme.color;
   const [when, setWhen] = useState<'upcoming' | 'past'>('upcoming');
   const [creating, setCreating] = useState(false);
   const [feed, setFeed] = useState(false);
@@ -45,7 +47,27 @@ export default function ScheduleScreen() {
 
   return (
     <AppScreen>
-      <H1>Schedule</H1>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <H1>Schedule</H1>
+        {canManage ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="New event"
+            onPress={() => setCreating(true)}
+            testID="new-event"
+            style={{
+              width: componentTokens.iconButton.size,
+              height: componentTokens.iconButton.size,
+              borderRadius: radius.pill,
+              backgroundColor: c.accent,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="plus" color={c.accentInk} />
+          </Pressable>
+        ) : null}
+      </View>
       <SegmentedControl
         label="Show"
         value={when}
@@ -55,14 +77,6 @@ export default function ScheduleScreen() {
           { value: 'past', label: 'Past' },
         ]}
       />
-      {canManage ? (
-        <Button
-          title="New event"
-          icon="plus"
-          onPress={() => setCreating(true)}
-          testID="new-event"
-        />
-      ) : null}
       <LoadState
         loading={res.loading}
         error={res.error}

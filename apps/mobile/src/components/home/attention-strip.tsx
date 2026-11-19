@@ -66,6 +66,7 @@ export function AttentionStrip({
         <Badge tone="count">{String(shown.length + more.length)}</Badge>
       </View>
       <ScrollView
+        showsVerticalScrollIndicator={false}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: space[3] }}

@@ -91,6 +91,8 @@ export function ContextSwitcher() {
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Switch team">
         <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           style={{ maxHeight: componentTokens.sidebar.width * 2 }}
           contentContainerStyle={{ gap: space[1] }}
         >
