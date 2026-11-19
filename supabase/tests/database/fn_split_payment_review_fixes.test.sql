@@ -44,6 +44,7 @@ create function pg_temp.inst(r uuid, n int) returns uuid language sql as $f$ sel
 
 -- Abandoned checkout frees the installment ---------------------------------------------------------------------------------
 create temp table r1 as select public.svc_reserve_plan('a2222222-2222-2222-2222-222222222222', 'b1000000-0000-0000-0000-000000000001', 3, false, 'v1') as j;
+grant select on r1 to public;
 select pg_temp.login('a2222222-2222-2222-2222-222222222222');
 select lives_ok($$ select public.cancel_open_payment((select (j ->> 'payment_id')::uuid from r1)) $$, 'the family walks away from checkout');
 reset role;
