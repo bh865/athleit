@@ -166,6 +166,18 @@ export function mapsUrl(t: MapsTarget): string | null {
   return t.placeId ? `${base}&query_place_id=${encodeURIComponent(t.placeId)}` : base;
 }
 
+/**
+ * URL for an embeddable map with a pin (iframe on web, WebView on mobile). Uses exact coordinates when
+ * known, else the address, name or typed text. Null when there is nothing to show.
+ */
+export function mapEmbedUrl(t: MapsTarget): string | null {
+  const q =
+    t.lat != null && t.lng != null
+      ? `${t.lat},${t.lng}`
+      : t.address?.trim() || t.name?.trim() || null;
+  return q ? `https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&output=embed` : null;
+}
+
 /** Turn-by-turn directions to the place. */
 export function directionsUrl(t: MapsTarget): string | null {
   const q = queryFor(t);

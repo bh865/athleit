@@ -125,6 +125,15 @@
   color: var(--color-ink);
   text-decoration: none;
 }
+.threadButton {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
 .threadText {
   flex: 1 1 auto;
   min-width: 0;
@@ -407,4 +416,18 @@
   white-space: nowrap;
   font-weight: var(--text-title-weight);
   font-size: var(--text-caption-size);
+}
+
+.mapTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.mapFrame {
+  width: 100%;
+  min-height: calc(var(--size-sidebar-width) * 0.8);
+  flex: 1;
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--radius-md);
 }

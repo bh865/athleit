@@ -4,7 +4,7 @@ import {
   localDateKey,
   queryRangeForDays,
   type RsvpStatus,
-  mapsUrl,
+  mapEmbedUrl,
 } from '@athleit/core';
 import {
   getEvent,
@@ -22,6 +22,7 @@ import { Linking, Pressable, View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { Notice } from '@/components/app/kit';
+import { MapEmbed } from '@/components/schedule/map-embed';
 import { CancelSheet, ResultSheet } from '@/components/schedule/event-actions';
 import { RsvpActions, type ChildRsvp } from '@/components/schedule/rsvp-actions';
 import {
@@ -146,8 +147,7 @@ export default function EventScreen() {
   const ended = new Date(event.ends_at) < new Date();
   const started = new Date(event.starts_at) <= new Date();
   const place = event.location_name ?? event.location_text;
-  const mapHref = mapsUrl({
-    placeId: event.location_place_id,
+  const mapSrc = mapEmbedUrl({
     lat: event.location_lat,
     lng: event.location_lng,
     address: event.location_address,
@@ -172,6 +172,14 @@ export default function EventScreen() {
         </Text>
         {t.viewerLocalLabel ? <Text muted>Your time: {t.viewerLocalLabel}</Text> : null}
       </View>
+      {mapSrc ? (
+        <MapEmbed
+          testID="event-map"
+          src={mapSrc}
+          label={`Map of ${place ?? 'the event location'}`}
+          height={200}
+        />
+      ) : null}
 
       {cancelled ? (
         <Notice tone="error" testID="cancelled-banner">
@@ -194,23 +202,25 @@ export default function EventScreen() {
         <Fact
           icon="calendar-blank"
           text={`${t.dateLabel} · ${t.startLabel} ${t.zoneLabel}`}
-          last={!place && !event.opponent_name}
+          last={!place && !event.opponent_name && !event.virtual_url}
         />
         {place ? (
           <Fact
             icon="map-pin"
             text={place}
             sub={event.location_address ?? undefined}
-            mapHref={mapHref}
-            last={!event.opponent_name}
+            last={!event.opponent_name && !event.virtual_url}
           />
         ) : null}
         {event.type === 'game' && event.opponent_name ? (
           <Fact
             icon="flag"
             text={`vs. ${event.opponent_name}${event.home_away ? ` (${event.home_away})` : ''}`}
-            last
+            last={!event.virtual_url}
           />
+        ) : null}
+        {event.virtual_url ? (
+          <Fact icon="link" text="Virtual · Join meeting" link={event.virtual_url} last />
         ) : null}
       </View>
       {event.arrive_early_minutes ? (
@@ -226,12 +236,12 @@ export default function EventScreen() {
 
       {!cancelled && counts.length > 0 ? (
         <View
-          style={{ flexDirection: 'row', gap: space[8], paddingHorizontal: space[2] }}
+          style={{ flexDirection: 'row', gap: space[4] }}
           accessibilityRole="summary"
           accessibilityLabel={counts.map((x) => `${x.v} ${x.l}`).join(', ')}
         >
           {counts.map((x) => (
-            <View key={x.l}>
+            <View key={x.l} style={{ flex: 1, alignItems: 'center' }}>
               <Text variant="monoLg">{x.v}</Text>
               <Text variant="caption" muted>
                 {x.l}
@@ -331,24 +341,24 @@ function Fact({
   text,
   sub,
   last,
-  mapHref,
+  link,
 }: {
-  icon: 'calendar-blank' | 'map-pin' | 'flag';
+  icon: 'calendar-blank' | 'map-pin' | 'flag' | 'link';
   text: string;
   sub?: string | undefined;
   last?: boolean;
-  /** Makes the row open the place in Maps. */
-  mapHref?: string | null;
+  /** Makes the row open this URL (a virtual meeting). */
+  link?: string | null;
 }) {
   const { theme } = useTheme();
-  const Row = mapHref ? Pressable : View;
+  const Row = link ? Pressable : View;
   return (
     <Row
-      {...(mapHref
+      {...(link
         ? {
             accessibilityRole: 'link' as const,
-            accessibilityLabel: `${text}, open in Maps`,
-            onPress: () => void Linking.openURL(mapHref),
+            accessibilityLabel: text,
+            onPress: () => void Linking.openURL(link),
           }
         : {})}
       style={{
@@ -367,11 +377,6 @@ function Fact({
         {sub ? (
           <Text variant="caption" muted>
             {sub}
-          </Text>
-        ) : null}
-        {mapHref ? (
-          <Text variant="caption" style={{ textDecorationLine: 'underline' }}>
-            Open in Maps
           </Text>
         ) : null}
       </View>

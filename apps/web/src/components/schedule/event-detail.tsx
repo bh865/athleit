@@ -5,7 +5,7 @@ import {
   describeEventTime,
   queryRangeForDays,
   localDateKey,
-  mapsUrl,
+  mapEmbedUrl,
   type RsvpStatus,
 } from '@athleit/core';
 import {
@@ -245,8 +245,7 @@ export function EventDetailView({
   const t = describeEventTime(event.starts_at, event.ends_at, event.timezone, viewerZone);
   const cancelled = event.status === 'cancelled';
   const isGame = event.type === 'game';
-  const mapHref = mapsUrl({
-    placeId: event.location_place_id,
+  const embedSrc = mapEmbedUrl({
     lat: event.location_lat,
     lng: event.location_lng,
     address: event.location_address,
@@ -274,18 +273,16 @@ export function EventDetailView({
         <h2 className={styles.detailTitle} data-testid="event-title">
           {event.title}
         </h2>
-        <p className={styles.detailMeta}>
-          {t.dateLabel} · {t.rangeLabel} {t.zoneLabel}
-          {event.location_name
-            ? ` · ${event.location_name}`
-            : event.location_text
-              ? ` · ${event.location_text}`
-              : ''}
-        </p>
-        {t.viewerLocalLabel ? (
-          <p className={styles.detailMeta}>Your time: {t.viewerLocalLabel}</p>
-        ) : null}
       </div>
+      {embedSrc ? (
+        <iframe
+          className={styles.map}
+          title={`Map: ${event.location_name ?? event.location_text ?? 'event location'}`}
+          loading="lazy"
+          src={embedSrc}
+          data-testid="event-map"
+        />
+      ) : null}
 
       {cancelled ? (
         <p className={styles.banner} role="status" data-testid="cancelled-banner">
@@ -300,21 +297,28 @@ export function EventDetailView({
 
       <ul className={styles.facts}>
         <li className={styles.fact}>
-          <Icon name="calendar-blank" /> {t.dateLabel} · {t.startLabel}
+          <Icon name="calendar-blank" />
+          <span>
+            {t.dateLabel} · {t.rangeLabel} {t.zoneLabel}
+            {t.viewerLocalLabel ? (
+              <span className={styles.detailMeta}> (your time: {t.viewerLocalLabel})</span>
+            ) : null}
+          </span>
         </li>
         {event.location_name || event.location_text ? (
           <li className={styles.fact}>
             <Icon name="map-pin" />
+            <span>{event.location_name ?? event.location_text}</span>
+          </li>
+        ) : null}
+        {event.virtual_url ? (
+          <li className={styles.fact}>
+            <Icon name="link" />
             <span>
-              {event.location_name ?? event.location_text}
-              {mapHref ? (
-                <>
-                  {' '}
-                  <a href={mapHref} target="_blank" rel="noreferrer">
-                    Open in Maps
-                  </a>
-                </>
-              ) : null}
+              Virtual ·{' '}
+              <a href={event.virtual_url} target="_blank" rel="noreferrer noopener">
+                Join meeting
+              </a>
             </span>
           </li>
         ) : null}
@@ -330,7 +334,11 @@ export function EventDetailView({
           </li>
         ) : null}
       </ul>
-      {event.notes ? <p className={styles.detailMeta}>{event.notes}</p> : null}
+      {event.notes ? (
+        <div className={styles.note} data-testid="event-notes">
+          {event.notes}
+        </div>
+      ) : null}
 
       {isGame && event.outcome ? (
         <p className={styles.detailTitle} data-testid="result-line">
@@ -388,32 +396,32 @@ export function EventDetailView({
               />
             ))
           : null}
-        {event.is_staff ? (
-          <div className={styles.actionRow}>
-            {isGame && started && !cancelled ? (
-              <Button onClick={() => actions?.onResult()} data-testid="enter-result">
-                {event.outcome ? 'Edit result' : 'Enter result'}
-              </Button>
-            ) : null}
-            {!cancelled ? (
+        {event.is_staff && !cancelled ? (
+          <>
+            <div className={styles.actionRow}>
+              {isGame && started ? (
+                <Button fullWidth onClick={() => actions?.onResult()} data-testid="enter-result">
+                  {event.outcome ? 'Edit result' : 'Enter result'}
+                </Button>
+              ) : null}
               <Button
+                fullWidth
                 variant="secondary"
                 onClick={() => actions?.onEdit()}
                 data-testid="edit-event"
               >
                 <Icon name="pencil" size="sm" /> Edit
               </Button>
-            ) : null}
-            {!cancelled ? (
-              <Button
-                variant="ghost"
-                onClick={() => actions?.onCancel()}
-                data-testid="cancel-event"
-              >
-                Cancel event
-              </Button>
-            ) : null}
-          </div>
+            </div>
+            <Button
+              fullWidth
+              variant="ghost"
+              onClick={() => actions?.onCancel()}
+              data-testid="cancel-event"
+            >
+              Cancel event
+            </Button>
+          </>
         ) : null}
       </div>
     </>

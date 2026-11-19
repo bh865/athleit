@@ -140,6 +140,7 @@ export interface CreateEventArgs {
   arrive_early_minutes?: number | null;
   game_format?: { period_count?: number; period_minutes?: number | null } | null;
   recurrence?: { weekdays: number[]; interval?: number; until?: string; count?: number } | null;
+  virtual_url?: string | null;
 }
 
 export const createEvent = (client: Client, a: CreateEventArgs) =>
@@ -159,6 +160,7 @@ export const createEvent = (client: Client, a: CreateEventArgs) =>
       p_arrive_early_minutes: a.arrive_early_minutes ?? null,
       p_game_format: a.game_format ?? null,
       p_recurrence: a.recurrence ?? null,
+      p_virtual_url: a.virtual_url ?? null,
     }),
   );
 

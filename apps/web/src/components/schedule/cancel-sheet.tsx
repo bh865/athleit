@@ -40,7 +40,7 @@ export function CancelSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Cancel event" level="modal">
+    <Sheet open={open} onClose={onClose} title="Cancel event" level="modal" placement="center">
       <div className={styles.form}>
         <Text variant="heading" as="h2">
           Cancel “{event.title}”?
