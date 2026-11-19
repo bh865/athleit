@@ -5,6 +5,13 @@ import { monthGrid } from '@athleit/core';
 import type { ScheduleItem } from './items';
 import styles from './schedule.module.css';
 
+/** Left-border color by event type: games lime, practices amber, other events neutral. */
+const TYPE_CLASS: Record<ScheduleItem['type'], string> = {
+  game: styles.cellEventGame ?? '',
+  practice: styles.cellEventPractice ?? '',
+  event: styles.cellEventOther ?? '',
+};
+
 const WEEKDAY_HEADS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** Month view: a Sunday-start grid, up to three events per day, today in lime. */
@@ -53,7 +60,7 @@ export function MonthGrid({
               <button
                 key={it.id}
                 type="button"
-                className={`${styles.cellEvent} ${it.status === 'cancelled' ? styles.cellEventCancelled : ''}`}
+                className={`${styles.cellEvent} ${TYPE_CLASS[it.type]} ${it.status === 'cancelled' ? styles.cellEventCancelled : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(it.id);

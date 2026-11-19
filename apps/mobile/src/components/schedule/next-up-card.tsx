@@ -1,8 +1,8 @@
-import { describeEventTime, mapsUrl } from '@athleit/core';
+import { describeEventTime, mapEmbedUrl } from '@athleit/core';
 import { getNextUp } from '@athleit/db/scheduling';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { ListGroup, Text, useTheme } from '@/components/ui';
 import { ListItem } from '@/components/app/kit';
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 import { viewerZone } from '@/lib/viewer-zone';
 
+import { MapEmbed } from './map-embed';
 import { RsvpActions, type ChildRsvp } from './rsvp-actions';
 
 /** Home "Next up": kicker with day and time, title, place, Going / Can't go per child (staff see counts). */
@@ -24,8 +25,7 @@ export function NextUpCard() {
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, viewerZone());
   const kids = (top.children as unknown as ChildRsvp[]) ?? [];
   const place = top.location_name ?? top.location_text;
-  const mapHref = mapsUrl({
-    placeId: top.location_place_id,
+  const mapSrc = mapEmbedUrl({
     lat: top.location_lat,
     lng: top.location_lng,
     address: top.location_address,
@@ -50,23 +50,20 @@ export function NextUpCard() {
         <Pressable accessibilityRole="link" onPress={() => router.push(`/events/${top.event_id}`)}>
           <Text variant="heading">{top.title}</Text>
         </Pressable>
-        {place ? (
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={`${place}, open in Maps`}
-            disabled={!mapHref}
-            onPress={() => mapHref && void Linking.openURL(mapHref)}
-          >
-            <Text variant="caption" muted>
-              {place}
-              {mapHref ? ' · Open in Maps' : ''}
-            </Text>
-          </Pressable>
+        {mapSrc ? (
+          <MapEmbed
+            testID="next-up-map"
+            src={mapSrc}
+            label={`Map of ${place ?? 'the event location'}`}
+            height={160}
+            rounded={radius.md}
+          />
         ) : null}
+        {place ? <Text variant="bodyBold">{place}</Text> : null}
         {kids.length > 0 ? <RsvpActions eventId={top.event_id} kids={kids} compact /> : null}
         {top.is_staff ? (
           <View
-            style={{ flexDirection: 'row', gap: space[6] }}
+            style={{ flexDirection: 'row', gap: space[4] }}
             accessibilityLabel={`${top.going} going, ${top.not_going} can’t go, ${top.no_reply} no reply`}
           >
             {[
@@ -74,7 +71,7 @@ export function NextUpCard() {
               { v: top.not_going, l: 'Can’t go' },
               { v: top.no_reply, l: 'No reply' },
             ].map((x) => (
-              <View key={x.l}>
+              <View key={x.l} style={{ flex: 1, alignItems: 'center' }}>
                 <Text variant="mono">{x.v}</Text>
                 <Text variant="caption" muted>
                   {x.l}

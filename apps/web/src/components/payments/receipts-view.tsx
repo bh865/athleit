@@ -135,7 +135,7 @@ export function ReceiptsView({
         onClose={() => setOpen(null)}
         title="Receipt"
         level="modal"
-        placement="side"
+        placement="right"
       >
         {open ? <ReceiptView receipt={open} onDone={() => setOpen(null)} /> : null}
       </Sheet>

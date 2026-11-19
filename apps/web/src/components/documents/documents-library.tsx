@@ -570,7 +570,6 @@ function UploadSheet({
       <div className={styles.stack}>
         <div className={`${styles.row} ${styles.between}`}>
           <h2 style={{ margin: 0 }}>Upload documents</h2>
-          <IconButton icon="x" label="Close" onClick={close} />
         </div>
         <div
           className={`${styles.drop} ${over ? styles.dropOn : ''}`}
@@ -763,7 +762,6 @@ function EditForm({
     <div className={styles.stack}>
       <div className={`${styles.row} ${styles.between}`}>
         <h2 style={{ margin: 0 }}>Edit document</h2>
-        <IconButton icon="x" label="Close" onClick={onClose} />
       </div>
       <div className={styles.row}>
         <Icon name={KIND_ICON[fileKind(doc.mime_type)]} size="lg" />

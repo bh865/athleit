@@ -14,7 +14,7 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Icon, IconButton, Sheet, Text } from '@/components/ui';
+import { Button, Icon, Sheet, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { stripeAppearance } from './appearance';
@@ -254,13 +254,12 @@ function CheckoutBody({
   const payee = rows.find((r) => requestIds.includes(r.request_id))?.issuer_name;
 
   return (
-    <Sheet open={open} onClose={close} title="Checkout" level="modal" placement="side">
+    <Sheet open={open} onClose={close} title="Checkout" level="modal" placement="right">
       <div className={styles.stack}>
         <div className={`${styles.row} ${styles.between}`}>
           <Text variant="heading" as="h2">
             Checkout
           </Text>
-          <IconButton icon="x" label="Close checkout" onClick={close} />
         </div>
         <StepHeader at={at} />
 

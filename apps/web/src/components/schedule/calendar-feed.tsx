@@ -59,6 +59,7 @@ export function CalendarFeed({ open, onClose }: { open: boolean; onClose: () => 
         onClose();
       }}
       title="Calendar link"
+      placement="right"
     >
       <div className={styles.form}>
         <Text variant="heading" as="h2">

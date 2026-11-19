@@ -74,6 +74,7 @@ export const createEventSchema = z
     arrive_early_minutes: z.number().int().min(0).max(240).nullish(),
     game_format: gameFormatSchema.nullish(),
     recurrence: recurrenceSchema.nullish(),
+    virtual_url: z.string().trim().max(500).regex(/^https?:\/\/\S+$/i, 'Enter a full link starting with https://').nullish(),
   })
   .refine((e) => new Date(e.ends_at) > new Date(e.starts_at), {
     message: 'The end must be after the start',
@@ -100,6 +101,7 @@ export const updateEventPatchSchema = z
     home_away: z.enum(HOME_AWAY).nullable(),
     arrive_early_minutes: z.number().int().min(0).max(240).nullable(),
     game_format: gameFormatSchema.nullable(),
+    virtual_url: z.string().trim().max(500).regex(/^https?:\/\/\S+$/i, 'Enter a full link starting with https://').nullable(),
     starts_at: z.iso.datetime({ offset: true }),
     ends_at: z.iso.datetime({ offset: true }),
     timezone: timeZoneSchema,

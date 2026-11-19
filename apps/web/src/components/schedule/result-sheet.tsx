@@ -146,7 +146,7 @@ export function ResultSheet({
   })();
 
   return (
-    <Sheet open={open} onClose={onClose} title="Game result">
+    <Sheet open={open} onClose={onClose} title="Game result" level="modal" placement="center">
       <div className={styles.form}>
         <Text variant="heading" as="h2">
           {event.title}

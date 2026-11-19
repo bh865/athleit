@@ -1,15 +1,12 @@
 import { componentTokens, radius, space } from '@athleit/tokens';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Animated, Keyboard, Modal, PanResponder, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from './glass';
 import { useTheme } from './theme';
 
-const DISMISS_DISTANCE = 100;
-const DISMISS_VELOCITY = 0.8;
-
-/** Glass sheet. Drag the handle down to dismiss. `level="modal"` for confirm and pay dialogs. */
+/** Glass sheet. `level="modal"` for confirm and pay dialogs. */
 export function Sheet({
   open,
   onClose,
@@ -25,8 +22,11 @@ export function Sheet({
 }) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  // Drag the handle down to dismiss; a short drag springs back.
-  const [y] = useState(() => new Animated.Value(0));
+  const [dy] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (open) dy.setValue(0);
+  }, [open, dy]);
+  // Drag the grabber down to dismiss: past 100px or a quick flick closes, otherwise it springs back.
   const pan = useMemo(
     () =>
       PanResponder.create({
@@ -34,15 +34,16 @@ export function Sheet({
           Keyboard.dismiss();
           return true;
         },
-        onPanResponderMove: (_, g) => y.setValue(Math.max(0, g.dy)),
-        onPanResponderRelease: (_, g) => {
-          if (g.dy > DISMISS_DISTANCE || g.vy > DISMISS_VELOCITY) {
-            onClose();
-            y.setValue(0);
-          } else Animated.spring(y, { toValue: 0, useNativeDriver: true }).start();
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderMove: (_e, g) => dy.setValue(Math.max(0, g.dy)),
+        onPanResponderRelease: (_e, g) => {
+          if (g.dy > 100 || g.vy > 0.8) onClose();
+          else Animated.spring(dy, { toValue: 0, useNativeDriver: true }).start();
         },
+        onPanResponderTerminate: () =>
+          Animated.spring(dy, { toValue: 0, useNativeDriver: true }).start(),
       }),
-    [y, onClose],
+    [dy, onClose],
   );
   return (
     <Modal
@@ -57,7 +58,7 @@ export function Sheet({
         onPress={onClose}
         style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: theme.color.scrim }}
       >
-        <Animated.View style={{ transform: [{ translateY: y }] }}>
+        <Animated.View style={{ transform: [{ translateY: dy }] }}>
           <Pressable onPress={Keyboard.dismiss} accessibilityLabel={title}>
             <Glass
               level={level}
@@ -75,8 +76,8 @@ export function Sheet({
                 style={{
                   alignSelf: 'stretch',
                   alignItems: 'center',
-                  paddingVertical: space[2],
-                  marginVertical: -space[2],
+                  marginTop: -space[2],
+                  paddingVertical: space[3],
                 }}
               >
                 <View
