@@ -7,7 +7,7 @@ import {
   type AddRoleAction,
   type AppContext,
 } from '@athleit/core';
-import { loadContextSource } from '@athleit/db/api';
+import { getAvatarUrl, loadContextSource } from '@athleit/db/api';
 import {
   createContext,
   use,
@@ -27,11 +27,19 @@ interface AppState {
   userId: string | null;
   email: string | null;
   displayName: string | null;
+  /** Where the photo lives: an https URL or a path in the avatars bucket (null = initials). */
+  avatarValue: string | null;
+  /** Displayable URL for the photo (signed for uploaded photos), or null. */
+  avatarUrl: string | null;
+  /** profiles.created_at, for "Member since". */
+  memberSince: string | null;
   contexts: AppContext[];
   active: AppContext | null;
   addActions: AddRoleAction[];
   setActive: (key: string) => void;
   refresh: () => Promise<void>;
+  /** Apply a profile change at once (the chip updates without a reload). */
+  updateProfile: (patch: { displayName?: string; avatarValue?: string | null }) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -52,7 +60,13 @@ const write = (key: string) => {
 };
 
 interface Loaded {
-  user: { id: string; email: string | null; name: string | null };
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    avatar: string | null;
+    createdAt: string | null;
+  };
   contexts: AppContext[];
 }
 
@@ -62,7 +76,11 @@ async function fetchAll(): Promise<Loaded | null> {
   if (!data.user) return null;
   const [source, profile] = await Promise.all([
     loadContextSource(client, data.user.id),
-    client.from('profiles').select('display_name').eq('id', data.user.id).single(),
+    client
+      .from('profiles')
+      .select('display_name, avatar_url, created_at')
+      .eq('id', data.user.id)
+      .single(),
   ]);
   if (source.error) return null;
   return {
@@ -70,6 +88,8 @@ async function fetchAll(): Promise<Loaded | null> {
       id: data.user.id,
       email: data.user.email ?? null,
       name: profile.data?.display_name ?? null,
+      avatar: profile.data?.avatar_url ?? null,
+      createdAt: profile.data?.created_at ?? null,
     },
     contexts: buildContexts(source.data),
   };
@@ -99,6 +119,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const updateProfile = useCallback<AppState['updateProfile']>((patch) => {
+    setLoaded((l) =>
+      l
+        ? {
+            ...l,
+            user: {
+              ...l.user,
+              ...(patch.displayName !== undefined ? { name: patch.displayName } : {}),
+              ...(patch.avatarValue !== undefined ? { avatar: patch.avatarValue } : {}),
+            },
+          }
+        : l,
+    );
+  }, []);
+
+  // Uploaded photos are private: show them through a short-lived signed URL, renewed before it expires.
+  const avatarValue = loaded?.user.avatar ?? null;
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    const load = () =>
+      void getAvatarUrl(getClient(), avatarValue).then((u) => live && setAvatarUrl(u));
+    load();
+    const t =
+      avatarValue && !/^https:/.test(avatarValue) ? setInterval(load, 50 * 60 * 1000) : null;
+    return () => {
+      live = false;
+      if (t) clearInterval(t);
+    };
+  }, [avatarValue]);
+
   const value = useMemo<AppState>(() => {
     const contexts = loaded?.contexts ?? [];
     return {
@@ -106,6 +157,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       userId: loaded?.user.id ?? null,
       email: loaded?.user.email ?? null,
       displayName: loaded?.user.name ?? null,
+      avatarValue,
+      avatarUrl: avatarValue ? avatarUrl : null,
+      memberSince: loaded?.user.createdAt ?? null,
       contexts,
       active: pickContext(contexts, activeKey),
       addActions: addRoleActions(contexts),
@@ -114,8 +168,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         write(key);
       },
       refresh,
+      updateProfile,
     };
-  }, [loaded, failed, activeKey, refresh]);
+  }, [loaded, failed, activeKey, refresh, updateProfile, avatarValue, avatarUrl]);
 
   return <Ctx value={value}>{children}</Ctx>;
 }

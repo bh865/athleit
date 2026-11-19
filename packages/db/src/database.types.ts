@@ -3241,6 +3241,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_deletion_blockers: {
+        Args: never
+        Returns: Json
+      }
       accept_invite: {
         Args: { p_token: string }
         Returns: {

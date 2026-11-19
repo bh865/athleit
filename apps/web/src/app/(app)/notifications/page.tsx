@@ -58,7 +58,7 @@ export default function NotificationsPage() {
                 Mark all read
               </Button>
             ) : null}
-            <Link href="/notifications/settings" className={styles.gear}>
+            <Link href="/account#notifications" className={styles.gear}>
               Settings
             </Link>
           </>

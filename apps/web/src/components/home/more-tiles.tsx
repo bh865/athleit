@@ -170,7 +170,7 @@ export function NotificationHealthTile({ teamId }: { teamId: string }) {
     <TileShell
       id="home-notification-health"
       title="Notification health"
-      href="/notifications/settings"
+      href="/account#notifications"
       res={res}
       empty={n === 0}
       hasData={res.data !== null}

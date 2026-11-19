@@ -166,7 +166,7 @@ test.describe.serial('messaging', () => {
   });
 
   test('notification preferences persist; quiet hours save with a timezone', async () => {
-    await parent.goto('/notifications/settings');
+    await parent.goto('/account#notifications');
     const messagesEmail = parent.getByLabel('Messages by email');
     await expect(messagesEmail).toBeChecked();
     await messagesEmail.uncheck();

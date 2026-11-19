@@ -2,10 +2,20 @@ import { capabilitiesForPlace, payViewsFor } from '@athleit/core';
 import { componentTokens, space } from '@athleit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Backdrop, Button, Sheet, TabBar, Text, ThemeToggle, type TabItem } from '@/components/ui';
+import {
+  Avatar,
+  Backdrop,
+  Button,
+  Icon,
+  Sheet,
+  TabBar,
+  Text,
+  ThemeToggle,
+  type TabItem,
+} from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 
 import { ADD } from './context-switcher';
@@ -25,7 +35,16 @@ const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts, active: place, userId, addActions } = useApp();
+  const {
+    status,
+    contexts,
+    active: place,
+    userId,
+    addActions,
+    displayName,
+    email,
+    avatarUrl,
+  } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -107,6 +126,8 @@ export function AppScreen({ children }: { children: ReactNode }) {
           </View>
         ) : null}
         <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             padding: space[4],
@@ -157,6 +178,34 @@ export function AppScreen({ children }: { children: ReactNode }) {
       />
       <Sheet open={more} onClose={() => setMore(false)} title="More">
         <Text variant="heading">More</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Account for ${displayName ?? email ?? 'you'}`}
+          testID="more-account-chip"
+          onPress={() => {
+            setMore(false);
+            router.push('/account' as never);
+          }}
+          style={{
+            minHeight: componentTokens.minTarget,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space[3],
+          }}
+        >
+          <Avatar name={displayName ?? email ?? 'Account'} src={avatarUrl} size="md" />
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyBold" numberOfLines={1}>
+              {displayName ?? email}
+            </Text>
+            {displayName && email ? (
+              <Text variant="caption" muted numberOfLines={1}>
+                {email}
+              </Text>
+            ) : null}
+          </View>
+          <Icon name="caret-right" size="sm" />
+        </Pressable>
         {hasTeam ? (
           <Button
             title="Roster"

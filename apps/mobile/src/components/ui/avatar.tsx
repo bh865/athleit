@@ -1,5 +1,6 @@
 import { componentTokens } from '@athleit/tokens';
 import { avatarSlot, initialsOf, type AvatarSize } from '@athleit/ui-core';
+import { useState } from 'react';
 import { Image, View } from 'react-native';
 
 import { Text } from './text';
@@ -19,7 +20,17 @@ export function Avatar({
   const px = componentTokens.avatar[size];
   const slot = avatarSlot(name);
   const base = { width: px, height: px, borderRadius: px / 2 };
-  if (src) return <Image source={{ uri: src }} style={base} accessibilityElementsHidden />;
+  // Remember which URL failed so a replaced photo gets a fresh try; a broken one shows initials.
+  const [failed, setFailed] = useState<string | null>(null);
+  if (src && failed !== src)
+    return (
+      <Image
+        source={{ uri: src }}
+        style={base}
+        accessibilityElementsHidden
+        onError={() => setFailed(src)}
+      />
+    );
   return (
     <View
       accessibilityElementsHidden

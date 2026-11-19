@@ -50,7 +50,7 @@ export default function AlertsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Notification settings"
-            onPress={() => router.push('/notifications/settings' as never)}
+            onPress={() => router.push('/account/notifications' as never)}
             style={{
               minWidth: componentTokens.minTarget,
               minHeight: componentTokens.minTarget,

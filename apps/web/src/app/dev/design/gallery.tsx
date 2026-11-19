@@ -243,6 +243,8 @@ function ThemePanel({ name }: { name: string }) {
           <Avatar name="Jordan Test" />
           <Avatar name="Sam Example" size="sm" />
           <Avatar name="Riley Demo" />
+          {/* A photo that fails to load falls back to initials. */}
+          <Avatar name="Broken Photo" src="https://invalid.example.test/missing.jpg" />
         </div>
       </Section>
 

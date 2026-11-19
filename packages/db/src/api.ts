@@ -792,3 +792,114 @@ export function subscribeToInApp(
     .subscribe();
   return () => void client.removeChannel(ch);
 }
+
+// Account (profile, photo, leaving places, deletion) ---------------------------------------------
+export const AVATAR_BUCKET = 'avatars';
+
+/** The signed-in user's own profile (profiles are readable only by their owner). */
+export const getMyProfile = (client: Client, userId: string) =>
+  run(
+    client
+      .from('profiles')
+      .select('id, display_name, avatar_url, created_at')
+      .eq('id', userId)
+      .single(),
+  );
+
+/** Change the display name and/or avatar. RLS and the column grant limit this to the caller's own row. */
+export const updateMyProfile = (
+  client: Client,
+  userId: string,
+  patch: { display_name?: string; avatar_url?: string | null },
+) => runVoid(client.from('profiles').update(patch).eq('id', userId));
+
+/** Short-lived URL for showing the user's own photo. External (OAuth) pictures are returned as they are. */
+export async function getAvatarUrl(
+  client: Client,
+  value: string | null | undefined,
+): Promise<string | null> {
+  if (!value) return null;
+  if (/^https:\/\//.test(value)) return value;
+  const { data } = await client.storage.from(AVATAR_BUCKET).createSignedUrl(value, 3600);
+  return data?.signedUrl ?? null;
+}
+
+/**
+ * Upload a new photo into the user's folder, point the profile at it, then delete the previous
+ * object. `body` is a Blob/File (web) or ArrayBuffer (React Native); the client has already
+ * cropped it to a square and validated type and size.
+ */
+export async function setMyAvatar(
+  client: Client,
+  input: {
+    userId: string;
+    body: Blob | ArrayBuffer;
+    contentType: 'image/jpeg' | 'image/png' | 'image/webp';
+    previous?: string | null;
+  },
+): Promise<Result<string>> {
+  const ext =
+    input.contentType === 'image/png' ? 'png' : input.contentType === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${input.userId}/${Date.now()}.${ext}`;
+  const up = await client.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, input.body, { contentType: input.contentType, upsert: false });
+  if (up.error) return fail({ message: up.error.message });
+  const upd = await updateMyProfile(client, input.userId, { avatar_url: path });
+  if (upd.error) {
+    await client.storage.from(AVATAR_BUCKET).remove([path]);
+    return fail(upd.error);
+  }
+  if (input.previous && !/^https:\/\//.test(input.previous))
+    await client.storage.from(AVATAR_BUCKET).remove([input.previous]);
+  return ok(path);
+}
+
+export async function removeMyAvatar(
+  client: Client,
+  input: { userId: string; previous?: string | null },
+): Promise<Result<null>> {
+  const upd = await updateMyProfile(client, input.userId, { avatar_url: null });
+  if (upd.error) return upd;
+  if (input.previous && !/^https:\/\//.test(input.previous))
+    await client.storage.from(AVATAR_BUCKET).remove([input.previous]);
+  return ok(null);
+}
+
+/**
+ * Leave a team or club: the existing "members can leave" delete policy applies, and the last-admin
+ * trigger refuses (error message `last_admin`) when this user is the only active admin.
+ */
+export const leaveTeam = (client: Client, teamId: string, userId: string) =>
+  runVoid(client.from('team_memberships').delete().eq('team_id', teamId).eq('profile_id', userId));
+
+export const leaveClub = (client: Client, clubId: string, userId: string) =>
+  runVoid(client.from('club_memberships').delete().eq('club_id', clubId).eq('profile_id', userId));
+
+export interface AccountBlockers {
+  teams: { id: string; name: string }[];
+  clubs: { id: string; name: string }[];
+  households: { id: string; name: string }[];
+}
+
+/** What must be handed over before this account can be deleted (empty lists = nothing). */
+export const getAccountBlockers = (client: Client) =>
+  run(client.rpc('account_deletion_blockers')) as Promise<Result<AccountBlockers>>;
+
+/** Permanently delete the signed-in user's account (edge function, service role inside). */
+export async function deleteMyAccount(
+  client: Client,
+  confirm: string,
+): Promise<Result<{ blockers?: AccountBlockers }>> {
+  const { error, data } = await client.functions.invoke('delete-account', { body: { confirm } });
+  if (!error) return ok({});
+  const ctx = (error as { context?: Response }).context;
+  const body = ctx && typeof ctx.json === 'function' ? await ctx.json().catch(() => null) : null;
+  if (body?.error === 'blocked')
+    return {
+      data: null,
+      error: { message: 'blocked', code: 'blocked', details: JSON.stringify(body.blockers) },
+    };
+  void data;
+  return fail({ message: body?.error ?? error.message });
+}

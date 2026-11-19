@@ -174,6 +174,8 @@ function Panel({ name }: { name: string }) {
               <Avatar name="Alex Sample" size="lg" />
               <Avatar name="Jordan Test" />
               <Avatar name="Sam Example" size="sm" />
+              {/* A photo that fails to load falls back to initials. */}
+              <Avatar name="Broken Photo" src="https://invalid.example.test/missing.jpg" />
             </View>
           </Section>
           <Section title="Icons · regular / fill active">
@@ -252,7 +254,7 @@ export default function DesignScreen() {
   const { reduceTransparencyOverride, setReduceTransparencyOverride } = useTheme();
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <View
           style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[4] }}
         >
