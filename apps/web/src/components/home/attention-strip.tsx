@@ -144,18 +144,16 @@ function Row({
   onResolved: (key: string) => void;
 }) {
   return (
-    <div className={lead ? styles.lead : styles.row} data-testid="attention-row">
-      <span className={lead ? styles.leadIcon : styles.icon} aria-hidden>
-        <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} size={lead ? 'lg' : 'md'} />
+    <div className={styles.row} data-testid="attention-row">
+      <span className={styles.icon} aria-hidden>
+        <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} size="md" />
       </span>
       <div className={styles.text}>
-        {lead ? <span className={styles.kicker}>Most urgent</span> : null}
-        <span className={lead ? styles.leadTitle : styles.title}>
-          <Link href={item.href} className={styles.titleLink}>
-            {item.label}
-          </Link>
-          {item.placeTag ? <span className={styles.tag}>{item.placeTag}</span> : null}
-        </span>
+        {lead ? <span className={styles.mostUrgent}>Most urgent</span> : null}
+        <Link href={item.href} className={styles.titleLink}>
+          {item.label}
+        </Link>
+        {item.placeTag ? <span className={styles.tag}>{item.placeTag}</span> : null}
         {item.detail ? <span className={styles.detail}>{item.detail}</span> : null}
         <Chip item={item} now={now} zone={zone} />
       </div>
@@ -167,8 +165,8 @@ function Row({
 }
 
 /**
- * "Needs your attention", Direction B: the most urgent item as a lead row, the rest as a quiet list (at most 4
- * rows, then "+N more" in a Sheet). One merged list for dual roles, each row with a place tag. States: loading
+ * "Needs your attention", Direction B, tightened: every item is the same size (the most urgent just carries the lime action and a label);
+ * title, amount and date chip share one row. At most 4 rows, then "+N more" in a Sheet). One merged list for dual roles, each row with a place tag. States: loading
  * skeleton, error with retry, and a quiet "all caught up" line. Order: title, chip, actions left to right, "+N more".
  */
 export function AttentionStrip({
@@ -204,7 +202,6 @@ export function AttentionStrip({
   const shown = attention.shown.filter((i) => !done.has(i.key));
   const more = attention.more.filter((i) => !done.has(i.key));
   const total = shown.length + more.length;
-  const [lead, ...rest] = shown;
 
   return (
     <section
@@ -237,26 +234,19 @@ export function AttentionStrip({
         </p>
       ) : (
         <>
-          {lead ? (
-            <Card className={styles.leadCard}>
-              <Row item={lead} now={now} zone={zone} lead onResolved={settle} />
-            </Card>
-          ) : null}
-          {rest.length > 0 || more.length > 0 ? (
-            <Card className={styles.panel}>
-              <ul className={styles.list}>
-                {rest.map((i) => (
-                  <li key={i.key}>
-                    <Row item={i} now={now} zone={zone} onResolved={settle} />
-                  </li>
-                ))}
-              </ul>
-              {more.length > 0 ? (
-                <Button variant="ghost" onClick={() => setOpen(true)}>
-                  +{more.length} more
-                </Button>
-              ) : null}
-            </Card>
+          <ul className={styles.cards}>
+            {shown.map((i, n) => (
+              <li key={i.key}>
+                <Card className={styles.item}>
+                  <Row item={i} now={now} zone={zone} lead={n === 0} onResolved={settle} />
+                </Card>
+              </li>
+            ))}
+          </ul>
+          {more.length > 0 ? (
+            <Button variant="ghost" onClick={() => setOpen(true)}>
+              +{more.length} more
+            </Button>
           ) : null}
           {error ? (
             <p role="status" className={styles.partial}>

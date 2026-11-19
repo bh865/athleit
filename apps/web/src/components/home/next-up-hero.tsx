@@ -179,7 +179,7 @@ export function NextUpCard({
   const updated = hasUpdate(e.revision, seen) && h.phase !== 'cancelled';
 
   const phase = h.phase;
-  const showMap = Boolean(embedSrc) && phase !== 'final';
+  const showMap = Boolean(embedSrc);
   return (
     <Card
       className={`${styles.card} ${showMap ? styles.withMap : ''}`}
