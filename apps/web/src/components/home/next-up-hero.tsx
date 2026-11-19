@@ -119,7 +119,7 @@ export function NextUpHero({ teamId, canManage }: { teamId: string | null; canMa
         </div>
       </Card>
     );
-  return <NextUpCard view={view} now={now} zone={zone} />;
+  return <NextUpCard key={view.event.eventId} view={view} now={now} zone={zone} />;
 }
 
 /**

@@ -191,9 +191,14 @@ export function AttentionStrip({
   const headId = useId();
   const [open, setOpen] = useState(false);
   // Hide a settled item at once; the refetch removes it for good.
-  const [done, setDone] = useState<ReadonlySet<string>>(new Set());
+  const [settled, setSettled] = useState<{ keys: ReadonlySet<string>; of: AttentionResult }>({
+    keys: new Set(),
+    of: attention,
+  });
+  // Only valid for the list it was recorded against: a refetch yields a new list, so a later item with the same key shows.
+  const done: ReadonlySet<string> = settled.of === attention ? settled.keys : new Set();
   const settle = (key: string) => {
-    setDone((d) => new Set(d).add(key));
+    setSettled({ keys: new Set(done).add(key), of: attention });
     onResolved();
   };
   const shown = attention.shown.filter((i) => !done.has(i.key));

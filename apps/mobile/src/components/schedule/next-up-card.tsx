@@ -90,7 +90,7 @@ export function NextUpCard({
       </Card>
     );
   if (!view) return null;
-  return <Game view={view} now={now} />;
+  return <Game key={view.event.eventId} view={view} now={now} />;
 }
 
 function Game({ view, now }: { view: NextUpView; now: Date }) {
