@@ -461,6 +461,10 @@ verify_jwt = false
 [functions.reconcile-payments]
 verify_jwt = false
 
+# Same shared secret as reconcile: the installment charger, called by pg_cron through pg_net.
+[functions.charge-installments]
+verify_jwt = false
+
 # Phase 5 registration. The public ones are called by anonymous visitors (a captcha, rate limits and the database are
 # the gate); sign-waiver authenticates inside (a session or a signing token); export checks the caller's session.
 [functions.get-public-registration]

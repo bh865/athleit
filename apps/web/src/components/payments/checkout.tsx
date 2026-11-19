@@ -1,14 +1,26 @@
 'use client';
 
-import { friendlyError, formatCents, type PayRow } from '@athleit/core';
+import {
+  autopayConsentText,
+  friendlyError,
+  formatCents,
+  PLAN_CADENCE_LABEL,
+  type PayRow,
+} from '@athleit/core';
 import {
   cancelOpenPayment,
+  createInstallmentIntent,
   createPaymentIntent,
+  createPlanIntent,
   getCheckoutQuote,
   getHouseholdPayments,
   getHouseholdReceipts,
+  getInstallmentQuote,
+  getPlanQuote,
   type CheckoutQuote,
   type HouseholdReceiptRow,
+  type PlanQuote,
+  type PlanQuoteSize,
 } from '@athleit/db/payments';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
@@ -24,6 +36,7 @@ import { ReceiptView } from './receipt';
 
 type Step =
   | { kind: 'review' }
+  | { kind: 'plan' }
   | { kind: 'pay'; clientSecret: string; stripe: Promise<Stripe | null> }
   | { kind: 'processing'; slow: boolean }
   | { kind: 'done'; receipt: HouseholdReceiptRow | null }
@@ -132,11 +145,14 @@ function PayForm({
  */
 function CheckoutBody({
   requestIds,
+  mode = 'requests',
   rows,
   onClose,
   onFinished,
 }: {
+  /** Request ids, or installment ids when mode is 'installments'. */
   requestIds: string[];
+  mode?: 'requests' | 'installments';
   rows: readonly PayRow[];
   onClose: () => void;
   onFinished: () => void;
@@ -146,22 +162,77 @@ function CheckoutBody({
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(true);
   const [starting, setStarting] = useState(false);
+  // Payment plans: the server offers the sizes (a single unpaid request only); the family chooses one.
+  const [planQuote, setPlanQuote] = useState<PlanQuote | null>(null);
+  const [choice, setChoice] = useState<number>(1); // 1 = pay in full
+  const [autopay, setAutopay] = useState(false);
+  const chosenPlan: PlanQuoteSize | null =
+    choice > 1 ? (planQuote?.plans[String(choice)] ?? null) : null;
   const polling = useRef(false);
   // The payment opened at the server, so it can be let go if the parent leaves before entering a card.
   const paymentId = useRef<string | null>(null);
 
   useEffect(() => {
     let live = true;
-    void getCheckoutQuote(getClient(), requestIds).then((r) => {
+    const client = getClient();
+    void (
+      mode === 'installments'
+        ? getInstallmentQuote(client, requestIds)
+        : getCheckoutQuote(client, requestIds)
+    ).then((r) => {
       if (!live) return;
       setLoadingQuote(false);
       if (r.error) setStep({ kind: 'error', message: friendlyError(r.error), retry: 'review' });
       else setQuote(r.data);
     });
+    if (mode === 'requests' && requestIds.length === 1) {
+      void getPlanQuote(client, requestIds[0]!).then((r) => {
+        if (!live || !r.data) return;
+        const sizes = r.data.current_plan
+          ? [r.data.current_plan]
+          : r.data.sizes.filter((n) => n > 1);
+        if (!sizes.length) return;
+        setPlanQuote(r.data);
+        if (r.data.current_plan) setChoice(r.data.current_plan);
+        setStep((s) => (s.kind === 'review' ? { kind: 'plan' } : s));
+      });
+    }
     return () => {
       live = false;
     };
-  }, [requestIds]);
+  }, [requestIds, mode]);
+
+  // Plan and installment payments settle an installment, not the whole request: wait for THIS payment instead.
+  const waitForPayment = useCallback(
+    async (paymentId: string) => {
+      if (polling.current) return;
+      polling.current = true;
+      setStep({ kind: 'processing', slow: false });
+      const client = getClient();
+      for (let i = 0; i < POLL_TRIES; i++) {
+        const p = await client
+          .from('payments')
+          .select('status, receipt_display_id')
+          .eq('id', paymentId)
+          .maybeSingle();
+        if (p.data && ['succeeded', 'partially_refunded', 'refunded'].includes(p.data.status)) {
+          const rec = await getHouseholdReceipts(client);
+          const receipt =
+            (rec.data ?? []).find((x) => x.receipt_display_id === p.data?.receipt_display_id) ??
+            null;
+          polling.current = false;
+          setStep({ kind: 'done', receipt });
+          onFinished();
+          return;
+        }
+        if (i === 9) setStep({ kind: 'processing', slow: true });
+        await new Promise((res) => setTimeout(res, POLL_MS));
+      }
+      polling.current = false;
+      setStep({ kind: 'processing', slow: true });
+    },
+    [onFinished],
+  );
 
   const waitForWebhook = useCallback(
     async (ids: string[]) => {
@@ -201,13 +272,21 @@ function CheckoutBody({
 
   const start = async () => {
     setStarting(true);
-    const r = await createPaymentIntent(getClient(), requestIds);
+    const client = getClient();
+    const r = chosenPlan
+      ? await createPlanIntent(client, { requestId: requestIds[0]!, size: choice, autopay })
+      : mode === 'installments'
+        ? await createInstallmentIntent(client, requestIds)
+        : await createPaymentIntent(client, requestIds);
     setStarting(false);
     if (r.error)
       return setStep({ kind: 'error', message: friendlyError(r.error), retry: 'review' });
     paymentId.current = r.data.paymentId;
-    if (r.data.status === 'succeeded' || !r.data.clientSecret)
-      return void waitForWebhook(requestIds);
+    const settle = () =>
+      chosenPlan || mode === 'installments'
+        ? void waitForPayment(r.data.paymentId)
+        : void waitForWebhook(requestIds);
+    if (r.data.status === 'succeeded' || !r.data.clientSecret) return settle();
     if (!PUBLISHABLE) {
       return setStep({
         kind: 'error',
@@ -237,7 +316,9 @@ function CheckoutBody({
   const at: 0 | 1 | 2 | 3 =
     step.kind === 'done'
       ? 3
-      : step.kind === 'review' || (step.kind === 'error' && step.retry === 'review')
+      : step.kind === 'review' ||
+          step.kind === 'plan' ||
+          (step.kind === 'error' && step.retry === 'review')
         ? 0
         : step.kind === 'pay' || step.kind === 'error'
           ? 1
@@ -252,6 +333,9 @@ function CheckoutBody({
   }
   const extras = (quote?.lines ?? []).filter((l) => l.kind !== 'item');
   const payee = rows.find((r) => requestIds.includes(r.request_id))?.issuer_name;
+  const payTotal = chosenPlan ? chosenPlan.charge_now_cents : (quote?.total_cents ?? 0);
+  const when = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
     <Sheet open={open} onClose={close} title="Checkout" level="modal" placement="right">
@@ -263,7 +347,114 @@ function CheckoutBody({
         </div>
         <StepHeader at={at} />
 
-        {step.kind === 'review' || (step.kind === 'error' && step.retry === 'review') ? (
+        {step.kind === 'plan' && planQuote ? (
+          <div className={styles.stack} data-testid="plan-step">
+            <Text variant="heading" as="h3">
+              How would you like to pay?
+            </Text>
+            <div role="radiogroup" aria-label="Payment option" className={styles.stack}>
+              {planQuote.current_plan ? null : (
+                <label className={styles.lines}>
+                  <span className={styles.row}>
+                    <input
+                      type="radio"
+                      name="plan"
+                      checked={choice === 1}
+                      onChange={() => setChoice(1)}
+                    />
+                    <Text variant="bodyBold">Pay in full</Text>
+                  </span>
+                  {quote ? <Amount cents={quote.total_cents} label="Pay in full" /> : null}
+                </label>
+              )}
+              {planQuote.sizes
+                .filter((n) => n > 1 && (!planQuote.current_plan || n === planQuote.current_plan))
+                .map((n) => {
+                  const q = planQuote.plans[String(n)];
+                  if (!q) return null;
+                  return (
+                    <label key={n} className={styles.lines}>
+                      <span className={styles.row}>
+                        <input
+                          type="radio"
+                          name="plan"
+                          checked={choice === n}
+                          onChange={() => setChoice(n)}
+                        />
+                        <Text variant="bodyBold">{n} payments</Text>
+                        <Text variant="caption" muted>
+                          {PLAN_CADENCE_LABEL[q.cadence].toLowerCase()}
+                        </Text>
+                      </span>
+                      <Text variant="caption" muted as="p">
+                        {formatCents(q.charge_now_cents)} today, then{' '}
+                        {q.installments
+                          .slice(1)
+                          .map((i) => `${formatCents(i.total_cents)} on ${when(i.due_at)}`)
+                          .join(', ')}
+                      </Text>
+                      <Text variant="caption" muted as="p">
+                        Total {formatCents(q.total_cents)}
+                        {q.extra_cents > 0
+                          ? `: ${formatCents(q.extra_cents)} more than paying in full, because each payment is its own card transaction with its own fees.`
+                          : ', the same as paying in full.'}
+                      </Text>
+                    </label>
+                  );
+                })}
+            </div>
+            {choice > 1 ? (
+              <label className={styles.row} data-testid="autopay-consent">
+                <input
+                  type="checkbox"
+                  checked={autopay}
+                  onChange={(e) => setAutopay(e.target.checked)}
+                />
+                <Text variant="caption">
+                  <strong>Pay automatically.</strong> {autopayConsentText(payee ?? 'your team')}
+                </Text>
+              </label>
+            ) : null}
+            <Button size="lg" fullWidth onClick={() => setStep({ kind: 'review' })}>
+              Continue <Icon name="arrow-right" size="sm" />
+            </Button>
+          </div>
+        ) : null}
+
+        {step.kind === 'review' && chosenPlan ? (
+          <div className={styles.stack} data-testid="plan-review">
+            <section className={styles.lines} aria-label="Payment schedule">
+              {chosenPlan.installments.map((i) => (
+                <div key={i.sequence} className={styles.line}>
+                  <Text>
+                    {i.sequence === 1 ? 'Today' : when(i.due_at)} · {i.sequence} of{' '}
+                    {chosenPlan.plan_size}
+                  </Text>
+                  <Amount cents={i.total_cents} label={`Payment ${i.sequence}`} />
+                </div>
+              ))}
+              <div className={`${styles.line} ${styles.lineTotal}`}>
+                <span>Total across all payments</span>
+                <Amount cents={chosenPlan.total_cents} variant="monoLg" label="Total" />
+              </div>
+            </section>
+            <Text variant="caption" muted as="p">
+              {autopay
+                ? 'The later payments are charged automatically to the card you use today.'
+                : 'You will pay each later payment yourself; we will remind you before it is due.'}
+            </Text>
+            <Button size="lg" fullWidth loading={starting} onClick={start}>
+              Pay {formatCents(chosenPlan.charge_now_cents)} now{' '}
+              <Icon name="arrow-right" size="sm" />
+            </Button>
+            <Button variant="secondary" onClick={() => setStep({ kind: 'plan' })}>
+              Change option
+            </Button>
+          </div>
+        ) : null}
+
+        {(step.kind === 'review' && !chosenPlan) ||
+        (step.kind === 'error' && step.retry === 'review') ? (
           <div className={styles.stack}>
             {step.kind === 'error' ? (
               <p role="alert" className={styles.strip}>
@@ -318,15 +509,19 @@ function CheckoutBody({
           <div className={styles.stack}>
             <div className={`${styles.row} ${styles.between}`}>
               <Text muted>Paying {payee ?? 'your team'}</Text>
-              <Amount cents={quote.total_cents} variant="monoLg" label="Total" />
+              <Amount cents={payTotal} variant="monoLg" label="Total" />
             </div>
             <Elements
               stripe={step.stripe}
               options={{ clientSecret: step.clientSecret, appearance: stripeAppearance() }}
             >
               <PayForm
-                total={quote.total_cents}
-                onSubmitted={() => void waitForWebhook(requestIds)}
+                total={payTotal}
+                onSubmitted={() =>
+                  chosenPlan || mode === 'installments'
+                    ? void waitForPayment(paymentId.current ?? '')
+                    : void waitForWebhook(requestIds)
+                }
                 onError={(message, cause) =>
                   setStep({ kind: 'error', message, retry: 'pay', cause })
                 }
@@ -401,20 +596,25 @@ function CheckoutBody({
 /** Mount per request set so every checkout starts from a clean review step. */
 export function CheckoutSheet({
   requestIds,
+  installmentIds = null,
   rows,
   onClose,
   onFinished,
 }: {
   requestIds: string[] | null;
+  /** Pay installments of an existing plan instead of whole requests. */
+  installmentIds?: string[] | null;
   rows: readonly PayRow[];
   onClose: () => void;
   onFinished: () => void;
 }) {
-  if (!requestIds) return null;
+  const ids = installmentIds ?? requestIds;
+  if (!ids) return null;
   return (
     <CheckoutBody
-      key={requestIds.join(',')}
-      requestIds={requestIds}
+      key={(installmentIds ? 'i:' : 'r:') + ids.join(',')}
+      requestIds={ids}
+      mode={installmentIds ? 'installments' : 'requests'}
       rows={rows}
       onClose={onClose}
       onFinished={onFinished}

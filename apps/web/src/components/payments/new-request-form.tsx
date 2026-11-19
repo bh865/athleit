@@ -9,12 +9,18 @@ import {
   MIN_CHARGE_CENTS,
   SERVICE_FEE_LABEL,
   ATHLEIT_CHARGE_LABEL,
+  PLAN_CADENCE_LABEL,
+  PLAN_CADENCES,
+  planFeeImpact,
+  planFits,
   type FeePolicy,
+  type PlanCadence,
 } from '@athleit/core';
 import {
   createPaymentEvent,
   getActiveFeeConfig,
   publishPaymentEvent,
+  setPaymentEventPlan,
   type Owner,
 } from '@athleit/db/payments';
 import { useEffect, useMemo, useState } from 'react';
@@ -66,6 +72,8 @@ export function NewRequestForm({
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [cfg, setCfg] = useState<Parameters<typeof computeFees>[2] | null>(null);
+  const [planSizes, setPlanSizes] = useState<Set<number>>(new Set([1]));
+  const [cadence, setCadence] = useState<PlanCadence>('monthly');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -96,6 +104,21 @@ export function NewRequestForm({
       cents !== null && cents >= MIN_CHARGE_CENTS && cfg ? computeFees(cents, policy, cfg) : null,
     [cents, policy, cfg],
   );
+
+  // What each chosen plan would cost a family who started it today (the server decides again at checkout).
+  const planPreview = useMemo(() => {
+    if (cents === null || cents < MIN_CHARGE_CENTS || !cfg || !due) return [];
+    const start = new Date();
+    const dueAt = new Date(`${due}T23:59:00`);
+    return [...planSizes]
+      .filter((n) => n > 1)
+      .sort((a, b) => a - b)
+      .map((n) =>
+        planFits(cents, n, cadence, start, dueAt)
+          ? { n, fits: true as const, impact: planFeeImpact(cents, n, cadence, start, policy, cfg) }
+          : { n, fits: false as const },
+      );
+  }, [cents, cfg, due, planSizes, cadence, policy]);
 
   const submit = async () => {
     setError(null);
@@ -130,6 +153,14 @@ export function NewRequestForm({
     if (made.error) {
       setBusy(false);
       return setError(friendlyError(made.error));
+    }
+    const sizes = [...planSizes].sort((a, b) => a - b);
+    if (sizes.length !== 1 || sizes[0] !== 1) {
+      const plan = await setPaymentEventPlan(c, made.data, sizes, cadence);
+      if (plan.error) {
+        setBusy(false);
+        return setError(`${friendlyError(plan.error)} Your request was saved as a draft.`);
+      }
     }
     const sent = await publishPaymentEvent(c, made.data);
     setBusy(false);
@@ -250,6 +281,74 @@ export function NewRequestForm({
                 ? `Families see a “${SERVICE_FEE_LABEL}” that covers card processing, so your team receives about the full amount. The exact card fee can differ by a few cents.`
                 : 'Your team pays the card processing fee, so it receives a little less than the request amount.'}
             </Text>
+          </div>
+        ) : null}
+        <fieldset
+          className={styles.stack}
+          style={{ border: 0, padding: 0 }}
+          data-testid="plan-options"
+        >
+          <legend>
+            <Text variant="label">How families can pay</Text>
+          </legend>
+          <Text variant="caption" muted as="p">
+            Choose the options to offer. Families pick one at checkout; plans that would not finish
+            before the due date are not offered.
+          </Text>
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <label key={n} className={styles.row}>
+              <input
+                type="checkbox"
+                className={styles.check}
+                checked={planSizes.has(n)}
+                onChange={() => {
+                  const next = new Set(planSizes);
+                  if (next.has(n)) next.delete(n);
+                  else next.add(n);
+                  if (next.size > 0) setPlanSizes(next);
+                }}
+              />
+              <Text>{n === 1 ? 'Pay in full' : `${n} payments`}</Text>
+            </label>
+          ))}
+          {[...planSizes].some((n) => n > 1) ? (
+            <Select
+              label="Payments are spaced"
+              value={cadence}
+              onChange={(e) => setCadence(e.target.value as PlanCadence)}
+              options={PLAN_CADENCES.map((c) => ({ value: c, label: PLAN_CADENCE_LABEL[c] }))}
+            />
+          ) : null}
+        </fieldset>
+        {planPreview.length > 0 ? (
+          <div className={styles.lines} data-testid="plan-preview" aria-live="polite">
+            {planPreview.map((p) =>
+              p.fits ? (
+                <div key={p.n} className={styles.stack}>
+                  <div className={styles.line}>
+                    <Text variant="bodyBold">{p.n} payments</Text>
+                    <Amount cents={p.impact.totalCents} label={`${p.n} payments, total`} />
+                  </div>
+                  <Text variant="caption" muted as="p">
+                    {p.impact.installments
+                      .map(
+                        (i, k) =>
+                          `${formatCents(i.fees.totalCents)} ${k === 0 ? 'now' : i.dueAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`,
+                      )
+                      .join(' · ')}
+                  </Text>
+                  <Text variant="caption" muted as="p">
+                    {p.impact.extraCents > 0
+                      ? `Families pay ${formatCents(p.impact.extraCents)} more in total than paying in full, because each payment is its own card transaction with its own fees.`
+                      : 'Costs families the same as paying in full.'}
+                  </Text>
+                </div>
+              ) : (
+                <Text key={p.n} variant="caption" muted as="p">
+                  {p.n} payments: not offered with this due date or amount.
+                </Text>
+              ),
+            )}
           </div>
         ) : null}
         {error ? (

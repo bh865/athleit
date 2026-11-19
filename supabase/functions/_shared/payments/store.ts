@@ -16,6 +16,34 @@ export interface Owner {
 export interface Store {
   rateLimit(bucket: string, limit: number, windowSeconds: number): Promise<boolean>;
   reservePayment(userId: string, requestIds: string[]): Promise<ReserveResult>;
+  reserveInstallments(
+    userId: string,
+    installmentIds: string[],
+    offSession?: boolean,
+  ): Promise<ReserveResult>;
+  reservePlan(a: {
+    userId: string;
+    requestId: string;
+    size: number;
+    autopay: boolean;
+    consentVersion: string;
+    ip?: string | null;
+    userAgent?: string | null;
+  }): Promise<ReserveResult>;
+  getCustomer(householdId: string, connectedAccountId: string): Promise<string | null>;
+  saveCustomer(a: {
+    householdId: string;
+    connectedAccountId: string;
+    customer: string;
+    userId: string;
+  }): Promise<void>;
+  saveCardForPayment(paymentId: string, customer: string, paymentMethod: string): Promise<string>;
+  claimDueInstallments(now?: string | null, limit?: number): Promise<DueInstallment[]>;
+  installmentChargeFailed(paymentId: string): Promise<string>;
+  repairInstallments(): Promise<number>;
+  cardsToCheck(now?: string | null): Promise<CardToCheck[]>;
+  warnCardExpiring(installmentId: string): Promise<string>;
+  markCardChecked(installmentId: string): Promise<void>;
   attachPaymentIntent(paymentId: string, pi: string): Promise<void>;
   releasePayment(paymentId: string): Promise<void>;
   paymentSucceeded(a: {
@@ -70,6 +98,23 @@ export interface Store {
   insertConnectedAccount(o: Owner, stripeAccountId: string, createdBy: string): Promise<void>;
 }
 
+export interface CardToCheck {
+  installment_id: string;
+  due_at: string;
+  payment_method: string;
+  stripe_account_id: string;
+}
+
+export interface DueInstallment {
+  installment_id: string;
+  request_id: string;
+  payer: string;
+  household_id: string;
+  customer: string;
+  payment_method: string;
+  attempt: number;
+}
+
 export interface ReserveResult {
   reused: boolean;
   payment_id: string;
@@ -81,6 +126,13 @@ export interface ReserveResult {
   display_ids?: string[];
   request_set_key?: string;
   stripe_account_id: string;
+  household_id?: string;
+  connected_account_id?: string;
+  installment_ids?: string[];
+  off_session?: boolean;
+  plan_count?: number;
+  autopay?: boolean;
+  setup_future_usage?: boolean;
 }
 
 export interface Candidates {
@@ -103,6 +155,42 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
     rateLimit: (b, l, w) =>
       call('svc_rate_limit', { p_bucket: b, p_limit: l, p_window_seconds: w }),
     reservePayment: (u, ids) => call('svc_reserve_payment', { p_uid: u, p_request_ids: ids }),
+    reserveInstallments: (u, ids, off = false) =>
+      call('svc_reserve_installments', { p_uid: u, p_installment_ids: ids, p_off_session: off }),
+    reservePlan: (a) =>
+      call('svc_reserve_plan', {
+        p_uid: a.userId,
+        p_request_id: a.requestId,
+        p_n: a.size,
+        p_autopay: a.autopay,
+        p_consent_version: a.consentVersion,
+        p_ip: a.ip ?? null,
+        p_user_agent: a.userAgent ?? null,
+      }),
+    getCustomer: async (h, a) =>
+      (await call('svc_get_customer', { p_household_id: h, p_connected_account_id: a })) ?? null,
+    saveCustomer: async (a) =>
+      void (await call('svc_save_payment_method', {
+        p_household_id: a.householdId,
+        p_connected_account_id: a.connectedAccountId,
+        p_customer: a.customer,
+        p_payment_method: null,
+        p_uid: a.userId,
+      })),
+    saveCardForPayment: (id, c, pm) =>
+      call('svc_save_card_for_payment', { p_payment_id: id, p_customer: c, p_payment_method: pm }),
+    claimDueInstallments: (now = null, limit = 25) =>
+      call('svc_claim_due_installments', {
+        p_now: now ?? new Date().toISOString(),
+        p_limit: limit,
+      }),
+    repairInstallments: () => call('svc_repair_installments'),
+    cardsToCheck: (now = null) =>
+      call('svc_cards_to_check', { p_now: now ?? new Date().toISOString() }),
+    markCardChecked: async (id) =>
+      void (await call('svc_mark_card_checked', { p_installment_id: id })),
+    warnCardExpiring: (id) => call('svc_warn_card_expiring', { p_installment_id: id }),
+    installmentChargeFailed: (id) => call('svc_installment_charge_failed', { p_payment_id: id }),
     attachPaymentIntent: async (id, pi) =>
       void (await call('svc_attach_payment_intent', { p_payment_id: id, p_pi: pi })),
     releasePayment: async (id) => void (await call('svc_release_payment', { p_payment_id: id })),

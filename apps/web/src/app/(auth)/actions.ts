@@ -92,3 +92,10 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect('/sign-in');
 }
+
+/** Ends every session of this user on every device (including this one). */
+export async function signOutEverywhere() {
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: 'global' });
+  redirect('/sign-in');
+}

@@ -296,6 +296,8 @@ export function CalendarSheetBody({
 
       {view === 'years' ? (
         <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           style={{ maxHeight: CELL * 6 }}
           contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap' }}
         >
@@ -424,7 +426,12 @@ export function TimePicker({
     items: { key: string; text: string; selected: boolean; onPress: () => void }[],
   ) => (
     <View style={{ flex: 1 }} accessibilityLabel={title}>
-      <ScrollView style={{ maxHeight: CELL * 5 }} contentContainerStyle={{ gap: space[1] }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        style={{ maxHeight: CELL * 5 }}
+        contentContainerStyle={{ gap: space[1] }}
+      >
         {items.map((it) => (
           <Pressable
             key={it.key}

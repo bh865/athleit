@@ -288,6 +288,7 @@ export function TabPills({
   }, [spotX, spotW, width]);
   return (
     <ScrollView
+      showsVerticalScrollIndicator={false}
       ref={scroller}
       horizontal
       showsHorizontalScrollIndicator={false}

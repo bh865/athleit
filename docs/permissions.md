@@ -222,3 +222,17 @@ Which Home tiles a person sees is `homeTileIds` in `packages/core/src/home-tiles
 no database functions: it composes existing RPCs and only ever shows counts and first names from them
 (waiver compliance, join requests, registrations). It must not render last names, emails, signed waiver text,
 medical answers or RSVP names to parents and players.
+
+## Payment plans
+
+| Action                                                                                              | Who                                                                                              |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Choose a plan, pay installments, turn autopay on or off                                             | A guardian of the billed household (not a 13+ player)                                            |
+| Read installments                                                                                   | The billed household, and staff of the issuing team or club (`payment_request_installments` RLS) |
+| Set plan terms (`set_payment_event_plan`, `set_registration_event_plan`)                            | Issuer staff, while the event is a draft / before registrations exist                            |
+| Offline payment, waive an installment or the remaining balance, remind, retry a charge, restructure | Issuer staff (`private.is_issuer_staff`), each audited                                           |
+| Refund against a plan request (`prepare_request_refund`)                                            | Issuer admins                                                                                    |
+| Saved card ids, autopay consents                                                                    | Service role only (no client access)                                                             |
+| Balance flags (`registration_balances`, `team_player_balances`)                                     | Issuer staff / team staff                                                                        |
+
+A club admin sees totals and names for club-issued events only, as before. A household with an active payment plan cannot delete its account.

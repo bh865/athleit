@@ -46,6 +46,9 @@ const DB_ERRORS: Record<string, [number, string]> = {
   nothing_to_refund: [409, 'nothing_to_refund'],
   amount_needs_item: [400, 'amount_needs_item'],
   invalid_amount: [400, 'invalid_amount'],
+  plan_not_offered: [409, 'plan_not_offered'],
+  plan_locked: [409, 'plan_locked'],
+  plan_request_use_installments: [409, 'plan_request_use_installments'],
 };
 
 export function mapError(err: unknown): { status: number; code: string } {

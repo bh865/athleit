@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
+import { AccountChip } from './account-chip';
 import { useApp } from './app-provider';
 import { ADD_LABEL, ContextSwitcher } from './context-switcher';
 import styles from './sidebar.module.css';
@@ -104,13 +105,16 @@ export function Sidebar() {
         <Link href="/" className={styles.brand} aria-label="Athleit home">
           <Logo variant="lockup" size="md" />
         </Link>
-        <IconButton
-          icon={open ? 'x' : 'list'}
-          label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          aria-controls="app-nav"
-          onClick={() => setOpen((o) => !o)}
-        />
+        <div className={styles.topbarActions}>
+          {status === 'ready' ? <AccountChip variant="avatar" /> : null}
+          <IconButton
+            icon={open ? 'x' : 'list'}
+            label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            aria-controls="app-nav"
+            onClick={() => setOpen((o) => !o)}
+          />
+        </div>
       </div>
       {open ? <div className={styles.scrim} onClick={() => setOpen(false)} aria-hidden /> : null}
       <Glass
@@ -144,6 +148,7 @@ export function Sidebar() {
           ))}
         </nav>
         <div className={styles.footer}>
+          {status === 'ready' ? <AccountChip /> : null}
           <div className={styles.addWrap}>
             <Button
               ref={addRef}

@@ -11,6 +11,7 @@ export {
 } from './button';
 export { Card } from './card';
 export { Chip, ChipLabel, type ChipProps } from './chip';
+export { ConfirmSheet } from './confirm-sheet';
 export { Glass, type GlassLevel, type GlassProps } from './glass';
 export { Icon, type IconProps } from './icon';
 export { IconCircle, ListGroup, ListRow, type ListRowProps } from './list-row';

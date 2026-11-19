@@ -30,6 +30,7 @@ import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 import { Amount, dueText } from './money';
+import { PlanSheet } from './plan-sheet';
 import styles from './payments.module.css';
 import { stateView } from './request-list';
 import { StatusPill, type PillTone } from './status-pill';
@@ -44,7 +45,7 @@ const groupOf = (s: string): Group =>
     ? 'paid'
     : s === 'waived'
       ? 'waived'
-      : s === 'unpaid' || s === 'processing'
+      : s === 'unpaid' || s === 'processing' || s === 'partially_paid'
         ? 'unpaid'
         : 'all';
 
@@ -63,6 +64,7 @@ const paidDate = (iso: string | null) =>
 const STATUS_TEXT: Record<string, string> = {
   unpaid: 'Unpaid',
   processing: 'Processing',
+  partially_paid: 'Partly paid',
   paid: 'Paid',
   paid_offline: 'Paid',
   partially_refunded: 'Partly refunded',
@@ -95,6 +97,7 @@ export function RequestDetail({
   const [page, setPage] = useState(0);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [action, setAction] = useState<Action>(null);
+  const [planRow, setPlanRow] = useState<CollectionRow | null>(null);
   const reload = () => {
     setTick((t) => t + 1);
     onChanged();
@@ -240,6 +243,9 @@ export function RequestDetail({
             <Amount cents={Number(s.outstanding_cents)} variant="monoLg" label="Outstanding" />
             <Text variant="caption" muted>
               {s.unpaid_count} unpaid
+              {s.plans_count > 0
+                ? ` · ${s.plans_count} on plans${s.scheduled_cents ? `, ${formatCents(Number(s.scheduled_cents))} scheduled` : ''}${s.overdue_installments ? `, ${s.overdue_installments} overdue` : ''}`
+                : ''}
             </Text>
           </div>
           <div className={styles.stat}>
@@ -338,7 +344,8 @@ export function RequestDetail({
             </div>
             {rows.map((r) => {
               const pill = rowPill(r);
-              const unpaid = r.status === 'unpaid';
+              const plan = r.plan_count !== null;
+              const unpaid = r.status === 'unpaid' && !plan;
               const refundable =
                 isAdmin &&
                 (r.status === 'paid' || r.status === 'partially_refunded') &&
@@ -375,6 +382,11 @@ export function RequestDetail({
                     <StatusPill tone={pill.tone} icon={pill.icon}>
                       {STATUS_TEXT[r.status as PaymentRequestStatus] ?? r.status}
                     </StatusPill>
+                    {plan ? (
+                      <StatusPill tone={r.overdue ? 'bad' : 'neutral'} icon="calendar-blank">
+                        {r.installments_paid} of {r.plan_count} paid{r.overdue ? ' · overdue' : ''}
+                      </StatusPill>
+                    ) : null}
                     {r.disputed ? (
                       <StatusPill tone="bad" icon="warning">
                         Disputed
@@ -422,7 +434,12 @@ export function RequestDetail({
                         </Button>
                       </>
                     ) : null}
-                    {refundable ? (
+                    {plan ? (
+                      <Button variant="ghost" onClick={() => setPlanRow(r)}>
+                        Plan
+                      </Button>
+                    ) : null}
+                    {refundable && !plan ? (
                       <Button
                         variant="ghost"
                         onClick={() => setAction({ kind: 'refund', rows: [r] })}
@@ -453,6 +470,14 @@ export function RequestDetail({
           </div>
         </LoadState>
       </div>
+      <PlanSheet
+        key={planRow?.request_id ?? 'none'}
+        row={planRow}
+        canManage={canSend}
+        isAdmin={isAdmin}
+        onClose={() => setPlanRow(null)}
+        onChanged={reload}
+      />
       <ActionSheet
         action={action}
         onClose={() => setAction(null)}

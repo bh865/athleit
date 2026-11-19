@@ -41,6 +41,7 @@ export function userFunction<T>(
     user: { id: string };
     input: T;
     authHeader: string;
+    req: Request;
     store: Store;
     log: Logger;
     user$: ReturnType<typeof userClient>;
@@ -73,6 +74,7 @@ export function userFunction<T>(
         user: { id: u.user.id },
         input: parsed.data as T,
         authHeader,
+        req,
         store,
         log,
         user$,

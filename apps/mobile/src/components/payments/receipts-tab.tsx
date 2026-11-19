@@ -94,6 +94,7 @@ export function ReceiptsTab({
       />
       {years.length > 1 ? (
         <ScrollView
+          showsVerticalScrollIndicator={false}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: space[2] }}

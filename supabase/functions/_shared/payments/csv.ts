@@ -4,6 +4,9 @@ export interface ExportRow {
   household_name: string;
   player_name: string;
   display_id: string;
+  /** Plan context: null for a request that is paid in one charge. */
+  installment_number?: number | null;
+  installment_count?: number | null;
   status: string;
   due_at: string | null;
   paid_at: string | null;
@@ -29,6 +32,10 @@ const COLUMNS: [string, (r: ExportRow) => unknown][] = [
   ['Household', (r) => r.household_name],
   ['Player', (r) => r.player_name],
   ['Request ID', (r) => r.display_id],
+  [
+    'Installment',
+    (r) => (r.installment_number ? `${r.installment_number} of ${r.installment_count}` : ''),
+  ],
   ['Status', (r) => r.status],
   ['Due', (r) => r.due_at],
   ['Paid', (r) => r.paid_at],

@@ -52,7 +52,7 @@ test.describe.serial('page headers', () => {
     '/messages/new',
     '/pay',
     '/notifications',
-    '/notifications/settings',
+    '/account',
     '/family',
     '/family/children/new',
     `/family/children/${childId}`,

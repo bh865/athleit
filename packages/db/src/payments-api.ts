@@ -223,6 +223,14 @@ export interface PaymentIntentResult {
 /** create-payment-intent accepts ONLY request ids. */
 export const createPaymentIntent = (c: Client, requestIds: string[]) =>
   invoke<PaymentIntentResult>(c, 'create-payment-intent', { requestIds });
+/** Start a plan of `size` installments for one request: the server creates the plan and charges installment 1. */
+export const createPlanIntent = (
+  c: Client,
+  a: { requestId: string; size: number; autopay: boolean },
+) => invoke<PaymentIntentResult>(c, 'create-payment-intent', { plan: a });
+/** Pay installments of an existing plan (one, several, or the whole remaining balance). */
+export const createInstallmentIntent = (c: Client, installmentIds: string[]) =>
+  invoke<PaymentIntentResult>(c, 'create-payment-intent', { installmentIds });
 export const startConnectOnboarding = (
   c: Client,
   o: Owner,
@@ -236,7 +244,9 @@ export const startConnectOnboarding = (
   });
 export const refundPayment = (
   c: Client,
-  a: { paymentId: string; paymentItemId?: string; baseCents?: number; reason?: string },
+  a:
+    | { paymentId: string; paymentItemId?: string; baseCents?: number; reason?: string }
+    | { requestId: string; baseCents?: number; reason?: string },
 ) =>
   invoke<{ refunds: { refundId: string; amountCents: number; status: string }[] }>(
     c,
@@ -255,5 +265,193 @@ export async function getOpenPayments(c: Client): Promise<Result<OpenPaymentRow[
 /** Walk away from an unfinished payment: it is canceled and its requests can be paid again. */
 export async function cancelOpenPayment(c: Client, paymentId: string): Promise<Result<null>> {
   const { error } = await c.rpc('cancel_open_payment', { p_payment_id: paymentId });
+  return error ? fail(error) : ok(null);
+}
+
+// Installment plans ---------------------------------------------------------------------------------------------
+export type PlanCadence = 'weekly' | 'biweekly' | 'monthly';
+export type InstallmentStatus =
+  | 'scheduled'
+  | 'due'
+  | 'processing'
+  | 'paid'
+  | 'paid_offline'
+  | 'failed'
+  | 'waived'
+  | 'cancelled'
+  | 'refunded'
+  | 'partially_refunded';
+export type InstallmentRow = Pick<
+  Tables<'payment_request_installments'>,
+  | 'id'
+  | 'request_id'
+  | 'sequence'
+  | 'amount_cents'
+  | 'due_at'
+  | 'status'
+  | 'attempt_count'
+  | 'next_retry_at'
+  | 'paid_at'
+  | 'last_reminded_at'
+> & { status: InstallmentStatus };
+
+/** The server's answer for one plan size: schedule and fee impact (display only; the charge is computed again at checkout). */
+export interface PlanQuoteSize {
+  plan_size: number;
+  cadence: PlanCadence;
+  fee_policy: 'absorb' | 'pass_on';
+  installments: {
+    sequence: number;
+    due_at: string;
+    base_cents: number;
+    platform_fee_cents: number;
+    processing_fee_cents: number;
+    total_cents: number;
+  }[];
+  total_cents: number;
+  full_pay_total_cents: number;
+  extra_cents: number;
+  athleit_charge_cents: number;
+  charge_now_cents: number;
+}
+export interface PlanQuote {
+  sizes: number[];
+  cadence: PlanCadence;
+  current_plan?: number | null;
+  plans: Record<string, PlanQuoteSize>;
+}
+
+export async function getPlanQuote(c: Client, requestId: string): Promise<Result<PlanQuote>> {
+  const { data, error } = await c.rpc('payer_plan_quote', { p_request_id: requestId });
+  return error ? fail(error) : ok(data as unknown as PlanQuote);
+}
+export async function getInstallmentQuote(
+  c: Client,
+  installmentIds: string[],
+): Promise<Result<CheckoutQuote>> {
+  const { data, error } = await c.rpc('payer_installment_quote', {
+    p_installment_ids: installmentIds,
+  });
+  return error ? fail(error) : ok(data as unknown as CheckoutQuote);
+}
+export async function getRequestInstallments(
+  c: Client,
+  requestId: string,
+): Promise<Result<InstallmentRow[]>> {
+  const { data, error } = await c
+    .from('payment_request_installments')
+    .select(
+      'id, request_id, sequence, amount_cents, due_at, status, attempt_count, next_retry_at, paid_at, last_reminded_at',
+    )
+    .eq('request_id', requestId)
+    .order('sequence');
+  return error ? fail(error) : ok((data ?? []) as InstallmentRow[]);
+}
+export async function setPlanAutopay(
+  c: Client,
+  requestId: string,
+  autopay: boolean,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('set_plan_autopay', {
+    p_request_id: requestId,
+    p_autopay: autopay,
+  });
+  return error ? fail(error) : ok(null);
+}
+/** Draft events only (the terms freeze at publish). */
+export async function setPaymentEventPlan(
+  c: Client,
+  eventId: string,
+  options: number[],
+  cadence: PlanCadence,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('set_payment_event_plan', {
+    p_event_id: eventId,
+    p_options: options,
+    p_cadence: cadence,
+  });
+  return error ? fail(error) : ok(null);
+}
+export async function setRegistrationEventPlan(
+  c: Client,
+  eventId: string,
+  options: number[],
+  cadence: PlanCadence,
+  requireFullBalance: 'none' | 'event_start' = 'none',
+): Promise<Result<null>> {
+  const { error } = await c.rpc('set_registration_event_plan', {
+    p_event_id: eventId,
+    p_options: options,
+    p_cadence: cadence,
+    p_require_full_balance: requireFullBalance,
+  });
+  return error ? fail(error) : ok(null);
+}
+
+// Staff operations on installments (issuer staff; the database checks).
+export async function recordOfflineInstallment(
+  c: Client,
+  installmentId: string,
+  method: 'cash' | 'check' | 'other',
+  note?: string,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('record_offline_installment', {
+    p_installment_id: installmentId,
+    p_method: method,
+    p_note: note ?? NULL,
+  });
+  return error ? fail(error) : ok(null);
+}
+export async function waiveInstallment(
+  c: Client,
+  installmentId: string,
+  note?: string,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('waive_installment', {
+    p_installment_id: installmentId,
+    p_note: note ?? NULL,
+  });
+  return error ? fail(error) : ok(null);
+}
+export async function waiveRemainingBalance(
+  c: Client,
+  requestId: string,
+  note?: string,
+): Promise<Result<number>> {
+  const { data, error } = await c.rpc('waive_remaining_balance', {
+    p_request_id: requestId,
+    p_note: note ?? NULL,
+  });
+  return error ? fail(error) : ok(data);
+}
+export async function retryInstallmentCharge(
+  c: Client,
+  installmentId: string,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('retry_installment_charge', { p_installment_id: installmentId });
+  return error ? fail(error) : ok(null);
+}
+export async function sendInstallmentReminder(
+  c: Client,
+  installmentId: string,
+): Promise<Result<boolean>> {
+  const { data, error } = await c.rpc('send_installment_reminder', {
+    p_installment_id: installmentId,
+  });
+  return error ? fail(error) : ok(data);
+}
+export async function restructurePlan(
+  c: Client,
+  requestId: string,
+  remaining: number,
+  nextDue: string,
+  note?: string,
+): Promise<Result<null>> {
+  const { error } = await c.rpc('restructure_plan', {
+    p_request_id: requestId,
+    p_remaining: remaining,
+    p_next_due: nextDue,
+    p_note: note ?? NULL,
+  });
   return error ? fail(error) : ok(null);
 }

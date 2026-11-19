@@ -32,3 +32,5 @@ export * from './form-builder';
 export * from './registration-builder';
 export * from './waivers';
 export * from './parent-pay';
+export * from './account';
+export * from './payment-plans';

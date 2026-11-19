@@ -139,3 +139,13 @@ Security properties the UI keeps (each has a test or a documented check):
 - User-authored text (info blocks, waiver text, answers) renders as escaped text; no `dangerouslySetInnerHTML` anywhere in the feature.
 - The public page and the verify/claim pages never list registrants. Tokens are read from the fragment and removed from the address bar.
 - Captcha fails closed: without a site key the form says registration is unavailable.
+
+## Payment plans
+
+A paid registration event can offer payment plans (see [split-payments.md](split-payments.md)). Staff choose the sizes and cadence and may **require the full balance before the event starts** (needs a start date); `set_registration_event_plan` saves them and they lock once registrations exist. The terms are copied into the payment event created for the registration event.
+
+- The plan must finish by the registration's payment deadline (the payment event's due date, or the start date when the balance is required before it).
+- **Installment 1 satisfies the spot hold**: the hold timer (`hold_expires_at`) only applies until the first installment is paid; a partially paid request lifts the hold and lets staff accept the registration. After that the remaining installments follow the schedule. With `after_acceptance` the schedule starts at acceptance.
+- Declining or withdrawing cancels what is still owed; paid installments stay for staff to refund.
+- Staff see the balance on the registration list (`registration_balances`) and on the roster (`team_player_balances`), including a "full balance required" flag. Nothing is blocked automatically; a hard block on roster placement for an unpaid required balance is not implemented.
+- Registrants who are not signed in or not linked to a household cannot start a plan (no saved card or consent); they pay in full or sign in first.

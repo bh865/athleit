@@ -22,11 +22,37 @@ export interface RefundDeps {
   }>;
 }
 
+type RefundPlan = Awaited<ReturnType<RefundDeps['prepare']>>;
+
 export async function refundPayment(
   a: { paymentId: string; paymentItemId?: string; baseCents?: number; reason?: string },
   d: RefundDeps,
 ) {
-  const plan = await d.prepare(a);
+  return sendRefunds(await d.prepare(a), d);
+}
+
+/**
+ * Refund an amount of a plan request: the database allocates it to the most recently paid installment first, then backwards
+ * (prepare_request_refund), one Stripe refund per payment touched. Sequential on purpose: if one fails, the earlier ones stand
+ * and the error says so; nothing already sent is ever retried under a new key.
+ */
+export async function refundRequest(
+  a: { requestId: string; baseCents?: number; reason?: string },
+  d: Pick<RefundDeps, 'store' | 'stripe' | 'log'> & {
+    prepareRequest: (a: {
+      requestId: string;
+      baseCents?: number;
+      reason?: string;
+    }) => Promise<RefundPlan[]>;
+  },
+) {
+  const plans = await d.prepareRequest(a);
+  const results: { refundId: string; amountCents: number; status: string }[] = [];
+  for (const plan of plans) results.push(...(await sendRefunds(plan, d)));
+  return results;
+}
+
+async function sendRefunds(plan: RefundPlan, d: Pick<RefundDeps, 'store' | 'stripe' | 'log'>) {
   const results: { refundId: string; amountCents: number; status: string }[] = [];
   for (const r of plan.refunds) {
     let sr;

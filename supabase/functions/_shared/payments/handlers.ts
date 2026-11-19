@@ -57,7 +57,7 @@ export async function applyPaymentIntent(
   if (status === 'succeeded') {
     const charge = idOf(pi.latest_charge);
     const fee = await actualStripeFee(d.stripe, charge, account);
-    return (await d.store.paymentSucceeded({
+    const outcome = (await d.store.paymentSucceeded({
       pi: pi.id,
       paymentId,
       charge,
@@ -67,6 +67,12 @@ export async function applyPaymentIntent(
       destination: account,
       applicationFee: pi.application_fee_amount ?? 0,
     })) as Outcome;
+    // A plan's first payment made with autopay consent saved the card for off-session use: remember the ids.
+    const customer = idOf(pi.customer);
+    const method = idOf(pi.payment_method);
+    if (paymentId && customer && method && pi.setup_future_usage === 'off_session')
+      await d.store.saveCardForPayment(paymentId, customer, method);
+    return outcome;
   }
   if (status === 'processing')
     return (await d.store.paymentStatus({

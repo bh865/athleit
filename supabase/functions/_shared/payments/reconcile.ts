@@ -14,7 +14,16 @@ export interface ReconcileDeps extends HandlerDeps {
 
 export async function reconcile(d: ReconcileDeps) {
   const c = await d.store.reconcileCandidates();
-  const out = { payments: 0, abandoned: 0, voided: 0, fees: 0, accounts: 0, events: 0, errors: 0 };
+  const out = {
+    payments: 0,
+    abandoned: 0,
+    voided: 0,
+    fees: 0,
+    accounts: 0,
+    events: 0,
+    repaired: 0,
+    errors: 0,
+  };
   const guard = async (label: string, fn: () => Promise<void>) => {
     try {
       await fn();
@@ -97,6 +106,9 @@ export async function reconcile(d: ReconcileDeps) {
     }
   }
 
+  // Installments left 'processing' with no live payment (a crashed reservation) go back to open.
+  const repaired = await Promise.resolve(d.store.repairInstallments?.() ?? 0).catch(() => 0);
+  if (repaired) (out as Record<string, number>).repaired = repaired;
   await d.store.cleanupRateLimits().catch(() => {});
   d.log('info', 'reconcile.done', out);
   return out;

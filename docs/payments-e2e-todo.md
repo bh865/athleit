@@ -87,3 +87,20 @@ Stripe **test mode** only. Watch the function logs (`stripe-webhook`, `create-pa
 ## Pay views by capability
 
 `apps/web/e2e/pay-views.spec.ts` (needs `E2E_SUPABASE_SERVICE_ROLE_KEY`, no Stripe account) covers parent-only, staff-only and staff-plus-parent with the team as the last-used place. Unit coverage: `packages/core/src/pay-views.test.ts`. Not yet run against the hosted project.
+
+## Installment plans (test mode)
+
+Run with a team whose event offers 3 payments. Advance the clock by calling `charge-installments` with `{ "now": "<ISO time after the due date>" }`.
+
+- [ ] Choose "3 payments" with a test card and autopay on: installment 1 is charged, the request becomes Partly paid, one receipt `RCP-…` says "installment 1 of 3"
+- [ ] Advance past installment 2: it is charged off-session on the connected account, a receipt arrives, installment 3 stays scheduled
+- [ ] `4000 0000 0000 9995` as the saved card: the charge fails, the family gets "pay now", the retry is set 3 days out (then 5 more), and after the third failure staff are told; the request is never cancelled
+- [ ] `4000 0025 0000 3155` as the saved card: authentication required is treated as a failed attempt, the family can complete it by paying by hand
+- [ ] Autopay off: no automatic charge, a due-soon notice 3 days ahead, an overdue notice after the date
+- [ ] Pay the remaining balance in one checkout: one charge, one receipt, cost equals paying in full
+- [ ] Partial refund larger than the last installment: taken from the latest paid installment first, then the one before; the webhook finalizes both
+- [ ] Replay the same webhook events: no duplicate receipts, refunds or state changes
+- [ ] Open a dispute on installment 1 (`4000 0000 0000 0259`): refunds of that payment are blocked, autopay for the household pauses, staff are told, the plan continues to exist
+- [ ] Cancel the event: open installments are cancelled, paid ones stay
+- [ ] A registration with a plan: installment 1 lifts the hold, declining cancels the rest
+- [ ] Account deletion is refused while a plan has installments to pay

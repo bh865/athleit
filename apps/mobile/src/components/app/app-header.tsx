@@ -2,7 +2,8 @@ import { componentTokens, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
-import { Icon, Logo } from '@/components/ui';
+import { Avatar, Icon, Logo } from '@/components/ui';
+import { useApp } from '@/lib/app-provider';
 
 import { ContextSwitcher } from './context-switcher';
 
@@ -12,6 +13,7 @@ import { ContextSwitcher } from './context-switcher';
  */
 export function AppHeader() {
   const router = useRouter();
+  const { displayName, email, avatarUrl } = useApp();
   return (
     <View
       style={{
@@ -25,19 +27,35 @@ export function AppHeader() {
         <Logo variant="mark" size={32} />
         <ContextSwitcher />
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Alerts"
-        onPress={() => router.push('/notifications' as never)}
-        style={{
-          width: componentTokens.minTarget,
-          height: componentTokens.minTarget,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon name="bell" size="lg" />
-      </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Alerts"
+          onPress={() => router.push('/notifications' as never)}
+          style={{
+            width: componentTokens.minTarget,
+            height: componentTokens.minTarget,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name="bell" size="lg" />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Account"
+          testID="header-account"
+          onPress={() => router.push('/account' as never)}
+          style={{
+            width: componentTokens.minTarget,
+            height: componentTokens.minTarget,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Avatar name={displayName ?? email ?? 'Account'} src={avatarUrl} size="sm" />
+        </Pressable>
+      </View>
     </View>
   );
 }

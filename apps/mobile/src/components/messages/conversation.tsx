@@ -205,6 +205,8 @@ export function Conversation({ threadId }: { threadId: string }) {
           </View>
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
             ref={list}
             data={inverted}
             inverted

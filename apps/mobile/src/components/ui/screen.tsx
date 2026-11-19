@@ -17,6 +17,8 @@ export function Screen({
     <Backdrop>
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[{ padding: space[4], gap: space[6], flexGrow: 1 }, contentStyle]}
         >

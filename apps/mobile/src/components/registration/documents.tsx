@@ -100,6 +100,7 @@ export function DocumentsSection({ owner, staff = false }: { owner: Owner; staff
         returnKeyType="search"
       />
       <ScrollView
+        showsVerticalScrollIndicator={false}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: space[2] }}
