@@ -1,4 +1,4 @@
-import { ageOn, can, canHaveOwnLogin, friendlyError } from '@athleit/core';
+import { can, friendlyError } from '@athleit/core';
 import { decidePlayerLoginClaim, getPlayerLoginClaims, listChildren } from '@athleit/db/api';
 import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
@@ -7,9 +7,11 @@ import { View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
 import { InvitePanel } from '@/components/app/invite-panel';
-import { Badge, FormMessage, H1, H2, ListItem, LoadState, Notice } from '@/components/app/kit';
-import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Button, Card, ListGroup, Text } from '@/components/ui';
+import { FormMessage, H1, H2, LoadState } from '@/components/app/kit';
+import { ChildCard } from '@/components/family/child-card';
+import { GuardiansSection } from '@/components/family/guardians-section';
+import { JoinFamilySheet } from '@/components/family/join-family-sheet';
+import { Button, Card, EmptyState, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
@@ -21,6 +23,7 @@ export default function FamilyScreen() {
   const children = useLoad(() => listChildren(supabase), []);
   const claims = useLoad(() => getPlayerLoginClaims(supabase), []);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   async function decide(id: string, approve: boolean) {
     setClaimError(null);
@@ -30,55 +33,61 @@ export default function FamilyScreen() {
     children.reload();
   }
 
+  if (!family) {
+    return (
+      <AppScreen>
+        <H1>Family</H1>
+        <View testID="no-family">
+          <EmptyState
+            icon="house-line"
+            title="Set up your family"
+            body="Add your children, or join a family a guardian has already set up."
+            action={
+              <View style={{ gap: space[2], alignSelf: 'stretch' }}>
+                <Button title="Add a child" onPress={() => router.push('/family/children/new')} />
+                <Button
+                  title="Join a family with a code"
+                  variant="secondary"
+                  onPress={() => setJoinOpen(true)}
+                  testID="join-family"
+                />
+              </View>
+            }
+          />
+        </View>
+        <JoinFamilySheet open={joinOpen} onClose={() => setJoinOpen(false)} />
+      </AppScreen>
+    );
+  }
+
+  const kids = children.data ?? [];
   return (
     <AppScreen>
-      <NextUpCard />
-      <H1>{family?.title ?? 'Your family'}</H1>
-      <Notice>
-        Children under 13 never have their own login. A parent or guardian manages everything for
-        them.
-      </Notice>
+      <H1>{family.title}</H1>
+      <Text muted>Children and guardians</Text>
 
       <View style={{ gap: space[3] }}>
         <H2>Children</H2>
         <LoadState
           loading={children.loading}
           error={children.error}
-          empty={children.data?.length === 0}
-          emptyText="You haven’t added a child yet. You don’t need to join a team first."
+          empty={kids.length === 0}
+          emptyText="Add your first child. You don’t need to join a team first."
           onRetry={children.reload}
         >
-          <ListGroup testID="children-list">
-            {children.data?.map((c) => {
-              const teams = c.team_players.filter((tp) => tp.teams);
-              return (
-                <ListItem
-                  key={c.id}
-                  avatarName={`${c.first_name} ${c.last_name}`}
-                  title={`${c.first_name} ${c.last_name}`}
-                  subtitle={`${ageOn(c.date_of_birth)} years old${
-                    teams.length
-                      ? ` · ${teams.map((tp) => tp.teams?.name).join(', ')}`
-                      : ' · Not on a team yet'
-                  }`}
-                  right={
-                    c.profile_id ? (
-                      <Badge tone="success">Has login</Badge>
-                    ) : canHaveOwnLogin(c.date_of_birth) ? null : (
-                      <Badge>No login (under 13)</Badge>
-                    )
-                  }
-                  onPress={() => router.push(`/family/children/${c.id}`)}
-                />
-              );
-            })}
-          </ListGroup>
+          <View style={{ gap: space[3] }} testID="children-list">
+            {kids.map((c) => (
+              <ChildCard key={c.id} child={c} />
+            ))}
+          </View>
         </LoadState>
         <Button
           title="Add a child"
-          variant="secondary"
+          icon="plus"
+          variant={kids.length === 0 ? 'primary' : 'secondary'}
           onPress={() => router.push('/family/children/new')}
         />
+        <Text muted>Children under 13 never have their own login.</Text>
       </View>
 
       {can(family, 'family.claimReview') && (claims.data?.length ?? 0) > 0 && (
@@ -104,19 +113,33 @@ export default function FamilyScreen() {
         </View>
       )}
 
-      {family && (
+      <GuardiansSection householdId={family.id} />
+
+      {can(family, 'family.manage') && (
         <Card style={{ gap: space[3] }}>
           <H2>Invite another guardian</H2>
           <Text muted>
-            A guardian can see and manage all of your children. Send the link only to someone you
-            trust.
+            A guardian can see and manage every child. Only invite someone you trust.
           </Text>
           <InvitePanel
             target={{ householdId: family.id }}
             roles={[{ value: 'guardian', label: 'Guardian' }]}
+            childNames={kids.map((k) => k.first_name)}
           />
         </Card>
       )}
+
+      <Card style={{ gap: space[3] }} testID="have-family-code">
+        <H2>Have a family code?</H2>
+        <Text muted>Join a family a guardian has already set up.</Text>
+        <Button
+          title="Join a family"
+          variant="secondary"
+          onPress={() => setJoinOpen(true)}
+          testID="join-family"
+        />
+      </Card>
+      <JoinFamilySheet open={joinOpen} onClose={() => setJoinOpen(false)} />
     </AppScreen>
   );
 }
