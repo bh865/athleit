@@ -111,6 +111,18 @@ export const requestToJoinSchema = z
   });
 export type RequestToJoinInput = z.infer<typeof requestToJoinSchema>;
 
+export const householdJoinCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{10}$/, 'Family codes are 10 letters and numbers');
+
+export const requestToJoinHouseholdSchema = z.object({
+  code: householdJoinCodeSchema,
+  message: z.string().trim().max(500, 'Use at most 500 characters').nullish(),
+});
+export type RequestToJoinHouseholdInput = z.infer<typeof requestToJoinHouseholdSchema>;
+
 export const decideRequestSchema = z.object({ requestId: z.uuid(), approve: z.boolean() });
 export type DecideRequestInput = z.infer<typeof decideRequestSchema>;
 

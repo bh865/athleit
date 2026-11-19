@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       api_rate_limits: {
@@ -719,6 +744,61 @@ export type Database = {
           },
         ]
       }
+      household_join_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          household_id: string
+          id: string
+          message: string | null
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id: string
+          id?: string
+          message?: string | null
+          requester_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id?: string
+          id?: string
+          message?: string | null
+          requester_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_join_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_join_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_join_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
@@ -759,18 +839,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          join_code: string
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          join_code?: string
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          join_code?: string
           name?: string
           updated_at?: string
         }
@@ -1698,6 +1781,7 @@ export type Database = {
         Row: {
           amount_cents: number
           attempt_count: number
+          card_checked_at: string | null
           card_expiry_warned_at: string | null
           created_at: string
           due_at: string
@@ -1719,6 +1803,7 @@ export type Database = {
         Insert: {
           amount_cents: number
           attempt_count?: number
+          card_checked_at?: string | null
           card_expiry_warned_at?: string | null
           created_at?: string
           due_at: string
@@ -1740,6 +1825,7 @@ export type Database = {
         Update: {
           amount_cents?: number
           attempt_count?: number
+          card_checked_at?: string | null
           card_expiry_warned_at?: string | null
           created_at?: string
           due_at?: string
@@ -3696,6 +3782,10 @@ export type Database = {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
       }
+      decide_household_join_request: {
+        Args: { p_approve: boolean; p_request_id: string }
+        Returns: undefined
+      }
       decide_join_request: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
@@ -3863,6 +3953,25 @@ export type Database = {
           removed_at: string
           removed_by: string
           sender_profile_id: string
+        }[]
+      }
+      get_household_guardians: {
+        Args: { p_household_id: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          is_you: boolean
+          profile_id: string
+          relationship: string
+        }[]
+      }
+      get_household_join_requests: {
+        Args: { p_household_id: string }
+        Returns: {
+          created_at: string
+          message: string
+          request_id: string
+          requester_name: string
         }[]
       }
       get_join_requests: {
@@ -4428,6 +4537,13 @@ export type Database = {
         }
         Returns: string
       }
+      request_to_join_household: {
+        Args: { p_code: string; p_message?: string }
+        Returns: {
+          outcome: string
+          request_id: string
+        }[]
+      }
       resolve_calendar_feed_token: {
         Args: { p_token: string }
         Returns: string
@@ -4456,6 +4572,10 @@ export type Database = {
         Returns: undefined
       }
       rotate_calendar_feed_token: { Args: never; Returns: string }
+      rotate_household_join_code: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
       rotate_team_join_code: { Args: { p_team_id: string }; Returns: string }
       save_form_draft: {
         Args: { p_form_id: string; p_name?: string; p_schema: Json }
@@ -4671,6 +4791,10 @@ export type Database = {
           p_type: string
         }
         Returns: string
+      }
+      svc_mark_card_checked: {
+        Args: { p_installment_id: string }
+        Returns: undefined
       }
       svc_payment_status: {
         Args: { p_payment_id?: string; p_pi: string; p_status: string }
@@ -5109,6 +5233,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       club_role: ["admin", "manager"],

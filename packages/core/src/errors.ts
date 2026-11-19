@@ -11,6 +11,8 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/invite_revoked/, 'This invite was cancelled. Ask for a new one.'],
   [/invite_exhausted/, 'This invite has already been used.'],
   [/already_member/, 'You are already a member.'],
+  [/too_many_attempts/, 'Too many attempts. Try again in a few minutes.'],
+  [/invalid_code/, 'That code is invalid or has been replaced. Ask for the current one.'],
   [/team_not_found/, 'No team matches that code.'],
   [/club_not_found/, 'No club matches that.'],
   [/already_affiliated/, 'This team already belongs to a club. Unlink it first.'],

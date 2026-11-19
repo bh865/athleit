@@ -383,6 +383,42 @@ export const getJoinRequests = (client: Client, teamId: string) =>
 export const decideJoinRequest = (client: Client, requestId: string, approve: boolean) =>
   runVoid(client.rpc('decide_join_request', { p_request_id: requestId, p_approve: approve }));
 
+// Family code and guardians -----------------------------------------------------------------
+export const getHouseholdJoinCode = (client: Client, householdId: string) =>
+  run(client.from('households').select('join_code').eq('id', householdId).single());
+
+export const rotateHouseholdJoinCode = (client: Client, householdId: string) =>
+  run(client.rpc('rotate_household_join_code', { p_household_id: householdId }));
+
+/** Outcomes other than 'sent' are returned (not raised) so the attempt still counts toward the limit. */
+export const requestToJoinHousehold = async (
+  client: Client,
+  input: { code: string; message?: string | null | undefined },
+) => {
+  const res = await run(
+    client.rpc('request_to_join_household', {
+      p_code: input.code,
+      ...(input.message ? { p_message: input.message } : {}),
+    }),
+  );
+  if (res.error) return res;
+  const row = res.data[0];
+  if (!row) return fail({ message: 'No data returned' });
+  if (row.outcome !== 'sent') return fail({ message: row.outcome, code: 'P0001' });
+  return ok(row.request_id);
+};
+
+export const getHouseholdJoinRequests = (client: Client, householdId: string) =>
+  run(client.rpc('get_household_join_requests', { p_household_id: householdId }), []);
+
+export const decideHouseholdJoinRequest = (client: Client, requestId: string, approve: boolean) =>
+  runVoid(
+    client.rpc('decide_household_join_request', { p_request_id: requestId, p_approve: approve }),
+  );
+
+export const getHouseholdGuardians = (client: Client, householdId: string) =>
+  run(client.rpc('get_household_guardians', { p_household_id: householdId }), []);
+
 // Player logins ----------------------------------------------------------------------------
 export const claimPlayerLogin = (client: Client, playerId: string) =>
   run(client.rpc('claim_player_login', { p_player_id: playerId }));

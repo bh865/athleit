@@ -34,3 +34,4 @@ export * from './waivers';
 export * from './parent-pay';
 export * from './account';
 export * from './payment-plans';
+export * from './family';
