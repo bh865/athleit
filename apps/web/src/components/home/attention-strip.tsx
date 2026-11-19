@@ -15,16 +15,7 @@ import Link from 'next/link';
 import { useId, useState } from 'react';
 
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
-import {
-  Button,
-  ButtonLink,
-  Card,
-  ErrorState,
-  Icon,
-  LoadingSkeleton,
-  Sheet,
-  Text,
-} from '@/components/ui';
+import { Button, ButtonLink, Card, ErrorState, Icon, LoadingSkeleton } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import styles from './attention.module.css';
@@ -130,43 +121,55 @@ function Chip({ item, now, zone }: { item: AttentionItem; now: Date; zone: strin
   );
 }
 
-function Row({
+/** One condensed card in the swiper: icon and time chip, a two-line title, place and detail, then the action. */
+function Slide({
   item,
   now,
   zone,
   lead,
+  index,
+  total,
   onResolved,
 }: {
   item: AttentionItem;
   now: Date;
   zone: string;
-  lead?: boolean;
+  lead: boolean;
+  index: number;
+  total: number;
   onResolved: (key: string) => void;
 }) {
+  const meta = [item.placeTag, item.detail].filter(Boolean).join(' · ');
   return (
-    <div className={styles.row} data-testid="attention-row">
-      <span className={styles.icon} aria-hidden>
-        <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} size="md" />
-      </span>
-      <div className={styles.text}>
-        {lead ? <span className={styles.mostUrgent}>Most urgent</span> : null}
+    <li
+      className={styles.slide}
+      data-testid="attention-row"
+      role="group"
+      aria-roledescription="slide"
+      aria-label={`${index + 1} of ${total}`}
+    >
+      <Card className={styles.slideCard}>
+        <div className={styles.slideHead}>
+          <span className={styles.icon} aria-hidden>
+            <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} size="md" />
+          </span>
+          <Chip item={item} now={now} zone={zone} />
+        </div>
         <Link href={item.href} className={styles.titleLink}>
           {item.label}
         </Link>
-        {item.placeTag ? <span className={styles.tag}>{item.placeTag}</span> : null}
-        {item.detail ? <span className={styles.detail}>{item.detail}</span> : null}
-        <Chip item={item} now={now} zone={zone} />
-      </div>
-      <div className={styles.actions}>
-        <Actions item={item} primary={Boolean(lead)} onResolved={onResolved} />
-      </div>
-    </div>
+        {meta ? <span className={styles.detail}>{meta}</span> : null}
+        <div className={styles.actions}>
+          <Actions item={item} primary={lead} onResolved={onResolved} />
+        </div>
+      </Card>
+    </li>
   );
 }
 
 /**
  * "Needs your attention", Direction B, tightened: every item is the same size (the most urgent just carries the lime action and a label);
- * title, amount and date chip share one row. At most 4 rows, then "+N more" in a Sheet). One merged list for dual roles, each row with a place tag. States: loading
+ * one condensed card per item in a swiper that bleeds to the screen edge. One merged list for dual roles, each card with a place tag. States: loading
  * skeleton, error with retry, and a quiet "all caught up" line. Order: title, chip, actions left to right, "+N more".
  */
 export function AttentionStrip({
@@ -187,7 +190,6 @@ export function AttentionStrip({
 }) {
   const zone = useViewerZone() ?? 'UTC';
   const headId = useId();
-  const [open, setOpen] = useState(false);
   // Hide a settled item at once; the refetch removes it for good.
   const [settled, setSettled] = useState<{ keys: ReadonlySet<string>; of: AttentionResult }>({
     keys: new Set(),
@@ -201,7 +203,8 @@ export function AttentionStrip({
   };
   const shown = attention.shown.filter((i) => !done.has(i.key));
   const more = attention.more.filter((i) => !done.has(i.key));
-  const total = shown.length + more.length;
+  const all = [...shown, ...more];
+  const total = all.length;
 
   return (
     <section
@@ -234,20 +237,25 @@ export function AttentionStrip({
         </p>
       ) : (
         <>
-          <ul className={styles.cards}>
-            {shown.map((i, n) => (
-              <li key={i.key}>
-                <Card className={styles.item}>
-                  <Row item={i} now={now} zone={zone} lead={n === 0} onResolved={settle} />
-                </Card>
-              </li>
+          <ul
+            className={styles.swiper}
+            aria-label="Needs your attention"
+            aria-roledescription="carousel"
+            tabIndex={0}
+          >
+            {all.map((i, n) => (
+              <Slide
+                key={i.key}
+                item={i}
+                now={now}
+                zone={zone}
+                lead={n === 0}
+                index={n}
+                total={all.length}
+                onResolved={settle}
+              />
             ))}
           </ul>
-          {more.length > 0 ? (
-            <Button variant="ghost" onClick={() => setOpen(true)}>
-              +{more.length} more
-            </Button>
-          ) : null}
           {error ? (
             <p role="status" className={styles.partial}>
               Some items didn’t load.{' '}
@@ -258,18 +266,6 @@ export function AttentionStrip({
           ) : null}
         </>
       )}
-      <Sheet open={open} onClose={() => setOpen(false)} title="Needs your attention">
-        <Text variant="heading" as="h2">
-          Needs your attention
-        </Text>
-        <ul className={styles.list}>
-          {[...shown, ...more].map((i) => (
-            <li key={i.key}>
-              <Row item={i} now={now} zone={zone} onResolved={settle} />
-            </li>
-          ))}
-        </ul>
-      </Sheet>
     </section>
   );
 }

@@ -12,18 +12,9 @@ import { componentTokens, radius, space } from '@athleit/tokens';
 import type { IconName } from '@athleit/ui-core';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 
-import {
-  Button,
-  Card,
-  ErrorState,
-  Icon,
-  LoadingSkeleton,
-  Sheet,
-  Text,
-  useTheme,
-} from '@/components/ui';
+import { Button, Card, ErrorState, Icon, LoadingSkeleton, Text, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { viewerZone } from '@/lib/viewer-zone';
 
@@ -157,89 +148,83 @@ function Chip({ item, now }: { item: AttentionItem; now: Date }) {
   );
 }
 
-function Row({
+/** One condensed card in the swiper: icon and time chip, a two-line title, place and detail, then the action. */
+function Slide({
   item,
   now,
   lead,
+  width,
+  index,
+  total,
   onResolved,
 }: {
   item: AttentionItem;
   now: Date;
-  lead?: boolean;
+  lead: boolean;
+  width: number;
+  index: number;
+  total: number;
   onResolved: (key: string) => void;
 }) {
   const { theme } = useTheme();
   const c = theme.color;
   const router = useRouter();
   const size = componentTokens.avatar.md;
-  // Rows that settle in place (Going, Approve / Decline) keep their buttons; the rest end in a caret on the same row.
-  const inPlace = item.action?.type === 'rsvp' || item.action?.type === 'decide';
+  const meta = [item.placeTag, item.detail].filter(Boolean).join(' · ');
   return (
-    <View
+    <Card
       testID="attention-row"
-      style={{
-        flexDirection: 'row',
-        flexWrap: inPlace ? 'wrap' : 'nowrap',
-        alignItems: 'center',
-        gap: space[3],
-        paddingVertical: space[2],
-      }}
+      accessibilityLabel={`${index + 1} of ${total}`}
+      style={{ width, padding: space[4], gap: space[2], justifyContent: 'space-between' }}
     >
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: c.surfaceAlt,
-        }}
-      >
-        <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} color={c.ink} />
-      </View>
-      <View style={{ flex: 1, minWidth: inPlace ? 140 : 0, gap: space[1] }}>
+      <View style={{ gap: space[2] }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: space[2],
+          }}
+        >
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: c.surfaceAlt,
+            }}
+          >
+            <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} color={c.ink} />
+          </View>
+          <Chip item={item} now={now} />
+        </View>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={item.detail ? `${item.label}, ${item.detail}` : item.label}
           onPress={() => router.push(item.href as never)}
-          style={{ minHeight: componentTokens.iconButton.size / 2, justifyContent: 'center' }}
         >
-          <View
-            style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space[2] }}
-          >
-            <Text variant="bodyBold">{item.label}</Text>
-            {item.placeTag ? (
-              <View
-                style={{
-                  paddingHorizontal: space[2],
-                  borderRadius: radius.pill,
-                  backgroundColor: c.surfaceAlt,
-                }}
-              >
-                <Text variant="label" muted>
-                  {item.placeTag}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          {item.detail ? (
-            <Text variant="caption" muted>
-              {item.detail}
-            </Text>
-          ) : null}
+          <Text variant="bodyBold" numberOfLines={2}>
+            {item.label}
+          </Text>
         </Pressable>
-        <Chip item={item} now={now} />
+        {meta ? (
+          <Text variant="caption" muted numberOfLines={1}>
+            {meta}
+          </Text>
+        ) : null}
       </View>
-      <Actions item={item} primary={Boolean(lead)} onResolved={onResolved} />
-    </View>
+      <Actions item={item} primary={lead} onResolved={onResolved} />
+    </Card>
   );
 }
 
 /**
- * "Needs your attention", compact triage list: every item and its action visible without swiping, the lead row
- * carrying the lime action. At most 4 rows then "+N more" in a Sheet. One merged list for dual roles (place tags).
+ * "Needs your attention", a swiper of condensed cards that bleeds to the screen edges, the first card
+ * carrying the lime action. One merged list for dual roles (place tags).
  * States: loading skeleton, error with retry, and a quiet "all caught up" line.
  */
 export function AttentionStrip({
@@ -259,7 +244,7 @@ export function AttentionStrip({
 }) {
   const { theme } = useTheme();
   const c = theme.color;
-  const [open, setOpen] = useState(false);
+  const { width } = useWindowDimensions();
   const [settled, setSettled] = useState<{ keys: ReadonlySet<string>; of: AttentionResult }>({
     keys: new Set(),
     of: attention,
@@ -272,7 +257,10 @@ export function AttentionStrip({
   };
   const shown = attention.shown.filter((i) => !done.has(i.key));
   const more = attention.more.filter((i) => !done.has(i.key));
-  const total = shown.length + more.length;
+  const all = [...shown, ...more];
+  const total = all.length;
+  // About 80% of the screen so the next card peeks in, capped for tablets.
+  const cardWidth = Math.min(width * 0.8, 340);
 
   const head = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
@@ -322,18 +310,32 @@ export function AttentionStrip({
           </Text>
         </View>
       ) : (
-        <Card style={{ gap: space[1] }}>
-          {shown.map((i, n) => (
-            <View
-              key={i.key}
-              style={n > 0 ? { borderTopWidth: 1, borderTopColor: c.line } : undefined}
-            >
-              <Row item={i} now={now} lead={n === 0} onResolved={settle} />
-            </View>
-          ))}
-          {more.length > 0 ? (
-            <Button title={`+${more.length} more`} variant="ghost" onPress={() => setOpen(true)} />
-          ) : null}
+        <>
+          {/* Bleeds to both screen edges: negative margin out of the screen padding, added back as content padding. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToInterval={cardWidth + space[3]}
+            snapToAlignment="start"
+            accessibilityRole="list"
+            accessibilityLabel="Needs your attention"
+            style={{ marginHorizontal: -space[4] }}
+            contentContainerStyle={{ paddingHorizontal: space[4], gap: space[3] }}
+          >
+            {all.map((i, n) => (
+              <Slide
+                key={i.key}
+                item={i}
+                now={now}
+                lead={n === 0}
+                width={cardWidth}
+                index={n}
+                total={all.length}
+                onResolved={settle}
+              />
+            ))}
+          </ScrollView>
           {error ? (
             <Text variant="caption" muted>
               Some items didn’t load.{' '}
@@ -342,15 +344,8 @@ export function AttentionStrip({
               </Text>
             </Text>
           ) : null}
-        </Card>
+        </>
       )}
-      <Sheet open={open} onClose={() => setOpen(false)} title="Needs your attention">
-        <View style={{ gap: space[1] }}>
-          {[...shown, ...more].map((i) => (
-            <Row key={i.key} item={i} now={now} onResolved={settle} />
-          ))}
-        </View>
-      </Sheet>
     </View>
   );
 }
