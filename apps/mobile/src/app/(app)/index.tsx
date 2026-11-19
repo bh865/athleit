@@ -14,11 +14,12 @@ import { H1 } from '@/components/app/kit';
 import { AttentionStrip } from '@/components/home/attention-strip';
 import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile } from '@/components/home/tiles';
 import {
-  CollectionTile,
   DocumentsTile,
   DueTile,
   FamilyTile,
   GroupHead,
+  OutstandingTile,
+  RosterTile,
   SetupTile,
 } from '@/components/home/more-tiles';
 import { useHomeData } from '@/components/home/use-home-data';
@@ -131,7 +132,10 @@ export default function HomeScreen() {
               {staffReg && tiles.has('registrations') ? (
                 <RegistrationsTile teamId={team?.id ?? null} staff />
               ) : null}
-              {owner && caps.has('payments.view') ? <CollectionTile owner={owner} /> : null}
+              {owner && caps.has('payments.view') ? <OutstandingTile owner={owner} /> : null}
+              {team && caps.has('roster.viewLimited') ? (
+                <RosterTile teamId={team.id} staff={caps.has('roster.viewFull')} />
+              ) : null}
               {tiles.has('setup') && team ? <SetupTile teamId={team.id} /> : null}
             </>
           ) : null}
@@ -147,6 +151,9 @@ export default function HomeScreen() {
               ) : null}
               {tiles.has('family') ? <FamilyTile /> : null}
             </>
+          ) : null}
+          {team && caps.has('roster.viewLimited') && !(team.isStaff || owner) ? (
+            <RosterTile teamId={team.id} staff={false} />
           ) : null}
           {tiles.has('documents') && team ? <DocumentsTile teamId={team.id} /> : null}
         </>

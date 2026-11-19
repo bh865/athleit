@@ -1,5 +1,5 @@
 import { formatCents, sumCents } from '@athleit/core';
-import { getRoster, listChildren, type Result } from '@athleit/db/api';
+import { getJoinRequests, getRoster, listChildren, type Result } from '@athleit/db/api';
 import {
   getCollectionSummary,
   getHouseholdPayments,
@@ -8,17 +8,17 @@ import {
 } from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
 import { getNextUp } from '@athleit/db/scheduling';
-import { space } from '@athleit/tokens';
+import { radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { ListItem } from '@/components/app/kit';
 import { Amount, dueText } from '@/components/payments/money';
-import { Badge, Button, ListGroup, Text } from '@/components/ui';
+import { Avatar, Badge, Button, ListGroup, Text, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
-import { Tile } from './tiles';
+import { Stat, Tile } from './tiles';
 
 /** Pinned or recent documents; read-only here. */
 export function DocumentsTile({ teamId }: { teamId: string }) {
@@ -113,9 +113,10 @@ export function DueTile() {
   );
 }
 
-/** Staff: outstanding across open requests, totals only. */
-export function CollectionTile({ owner }: { owner: Owner }) {
+/** Staff: what is still owed across open requests, styled like Amount due. Hidden when nothing is open. */
+export function OutstandingTile({ owner }: { owner: Owner }) {
   const router = useRouter();
+  const { theme } = useTheme();
   const res = useLoad(async (): Promise<
     Result<{ outstanding: number; collected: number; expected: number; count: number }>
   > => {
@@ -135,24 +136,93 @@ export function CollectionTile({ owner }: { owner: Owner }) {
     };
   }, [owner.teamId, owner.clubId]);
   const d = res.data;
+  const pct = d && d.expected > 0 ? Math.min(100, Math.floor((d.collected * 100) / d.expected)) : 0;
   return (
     <Tile
-      id="home-collection"
-      title="Collection"
+      id="home-payments"
+      title="Outstanding payments"
       res={res}
       hasData={d !== null}
       empty={!d || d.count === 0}
     >
       {d ? (
-        <ListGroup>
-          <ListItem
-            title="Outstanding"
-            subtitle={`${d.count} open request${d.count === 1 ? '' : 's'}`}
-            right={<Amount cents={d.outstanding} variant="monoLg" label="Outstanding" />}
-            onPress={() => router.push('/pay' as never)}
-          />
-        </ListGroup>
+        <View style={{ gap: space[2], alignItems: 'flex-start' }}>
+          <Badge>{`${d.count} open request${d.count === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={d.outstanding} variant="monoXl" label="Outstanding" />
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Collected"
+            accessibilityValue={{ min: 0, max: 100, now: pct }}
+            style={{
+              alignSelf: 'stretch',
+              height: space[2],
+              borderRadius: radius.pill,
+              overflow: 'hidden',
+              backgroundColor: theme.color.surfaceAlt,
+            }}
+          >
+            <View
+              style={{
+                width: `${pct}%`,
+                height: '100%',
+                borderRadius: radius.pill,
+                backgroundColor: theme.color.accent,
+              }}
+            />
+          </View>
+          <Text variant="caption" muted>
+            {pct}% collected
+          </Text>
+          <View style={{ alignSelf: 'stretch' }}>
+            <Button
+              title="View payments"
+              variant="secondary"
+              onPress={() => router.push('/pay' as never)}
+            />
+          </View>
+        </View>
       ) : null}
+    </Tile>
+  );
+}
+
+/** Players, and for staff active and pending counts, with an avatar stack. */
+export function RosterTile({ teamId, staff }: { teamId: string; staff: boolean }) {
+  const router = useRouter();
+  const roster = useLoad(() => getRoster(supabase, teamId), [teamId]);
+  const pending = useLoad(
+    () =>
+      staff
+        ? getJoinRequests(supabase, teamId)
+        : Promise.resolve({ data: [] as { status: string }[], error: null }),
+    [teamId, staff],
+  );
+  const rows = (roster.data ?? []) as { first_name: string; status?: string }[];
+  const active = rows.filter((r) => r.status === undefined || r.status === 'active');
+  const waiting = (pending.data ?? []).filter((r) => r.status === 'pending').length;
+  return (
+    <Tile id="home-roster" title="Roster" res={roster} hasData={roster.data !== null} empty={false}>
+      <View style={{ flexDirection: 'row', gap: space[6] }}>
+        <Stat v={rows.length} l="Players" />
+        {staff ? (
+          <>
+            <Stat v={active.length} l="Active" />
+            <Stat v={waiting} l="Pending" />
+          </>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row' }} accessibilityElementsHidden>
+        {rows.slice(0, 5).map((r, i) => (
+          <View key={`${r.first_name}${i}`} style={{ marginLeft: i === 0 ? 0 : -space[2] }}>
+            <Avatar name={r.first_name} size="sm" />
+          </View>
+        ))}
+      </View>
+      <Button
+        title="Open roster"
+        variant="secondary"
+        onPress={() => router.push('/roster' as never)}
+      />
     </Tile>
   );
 }

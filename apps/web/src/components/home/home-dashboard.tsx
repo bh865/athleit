@@ -12,12 +12,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
-import { StaffPaymentsCard } from '@/components/payments/home-cards';
 import { Avatar, ButtonLink, Card, Icon, PageHeader, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
-import { DueTile, DocumentsTile, FamilyTile, SetupTile } from './more-tiles';
+import { DueTile, DocumentsTile, FamilyTile, OutstandingTile, SetupTile } from './more-tiles';
 import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile } from './tiles';
 import { AttentionStrip } from './attention-strip';
 import styles from './home.module.css';
@@ -151,16 +150,13 @@ export function HomeDashboard() {
             <RegistrationsTile teamId={teamId} staff />
           ) : null}
           {views.staff && caps.has('payments.view') ? (
-            <div className={styles.card} data-testid="home-payments">
-              <StaffPaymentsCard
-                owner={
-                  views.staff.kind === 'team'
-                    ? { teamId: views.staff.id }
-                    : { clubId: views.staff.id }
-                }
-                href="/pay"
-              />
-            </div>
+            <OutstandingTile
+              owner={
+                views.staff.kind === 'team'
+                  ? { teamId: views.staff.id }
+                  : { clubId: views.staff.id }
+              }
+            />
           ) : null}
           {team && caps.has('roster.viewLimited') ? (
             <RosterCard teamId={team.id} staff={caps.has('roster.viewFull')} />

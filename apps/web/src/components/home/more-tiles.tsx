@@ -2,7 +2,12 @@
 
 import { sumCents, teamTabHref } from '@athleit/core';
 import { getRoster, listChildren, type Result } from '@athleit/db/api';
-import { getHouseholdPayments } from '@athleit/db/payments';
+import {
+  getCollectionSummary,
+  getHouseholdPayments,
+  listPaymentEvents,
+  type Owner,
+} from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
 import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
@@ -145,6 +150,63 @@ export function DueTile({ id }: { id: string }) {
             · due {dueText(first.due_at)}
           </Text>
           <ButtonLink href="/pay">Pay {`$${(total / 100).toFixed(2)}`}</ButtonLink>
+        </div>
+      ) : null}
+    </TileShell>
+  );
+}
+
+/** Staff: what is still owed across open requests, styled like Amount due. Hidden when nothing is open. */
+export function OutstandingTile({ owner }: { owner: Owner }) {
+  const res = useLoad(async (): Promise<
+    Result<{ outstanding: number; expected: number; collected: number; count: number }>
+  > => {
+    const c = getClient();
+    const events = await listPaymentEvents(c, owner);
+    if (events.error) return events;
+    const open = events.data.filter((e) => e.status === 'published').slice(0, 10);
+    const sums = await Promise.all(open.map((e) => getCollectionSummary(c, e.id)));
+    const rows = sums.flatMap((s) => (s.data ? [s.data] : []));
+    return {
+      data: {
+        outstanding: sumCents(rows.map((r) => Number(r.outstanding_cents))),
+        expected: sumCents(rows.map((r) => Number(r.expected_cents))),
+        collected: sumCents(rows.map((r) => Number(r.collected_cents))),
+        count: open.length,
+      },
+      error: null,
+    };
+  }, [owner.teamId, owner.clubId]);
+  const d = res.data;
+  const pct = d && d.expected > 0 ? Math.min(100, Math.floor((d.collected * 100) / d.expected)) : 0;
+  return (
+    <TileShell
+      id="home-payments"
+      title="Outstanding payments"
+      res={res}
+      empty={!d || d.count === 0}
+      hasData={d !== null}
+    >
+      {d ? (
+        <div className={styles.amount} data-testid="payments-card">
+          <Badge tone="neutral">{`${d.count} open request${d.count === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={d.outstanding} variant="monoLg" label="Outstanding" />
+          <div
+            className={styles.bar}
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Collected"
+          >
+            <span className={styles.barFill} style={{ width: `${pct}%` }} />
+          </div>
+          <Text variant="caption" muted>
+            {pct}% collected
+          </Text>
+          <ButtonLink href="/pay" variant="secondary">
+            View payments
+          </ButtonLink>
         </div>
       ) : null}
     </TileShell>
