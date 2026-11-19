@@ -6,7 +6,10 @@ import {
   SPORTS,
   adaptFormSchema,
   dollarsToCents,
+  draftPlanTerms,
   draftToEventData,
+  PLAN_CADENCE_LABEL,
+  PLAN_CADENCES,
   emptyDraft,
   eventDataValid,
   eventToDraft,
@@ -29,6 +32,7 @@ import {
   updateRegistrationEvent,
   type Owner,
 } from '@athleit/db/registration';
+import { setRegistrationEventPlan } from '@athleit/db/payments';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
@@ -277,6 +281,16 @@ function Builder({
       // The URL now names the draft, without remounting the builder.
       window.history.replaceState(null, '', `/manage/registration/${id}/edit`);
     }
+    // Plan terms have their own function; once registrations exist they are locked and an unchanged value is accepted.
+    const plan = draftPlanTerms(d);
+    const planSaved = await setRegistrationEventPlan(
+      client,
+      id,
+      plan.options,
+      plan.cadence,
+      plan.requireFullBalance,
+    );
+    if (planSaved.error && !quiet) toast(friendlyError(planSaved.error), 'danger');
     setDirty(false);
     setSave('saved');
     return id;
@@ -693,6 +707,56 @@ function Pricing({
             error={err('paymentTiming')}
             onChange={(e) => set('paymentTiming', e.target.value as RegDraft['paymentTiming'])}
           />
+        ) : null}
+        {paid ? (
+          <fieldset
+            className={styles.stack}
+            style={{ border: 0, padding: 0 }}
+            data-testid="plan-options"
+          >
+            <legend>How families can pay</legend>
+            <p className={styles.muted}>
+              Families choose one at checkout; plans that would not finish before the payment
+              deadline are not offered. These settings lock once the first registration arrives.
+            </p>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <label key={n} className={styles.row}>
+                <input
+                  type="checkbox"
+                  checked={draft.planOptions.includes(n)}
+                  onChange={() => {
+                    const next = draft.planOptions.includes(n)
+                      ? draft.planOptions.filter((x) => x !== n)
+                      : [...draft.planOptions, n];
+                    if (next.length > 0) set('planOptions', next);
+                  }}
+                />
+                {n === 1 ? 'Pay in full' : `${n} payments`}
+              </label>
+            ))}
+            {draft.planOptions.some((n) => n > 1) ? (
+              <>
+                <Select
+                  label="Payments are spaced"
+                  value={draft.planCadence}
+                  options={PLAN_CADENCES.map((c) => ({ value: c, label: PLAN_CADENCE_LABEL[c] }))}
+                  onChange={(e) => set('planCadence', e.target.value as RegDraft['planCadence'])}
+                />
+                <Select
+                  label="Require the full balance"
+                  value={draft.requireFullBalance}
+                  error={err('requireFullBalance')}
+                  options={[
+                    { value: 'none', label: 'No requirement' },
+                    { value: 'event_start', label: 'Before the event starts' },
+                  ]}
+                  onChange={(e) =>
+                    set('requireFullBalance', e.target.value as RegDraft['requireFullBalance'])
+                  }
+                />
+              </>
+            ) : null}
+          </fieldset>
         ) : null}
       </div>
       <Heading title="Capacity" />

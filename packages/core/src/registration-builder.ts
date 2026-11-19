@@ -34,6 +34,11 @@ export interface RegDraft {
   /** Dollars as typed, e.g. "120" or "120.00"; empty means free. */
   price: string;
   paymentTiming: 'none' | 'at_submission' | 'after_acceptance';
+  /** Payment plans: the sizes families may choose (1 = pay in full) and how the payments are spaced. */
+  planOptions: number[];
+  planCadence: 'weekly' | 'biweekly' | 'monthly';
+  /** Staff may require the full balance before the event starts (needs a start date). */
+  requireFullBalance: 'none' | 'event_start';
   capacity: string;
   waitlist: boolean;
   autoPromote: boolean;
@@ -62,6 +67,9 @@ export const emptyDraft = (): RegDraft => ({
   ageMax: '',
   price: '',
   paymentTiming: 'none',
+  planOptions: [1],
+  planCadence: 'monthly',
+  requireFullBalance: 'none',
   capacity: '',
   waitlist: true,
   autoPromote: false,
@@ -118,6 +126,9 @@ interface EventRow {
   eligibility: unknown;
   price_cents: number | null;
   payment_timing: string;
+  plan_options?: number[];
+  plan_cadence?: string;
+  require_full_balance?: string;
   capacity: number | null;
   waitlist_enabled: boolean;
   auto_promote_waitlist: boolean;
@@ -147,6 +158,9 @@ export function eventToDraft(e: EventRow, formId = '', waiverIds: string[] = [])
     ageMax: age?.max !== undefined ? String(age.max) : '',
     price: centsToDollars(e.price_cents),
     paymentTiming: (e.payment_timing as RegDraft['paymentTiming']) ?? 'none',
+    planOptions: e.plan_options?.length ? [...e.plan_options] : [1],
+    planCadence: (e.plan_cadence as RegDraft['planCadence']) ?? 'monthly',
+    requireFullBalance: (e.require_full_balance as RegDraft['requireFullBalance']) ?? 'none',
     capacity: e.capacity ? String(e.capacity) : '',
     waitlist: e.waitlist_enabled,
     autoPromote: e.auto_promote_waitlist,
@@ -203,6 +217,24 @@ export function draftToEventData(
   };
 }
 
+/**
+ * Plan terms are saved through their own function (set_registration_event_plan), not update_registration_event, which
+ * whitelists the other columns. A free registration keeps the defaults.
+ */
+export function draftPlanTerms(d: RegDraft): {
+  options: number[];
+  cadence: RegDraft['planCadence'];
+  requireFullBalance: RegDraft['requireFullBalance'];
+} {
+  const cents = dollarsToCents(d.price);
+  const paid = cents !== null && !Number.isNaN(cents) && cents > 0;
+  return {
+    options: paid ? [...new Set(d.planOptions)].sort((a, b) => a - b) : [1],
+    cadence: d.planCadence,
+    requireFullBalance: paid ? d.requireFullBalance : 'none',
+  };
+}
+
 // ------------------------------------------------------------------------------------------------ validation
 export interface RegIssue {
   step: RegStep;
@@ -237,6 +269,13 @@ export function regIssues(d: RegDraft): RegIssue[] {
   else if (cents !== null && cents > 5_000_000) add('pricing', 'price', 'That fee is too high.');
   if (cents && !Number.isNaN(cents) && cents > 0 && d.paymentTiming === 'none')
     add('pricing', 'paymentTiming', 'Choose when to collect payment.');
+  if (d.requireFullBalance === 'event_start' && !d.startsOn)
+    add('pricing', 'requireFullBalance', 'Add the start date first: the balance is due before it.');
+  if (
+    d.planOptions.some((n) => n < 1 || n > 6 || !Number.isInteger(n)) ||
+    d.planOptions.length === 0
+  )
+    add('pricing', 'planOptions', 'Choose at least one way to pay.');
   if (d.capacity.trim() && (intOrNull(d.capacity) ?? 0) < 1)
     add('pricing', 'capacity', 'Use a whole number of players, at least 1.');
 

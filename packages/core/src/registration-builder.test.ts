@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   REG_STEPS,
+  draftPlanTerms,
   centsToDollars,
   dollarsToCents,
   draftToEventData,
@@ -149,5 +150,69 @@ describe('preview', () => {
     });
     expect(p.forms).toBe('Player Info · 16 questions');
     expect(previewFacts(emptyDraft(), 0).title).toBe('Untitled registration');
+  });
+});
+
+describe('payment plan terms in the builder', () => {
+  it('a free registration keeps the defaults whatever was ticked', () => {
+    const d = { ...emptyDraft(), planOptions: [3, 2], requireFullBalance: 'event_start' as const };
+    expect(draftPlanTerms(d)).toEqual({
+      options: [1],
+      cadence: 'monthly',
+      requireFullBalance: 'none',
+    });
+  });
+  it('a paid registration saves sorted, distinct options', () => {
+    const d = {
+      ...emptyDraft(),
+      price: '120',
+      planOptions: [3, 1, 3, 2],
+      planCadence: 'weekly' as const,
+    };
+    expect(draftPlanTerms(d)).toEqual({
+      options: [1, 2, 3],
+      cadence: 'weekly',
+      requireFullBalance: 'none',
+    });
+  });
+  it('requiring the full balance before the event needs a start date', () => {
+    const d = {
+      ...emptyDraft(),
+      price: '120',
+      paymentTiming: 'at_submission' as const,
+      requireFullBalance: 'event_start' as const,
+    };
+    expect(regIssues(d).some((i) => i.field === 'requireFullBalance')).toBe(true);
+    expect(
+      regIssues({ ...d, startsOn: '2027-03-01' }).some((i) => i.field === 'requireFullBalance'),
+    ).toBe(false);
+  });
+  it('the draft round-trips the stored plan terms', () => {
+    const d = eventToDraft({
+      title: 'X',
+      kind: 'season',
+      sport: null,
+      summary: null,
+      location_text: null,
+      target_team_id: null,
+      contact_email: null,
+      visibility: 'link_only',
+      eligibility: null,
+      price_cents: 12000,
+      payment_timing: 'at_submission',
+      plan_options: [1, 4],
+      plan_cadence: 'biweekly',
+      require_full_balance: 'event_start',
+      capacity: null,
+      waitlist_enabled: true,
+      auto_promote_waitlist: false,
+      opens_at: null,
+      closes_at: null,
+      starts_on: '2027-03-01',
+      ends_on: null,
+    } as never);
+    expect(d.planOptions).toEqual([1, 4]);
+    expect(d.planCadence).toBe('biweekly');
+    expect(d.requireFullBalance).toBe('event_start');
   });
 });
