@@ -89,7 +89,7 @@ export function HomeDashboard() {
   const first = displayName?.split(' ')[0];
   const staff = Boolean(team?.isStaff);
   const clubAdmin = contexts.find((c) => c.kind === 'club');
-  const { attention, loading, error, reload, refresh, now } = useHomeData(contexts, active);
+  const { attention, loading, error, reload, refresh, tick, now } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const teamId = team?.id ?? null;
   const staffReg = Boolean(staff && caps.has('registration.view'));
@@ -135,7 +135,7 @@ export function HomeDashboard() {
       />
       {tiles.has('nextUp') || tiles.has('teamRecord') ? (
         <div className={styles.heroRow}>
-          <NextUpHero teamId={teamId} canManage={staff} />
+          <NextUpHero teamId={teamId} canManage={staff} reloadKey={tick} />
           {tiles.has('teamRecord') && teamId ? <RecordTile teamId={teamId} /> : null}
         </div>
       ) : null}

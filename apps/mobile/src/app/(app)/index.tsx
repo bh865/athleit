@@ -54,7 +54,7 @@ const greeting = () => {
  */
 export default function HomeScreen() {
   const { contexts, active, displayName, addActions, status } = useApp();
-  const { attention, loading, error, reload, refresh, now } = useHomeData(contexts, active);
+  const { attention, loading, error, reload, refresh, tick, now } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const team = teamForScreen(contexts, active);
   const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : new Set<string>();
@@ -107,7 +107,11 @@ export default function HomeScreen() {
             now={now}
           />
           {tiles.has('nextUp') ? (
-            <NextUpCard teamId={team?.id ?? null} canManage={Boolean(team?.isStaff)} />
+            <NextUpCard
+              teamId={team?.id ?? null}
+              canManage={Boolean(team?.isStaff)}
+              reloadKey={tick}
+            />
           ) : null}
           {tiles.has('teamRecord') && team ? <RecordTile teamId={team.id} /> : null}
           {team?.isStaff || owner ? (

@@ -64,7 +64,16 @@ const writeSeen = (id: string, rev: number) => {
  * staff. The card follows a state machine in `@athleit/core` (before, live, final, cancelled) and shows an
  * "updated" banner when the event changed since the viewer last saw it.
  */
-export function NextUpHero({ teamId, canManage }: { teamId: string | null; canManage: boolean }) {
+export function NextUpHero({
+  teamId,
+  canManage,
+  reloadKey = 0,
+}: {
+  teamId: string | null;
+  canManage: boolean;
+  /** Bump to refetch, e.g. after an RSVP was settled from the attention row. */
+  reloadKey?: number;
+}) {
   const zone = useViewerZone() ?? 'UTC';
   const now = useNow();
   const res = useLoad(async () => {
@@ -83,7 +92,7 @@ export function NextUpHero({ teamId, canManage }: { teamId: string | null; canMa
       ),
       error: null,
     };
-  }, [teamId, canManage]);
+  }, [teamId, canManage, reloadKey]);
 
   const data = res.data;
   const view = useMemo(() => {

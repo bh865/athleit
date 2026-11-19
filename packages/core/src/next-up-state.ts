@@ -256,6 +256,7 @@ export function buildNextUpViews(
   nextUp: readonly NextUpRowLike[],
   schedule: readonly ScheduleRowLike[],
   canManage: boolean,
+  now: Date = new Date(),
 ): NextUpView[] {
   const out = new Map<string, NextUpView>();
   for (const r of nextUp)
@@ -284,6 +285,9 @@ export function buildNextUpViews(
       };
       continue;
     }
+    // A viewer who is not staff only gets RSVP controls through next_up. An upcoming scheduled event it omitted
+    // (e.g. their child is not on that roster) must not appear; cancelled and finished events are fine.
+    if (!canManage && r.status === 'scheduled' && Date.parse(r.ends_at) > now.getTime()) continue;
     out.set(r.id, {
       event: {
         eventId: r.id,

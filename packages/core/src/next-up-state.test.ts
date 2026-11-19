@@ -191,4 +191,15 @@ describe('buildNextUpViews', () => {
     );
     expect(pick?.eventId).toBe('s1');
   });
+  it('hides an upcoming scheduled event next_up omitted for a non-staff viewer, keeps it for staff', () => {
+    const extra = sched({
+      id: 'x',
+      status: 'scheduled',
+      starts_at: '2026-11-25T15:00:00Z',
+      ends_at: '2026-11-25T17:00:00Z',
+    });
+    const now = new Date('2026-11-19T15:00:00Z');
+    expect(buildNextUpViews([], [extra], false, now)).toHaveLength(0);
+    expect(buildNextUpViews([], [extra], true, now)).toHaveLength(1);
+  });
 });

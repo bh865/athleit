@@ -193,5 +193,5 @@ export function useHomeData(
   ]);
 
   const refresh = () => setVisibleTick((t) => t + 1);
-  return { attention, loading, error, reload, refresh, now };
+  return { attention, loading, error, reload, refresh, tick: visibleTick, now };
 }

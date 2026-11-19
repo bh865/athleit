@@ -190,5 +190,5 @@ export function useHomeData(
   ]);
 
   const refresh = () => setK((t) => t + 1);
-  return { attention, loading, error, reload, refresh, now };
+  return { attention, loading, error, reload, refresh, tick: k, now };
 }
