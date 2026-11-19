@@ -63,3 +63,9 @@ Parent-requested export and deletion are staff-triggered, audited functions (`ex
 - Signer IP and user agent are NOT recorded unless `RECORD_SIGNER_EVIDENCE=true` is set on `sign-waiver`.
 - The cover image of a public page is served through a 1-hour signed URL that may be cached publicly for 60 seconds; do not put anything in a cover image that must stay private.
 - Signed waiver copies are stored privately and emailed as attachments to the signer's address; the email provider (Resend) therefore processes them.
+
+## Guardian access outside registration
+
+A family code lets a person ask to become a guardian of a household. It only queues a request; an existing guardian approves
+it, and until then the requester sees no child, guardian or household data. Guardian lists on the Family page show display
+names and the date they joined, never email or phone. See [permissions.md](permissions.md) (Family code and guardian requests).

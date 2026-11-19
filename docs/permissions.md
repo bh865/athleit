@@ -166,12 +166,34 @@ Service role only (Edge Functions): `svc_create_registration`, `svc_verify_regis
 - Staff see a child named on a pending/approved join request to their team (to decide and
   place them), but contacts only after they are on the roster.
 
+## Family code and guardian requests
+
+A household has a 10-character `join_code` (same generator and format as `teams.join_code`), readable only by its
+guardians. A code never grants access: `request_to_join_household` queues a row in `household_join_requests`, and an
+existing guardian approves it with `decide_household_join_request`, which adds the requester to `household_members`
+as a guardian and notifies them. Members cannot be removed in this change.
+
+| Resource / action                                             |      Guardian of the household      |     Requester (pending)     |                Anyone else                |
+| ------------------------------------------------------------- | :---------------------------------: | :-------------------------: | :---------------------------------------: |
+| Read `households.join_code`, rotate it                        |  ✓ (`rotate_household_join_code`)   |              –              |                     –                     |
+| Request to join with a code                                   |        – (already a member)         |              ✓              | ✓ (signed in; 10 attempts per 15 minutes) |
+| Read `household_join_requests`                                |        own household's rows         |          own rows           |                     –                     |
+| List pending requests (name and message, no email)            |  ✓ (`get_household_join_requests`)  |              –              |                     –                     |
+| Approve or decline a request                                  | ✓ (`decide_household_join_request`) | – (cannot decide their own) |                     –                     |
+| List guardians (name, relationship, since; no email or phone) |    ✓ (`get_household_guardians`)    |              –              |                     –                     |
+
+Writes to `household_join_requests` are never direct (no insert, update or delete grant). A pending requester sees nothing of
+the household, its children or its guardians. `request_to_join_household` returns an outcome (`sent`, `invalid_code`,
+`already_member`, `too_many_attempts`) instead of raising so failed guesses still count toward the limit; an unknown and a
+rotated code are deliberately indistinguishable. Web and mobile gate the Code tab with `family.manage`.
+
 ## Functions (all `SECURITY DEFINER`, pinned `search_path`, audited, `authenticated` only)
 
 `create_club`, `create_team`, `create_invite`, `create_household_invite`, `accept_invite`, `revoke_invite`, `unlink_team_from_club`, `rotate_team_join_code`,
 `request_to_join`, `decide_join_request`, `add_child`, `place_player_on_roster`,
 `request_club_link`, `decide_club_link`, `find_club`, `claim_player_login`,
 `decide_player_login_claim`, `get_team_roster`, `get_team_members`, `get_guardian_contacts`.
+Family code: `rotate_household_join_code`, `request_to_join_household`, `decide_household_join_request`, `get_household_join_requests`, `get_household_guardians`.
 Messaging: `create_thread`, `add_participant`, `remove_participant`, `set_thread_mute`, `set_thread_archived`, `get_thread_members`, `send_message`, `edit_message`, `delete_message`, `hide_message`, `get_hidden_message`, `report_message`, `review_report`, `mark_thread_read`, `toggle_reaction`; notifications: `register_push_device`, `revoke_push_device`, `mark_notifications_read`.
 Scheduling: `create_event`, `update_event`, `cancel_event`, `delete_event`, `set_rsvp`, `staff_set_rsvp`, `event_rsvp_summary`, `event_rsvp_detail`, `record_game_result`, `clear_game_result`, `team_record`, `team_schedule`, `household_schedule`, `next_up`, `create_calendar_feed_token`, `rotate_calendar_feed_token`, `revoke_calendar_feed_token` (`resolve_calendar_feed_token` is service-role only).
 UI read helpers (no new tables): `get_join_requests`, `get_link_requests`, `get_player_login_claims`, `preview_invite`.

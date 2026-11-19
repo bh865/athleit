@@ -201,3 +201,15 @@ Removed for good (not behind a flag): This week, Messages card, Latest announcem
 | Content gutter                              | `componentTokens.content`: `gutterStart` 40, `gutterEnd` 56, `columnGap` 20                                            | Applied in the web app shell at 900px and up (`shell.module.css`), so every page gets it. Below 900px the sidebar collapses and the old gutters stay. Home's hero row is a 12-column grid; an odd last tile in a group spans the full row.                                                   |
 
 The Next up state machine (before, live, final, cancelled, updated) and the rank rule are pure and unit-tested in `packages/core` (`next-up-state.ts`, `home-attention.ts`) with an injected clock.
+
+## Family page and family code
+
+| Piece                         | Composed from                                                                 | Notes                                                                                                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Child profile card            | Card surface, Avatar, mono age, ChipLabel team chips, Badge                   | **New variant** (`components/family/child-card.tsx` on both apps). Whole card opens the child; "Join a team" is its own link (stretched-link pattern on web). Dashed Add-a-child card ends the grid. |
+| Link \| Code tablist          | Existing tab styles (web), `Segmented` chips (mobile)                         | Household invites only. Web is a real `tablist` with arrow keys, Home and End; team and club invites are unchanged.                                                                                  |
+| Family code block             | Mono code, Copy and Share buttons, `ConfirmSheet` for rotate                  | Mirrors the team code. Visible code is `aria-hidden` and a hidden line spells it ("K 7 M 2 …").                                                                                                      |
+| Guardian request row          | List item, Approve and Decline buttons, `ConfirmSheet alert` before approving | `Sheet` and `ConfirmSheet` gained an opt-in `role="alertdialog"` (web).                                                                                                                              |
+| Join a family dialog or sheet | `Sheet`, mono `TextField`, `TextArea` with counter                            | States: empty, filled, invalid, replaced or unknown, already a guardian, too many attempts, sent.                                                                                                    |
+
+View-model rules (guardian order with You first, card badge and team chips, code formatting and spelling, approve copy) are pure and unit-tested in `packages/core/src/family.ts`.
