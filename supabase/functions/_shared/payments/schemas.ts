@@ -4,9 +4,25 @@ import { z } from 'npm:zod@4.6.7';
 
 const uuid = z.uuid();
 
-export const createPaymentIntentInput = z
-  .object({ requestIds: z.array(uuid).min(1).max(25) })
-  .strict();
+/**
+ * One of: whole requests (as before), installments of a plan already created (manual / early / the rest), or the start of
+ * a plan (a request, a size and whether the family opts in to autopay). Never an amount.
+ */
+export const createPaymentIntentInput = z.union([
+  z.object({ requestIds: z.array(uuid).min(1).max(25) }).strict(),
+  z.object({ installmentIds: z.array(uuid).min(1).max(25) }).strict(),
+  z
+    .object({
+      plan: z
+        .object({ requestId: uuid, size: z.number().int().min(2).max(6), autopay: z.boolean() })
+        .strict(),
+    })
+    .strict(),
+]);
+export type CreatePaymentIntentInput = z.infer<typeof createPaymentIntentInput>;
+
+/** Shown to the family next to the autopay choice; recorded with the consent so we can prove what they saw. */
+export const AUTOPAY_CONSENT_VERSION = 'autopay-2026-11';
 
 export const onboardingInput = z
   .object({

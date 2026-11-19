@@ -284,6 +284,7 @@ begin
     return jsonb_build_object('reused', true, 'payment_id', v_pay.id, 'stripe_payment_intent_id', v_pay.stripe_payment_intent_id,
       'status', v_pay.status, 'total_cents', v_pay.total_charged_cents, 'application_fee_cents', v_pay.application_fee_cents,
       'currency', 'usd', 'request_set_key', v_key, 'installment_ids', to_jsonb(v_ids), 'off_session', v_pay.off_session,
+      'household_id', v_pay.household_id, 'connected_account_id', v_pay.connected_account_id,
       'display_ids', (select jsonb_agg(distinct r.display_id) from public.payment_items pi join public.payment_requests r on r.id = pi.payment_request_id where pi.payment_id = v_pay.id),
       'description', (select case when count(*) = 1 then max(e.title) || ' · ' || max(r.display_id) || ' · installment ' || max(i.sequence) || ' of ' || max(r.plan_count)
                                   else count(*)::text || ' installments' end
@@ -306,7 +307,8 @@ begin
   return jsonb_build_object('reused', false, 'payment_id', v_pay.id, 'stripe_payment_intent_id', null, 'status', v_pay.status,
     'total_cents', v_pay.total_charged_cents, 'application_fee_cents', v_pay.application_fee_cents, 'currency', 'usd',
     'description', q ->> 'description', 'display_ids', q -> 'display_ids', 'request_set_key', v_key, 'installment_ids', to_jsonb(v_ids),
-    'off_session', p_off_session, 'stripe_account_id', q ->> 'stripe_account_id');
+    'off_session', p_off_session, 'household_id', v_pay.household_id, 'connected_account_id', v_pay.connected_account_id,
+    'stripe_account_id', q ->> 'stripe_account_id');
 end;
 $$;
 
@@ -643,3 +645,47 @@ grant execute on function public.svc_reserve_installments(uuid, uuid[], boolean)
   public.svc_payment_succeeded(text, uuid, text, integer, integer, text, text, integer),
   public.svc_payment_status(text, text, uuid), public.svc_release_payment(uuid) to service_role;
 grant execute on function private.plan_quote(uuid, integer, timestamptz), private.compute_installment_quote(uuid, uuid[]) to service_role;
+
+-- After a plan's first payment succeeds with the card saved for off-session use, remember the PaymentMethod id.
+-- Household and account come from the PAYMENT (never from the caller); only a payment that carries a plan request
+-- with autopay on can save a card.
+create function public.svc_save_card_for_payment(p_payment_id uuid, p_customer text, p_payment_method text)
+returns text language plpgsql security definer set search_path = ''
+as $$
+declare v public.payments;
+begin
+  select * into v from public.payments where id = p_payment_id;
+  if not found or v.status <> 'succeeded' then return 'noop'; end if;
+  if not exists (select 1 from public.payment_items pi join public.payment_requests r on r.id = pi.payment_request_id
+                 where pi.payment_id = v.id and pi.installment_id is not null and r.autopay) then
+    return 'noop';
+  end if;
+  insert into public.payer_payment_methods (household_id, connected_account_id, stripe_customer_id, stripe_payment_method_id, saved_by)
+  values (v.household_id, v.connected_account_id, p_customer, p_payment_method, v.payer_profile_id)
+  on conflict (household_id, connected_account_id) do update
+    set stripe_customer_id = excluded.stripe_customer_id, stripe_payment_method_id = excluded.stripe_payment_method_id, saved_by = excluded.saved_by;
+  return 'applied';
+end;
+$$;
+revoke execute on function public.svc_save_card_for_payment(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.svc_save_card_for_payment(uuid, text, text) to service_role;
+
+-- The charger runs every 15 minutes (no-op until the Vault secret `charge_function_url` exists; the shared secret is the
+-- one reconcile already uses).
+create function private.kick_charge_installments()
+returns void language plpgsql security definer set search_path = ''
+as $$
+declare v_url text; v_secret text;
+begin
+  select decrypted_secret into v_url from vault.decrypted_secrets where name = 'charge_function_url';
+  select decrypted_secret into v_secret from vault.decrypted_secrets where name = 'reconcile_secret';
+  if v_url is null or v_secret is null then return; end if;
+  perform net.http_post(url := v_url,
+    headers := jsonb_build_object('content-type', 'application/json', 'x-reconcile-secret', v_secret),
+    body := '{}'::jsonb, timeout_milliseconds := 5000);
+exception when others then
+  null;
+end;
+$$;
+revoke execute on function private.kick_charge_installments() from public, anon, authenticated;
+select cron.schedule('payments-charge-installments', '*/15 * * * *', 'select private.kick_charge_installments()');
