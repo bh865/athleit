@@ -236,7 +236,7 @@ check('retrying the same installment attempt returns the same intent', p2again.i
 
 // A declined saved card (4000 0000 0000 9995): a card error, recorded as a failed attempt; nothing is cancelled.
 const cusBad = await api('POST', '/v1/customers', { metadata: { athleit_household_id: `itest-${run}-bad` } }, `itest:${run}:cusbad`);
-const bad = await api('POST', '/v1/payment_methods/pm_card_chargeDeclinedInsufficientFunds/attach', { customer: cusBad.id }, `itest:${run}:attachbad`, '');
+const bad = await api('POST', '/v1/payment_methods/pm_card_chargeDeclinedInsufficientFunds/attach', { customer: cusBad.id }, `itest:${run}:attachbad`);
 try {
   await offSession(2, bad.id, cusBad.id, 0);
   check('a declined saved card is declined off-session', false);
@@ -250,7 +250,7 @@ try {
 
 // An authentication-required saved card (4000 0025 0000 3155): off-session cannot complete 3D Secure.
 const cusSca = await api('POST', '/v1/customers', { metadata: { athleit_household_id: `itest-${run}-sca` } }, `itest:${run}:cussca`);
-const scaPm = await api('POST', '/v1/payment_methods/pm_card_authenticationRequired/attach', { customer: cusSca.id }, `itest:${run}:attachsca`, '');
+const scaPm = await api('POST', '/v1/payment_methods/pm_card_authenticationRequired/attach', { customer: cusSca.id }, `itest:${run}:attachsca`);
 try {
   const r = await offSession(3, scaPm.id, cusSca.id, 0);
   check('an authentication-required card cannot be charged off-session', r.status !== 'succeeded', r.status);
