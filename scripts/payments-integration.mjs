@@ -16,6 +16,10 @@ if (/^(sk|rk)_live_/.test(key)) {
   console.error('Refusing a live key.');
   process.exit(2);
 }
+if (/\.\.\.|XXXX|<|>/.test(key + acct) || key.length < 30 || acct.length < 10) {
+  console.error('STRIPE_SECRET_KEY or CONNECTED_ACCOUNT still looks like a placeholder. Use the real values (see docs/payments-e2e-todo.md).');
+  process.exit(2);
+}
 if (!/^(sk|rk)_test_/.test(key) || !/^acct_/.test(acct)) {
   console.error('Set STRIPE_SECRET_KEY (test) and CONNECTED_ACCOUNT.');
   process.exit(2);
