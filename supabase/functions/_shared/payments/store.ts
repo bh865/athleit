@@ -41,6 +41,8 @@ export interface Store {
   claimDueInstallments(now?: string | null, limit?: number): Promise<DueInstallment[]>;
   installmentChargeFailed(paymentId: string): Promise<string>;
   repairInstallments(): Promise<number>;
+  cardsToCheck(now?: string | null): Promise<CardToCheck[]>;
+  warnCardExpiring(installmentId: string): Promise<string>;
   attachPaymentIntent(paymentId: string, pi: string): Promise<void>;
   releasePayment(paymentId: string): Promise<void>;
   paymentSucceeded(a: {
@@ -93,6 +95,13 @@ export interface Store {
   cleanupRateLimits(): Promise<void>;
   getConnectedAccount(o: Owner): Promise<{ stripeAccountId: string } | null>;
   insertConnectedAccount(o: Owner, stripeAccountId: string, createdBy: string): Promise<void>;
+}
+
+export interface CardToCheck {
+  installment_id: string;
+  due_at: string;
+  payment_method: string;
+  stripe_account_id: string;
 }
 
 export interface DueInstallment {
@@ -175,6 +184,9 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
         p_limit: limit,
       }),
     repairInstallments: () => call('svc_repair_installments'),
+    cardsToCheck: (now = null) =>
+      call('svc_cards_to_check', { p_now: now ?? new Date().toISOString() }),
+    warnCardExpiring: (id) => call('svc_warn_card_expiring', { p_installment_id: id }),
     installmentChargeFailed: (id) => call('svc_installment_charge_failed', { p_payment_id: id }),
     attachPaymentIntent: async (id, pi) =>
       void (await call('svc_attach_payment_intent', { p_payment_id: id, p_pi: pi })),

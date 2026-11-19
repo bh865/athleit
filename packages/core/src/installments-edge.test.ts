@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { chargeDueInstallments } from '../../../supabase/functions/_shared/payments/installments';
+import {
+  chargeDueInstallments,
+  warnExpiringCards,
+} from '../../../supabase/functions/_shared/payments/installments';
 import { createPaymentIntent } from '../../../supabase/functions/_shared/payments/intents';
 import { createPaymentIntentInput } from '../../../supabase/functions/_shared/payments/schemas';
 import { StripeError } from '../../../supabase/functions/_shared/payments/stripe';
@@ -247,5 +250,45 @@ describe('createPaymentIntent with a plan', () => {
       { store, stripe: { get: vi.fn(), post }, log },
     );
     expect(store.reserveInstallments).toHaveBeenCalledWith(uuid(5), [uuid(1), uuid(2)]);
+  });
+});
+
+describe('warnExpiringCards', () => {
+  const card = (due: string) => ({
+    installment_id: uuid(1),
+    due_at: due,
+    payment_method: 'pm_1',
+    stripe_account_id: 'acct_team',
+  });
+  const run = async (exp: { exp_month: number; exp_year: number }, due: string) => {
+    const store = fakeStore({
+      cardsToCheck: vi.fn().mockResolvedValue([card(due)]),
+      warnCardExpiring: vi.fn().mockResolvedValue('applied'),
+    });
+    const get = vi.fn().mockResolvedValue({ id: 'pm_1', card: exp });
+    const out = await warnExpiringCards({ store, stripe: { get, post: vi.fn() }, log });
+    return { store, get, out };
+  };
+  it('warns when the card expires before the due date', async () => {
+    const { store, out, get } = await run({ exp_month: 3, exp_year: 2027 }, '2027-04-10T00:00:00Z');
+    expect(out).toEqual({ checked: 1, warned: 1 });
+    expect(store.warnCardExpiring).toHaveBeenCalledWith(uuid(1));
+    expect(get.mock.calls[0]![2]).toBe('acct_team');
+  });
+  it('a card valid through the due date is fine (valid through the END of its month)', async () => {
+    const { store, out } = await run({ exp_month: 4, exp_year: 2027 }, '2027-04-10T00:00:00Z');
+    expect(out.warned).toBe(0);
+    expect(store.warnCardExpiring).not.toHaveBeenCalled();
+  });
+  it('an unreadable card is skipped without failing the run', async () => {
+    const store = fakeStore({
+      cardsToCheck: vi.fn().mockResolvedValue([card('2027-04-10T00:00:00Z')]),
+    });
+    const out = await warnExpiringCards({
+      store,
+      stripe: { get: vi.fn().mockRejectedValue(new Error('boom')), post: vi.fn() },
+      log,
+    });
+    expect(out).toEqual({ checked: 0, warned: 0 });
   });
 });

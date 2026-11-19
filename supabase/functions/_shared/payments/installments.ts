@@ -80,3 +80,37 @@ export async function chargeDueInstallments(
   }
   return out;
 }
+
+/**
+ * Warn households whose saved card expires before an autopay installment is due (7 days ahead). The expiry is read from Stripe
+ * (we store ids only); a card that cannot be read is skipped and tried again on the next run.
+ */
+export async function warnExpiringCards(
+  d: ChargeDeps,
+  opts: { now?: string | null } = {},
+): Promise<{ checked: number; warned: number }> {
+  const out = { checked: 0, warned: 0 };
+  for (const c of await d.store.cardsToCheck(opts.now ?? null)) {
+    try {
+      const pm = await d.stripe.get(
+        `/v1/payment_methods/${c.payment_method}`,
+        undefined,
+        c.stripe_account_id,
+      );
+      const card = pm.card as { exp_month?: number; exp_year?: number } | undefined;
+      out.checked++;
+      if (!card?.exp_month || !card.exp_year) continue;
+      // A card is valid through the END of its expiry month (UTC).
+      const validThrough = Date.UTC(card.exp_year, card.exp_month, 1);
+      if (validThrough <= Date.parse(c.due_at)) {
+        await d.store.warnCardExpiring(c.installment_id);
+        out.warned++;
+      }
+    } catch (e) {
+      d.log('warn', 'card.check_failed', {
+        reason: String((e as Error)?.message ?? e).slice(0, 60),
+      });
+    }
+  }
+  return out;
+}
