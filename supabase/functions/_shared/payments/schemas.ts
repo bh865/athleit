@@ -34,13 +34,23 @@ export const onboardingInput = z
   .strict()
   .refine((v) => Number(!!v.teamId) + Number(!!v.clubId) === 1, 'exactly one of teamId / clubId');
 
-export const refundInput = z
-  .object({
-    paymentId: uuid,
-    paymentItemId: uuid.optional(),
-    baseCents: z.number().int().positive().max(5_000_000).optional(),
-    reason: z.string().trim().max(300).optional(),
-  })
-  .strict();
+export const refundInput = z.union([
+  z
+    .object({
+      paymentId: uuid,
+      paymentItemId: uuid.optional(),
+      baseCents: z.number().int().positive().max(5_000_000).optional(),
+      reason: z.string().trim().max(300).optional(),
+    })
+    .strict(),
+  // A plan request: the refund is allocated to the latest paid installment first, then backwards.
+  z
+    .object({
+      requestId: uuid,
+      baseCents: z.number().int().positive().max(5_000_000).optional(),
+      reason: z.string().trim().max(300).optional(),
+    })
+    .strict(),
+]);
 
 export const exportInput = z.object({ eventId: uuid }).strict();

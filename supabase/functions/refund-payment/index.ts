@@ -1,6 +1,6 @@
 // refund-payment: issuer admins only (enforced inside public.prepare_refund as the signed-in user).
 import { json } from '../_shared/payments/http.ts';
-import { refundPayment } from '../_shared/payments/refunds.ts';
+import { refundPayment, refundRequest } from '../_shared/payments/refunds.ts';
 import { refundInput } from '../_shared/payments/schemas.ts';
 import { stripeApi, userFunction } from '../_shared/payments/runtime.ts';
 
@@ -9,6 +9,23 @@ userFunction(
   (b) => refundInput.safeParse(b),
   { perMinute: 10 },
   async ({ input, store, log, user$ }) => {
+    if ('requestId' in input) {
+      const results = await refundRequest(input, {
+        store,
+        stripe: stripeApi(),
+        log,
+        prepareRequest: async (a) => {
+          const { data, error } = await user$.rpc('prepare_request_refund', {
+            p_request_id: a.requestId,
+            p_base_cents: a.baseCents ?? null,
+            p_reason: a.reason ?? null,
+          });
+          if (error) throw new Error(error.message);
+          return data;
+        },
+      });
+      return json({ refunds: results });
+    }
     const results = await refundPayment(input, {
       store,
       stripe: stripeApi(),

@@ -40,6 +40,7 @@ export interface Store {
   saveCardForPayment(paymentId: string, customer: string, paymentMethod: string): Promise<string>;
   claimDueInstallments(now?: string | null, limit?: number): Promise<DueInstallment[]>;
   installmentChargeFailed(paymentId: string): Promise<string>;
+  repairInstallments(): Promise<number>;
   attachPaymentIntent(paymentId: string, pi: string): Promise<void>;
   releasePayment(paymentId: string): Promise<void>;
   paymentSucceeded(a: {
@@ -173,6 +174,7 @@ export function supabaseStore(db: Rpc & { from(table: string): any }): Store {
         p_now: now ?? new Date().toISOString(),
         p_limit: limit,
       }),
+    repairInstallments: () => call('svc_repair_installments'),
     installmentChargeFailed: (id) => call('svc_installment_charge_failed', { p_payment_id: id }),
     attachPaymentIntent: async (id, pi) =>
       void (await call('svc_attach_payment_intent', { p_payment_id: id, p_pi: pi })),

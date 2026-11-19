@@ -9,7 +9,9 @@ userFunction(
   (b) => exportInput.safeParse(b),
   { perMinute: 10 },
   async ({ input, user$ }) => {
-    const { data, error } = await user$.rpc('payment_event_export', { p_event_id: input.eventId });
+    const { data, error } = await user$.rpc('payment_event_installment_export', {
+      p_event_id: input.eventId,
+    });
     if (error) throw new Error(error.message);
     if (!data?.length) return json({ error: 'not_authorized' }, 403);
     return new Response(toCsv(data as ExportRow[]), {
