@@ -4,7 +4,7 @@ import {
   startConnectOnboarding,
   type Owner,
 } from '@athleit/db/payments';
-import { radius, space } from '@athleit/tokens';
+import { componentTokens, radius, space } from '@athleit/tokens';
 import type { IconName } from '@athleit/ui-core';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, type ReactNode } from 'react';
@@ -199,7 +199,7 @@ export function usePayout(owner: Owner, onReady: (r: boolean) => void) {
 }
 export type Payout = ReturnType<typeof usePayout>;
 
-export function PayoutBadge({ onPress }: { onPress: () => void }) {
+export function PayoutBadge({ onPress, fill }: { onPress: () => void; fill?: boolean }) {
   const { theme } = useTheme();
   const c = theme.color;
   return (
@@ -209,8 +209,10 @@ export function PayoutBadge({ onPress }: { onPress: () => void }) {
       onPress={onPress}
       testID="connect-card"
       style={{
-        minHeight: 44,
-        alignSelf: 'flex-start',
+        minHeight: fill ? componentTokens.button.height : 44,
+        ...(fill
+          ? { flex: 1, justifyContent: 'center' as const }
+          : { alignSelf: 'flex-start' as const }),
         flexDirection: 'row',
         alignItems: 'center',
         gap: space[2],

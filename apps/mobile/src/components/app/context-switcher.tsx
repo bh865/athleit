@@ -1,6 +1,6 @@
 import { contextPath, switcherPlaces, type AddRoleAction } from '@athleit/core';
 import { componentTokens, radius, space } from '@athleit/tokens';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -21,10 +21,11 @@ export const ADD: Record<AddRoleAction, { label: string; href: string }> = {
  * pill with no sheet. "Add a team / club / family" also lives in More for single-place users.
  */
 export function ContextSwitcher() {
-  const { contexts, active, setActive, addActions } = useApp();
+  const { contexts, active, setActive } = useApp();
   const { theme } = useTheme();
   const c = theme.color;
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const places = switcherPlaces(contexts);
   const single = places.length <= 1;
@@ -100,7 +101,11 @@ export function ContextSwitcher() {
               accessibilityState={{ selected: ctx.key === active?.key }}
               onPress={() => {
                 setActive(ctx.key);
-                go(contextPath(ctx));
+                // Teams: stay put; the current screen re-reads the newly active team. Only a screen
+                // that belongs to one specific team/club (its route would fight the switch) goes Home.
+                if (ctx.kind !== 'team') go(contextPath(ctx));
+                else if (pathname.startsWith('/teams/') || pathname.startsWith('/clubs/')) go('/');
+                else setOpen(false);
               }}
               style={{
                 minHeight: componentTokens.listRow.height,
@@ -116,31 +121,6 @@ export function ContextSwitcher() {
                   {ctx.subtitle}
                 </Text>
               </View>
-              {ctx.key === active?.key ? <Icon name="check" weight="fill" size="sm" /> : null}
-            </Pressable>
-          ))}
-          <Text
-            variant="caption"
-            muted
-            style={{ marginTop: space[3], paddingHorizontal: space[3] }}
-          >
-            ADD
-          </Text>
-          {addActions.map((a) => (
-            <Pressable
-              key={a}
-              accessibilityRole="menuitem"
-              onPress={() => go(ADD[a].href)}
-              style={{
-                minHeight: componentTokens.button.height,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: space[3],
-                padding: space[3],
-              }}
-            >
-              <Icon name="plus" size="sm" />
-              <Text variant="bodyBold">{ADD[a].label}</Text>
             </Pressable>
           ))}
         </ScrollView>

@@ -11,42 +11,43 @@ without write access. **Guardian** = member of a household (independent of any t
 
 ## Capability matrix
 
-| Resource / action                                |                                Team admin                                | Coach / manager | Parent |  Player (13+)  | Guardian (household) | Club admin (linked) | Club manager | Anyone else |
-| ------------------------------------------------ | :----------------------------------------------------------------------: | :-------------: | :----: | :------------: | :------------------: | :-----------------: | :----------: | :---------: |
-| Read team                                        |                                    ✓                                     |        ✓        |   ✓    |       ✓        |          –           |      ✓ (read)       |      –       |      –      |
-| Edit team name / sport / season                  |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Set a team's `club_id`                           |                                    –                                     |        –        |   –    |       –        |          –           |    via approval     |      –       |      –      |
-| Request club affiliation                         |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Approve / decline club link                      |                                    –                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
-| Read full roster (names, DOB, inactive)          |                                    ✓                                     |        ✓        |   –    |       –        |          –           |      ✓ (read)       |      –       |      –      |
-| Read limited roster (first name, #, pos.)        |                                    ✓                                     |        ✓        |   ✓    |       ✓        |          –           |          ✓          |      –       |      –      |
-| Edit / deactivate / remove roster rows           |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Place a child on the roster                      |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Read guardian contacts of rostered child         |                                    ✓                                     |        ✓        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
-| Read own child / edit own child's details        |                                    –                                     |        –        |   –    | read self only |          ✓           |          –          |      –       |      –      |
-| Add a child (no team needed)                     |             any signed-in user (becomes household guardian)              |                 |        |                |                      |                     |              |
-| Read / edit own household                        |                                    –                                     |        –        |   –    |       –        |          ✓           |          –          |      –       |      –      |
-| Read team members (names)                        |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Change a member's role / status                  |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Remove a member / leave                          |                                  ✓ / ✓                                   |      self       |  self  |      self      |          –           |          –          |      –       |      –      |
-| Remove or demote the last admin                  |                                  never                                   |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Create invite: staff roles (admin/coach/manager) |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Create invite: parent / player roles             |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Create club invite (admin / manager)             |                                    –                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
-| Read / revoke invites                            |                                 ✓ (team)                                 |   own created   |   –    |       –        |          –           |      ✓ (club)       | own created  |      –      |
-| Accept an invite (holder of the link)            | any signed-in user with a valid, unexpired, unrevoked, unexhausted token |                 |        |                |                      |                     |              |
-| Request to join (team code or id)                |      any signed-in user; creates a pending request, grants nothing       |                 |        |                |                      |                     |              |
-| Read join-request queue / decide                 |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
-| Read own join requests                           |                                                                          |                 |  own   |      own       |         own          |                     |              |             |
-| Claim a player login (13+ only)                  |   any signed-in user; auto-approves only on a confirmed matching email   |                 |        |                |                      |                     |              |
-| Approve / decline a player login claim           |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
-| Read audit trail                                 |                                 ✓ (team)                                 |        –        |   –    |       –        |          –           |      ✓ (club)       |      –       |      –      |
-| Invite another guardian into a household         |                                    –                                     |        –        |   –    |       –        |          ✓           |          –          |      –       |      –      |
-| Rotate the team join code                        |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
-| End a club affiliation (unlink)                  |                                    ✓                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
-| Upload / replace a child's photo                 |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
-| View a child's photo                             |                               ✓ (rostered)                               |  ✓ (rostered)   |   –    |    own only    |          ✓           |    ✓ (rostered)     |      –       |      –      |
-| Create a club / create a team                    |                any signed-in user (creator becomes admin)                |                 |        |                |                      |                     |              |
+| Resource / action                                        |                                Team admin                                | Coach / manager | Parent |  Player (13+)  | Guardian (household) | Club admin (linked) | Club manager | Anyone else |
+| -------------------------------------------------------- | :----------------------------------------------------------------------: | :-------------: | :----: | :------------: | :------------------: | :-----------------: | :----------: | :---------: |
+| Read team                                                |                                    ✓                                     |        ✓        |   ✓    |       ✓        |          –           |      ✓ (read)       |      –       |      –      |
+| Open the team details area (members, invites, settings…) |                                    ✓                                     |        ✓        |   –    |       –        |          –           |      ✓ (read)       |      –       |      –      |
+| Edit team name / sport / season                          |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Set a team's `club_id`                                   |                                    –                                     |        –        |   –    |       –        |          –           |    via approval     |      –       |      –      |
+| Request club affiliation                                 |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Approve / decline club link                              |                                    –                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
+| Read full roster (names, DOB, inactive)                  |                                    ✓                                     |        ✓        |   –    |       –        |          –           |      ✓ (read)       |      –       |      –      |
+| Read limited roster (first name, #, pos.)                |                                    ✓                                     |        ✓        |   ✓    |       ✓        |          –           |          ✓          |      –       |      –      |
+| Edit / deactivate / remove roster rows                   |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Place a child on the roster                              |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Read guardian contacts of rostered child                 |                                    ✓                                     |        ✓        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
+| Read own child / edit own child's details                |                                    –                                     |        –        |   –    | read self only |          ✓           |          –          |      –       |      –      |
+| Add a child (no team needed)                             |             any signed-in user (becomes household guardian)              |                 |        |                |                      |                     |              |
+| Read / edit own household                                |                                    –                                     |        –        |   –    |       –        |          ✓           |          –          |      –       |      –      |
+| Read team members (names)                                |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Change a member's role / status                          |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Remove a member / leave                                  |                                  ✓ / ✓                                   |      self       |  self  |      self      |          –           |          –          |      –       |      –      |
+| Remove or demote the last admin                          |                                  never                                   |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Create invite: staff roles (admin/coach/manager)         |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Create invite: parent / player roles                     |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Create club invite (admin / manager)                     |                                    –                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
+| Read / revoke invites                                    |                                 ✓ (team)                                 |   own created   |   –    |       –        |          –           |      ✓ (club)       | own created  |      –      |
+| Accept an invite (holder of the link)                    | any signed-in user with a valid, unexpired, unrevoked, unexhausted token |                 |        |                |                      |                     |              |
+| Request to join (team code or id)                        |      any signed-in user; creates a pending request, grants nothing       |                 |        |                |                      |                     |              |
+| Read join-request queue / decide                         |                                    ✓                                     |        ✓        |   –    |       –        |          –           |          –          |      –       |      –      |
+| Read own join requests                                   |                                                                          |                 |  own   |      own       |         own          |                     |              |             |
+| Claim a player login (13+ only)                          |   any signed-in user; auto-approves only on a confirmed matching email   |                 |        |                |                      |                     |              |
+| Approve / decline a player login claim                   |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
+| Read audit trail                                         |                                 ✓ (team)                                 |        –        |   –    |       –        |          –           |      ✓ (club)       |      –       |      –      |
+| Invite another guardian into a household                 |                                    –                                     |        –        |   –    |       –        |          ✓           |          –          |      –       |      –      |
+| Rotate the team join code                                |                                    ✓                                     |        –        |   –    |       –        |          –           |          –          |      –       |      –      |
+| End a club affiliation (unlink)                          |                                    ✓                                     |        –        |   –    |       –        |          –           |          ✓          |      –       |      –      |
+| Upload / replace a child's photo                         |                                    –                                     |        –        |   –    |       –        |   ✓ (own children)   |          –          |      –       |      –      |
+| View a child's photo                                     |                               ✓ (rostered)                               |  ✓ (rostered)   |   –    |    own only    |          ✓           |    ✓ (rostered)     |      –       |      –      |
+| Create a club / create a team                            |                any signed-in user (creator becomes admin)                |                 |        |                |                      |                     |              |
 
 Messaging and notifications (Phase 3; full rules in [messaging-safety.md](messaging-safety.md)):
 
@@ -179,6 +180,32 @@ Policy helpers live in the unexposed `private` schema: `is_team_member`, `has_te
 `is_household_guardian`, `is_guardian_of`, `is_player_self`, `can_see_player`, `can_read_thread`, `can_read_message`, `can_post_thread`, `can_see_participants`, `can_see_reads`, `can_use_thread_channel`, `can_view_team_schedule`.
 
 ## How the apps use this
+
+The team details area (`/teams/[id]`) is gated by `team.details`; parents and players use Roster, Schedule, Messages and Pay from the main navigation, and keep only the Documents shelf (`/teams/[id]/documents`). Switching the active team does not navigate; a Settings item in the navigation opens the details area for team staff.
+
+### Team details tabs
+
+Eight tabs, in order: Overview, People, Payments, Registrations, Forms, Waivers, Documents, Settings
+(`visibleTeamTabs` in `packages/core/src/team-details.ts`; no capability changed). Every control is
+shown from a capability, never a role string, and hidden rather than explained:
+
+| Area                                                     | Capability that shows it                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tab row (any tab)                                        | `team.details`; Payments needs `payments.view`; Registrations, Forms and Waivers need `registration.view`; Documents needs `documents.view` |
+| People · Members (read)                                  | `members.view`; role change and remove need `members.manage` (admin)                                                                        |
+| People · Requests                                        | `joinRequests.decide` (admin, manager, coach)                                                                                               |
+| People · Invites, copy team code                         | `invites.createFamily`; staff invite roles need `invites.createStaff`; "Generate new code" needs `team.rotateCode` (admin)                  |
+| Registrations: New registration and its builder          | `registration.manage` (admin, manager)                                                                                                      |
+| Forms tab: New form, form builder, Duplicate, Archive    | `registration.manage`; the tab itself needs `registration.view`                                                                             |
+| Waivers: required-waiver toggles, library, New waiver    | `registration.manage`; the compliance list needs only `registration.view`                                                                   |
+| Waivers: Send reminder, Remind all missing               | `registration.manage` (admin, manager), enforced by `remind_waiver_signers`; one reminder per player and waiver per 24 hours                |
+| Documents: Upload, edit, pin, change visibility, archive | `documents.manage`; everyone else gets the same library read-only                                                                           |
+| Settings: edit details, request or leave a club link     | `team.edit` / `team.requestClubLink` / `team.unlinkClub` (admin); others read                                                               |
+
+Overview and the tab-row counts show counts and first names only: never last names, medical answers or
+signed waiver text. Old team URLs redirect (`requests`, `invites`, `members` to People, `compliance` to
+Waivers, `schedule` to the global Schedule). On mobile the one team screen takes `section` and `view`
+params.
 
 `packages/core/src/capabilities.ts` is the code form of the matrix above (`can(context, capability)`),
 used to hide controls a user cannot use. It never grants anything: the database decides.

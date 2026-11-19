@@ -116,7 +116,7 @@ describe('buildContent (lock-screen content)', () => {
       '/manage/registration/e1',
     );
     expect(linkFor({ kind: 'registration', team_id: 't1', audience: 'staff' })).toBe(
-      '/teams/t1/compliance',
+      '/teams/t1/waivers',
     );
     expect(linkFor({ kind: 'registration', team_id: 't1', audience: 'family' })).toBe(
       '/registrations',

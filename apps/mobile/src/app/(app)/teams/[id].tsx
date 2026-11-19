@@ -1,77 +1,107 @@
-import { space } from '@athleit/tokens';
+import {
+  parsePeopleView,
+  parseTeamTab,
+  TEAM_TAB_LABEL,
+  teamTabParams,
+  visibleTeamTabs,
+  type PeopleView,
+  type TeamTab,
+} from '@athleit/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { AppScreen } from '@/components/app/app-screen';
-import { Badge, H1, Segmented } from '@/components/app/kit';
-import { ComplianceSection } from '@/components/registration/compliance';
+import { useScreenTitle } from '@/components/app/screen-title';
+import { StaffScreen } from '@/components/payments/staff-screen';
 import { DocumentsSection } from '@/components/registration/documents';
-import { StaffRegistrationsSection } from '@/components/registration/staff';
-import { InvitesSection } from '@/components/team/invites';
-import { MembersSection } from '@/components/team/members';
-import { RequestsSection } from '@/components/team/requests';
-import { SettingsSection } from '@/components/team/settings';
+import { DocumentsTab } from '@/components/team/documents-tab';
+import { TeamHubProvider, useTeamHub } from '@/components/team/hub';
+import { OverviewTab } from '@/components/team/overview-tab';
+import { TabPills } from '@/components/team/parts';
+import { PeopleTab } from '@/components/team/people-tab';
+import { RegistrationsTab } from '@/components/team/registrations-tab';
+import { SettingsTab } from '@/components/team/settings-tab';
 import { TeamProvider, useTeam } from '@/components/team/team-context';
-import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Button, Card, Text } from '@/components/ui';
-
-type Section =
-  | 'roster'
-  | 'registrations'
-  | 'waivers'
-  | 'documents'
-  | 'requests'
-  | 'invites'
-  | 'members'
-  | 'settings';
+import { WaiversTab } from '@/components/team/waivers-tab';
 
 function TeamBody() {
   const { team, caps } = useTeam();
   const router = useRouter();
-  const [section, setSection] = useState<Section>('roster');
-  const tabs = (
-    [
-      { value: 'roster', label: 'Overview', show: caps.has('roster.viewLimited') },
-      { value: 'registrations', label: 'Registrations', show: caps.has('registration.view') },
-      { value: 'waivers', label: 'Waivers', show: caps.has('registration.view') },
-      { value: 'documents', label: 'Documents', show: caps.has('documents.view') },
-      { value: 'requests', label: 'Requests', show: caps.has('joinRequests.decide') },
-      { value: 'invites', label: 'Invites', show: caps.has('invites.createFamily') },
-      { value: 'members', label: 'Members', show: caps.has('members.view') },
-      { value: 'settings', label: 'Settings', show: caps.has('team.edit') },
-    ] as const
-  ).filter((t) => t.show);
-  const current = tabs.some((t) => t.value === section) ? section : 'roster';
+  const hub = useTeamHub();
+  // Deep links (Home tiles, notifications) arrive as ?section=&view=.
+  const params = useLocalSearchParams<{ section?: string; view?: string }>();
+  const staff = caps.has('team.details');
+  // Forms are built on the web only; mobile keeps the forms list inside Registrations.
+  const tabs = visibleTeamTabs(caps).filter((t) => t !== 'forms');
+  const fromLink = parseTeamTab(params.section);
+  const [payKey, setPayKey] = useState(0);
+  const [pick, setPick] = useState<{
+    from: string | undefined;
+    tab: TeamTab;
+    view: PeopleView | null;
+  } | null>(null);
+  // A tap overrides the link until the link changes again.
+  const linkKey = `${params.section ?? ''}|${params.view ?? ''}`;
+  const chosen = pick && pick.from === linkKey ? pick : null;
+  const wanted = chosen?.tab ?? fromLink ?? 'overview';
+  const active: TeamTab = (tabs as TeamTab[]).includes(wanted) ? wanted : 'overview';
+  const view = chosen ? chosen.view : parsePeopleView(params.view);
+
+  const sport = team.sport.charAt(0).toUpperCase() + team.sport.slice(1);
+  const readOnly = !caps.has('roster.edit') && caps.has('roster.viewFull');
+  useScreenTitle(
+    team.name,
+    staff ? `${sport} · ${team.season_label}${readOnly ? ' · Read only' : ''}` : 'Documents',
+  );
+
+  // Staff only (and the linked club admin, read-only). Everyone else already has Roster, Schedule,
+  // Messages and Pay in the main navigation. The Documents shelf stays open to anyone who can read it:
+  // parents and players reach it from Home and have nowhere else to open it.
+  const documentsOnly = !staff && caps.has('documents.view');
+  useEffect(() => {
+    if (!staff && !documentsOnly) router.replace('/');
+  }, [staff, documentsOnly, router]);
+
+  if (!staff) {
+    return documentsOnly ? (
+      <>
+        <DocumentsSection owner={{ teamId: team.id }} />
+      </>
+    ) : null;
+  }
+
+  const open = (p: { section: TeamTab; view?: PeopleView }) =>
+    setPick({ from: linkKey, tab: p.section, view: p.view ?? null });
+
   return (
     <>
-      <View style={{ gap: space[1] }}>
-        <H1>{team.name}</H1>
-        <Text muted>
-          {team.sport.charAt(0).toUpperCase() + team.sport.slice(1)} · {team.season_label}
-        </Text>
-        {!caps.has('roster.edit') && caps.has('roster.viewFull') && <Badge>Read only</Badge>}
-      </View>
-      {caps.has('schedule.view') ? <NextUpCard /> : null}
-      <Segmented value={current} options={tabs} onChange={setSection} />
-      {current === 'roster' && (
-        <Card style={{ gap: space[3] }}>
-          <Text variant="heading">Roster</Text>
-          <Text muted>The full list lives on the Roster screen.</Text>
-          <Button
-            title="Open roster"
-            icon="arrow-right"
-            onPress={() => router.push('/roster' as never)}
-          />
-        </Card>
+      <TabPills
+        tabs={tabs}
+        active={active}
+        counts={hub.counts}
+        labels={TEAM_TAB_LABEL}
+        onPick={(t) => {
+          // Tapping Payments again goes back to its list (the page has no second back button).
+          if (t === active && t === 'payments') setPayKey((k) => k + 1);
+          else open(teamTabParams(t));
+        }}
+      />
+      {active === 'overview' && <OverviewTab onOpen={open} />}
+      {active === 'people' && (
+        <PeopleTab view={view} onView={(v) => open(teamTabParams('people', v))} />
       )}
-      {current === 'registrations' && <StaffRegistrationsSection owner={{ teamId: team.id }} />}
-      {current === 'waivers' && <ComplianceSection teamId={team.id} />}
-      {current === 'documents' && <DocumentsSection owner={{ teamId: team.id }} />}
-      {current === 'requests' && <RequestsSection />}
-      {current === 'invites' && <InvitesSection />}
-      {current === 'members' && <MembersSection />}
-      {current === 'settings' && <SettingsSection />}
+      {active === 'payments' && (
+        <StaffScreen
+          key={payKey}
+          owner={{ teamId: team.id }}
+          canSend={caps.has('payments.manage')}
+          embedded
+        />
+      )}
+      {active === 'registrations' && <RegistrationsTab />}
+      {active === 'waivers' && <WaiversTab />}
+      {active === 'documents' && <DocumentsTab />}
+      {active === 'settings' && <SettingsTab />}
     </>
   );
 }
@@ -81,7 +111,9 @@ export default function TeamScreen() {
   return (
     <AppScreen>
       <TeamProvider teamId={id}>
-        <TeamBody />
+        <TeamHubProvider>
+          <TeamBody />
+        </TeamHubProvider>
       </TeamProvider>
     </AppScreen>
   );

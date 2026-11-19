@@ -46,48 +46,48 @@ test.describe.serial('registration (end to end)', () => {
     teamUrl = admin.url();
     const teamId = teamUrl.split('/').pop()!;
 
-    // Form from a template, published.
+    // Form from a starter template, saved (publishes version 1).
     await admin.goto(`/manage/forms/new?team=${teamId}`);
-    await admin.getByRole('button', { name: 'Use' }).first().click();
-    await admin.getByRole('button', { name: /Publish version 1/ }).click();
-    // The builder only moves to the edit route after create AND publish finished.
-    await admin.waitForURL(/\/manage\/forms\/[0-9a-f-]{36}$/);
-    await expect(admin.getByRole('button', { name: /Publish version 2/ })).toBeVisible();
+    await admin.getByRole('button', { name: /Medical & Emergency/ }).click();
+    await admin.getByRole('button', { name: 'Save form' }).click();
+    await expect(admin.getByText('Saved', { exact: true })).toBeVisible();
 
-    // Waiver, published.
+    // Waiver, published (the builder asks for confirmation).
     await admin.goto(`/manage/waivers/new?team=${teamId}`);
-    await admin.getByLabel('Title', { exact: true }).fill('Liability waiver');
+    await admin.getByLabel('Waiver title').fill('Liability waiver');
     await admin.getByLabel('Waiver text').fill('I agree to the terms of participation.');
-    await admin.getByRole('button', { name: /Publish version 1/ }).click();
-    // Creating then publishing swaps to the edit route, which drops the toast: the version list is the lasting proof.
-    await admin.waitForURL(/\/manage\/waivers\/[0-9a-f-]{36}$/);
-    await expect(admin.getByRole('heading', { name: 'Published versions' })).toBeVisible();
+    await admin.getByRole('button', { name: 'Publish v1' }).first().click();
+    await admin.getByRole('dialog').getByRole('button', { name: 'Publish v1' }).click();
+    await expect(admin.getByText(/v1 is live/)).toBeVisible();
 
-    // Registration event using both.
+    // Registration builder: Basics, Pricing, Dates, Form & waivers, Review. The title doubles as the web address.
     await admin.goto(`/manage/registration/new?team=${teamId}`);
-    await admin.getByLabel('Title', { exact: true }).fill('E2E Spring League');
-    await admin.getByLabel('Web address').fill(slug);
+    await admin.getByLabel('Registration name').first().fill(slug);
+    await admin.getByLabel('Team', { exact: true }).selectOption({ label: 'E2E Registration FC' });
+    await admin.getByLabel('Place accepted players on the roster').check();
+    await admin.getByRole('button', { name: 'Continue' }).click();
+    await admin.getByLabel('Maximum players').fill('1');
+    await admin.getByRole('button', { name: 'Continue' }).click();
     // Publishing needs an open window.
-    await pickDate(admin, 'Opens (date)', '2020-01-01');
-    await pickTime(admin, 'Opens (time)', '09:00');
-    await pickDate(admin, 'Closes (date)', '2040-01-01');
-    await pickTime(admin, 'Closes (time)', '09:00');
-    await admin.getByLabel('Spots (leave blank for no limit)').fill('1');
-    await admin.getByLabel('Registration form').selectOption({ index: 1 });
+    await pickDate(admin, 'Opens', '2020-01-01');
+    await pickTime(admin, 'Opens time', '09:00');
+    await pickDate(admin, 'Closes', '2040-01-01');
+    await pickTime(admin, 'Closes time', '09:00');
+    await admin.getByRole('button', { name: 'Continue' }).click();
+    await admin.getByRole('radio', { name: /Medical & Emergency/ }).click();
     await admin.getByLabel('Liability waiver').check();
-    await admin.getByLabel('I will place accepted players on a team roster').check();
-    await admin.getByLabel('Default team').selectOption({ label: 'E2E Registration FC' });
-    await admin.getByRole('button', { name: 'Create draft' }).click();
+    await admin.getByRole('button', { name: 'Continue' }).click();
+    await admin.getByRole('button', { name: 'Publish registration' }).click();
+    await expect(admin.getByText('Registration is live')).toBeVisible();
+    await expect(admin.getByRole('img', { name: /QR code/ })).toBeVisible();
+    await admin.getByRole('button', { name: 'View registration' }).click();
     await admin.waitForURL(/\/manage\/registration\/[0-9a-f-]{36}$/);
     eventId = admin.url().split('/').pop()!;
-    await admin.getByRole('button', { name: 'Publish' }).click();
-    await expect(admin.getByText('open', { exact: true })).toBeVisible();
-    await expect(admin.getByRole('img', { name: /QR code/ })).toBeVisible();
   });
 
   test('a visitor registers from the public link and is asked to confirm by email', async () => {
     await visitor.goto(`/r/${slug}`);
-    await expect(visitor.getByRole('heading', { name: 'E2E Spring League' })).toBeVisible();
+    await expect(visitor.getByRole('heading', { name: slug })).toBeVisible();
     await expect(visitor.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/); // link-only by default
     await visitor.getByLabel('Child’s first name').fill('Ava');
     await visitor.getByLabel('Child’s last name').fill('Adams');
@@ -97,7 +97,6 @@ test.describe.serial('registration (end to end)', () => {
       .getByLabel('Your email')
       .fill(`e2e-guardian-${Date.now().toString(36)}@example.test`);
     await visitor.getByRole('button', { name: 'Continue' }).click();
-    await visitor.getByLabel(/Shirt size/).selectOption({ index: 1 });
     await visitor.getByLabel(/Emergency contact name/).fill('Sam Parent');
     await visitor.getByLabel(/Emergency contact phone/).fill('555-0100');
     await visitor.getByRole('button', { name: 'Continue' }).click();

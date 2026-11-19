@@ -10,6 +10,7 @@ export type ConnectedAccountStatus = Fn['connected_account_status']['Returns'][n
 export type CollectionSummary = Fn['event_collection_summary']['Returns'][number];
 export type CollectionRow = Fn['event_collection_detail']['Returns'][number];
 export type HouseholdPaymentRow = Fn['household_payments']['Returns'][number];
+export type OpenPaymentRow = Fn['household_open_payments']['Returns'][number];
 export type HouseholdReceiptRow = Fn['household_receipts']['Returns'][number];
 export type PaymentEventRow = Pick<
   Tables<'payment_events'>,
@@ -50,13 +51,18 @@ export interface CheckoutQuote {
 }
 
 const ok = <T>(data: T): Result<T> => ({ data, error: null });
-const fail = <T>(e: { message?: string; code?: string; details?: string | null } | null): Result<T> => ({
+const fail = <T>(
+  e: { message?: string; code?: string; details?: string | null } | null,
+): Result<T> => ({
   data: null,
   error: { message: e?.message ?? 'Unknown error', code: e?.code, details: e?.details },
 });
 const NULL = null as unknown as string;
 
-export async function getConnectedAccountStatus(c: Client, o: Owner): Promise<Result<ConnectedAccountStatus | null>> {
+export async function getConnectedAccountStatus(
+  c: Client,
+  o: Owner,
+): Promise<Result<ConnectedAccountStatus | null>> {
   const { data, error } = await c.rpc('connected_account_status', {
     p_team_id: o.teamId ?? NULL,
     p_club_id: o.clubId ?? NULL,
@@ -64,7 +70,11 @@ export async function getConnectedAccountStatus(c: Client, o: Owner): Promise<Re
   return error ? fail(error) : ok(data?.[0] ?? null);
 }
 
-export async function setDefaultFeePolicy(c: Client, o: Owner, policy: 'absorb' | 'pass_on'): Promise<Result<null>> {
+export async function setDefaultFeePolicy(
+  c: Client,
+  o: Owner,
+  policy: 'absorb' | 'pass_on',
+): Promise<Result<null>> {
   const { error } = await c.rpc('set_default_fee_policy', {
     p_team_id: o.teamId ?? NULL,
     p_club_id: o.clubId ?? NULL,
@@ -81,9 +91,13 @@ export async function getActiveFeeConfig(c: Client): Promise<Result<FeeConfigRow
 export async function listPaymentEvents(c: Client, o: Owner): Promise<Result<PaymentEventRow[]>> {
   const q = c
     .from('payment_events')
-    .select('id,title,description,amount_cents,due_at,status,fee_policy,audience,team_id,club_id,created_at')
+    .select(
+      'id,title,description,amount_cents,due_at,status,fee_policy,audience,team_id,club_id,created_at',
+    )
     .order('created_at', { ascending: false });
-  const { data, error } = await (o.teamId ? q.eq('team_id', o.teamId) : q.eq('club_id', o.clubId ?? ''));
+  const { data, error } = await (o.teamId
+    ? q.eq('team_id', o.teamId)
+    : q.eq('club_id', o.clubId ?? ''));
   return error ? fail(error) : ok(data);
 }
 
@@ -124,7 +138,11 @@ export async function sendPaymentReminders(c: Client, id: string): Promise<Resul
   const { data, error } = await c.rpc('send_payment_reminders', { p_event_id: id });
   return error ? fail(error) : ok(data);
 }
-export async function waiveRequest(c: Client, requestId: string, note?: string): Promise<Result<null>> {
+export async function waiveRequest(
+  c: Client,
+  requestId: string,
+  note?: string,
+): Promise<Result<null>> {
   const { error } = await c.rpc('waive_request', { p_request_id: requestId, p_note: note ?? NULL });
   return error ? fail(error) : ok(null);
 }
@@ -134,15 +152,25 @@ export async function recordOfflinePayment(
   method: 'cash' | 'check' | 'other',
   note?: string,
 ): Promise<Result<null>> {
-  const { error } = await c.rpc('record_offline_payment', { p_request_id: requestId, p_method: method, p_note: note ?? NULL });
+  const { error } = await c.rpc('record_offline_payment', {
+    p_request_id: requestId,
+    p_method: method,
+    p_note: note ?? NULL,
+  });
   return error ? fail(error) : ok(null);
 }
 
-export async function getCollectionSummary(c: Client, eventId: string): Promise<Result<CollectionSummary | null>> {
+export async function getCollectionSummary(
+  c: Client,
+  eventId: string,
+): Promise<Result<CollectionSummary | null>> {
   const { data, error } = await c.rpc('event_collection_summary', { p_event_id: eventId });
   return error ? fail(error) : ok(data?.[0] ?? null);
 }
-export async function getCollectionDetail(c: Client, eventId: string): Promise<Result<CollectionRow[]>> {
+export async function getCollectionDetail(
+  c: Client,
+  eventId: string,
+): Promise<Result<CollectionRow[]>> {
   const { data, error } = await c.rpc('event_collection_detail', { p_event_id: eventId });
   return error ? fail(error) : ok(data ?? []);
 }
@@ -156,13 +184,20 @@ export async function getHouseholdReceipts(c: Client): Promise<Result<HouseholdR
 }
 
 /** The server-computed review sheet. Takes only request ids. */
-export async function getCheckoutQuote(c: Client, requestIds: string[]): Promise<Result<CheckoutQuote>> {
+export async function getCheckoutQuote(
+  c: Client,
+  requestIds: string[],
+): Promise<Result<CheckoutQuote>> {
   const { data, error } = await c.rpc('payer_checkout_quote', { p_request_ids: requestIds });
   return error ? fail(error) : ok(data as unknown as CheckoutQuote);
 }
 
 // Edge Functions -----------------------------------------------------------------------------------------------
-async function invoke<T>(c: Client, name: string, body: Record<string, unknown>): Promise<Result<T>> {
+async function invoke<T>(
+  c: Client,
+  name: string,
+  body: Record<string, unknown>,
+): Promise<Result<T>> {
   const { data, error } = await c.functions.invoke(name, { body });
   if (!error) return ok(data as T);
   // Non-2xx: the function answers {"error":"<code>"}; surface the code so friendlyError can map it.
@@ -188,14 +223,37 @@ export interface PaymentIntentResult {
 /** create-payment-intent accepts ONLY request ids. */
 export const createPaymentIntent = (c: Client, requestIds: string[]) =>
   invoke<PaymentIntentResult>(c, 'create-payment-intent', { requestIds });
-export const startConnectOnboarding = (c: Client, o: Owner, platform: 'web' | 'mobile', action: 'link' | 'sync' = 'link') =>
+export const startConnectOnboarding = (
+  c: Client,
+  o: Owner,
+  platform: 'web' | 'mobile',
+  action: 'link' | 'sync' = 'link',
+) =>
   invoke<{ url?: string; onboardingStatus?: string }>(c, 'connect-onboarding', {
     ...(o.teamId ? { teamId: o.teamId } : { clubId: o.clubId }),
     platform,
     action,
   });
-export const refundPayment = (c: Client, a: { paymentId: string; paymentItemId?: string; baseCents?: number; reason?: string }) =>
-  invoke<{ refunds: { refundId: string; amountCents: number; status: string }[] }>(c, 'refund-payment', a);
+export const refundPayment = (
+  c: Client,
+  a: { paymentId: string; paymentItemId?: string; baseCents?: number; reason?: string },
+) =>
+  invoke<{ refunds: { refundId: string; amountCents: number; status: string }[] }>(
+    c,
+    'refund-payment',
+    a,
+  );
 export async function exportPaymentEvent(c: Client, eventId: string): Promise<Result<string>> {
   return invoke<string>(c, 'export-payments', { eventId });
+}
+
+/** Payments the family started but never put a card to. Nothing was charged; their requests show as processing. */
+export async function getOpenPayments(c: Client): Promise<Result<OpenPaymentRow[]>> {
+  const { data, error } = await c.rpc('household_open_payments');
+  return error ? fail(error) : ok(data ?? []);
+}
+/** Walk away from an unfinished payment: it is canceled and its requests can be paid again. */
+export async function cancelOpenPayment(c: Client, paymentId: string): Promise<Result<null>> {
+  const { error } = await c.rpc('cancel_open_payment', { p_payment_id: paymentId });
+  return error ? fail(error) : ok(null);
 }

@@ -6,6 +6,7 @@ import type { AppContext } from './context';
  */
 export type Capability =
   | 'team.view'
+  | 'team.details'
   | 'team.edit'
   | 'team.requestClubLink'
   | 'team.unlinkClub'
@@ -46,6 +47,7 @@ export type Capability =
 
 const STAFF: Capability[] = [
   'team.view',
+  'team.details',
   'roster.viewFull',
   'roster.viewLimited',
   'roster.edit',
@@ -167,6 +169,7 @@ export function capabilitiesForPlace(
 /** What an admin of the club a team belongs to may do on that team's page: read, never edit. */
 export const CLUB_ADMIN_TEAM_VIEW: ReadonlySet<Capability> = new Set<Capability>([
   'team.view',
+  'team.details',
   'roster.viewFull',
   'roster.viewLimited',
   'schedule.view',

@@ -175,11 +175,6 @@
   border-radius: var(--radius-md);
   padding: var(--space-4);
 }
-.editorField {
-  padding: var(--space-3);
-  border: var(--size-card-border) solid var(--color-line);
-  border-radius: var(--radius-md);
-}
 .linkButton {
   padding: 0;
   border: 0;
@@ -190,4 +185,23 @@
   text-decoration: underline;
   cursor: pointer;
   min-height: var(--size-min-target);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.half {
+  grid-column: span 1;
+  min-width: 0;
+}
+.fullCol {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+@media (max-width: 40rem) {
+  .half {
+    grid-column: 1 / -1;
+  }
 }

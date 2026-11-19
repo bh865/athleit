@@ -1,9 +1,9 @@
-import { payViewsFor } from '@athleit/core';
-import { space } from '@athleit/tokens';
+import { capabilitiesForPlace, payViewsFor } from '@athleit/core';
+import { componentTokens, space } from '@athleit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Backdrop, Button, Sheet, TabBar, Text, ThemeToggle, type TabItem } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
@@ -16,22 +16,34 @@ import { AppHeader } from './app-header';
 import { BackLink } from './kit';
 import { ErrorNotice, Loading } from './app-screen-states';
 
+import { ScreenFooterContext } from './screen-footer';
+import { ScreenTitleContext, type ScreenTitle } from './screen-title';
+
 /** Screens that show the brand header (the rest are detail screens with a back button). */
+
 const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/notifications']);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts, userId, addActions } = useApp();
+  const { status, contexts, active: place, userId, addActions } = useApp();
   const { signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [more, setMore] = useState(false);
+  const [screenTitle, setScreenTitle] = useState<ScreenTitle | null>(null);
+  const [footer, setFooter] = useState<ReactNode>(null);
+  const insets = useSafeAreaInsets();
   const isRoot = ROOT_PATHS.has(pathname);
 
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const hasTeam = contexts.some((c) => c.kind === 'team');
   const pv = payViewsFor(contexts, null);
-  const showPay = pv.payer || pv.staff !== null;
+  const showPay = pv.payer;
+  // Team details (members, invites, settings...) are staff only; the active team decides which one.
+  const settingsTeamId =
+    place?.kind === 'team' && capabilitiesForPlace(contexts, 'team', place.id).has('team.details')
+      ? place.id
+      : null;
   const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
@@ -70,8 +82,28 @@ export function AppScreen({ children }: { children: ReactNode }) {
           </View>
         ) : null}
         {!isRoot && status === 'ready' ? (
-          <View style={{ paddingHorizontal: space[4], paddingTop: space[2] }}>
+          <View
+            style={{
+              paddingHorizontal: space[4],
+              paddingTop: space[2],
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space[3],
+            }}
+          >
             <BackLink />
+            {screenTitle ? (
+              <View style={{ flex: 1 }} accessibilityRole="header">
+                <Text variant="heading" numberOfLines={1}>
+                  {screenTitle.title}
+                </Text>
+                {screenTitle.subtitle ? (
+                  <Text variant="caption" muted numberOfLines={1}>
+                    {screenTitle.subtitle}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         ) : null}
         <ScrollView
@@ -83,9 +115,27 @@ export function AppScreen({ children }: { children: ReactNode }) {
             paddingBottom: space[12] * 3,
           }}
         >
-          {status === 'error' ? <ErrorNotice /> : status !== 'ready' ? <Loading /> : children}
+          <ScreenFooterContext value={setFooter}>
+            <ScreenTitleContext value={setScreenTitle}>
+              {status === 'error' ? <ErrorNotice /> : status !== 'ready' ? <Loading /> : children}
+            </ScreenTitleContext>
+          </ScreenFooterContext>
         </ScrollView>
       </SafeAreaView>
+      {footer ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            // Sits just above the floating tab bar.
+            bottom: insets.bottom + space[2] * 2 + componentTokens.tabBar.height,
+            paddingHorizontal: space[4],
+          }}
+        >
+          {footer}
+        </View>
+      ) : null}
       <TabBar
         items={showTabs}
         active={active}
@@ -115,6 +165,17 @@ export function AppScreen({ children }: { children: ReactNode }) {
             onPress={() => {
               setMore(false);
               router.push('/roster' as never);
+            }}
+          />
+        ) : null}
+        {settingsTeamId ? (
+          <Button
+            title="Settings"
+            variant="secondary"
+            icon="gear"
+            onPress={() => {
+              setMore(false);
+              router.push(`/teams/${settingsTeamId}` as never);
             }}
           />
         ) : null}

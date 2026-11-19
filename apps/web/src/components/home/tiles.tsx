@@ -1,6 +1,6 @@
 'use client';
 
-import { describeEventTime } from '@athleit/core';
+import { describeEventTime, teamTabHref } from '@athleit/core';
 import { getJoinRequests, type Result } from '@athleit/db/api';
 import {
   getCapacitySummary,
@@ -367,7 +367,7 @@ export function ApprovalsTile({ teamId }: { teamId: string }) {
     <TileShell
       id="home-approvals"
       title={`Join requests${pending.length ? ` · ${pending.length}` : ''}`}
-      href={`/teams/${teamId}/requests`}
+      href={teamTabHref(teamId, 'people', 'requests')}
       linkLabel="Approve or decline"
       res={res}
       empty={pending.length === 0}
@@ -376,7 +376,7 @@ export function ApprovalsTile({ teamId }: { teamId: string }) {
       <ul className={styles.threads}>
         {pending.slice(0, 3).map((r) => (
           <li key={r.id}>
-            <Link href={`/teams/${teamId}/requests`} className={styles.thread}>
+            <Link href={teamTabHref(teamId, 'people', 'requests')} className={styles.thread}>
               <span className={styles.threadText}>
                 <span className={styles.threadTitle}>{r.requester_name}</span>
                 <span className={styles.threadPreview}>Parent of {r.player_first_name}</span>

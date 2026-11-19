@@ -1,4 +1,5 @@
 import {
+  can,
   capabilitiesForPlace,
   contextPath,
   homeTileIds,
@@ -63,7 +64,7 @@ const greeting = () => {
  * switcher in the header still jumps straight to them.
  */
 export default function HomeScreen() {
-  const { contexts, active, displayName, addActions, status } = useApp();
+  const { contexts, active, displayName, addActions, status, setActive } = useApp();
   const { attention, loading } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const team = teamForScreen(contexts, active);
@@ -165,7 +166,11 @@ export default function HomeScreen() {
                   title={c.title}
                   subtitle={c.subtitle}
                   avatarName={c.title}
-                  onPress={() => router.push(contextPath(c) as never)}
+                  onPress={() =>
+                    c.kind === 'team' && !can(c, 'team.details')
+                      ? setActive(c.key)
+                      : router.push(contextPath(c) as never)
+                  }
                   testID={`place-${c.kind}`}
                 />
               ))}

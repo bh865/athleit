@@ -53,7 +53,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('the coach invites a second coach by link', async () => {
-    await coach.goto(`${teamUrl}/invites`);
+    await coach.goto(`${teamUrl}/people?view=invites`);
     await coach.getByLabel('Role').selectOption('coach');
     await coach.getByRole('button', { name: 'Create invite link' }).click();
     inviteLink = (await coach.getByTestId('invite-link').textContent())?.trim() ?? '';
@@ -84,12 +84,13 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('staff approve the request', async () => {
-    await coach.goto(`${teamUrl}/requests`);
+    await coach.goto(`${teamUrl}/people?view=requests`);
     const queue = coach.getByTestId('join-requests');
     await expect(queue).toContainText('Pat Parent');
-    await expect(queue).toContainText('For Ava Adams');
+    await expect(queue).toContainText('Parent of Ava Adams');
     await queue.getByRole('button', { name: 'Approve' }).click();
-    await expect(queue.getByText('approved')).toBeVisible();
+    // Decided requests leave the pending queue.
+    await expect(coach.getByText('No join requests')).toBeVisible();
   });
 
   test('staff place the child on the roster and see guardian contacts', async () => {
@@ -114,7 +115,8 @@ test.describe.serial('people, teams and rosters', () => {
     await expect(limited).not.toContainText('Adams');
     await expect(parent.getByRole('link', { name: 'Members' })).toHaveCount(0);
     await expect(parent.getByRole('link', { name: 'Requests' })).toHaveCount(0);
+    // Team details is staff-only: a parent who opens the old members URL is sent home, not shown a notice.
     await parent.goto(`${teamUrl}/members`);
-    await expect(parent.getByText('Only team staff can see members.')).toBeVisible();
+    await expect(parent).toHaveURL(/\/$/);
   });
 });

@@ -3,14 +3,14 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { EventBuilder } from '@/components/registration/event-builder';
+import { RegistrationBuilder } from '@/components/builders/registration-builder';
 
 function Inner() {
   const q = useSearchParams();
   const owner = q.get('team')
     ? { teamId: q.get('team') as string }
     : { clubId: q.get('club') as string };
-  return <EventBuilder eventId={null} owner={owner} />;
+  return <RegistrationBuilder eventId={null} owner={owner} />;
 }
 export default function NewRegistrationPage() {
   return (

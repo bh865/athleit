@@ -87,6 +87,10 @@ export const formFieldSchema = z
     validation: fieldValidationSchema.optional(),
     show_if: showIfSchema.optional(),
     sensitive: z.boolean().optional(),
+    /** Hint shown inside the empty input. Optional; older forms do not have it. */
+    placeholder: z.string().max(120).optional(),
+    /** Layout on wide screens. Missing means full width, so older forms look the same. */
+    width: z.enum(['half', 'full']).optional(),
   })
   .superRefine((f, ctx) => {
     if (isForbiddenFieldText(f.label) || isForbiddenFieldText(f.help)) {

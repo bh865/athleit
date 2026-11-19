@@ -1,10 +1,19 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-import { WaiverEditor } from '@/components/registration/waiver-editor';
+import { WaiverBuilder } from '@/components/builders/waiver-builder';
 
-export default function EditWaiverPage() {
+function Inner() {
   const { waiverId } = useParams<{ waiverId: string }>();
-  return <WaiverEditor waiverId={waiverId} owner={{}} />;
+  const q = useSearchParams();
+  return <WaiverBuilder waiverId={waiverId} owner={{}} returnTo={q.get('returnTo')} />;
+}
+export default function EditWaiverPage() {
+  return (
+    <Suspense fallback={null}>
+      <Inner />
+    </Suspense>
+  );
 }

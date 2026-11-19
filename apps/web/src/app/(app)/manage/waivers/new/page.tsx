@@ -3,14 +3,14 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { WaiverEditor } from '@/components/registration/waiver-editor';
+import { WaiverBuilder } from '@/components/builders/waiver-builder';
 
 function Inner() {
   const q = useSearchParams();
   const owner = q.get('team')
     ? { teamId: q.get('team') as string }
     : { clubId: q.get('club') as string };
-  return <WaiverEditor waiverId={null} owner={owner} />;
+  return <WaiverBuilder waiverId={null} owner={owner} returnTo={q.get('returnTo')} />;
 }
 export default function NewWaiverPage() {
   return (

@@ -155,10 +155,7 @@ function NewRequest({
   };
   return (
     <View style={{ gap: space[3] }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <H2>New payment request</H2>
-        <IconButton icon="x" label="Close" onPress={onClose} />
-      </View>
+      <H2>New payment request</H2>
       <TextField
         label="Title"
         value={title}
@@ -255,11 +252,14 @@ function Detail({
   event,
   canSend,
   onBack,
+  showBack = true,
   onChanged,
 }: {
   event: PaymentEventRow;
   canSend: boolean;
   onBack: () => void;
+  /** Inside Team details the screen already has a back button, so the in-page one is left out. */
+  showBack?: boolean;
   onChanged: () => void;
 }) {
   const toast = useToast();
@@ -322,7 +322,7 @@ function Detail({
 
   return (
     <View style={{ gap: space[4] }} testID="collection">
-      <IconButton icon="caret-left" label="Back to Pay" onPress={onBack} />
+      {showBack ? <IconButton icon="caret-left" label="Back to Pay" onPress={onBack} /> : null}
       <Card style={{ gap: space[3] }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space[3] }}>
           <View style={{ flex: 1 }}>
@@ -702,7 +702,16 @@ function List({
 }
 
 /** Mobile staff Pay: payout status, request list with stats, per-request detail and actions, new request sheet. Refunds and CSV export live on the web. */
-export function StaffScreen({ owner, canSend }: { owner: Owner; canSend: boolean }) {
+export function StaffScreen({
+  owner,
+  canSend,
+  embedded = false,
+}: {
+  owner: Owner;
+  canSend: boolean;
+  /** Inside Team details: no "Pay / Collection" title and no My payments toggle, only the team collection. */
+  embedded?: boolean;
+}) {
   const toast = useToast();
   const [mode, setMode] = useState<'team' | 'mine'>('team');
   const [ready, setReady] = useState(false);
@@ -733,7 +742,21 @@ export function StaffScreen({ owner, canSend }: { owner: Owner; canSend: boolean
 
   return (
     <View style={{ gap: space[4] }}>
-      {current && mode === 'team' ? null : (
+      {current && mode === 'team' ? null : embedded ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          {payout.key === 'ready' ? <PayoutBadge fill onPress={() => setSettings(true)} /> : null}
+          {canSend ? (
+            <Button
+              title="New"
+              icon="plus"
+              disabled={!ready}
+              onPress={() => setDrawer(true)}
+              testID="new-request"
+              style={{ flex: 1 }}
+            />
+          ) : null}
+        </View>
+      ) : (
         <>
           <View
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
@@ -769,7 +792,7 @@ export function StaffScreen({ owner, canSend }: { owner: Owner; canSend: boolean
         <PayScreen embedded />
       ) : (
         <>
-          {payout.key === 'ready' && !current ? (
+          {payout.key === 'ready' && !current && !embedded ? (
             <PayoutBadge onPress={() => setSettings(true)} />
           ) : null}
           {notSetUp ? <PayoutSetupTile payout={payout} /> : null}
@@ -781,6 +804,7 @@ export function StaffScreen({ owner, canSend }: { owner: Owner; canSend: boolean
               event={current}
               canSend={canSend}
               onBack={() => setSelected(null)}
+              showBack={!embedded}
               onChanged={() => {
                 events.reload();
                 sums.reload();

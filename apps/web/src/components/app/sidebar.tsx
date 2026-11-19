@@ -1,6 +1,6 @@
 'use client';
 
-import { payViewsFor } from '@athleit/core';
+import { capabilitiesForPlace, payViewsFor } from '@athleit/core';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,7 +34,7 @@ interface NavItem {
 
 /** Glass sidebar: 248 wide on desktop; collapses to a top bar on narrow screens. */
 export function Sidebar() {
-  const { status, contexts, displayName, userId, addActions } = useApp();
+  const { status, contexts, active, displayName, userId, addActions } = useApp();
   const addRef = useRef<HTMLButtonElement>(null);
   const [addOpen, setAddOpen] = useState(false);
   const pathname = usePathname();
@@ -65,7 +65,12 @@ export function Sidebar() {
   }, [userId, hasTeam]);
   const hasFamily = contexts.some((c) => c.kind === 'family');
   const pv = payViewsFor(contexts, null);
-  const showPay = pv.payer || pv.staff !== null;
+  const showPay = pv.payer;
+  // Team details (members, invites, settings...) are staff only; the active team decides which one.
+  const settingsHref =
+    active?.kind === 'team' && capabilitiesForPlace(contexts, 'team', active.id).has('team.details')
+      ? `/teams/${active.id}`
+      : null;
   const items: NavItem[] = [
     { href: '/', label: 'Home', icon: 'house' },
     ...(hasTeam
@@ -88,6 +93,7 @@ export function Sidebar() {
       : []),
     { href: '/notifications', label: 'Alerts', icon: 'bell' },
     ...(hasFamily ? [{ href: '/family', label: 'Family', icon: 'house-line' } as NavItem] : []),
+    ...(settingsHref ? [{ href: settingsHref, label: 'Settings', icon: 'gear' } as NavItem] : []),
   ];
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
