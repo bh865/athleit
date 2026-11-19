@@ -97,7 +97,7 @@ select throws_ok($$ select public.restructure_plan('b4000000-0000-0000-0000-0000
 reset role;
 select pg_temp.login('a8888888-8888-8888-8888-888888888888');
 select throws_ok($$ select public.restructure_plan('b4000000-0000-0000-0000-000000000004', 6, now() + interval '5 days') $$, '22023', null, 'out-of-range counts are refused');
-select throws_ok($$ select public.restructure_plan('b4000000-0000-0000-0000-000000000004', 5, now() + interval '5 days') $$, '23514', 'plan_too_long', 'more than six installments in total is refused');
+select lives_ok($$ select public.restructure_plan('b4000000-0000-0000-0000-000000000004', 5, now() + interval '5 days') $$, 'up to six installments in total is allowed (one paid + five open)');
 select lives_ok($$ select public.restructure_plan('b4000000-0000-0000-0000-000000000004', 1, now() + interval '20 days', 'Family asked for one payment') $$, 'two open installments become one');
 reset role;
 select is((select count(*)::int from public.payment_request_installments where request_id = 'b4000000-0000-0000-0000-000000000004'), 2, 'the plan now has two installments');
