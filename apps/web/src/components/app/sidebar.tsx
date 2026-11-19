@@ -4,26 +4,16 @@ import { capabilitiesForPlace, payViewsFor } from '@athleit/core';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { getUnreadTotal, subscribeToNotifications } from '@athleit/db/api';
 
-import { signOut } from '@/app/(auth)/actions';
-import {
-  Badge,
-  Button,
-  Glass,
-  Icon,
-  IconButton,
-  Logo,
-  Popover,
-  ThemeToggle,
-} from '@/components/ui';
+import { Badge, Glass, Icon, IconButton, Logo } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { AccountChip } from './account-chip';
 import { useApp } from './app-provider';
-import { ADD_LABEL, ContextSwitcher } from './context-switcher';
+import { ContextSwitcher } from './context-switcher';
 import styles from './sidebar.module.css';
 
 interface NavItem {
@@ -35,9 +25,7 @@ interface NavItem {
 
 /** Glass sidebar: 248 wide on desktop; collapses to a top bar on narrow screens. */
 export function Sidebar() {
-  const { status, contexts, active, displayName, userId, addActions } = useApp();
-  const addRef = useRef<HTMLButtonElement>(null);
-  const [addOpen, setAddOpen] = useState(false);
+  const { status, contexts, active, userId } = useApp();
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   // Open for one path only: navigating closes the drawer without a setState-in-effect.
@@ -149,53 +137,6 @@ export function Sidebar() {
         </nav>
         <div className={styles.footer}>
           {status === 'ready' ? <AccountChip /> : null}
-          <div className={styles.addWrap}>
-            <Button
-              ref={addRef}
-              variant="secondary"
-              fullWidth
-              aria-haspopup="menu"
-              aria-expanded={addOpen}
-              onClick={() => setAddOpen((o) => !o)}
-              data-testid="account-add"
-            >
-              <Icon name="plus" size="sm" /> Add or join
-            </Button>
-            <Popover
-              open={addOpen}
-              onClose={() => setAddOpen(false)}
-              anchor={addRef}
-              label="Add a team, club or family"
-            >
-              <ul className={styles.addList}>
-                {addActions.map((a) => (
-                  <li key={a}>
-                    <Link
-                      href={ADD_LABEL[a].href}
-                      className={styles.addItem}
-                      onClick={() => setAddOpen(false)}
-                    >
-                      <span className={styles.addIcon}>
-                        <Icon name="plus" size="sm" />
-                      </span>
-                      {ADD_LABEL[a].label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Popover>
-          </div>
-          <ThemeToggle />
-          <form action={signOut}>
-            <Button
-              type="submit"
-              variant="ghost"
-              fullWidth
-              aria-label={`Sign out ${displayName ?? ''}`.trim()}
-            >
-              <Icon name="sign-out" size="sm" /> Sign out
-            </Button>
-          </form>
         </div>
       </Glass>
     </>

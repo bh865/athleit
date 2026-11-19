@@ -3803,6 +3803,7 @@ export type Database = {
         Returns: Json
       }
       delete_event: { Args: { p_event_id: string }; Returns: undefined }
+      delete_invite: { Args: { p_invite_id: string }; Returns: undefined }
       delete_message: { Args: { p_message_id: string }; Returns: undefined }
       edit_message: {
         Args: { p_body: string; p_message_id: string }

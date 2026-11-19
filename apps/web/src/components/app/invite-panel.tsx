@@ -3,15 +3,24 @@
 import {
   createHouseholdInvite,
   createInvite,
+  deleteInvite,
   listInvites,
   revokeInvite,
   type InviteTarget,
 } from '@athleit/db/api';
 import { friendlyError } from '@athleit/core';
 import QRCode from 'qrcode';
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
-import { Badge, Button, Icon, Select, TextField } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  ConfirmSheet,
+  Icon,
+  SegmentedControl,
+  Select,
+  TextField,
+} from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -72,7 +81,7 @@ export function InvitePanel({
   return <LinkInvitePanel target={target} roles={roles} />;
 }
 
-/** Household invite card body: a Link | Code tablist (arrow keys move between tabs). */
+/** Household invite card body: a Link | Code toggle. */
 function HouseholdInvite({
   householdId,
   childNames,
@@ -83,61 +92,25 @@ function HouseholdInvite({
   childNames: readonly string[];
   children: React.ReactNode;
 }) {
-  const id = useId();
   const [tab, setTab] = useState<'link' | 'code'>('link');
-  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const tabs = [
-    { key: 'link', label: 'Link' },
-    { key: 'code', label: 'Code' },
-  ] as const;
-  function onKey(e: KeyboardEvent) {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-    e.preventDefault();
-    const i = tabs.findIndex((t) => t.key === tab);
-    const next =
-      e.key === 'Home'
-        ? 0
-        : e.key === 'End'
-          ? tabs.length - 1
-          : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    const k = tabs[next]!.key;
-    setTab(k);
-    refs.current[k]?.focus();
-  }
   return (
     <div className={styles.stack}>
-      <div role="tablist" aria-label="Invite method" className={styles.tabs} onKeyDown={onKey}>
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            ref={(el) => {
-              refs.current[t.key] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`${id}-${t.key}-tab`}
-            aria-selected={tab === t.key}
-            aria-controls={`${id}-${t.key}-panel`}
-            tabIndex={tab === t.key ? 0 : -1}
-            className={`${styles.tab} ${tab === t.key ? styles.tabActive : ''}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div>
+        <SegmentedControl
+          label="Invite method"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'link', label: 'Link' },
+            { value: 'code', label: 'Code' },
+          ]}
+        />
       </div>
-      <div
-        role="tabpanel"
-        id={`${id}-${tab}-panel`}
-        aria-labelledby={`${id}-${tab}-tab`}
-        tabIndex={0}
-      >
-        {tab === 'link' ? (
-          children
-        ) : (
-          <FamilyCodePanel householdId={householdId} childNames={childNames} />
-        )}
-      </div>
+      {tab === 'link' ? (
+        children
+      ) : (
+        <FamilyCodePanel householdId={householdId} childNames={childNames} />
+      )}
     </div>
   );
 }
@@ -159,6 +132,7 @@ function LinkInvitePanel({
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ url: string; role: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -197,6 +171,16 @@ function LinkInvitePanel({
 
   async function onRevoke(id: string) {
     const res = await revokeInvite(client, id);
+    if (res.error) setError(friendlyError(res.error));
+    else list.reload();
+  }
+
+  async function onDelete() {
+    if (!deleting) return;
+    setBusy(true);
+    const res = await deleteInvite(client, deleting);
+    setBusy(false);
+    setDeleting(null);
     if (res.error) setError(friendlyError(res.error));
     else list.reload();
   }
@@ -282,11 +266,32 @@ function LinkInvitePanel({
                     Revoke
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  onClick={() => setDeleting(inv.id)}
+                  aria-label={`Delete ${inv.role} invite`}
+                >
+                  <Icon name="trash" size="sm" /> Delete
+                </Button>
               </li>
             );
           })}
         </ul>
       </LoadState>
+      <ConfirmSheet
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Delete this invite?"
+        confirmLabel="Delete invite"
+        busy={busy}
+        alert
+        onConfirm={() => void onDelete()}
+      >
+        <p>
+          It disappears from this list and its link stops working. People who already joined keep
+          their access.
+        </p>
+      </ConfirmSheet>
     </div>
   );
 }

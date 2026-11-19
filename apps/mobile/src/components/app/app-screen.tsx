@@ -1,25 +1,13 @@
-import { capabilitiesForPlace, payViewsFor } from '@athleit/core';
+import { payViewsFor } from '@athleit/core';
 import { componentTokens, space } from '@athleit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  Avatar,
-  Backdrop,
-  Button,
-  Icon,
-  Sheet,
-  TabBar,
-  Text,
-  ThemeToggle,
-  type TabItem,
-} from '@/components/ui';
+import { Backdrop, TabBar, Text, type TabItem } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 
-import { ADD } from './context-switcher';
-import { useAuth } from '@/lib/auth';
 import { useUnread } from '@/lib/use-unread';
 
 import { AppHeader } from './app-header';
@@ -31,24 +19,13 @@ import { ScreenTitleContext, type ScreenTitle } from './screen-title';
 
 /** Screens that show the brand header (the rest are detail screens with a back button). */
 
-const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/notifications']);
+const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/notifications', '/more']);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const {
-    status,
-    contexts,
-    active: place,
-    userId,
-    addActions,
-    displayName,
-    email,
-    avatarUrl,
-  } = useApp();
-  const { signOut } = useAuth();
+  const { status, contexts, userId } = useApp();
   const router = useRouter();
   const pathname = usePathname();
-  const [more, setMore] = useState(false);
   const [screenTitle, setScreenTitle] = useState<ScreenTitle | null>(null);
   const [footer, setFooter] = useState<ReactNode>(null);
   const insets = useSafeAreaInsets();
@@ -58,11 +35,6 @@ export function AppScreen({ children }: { children: ReactNode }) {
   const hasTeam = contexts.some((c) => c.kind === 'team');
   const pv = payViewsFor(contexts, null);
   const showPay = pv.payer;
-  // Team details (members, invites, settings...) are staff only; the active team decides which one.
-  const settingsTeamId =
-    place?.kind === 'team' && capabilitiesForPlace(contexts, 'team', place.id).has('team.details')
-      ? place.id
-      : null;
   const unread = useUnread(userId, hasTeam);
   const tabs: TabItem[] = [
     { key: 'home', label: 'Home', icon: 'house' },
@@ -77,7 +49,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
     { key: 'more', label: 'More', icon: 'dots-three-circle' },
   ];
   const showTabs = tabs.length > 5 ? tabs.filter((t) => t.key !== 'family') : tabs;
-  const active = more
+  const active = pathname.startsWith('/more')
     ? 'more'
     : pathname.startsWith('/schedule') || pathname.startsWith('/events')
       ? 'schedule'
@@ -161,118 +133,21 @@ export function AppScreen({ children }: { children: ReactNode }) {
         items={showTabs}
         active={active}
         onSelect={(key) => {
-          if (key === 'more') setMore(true);
-          else
-            router.replace(
-              key === 'home'
-                ? '/'
-                : key === 'schedule'
-                  ? '/schedule'
-                  : key === 'messages'
-                    ? '/messages'
-                    : key === 'pay'
-                      ? '/pay'
+          router.replace(
+            key === 'home'
+              ? '/'
+              : key === 'schedule'
+                ? '/schedule'
+                : key === 'messages'
+                  ? '/messages'
+                  : key === 'pay'
+                    ? '/pay'
+                    : key === 'more'
+                      ? ('/more' as never)
                       : '/family',
-            );
+          );
         }}
       />
-      <Sheet open={more} onClose={() => setMore(false)} title="More">
-        <Text variant="heading">More</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Account for ${displayName ?? email ?? 'you'}`}
-          testID="more-account-chip"
-          onPress={() => {
-            setMore(false);
-            router.push('/account' as never);
-          }}
-          style={{
-            minHeight: componentTokens.minTarget,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: space[3],
-          }}
-        >
-          <Avatar name={displayName ?? email ?? 'Account'} src={avatarUrl} size="md" />
-          <View style={{ flex: 1 }}>
-            <Text variant="bodyBold" numberOfLines={1}>
-              {displayName ?? email}
-            </Text>
-            {displayName && email ? (
-              <Text variant="caption" muted numberOfLines={1}>
-                {email}
-              </Text>
-            ) : null}
-          </View>
-          <Icon name="caret-right" size="sm" />
-        </Pressable>
-        {hasTeam ? (
-          <Button
-            title="Roster"
-            variant="secondary"
-            icon="users-three"
-            onPress={() => {
-              setMore(false);
-              router.push('/roster' as never);
-            }}
-          />
-        ) : null}
-        {settingsTeamId ? (
-          <Button
-            title="Settings"
-            variant="secondary"
-            icon="gear"
-            onPress={() => {
-              setMore(false);
-              router.push(`/teams/${settingsTeamId}` as never);
-            }}
-          />
-        ) : null}
-        {hasFamily ? (
-          <Button
-            title="Family"
-            variant="secondary"
-            onPress={() => {
-              setMore(false);
-              router.push('/family' as never);
-            }}
-          />
-        ) : null}
-        {hasFamily ? (
-          <Button
-            title="Registrations"
-            variant="secondary"
-            icon="clipboard-text"
-            onPress={() => {
-              setMore(false);
-              router.push('/registrations' as never);
-            }}
-          />
-        ) : null}
-        <Button
-          title="Alerts"
-          variant="secondary"
-          icon="bell"
-          onPress={() => {
-            setMore(false);
-            router.push('/notifications' as never);
-          }}
-        />
-        {addActions.map((a) => (
-          <Button
-            key={a}
-            title={ADD[a].label}
-            variant="ghost"
-            icon="plus"
-            onPress={() => {
-              setMore(false);
-              router.push(ADD[a].href as never);
-            }}
-          />
-        ))}
-        <ThemeToggle />
-        <Button title="Sign out" variant="ghost" icon="sign-out" onPress={() => void signOut()} />
-      </Sheet>
     </Backdrop>
   );
 }

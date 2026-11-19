@@ -2,6 +2,7 @@ import { friendlyError } from '@athleit/core';
 import {
   createHouseholdInvite,
   createInvite,
+  deleteInvite,
   listInvites,
   revokeInvite,
   type InviteTarget,
@@ -12,12 +13,12 @@ import { useState } from 'react';
 import { Share, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { Button, Text, TextField, useTheme } from '@/components/ui';
+import { Button, SegmentedControl, Sheet, Text, TextField, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
 import { FamilyCodePanel } from './family-code-panel';
-import { Badge, Choice, FormMessage, H2, ListItem, LoadState, Notice, Segmented } from './kit';
+import { Badge, Choice, FormMessage, H2, ListItem, LoadState, Notice } from './kit';
 
 export interface RoleOption {
   value: string;
@@ -54,7 +55,8 @@ export function InvitePanel({
   if (!('householdId' in target)) return <LinkInvitePanel target={target} roles={roles} />;
   return (
     <View style={{ gap: space[4] }}>
-      <Segmented
+      <SegmentedControl
+        label="Invite method"
         value={tab}
         onChange={setTab}
         options={[
@@ -87,6 +89,7 @@ function LinkInvitePanel({
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ url: string; role: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function onCreate() {
     const expiresInDays = Number(days);
@@ -115,6 +118,16 @@ function LinkInvitePanel({
 
   async function onRevoke(id: string) {
     const res = await revokeInvite(supabase, id);
+    if (res.error) setError(friendlyError(res.error));
+    else list.reload();
+  }
+
+  async function onDelete() {
+    if (!deleting) return;
+    setBusy(true);
+    const res = await deleteInvite(supabase, deleting);
+    setBusy(false);
+    setDeleting(null);
     if (res.error) setError(friendlyError(res.error));
     else list.reload();
   }
@@ -196,11 +209,33 @@ function LinkInvitePanel({
                 {s.label === 'Active' && (
                   <Button title="Revoke" variant="ghost" onPress={() => void onRevoke(inv.id)} />
                 )}
+                <Button
+                  title="Delete"
+                  variant="ghost"
+                  icon="trash"
+                  accessibilityLabel={`Delete ${inv.role} invite`}
+                  onPress={() => setDeleting(inv.id)}
+                />
               </View>
             );
           })}
         </View>
       </LoadState>
+
+      <Sheet
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Delete this invite?"
+        level="modal"
+      >
+        <Text variant="heading">Delete this invite?</Text>
+        <Text muted>
+          It disappears from this list and its link stops working. People who already joined keep
+          their access.
+        </Text>
+        <Button title="Delete invite" loading={busy} onPress={() => void onDelete()} />
+        <Button title="Cancel" variant="ghost" onPress={() => setDeleting(null)} />
+      </Sheet>
     </View>
   );
 }

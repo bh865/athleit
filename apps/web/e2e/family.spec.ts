@@ -54,7 +54,16 @@ test.describe.serial('family page and family code', () => {
   test('the invite card keeps the link flow and adds a Code tab; rotate asks first', async () => {
     await guardian.getByRole('button', { name: 'Create invite link' }).click();
     await expect(guardian.getByTestId('invite-link')).toBeVisible();
-    await guardian.getByRole('tab', { name: 'Code' }).click();
+    // Revoked invites can be deleted too.
+    await guardian.getByRole('button', { name: 'Revoke guardian invite' }).click();
+    await expect(guardian.getByText('Revoked')).toBeVisible();
+    await guardian.getByRole('button', { name: 'Delete guardian invite' }).click();
+    await guardian
+      .getByRole('alertdialog', { name: 'Delete this invite?' })
+      .getByRole('button', { name: 'Delete invite' })
+      .click();
+    await expect(guardian.getByText('No invites yet.')).toBeVisible();
+    await guardian.getByRole('radio', { name: 'Code' }).click();
     const first = (await guardian.getByTestId('family-code').textContent())?.replace(/\s/g, '');
     expect(first).toMatch(/^[A-Z0-9]{10}$/);
     await guardian.getByTestId('family-code-rotate').click();
@@ -83,7 +92,7 @@ test.describe.serial('family page and family code', () => {
 
   test('a second person requests with the code; the guardian approves and they see the children', async () => {
     await guardian.goto('/family');
-    await guardian.getByRole('tab', { name: 'Code' }).click();
+    await guardian.getByRole('radio', { name: 'Code' }).click();
     const code = (await guardian.getByTestId('family-code').textContent())!.replace(/\s/g, '');
     await joiner.goto('/family');
     await joiner.getByTestId('join-family').click();
@@ -93,7 +102,7 @@ test.describe.serial('family page and family code', () => {
     await expect(joiner.getByTestId('child-card')).toHaveCount(0);
 
     await guardian.goto('/family');
-    await guardian.getByRole('tab', { name: 'Code' }).click();
+    await guardian.getByRole('radio', { name: 'Code' }).click();
     const requests = guardian.getByTestId('guardian-requests');
     await expect(requests).toContainText('Jo Joiner');
     await requests.getByRole('button', { name: 'Approve Jo Joiner' }).click();
@@ -111,7 +120,7 @@ test.describe.serial('family page and family code', () => {
 
   test('a declined request grants nothing', async () => {
     await guardian.goto('/family');
-    await guardian.getByRole('tab', { name: 'Code' }).click();
+    await guardian.getByRole('radio', { name: 'Code' }).click();
     const code = (await guardian.getByTestId('family-code').textContent())!.replace(/\s/g, '');
     await signUp(stranger, 'stranger', 'Sam Stranger');
     await stranger.goto('/family');
@@ -121,7 +130,7 @@ test.describe.serial('family page and family code', () => {
     await expect(stranger.getByTestId('join-family-sent')).toBeVisible();
 
     await guardian.goto('/family');
-    await guardian.getByRole('tab', { name: 'Code' }).click();
+    await guardian.getByRole('radio', { name: 'Code' }).click();
     await guardian.getByRole('button', { name: 'Decline Sam Stranger' }).click();
     await expect(guardian.getByTestId('guardian-requests')).toHaveCount(0);
     await stranger.goto('/family');

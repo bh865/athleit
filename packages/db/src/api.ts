@@ -352,6 +352,9 @@ export const listInvites = (client: Client, target: InviteTarget) => {
 export const revokeInvite = (client: Client, inviteId: string) =>
   runVoid(client.rpc('revoke_invite', { p_invite_id: inviteId }));
 
+export const deleteInvite = (client: Client, inviteId: string) =>
+  runVoid(client.rpc('delete_invite', { p_invite_id: inviteId }));
+
 export const previewInvite = (client: Client, token: string) =>
   run(client.rpc('preview_invite', { p_token: token }), []);
 
