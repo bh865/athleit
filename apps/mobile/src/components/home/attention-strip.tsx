@@ -107,11 +107,20 @@ function Actions({
     );
   }
   return (
-    <Button
-      title={attentionActionLabel(item)}
-      variant={primary ? 'primary' : 'secondary'}
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${attentionActionLabel(item)}: ${item.label}`}
       onPress={() => router.push(item.href as never)}
-    />
+      hitSlop={space[2]}
+      style={{
+        width: componentTokens.iconButton.size,
+        height: componentTokens.iconButton.size,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Icon name="caret-right" color={theme.color.ink} />
+    </Pressable>
   );
 }
 
@@ -163,15 +172,16 @@ function Row({
   const c = theme.color;
   const router = useRouter();
   const size = componentTokens.avatar.md;
+  // Rows that settle in place (Going, Approve / Decline) keep their buttons; the rest end in a caret on the same row.
+  const inPlace = item.action?.type === 'rsvp' || item.action?.type === 'decide';
   return (
     <View
       testID="attention-row"
       style={{
         flexDirection: 'row',
-        flexWrap: 'wrap',
+        flexWrap: inPlace ? 'wrap' : 'nowrap',
         alignItems: 'center',
         gap: space[3],
-        minHeight: componentTokens.listRow.height,
         paddingVertical: space[2],
       }}
     >
@@ -189,7 +199,7 @@ function Row({
       >
         <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} color={c.ink} />
       </View>
-      <View style={{ flex: 1, minWidth: 140, gap: space[1] }}>
+      <View style={{ flex: 1, minWidth: inPlace ? 140 : 0, gap: space[1] }}>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={item.detail ? `${item.label}, ${item.detail}` : item.label}
