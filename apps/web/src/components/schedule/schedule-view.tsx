@@ -36,6 +36,7 @@ import { EventForm } from './event-form';
 import { EventRow } from './event-row';
 import { MonthGrid } from './month-grid';
 import { fromHouseholdRows, fromTeamRows, type ScheduleItem } from './items';
+import { OpponentsManager } from './opponents-manager';
 import { PlacesManager } from './places-manager';
 import styles from './schedule.module.css';
 import { useViewerZone } from './use-viewer-zone';
@@ -80,6 +81,7 @@ export function ScheduleView({
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [places, setPlaces] = useState(false);
+  const [opponents, setOpponents] = useState(false);
   const [feed, setFeed] = useState(false);
 
   const [y, m] = anchor.split('-').map(Number) as [number, number];
@@ -187,9 +189,14 @@ export function ScheduleView({
         </div>
         <div className={styles.controls}>
           {canManage ? (
-            <Button variant="ghost" onClick={() => setPlaces(true)}>
-              <Icon name="map-pin" size="sm" /> Places
-            </Button>
+            <>
+              <Button variant="ghost" onClick={() => setPlaces(true)}>
+                <Icon name="map-pin" size="sm" /> Places
+              </Button>
+              <Button variant="ghost" onClick={() => setOpponents(true)}>
+                <Icon name="flag" size="sm" /> Opponents
+              </Button>
+            </>
           ) : null}
           <Button variant="ghost" onClick={() => setFeed(true)}>
             <Icon name="link" size="sm" /> Calendar link
@@ -279,6 +286,13 @@ export function ScheduleView({
       ) : null}
       {scope.kind === 'team' ? (
         <PlacesManager open={places} onClose={() => setPlaces(false)} teamId={scope.teamId} />
+      ) : null}
+      {scope.kind === 'team' ? (
+        <OpponentsManager
+          open={opponents}
+          onClose={() => setOpponents(false)}
+          teamId={scope.teamId}
+        />
       ) : null}
       <CalendarFeed open={feed} onClose={() => setFeed(false)} />
     </div>

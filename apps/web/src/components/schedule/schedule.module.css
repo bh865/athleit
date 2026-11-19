@@ -168,12 +168,27 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  padding: 0 var(--space-1);
+  padding: 2px var(--space-2);
+  border: 0;
+  border-left: 3px solid var(--color-muted);
   border-radius: var(--radius-xs);
   background: var(--color-surface-alt);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
   font-size: var(--text-caption-size);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.cellEventGame {
+  border-left-color: var(--color-accent);
+}
+.cellEventPractice {
+  border-left-color: var(--color-warn);
+}
+.cellEventOther {
+  border-left-color: var(--color-muted);
 }
 .cellEventCancelled {
   text-decoration: line-through;
@@ -196,9 +211,18 @@
   gap: var(--space-4);
   width: var(--size-schedule-drawer-width);
   max-width: calc(100vw - var(--space-8));
-  overflow-y: auto;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
   padding: var(--space-6);
   border-radius: var(--radius-xl);
+}
+.drawer.drawer::-webkit-scrollbar {
+  width: 8px;
+}
+.drawer.drawer::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: var(--color-muted);
 }
 .drawerHead {
   display: flex;
@@ -227,11 +251,15 @@
 }
 .counts {
   display: flex;
-  gap: var(--space-6);
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 .count {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 .countValue {
   font-family: var(--font-mono);
@@ -311,7 +339,8 @@
 }
 .actionRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: var(--space-2);
 }
 .rsvpPill {
@@ -447,4 +476,25 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.map {
+  width: 100%;
+  height: 180px;
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--size-card-radius);
+}
+.note {
+  padding: var(--space-3) var(--space-4);
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--size-card-radius);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+/* Keep every fact icon the same size; long text must not squeeze the glyph. */
+.fact > svg {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }

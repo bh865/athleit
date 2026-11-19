@@ -61,7 +61,7 @@ export function CancelSheet({
     onDone();
   }
   return (
-    <Sheet open={open} onClose={onClose} title="Cancel event" level="modal">
+    <Sheet open={open} onClose={onClose} title="Cancel event">
       <View style={{ gap: space[4] }}>
         <Text variant="heading">Cancel “{event.title}”?</Text>
         <Text muted>Families are told, and the event stays on the schedule marked cancelled.</Text>

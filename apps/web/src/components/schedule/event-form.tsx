@@ -120,6 +120,8 @@ function EventFormBody({
       homeAway: (editing?.home_away ?? '') as '' | 'home' | 'away' | 'neutral',
       arrive: editing?.arrive_early_minutes?.toString() ?? '',
       notes: editing?.notes ?? '',
+      virtual: Boolean(editing?.virtual_url),
+      url: editing?.virtual_url ?? '',
     };
   }, [editing, zone0]);
 
@@ -158,6 +160,8 @@ function EventFormBody({
   const isSeries = Boolean(editing?.series_id);
   const multi = isSeries && scope !== 'this';
   const isGame = f.type === 'game';
+  // Only a general "Event" can be virtual; games and practices are in person.
+  const isVirtual = f.type === 'event' && f.virtual;
   const zones = useMemo(() => allZones(zone0), [zone0]);
 
   async function submit() {
@@ -168,11 +172,26 @@ function EventFormBody({
 
     setBusy(true);
     try {
+      const url = isVirtual ? f.url.trim() : '';
+      if (isVirtual && !/^https?:\/\/\S+$/i.test(url))
+        return setError('Enter the meeting link, starting with https://');
+      // A game is titled by its opponent.
+      let title = f.title.trim();
+      if (isGame) {
+        const oppName =
+          f.opp === NEW ? newOpp.trim() : (opponents.find((o) => o.id === f.opp)?.name ?? '');
+        if (!oppName) return setError('Choose or add the opponent.');
+        title = oppName.slice(0, 120);
+      }
       // Saved location / opponent first, so the event can reference them.
-      let locationId: string | null = f.loc && f.loc !== TYPED ? f.loc : null;
+      let locationId: string | null = !isVirtual && f.loc && f.loc !== TYPED ? f.loc : null;
       let locationText: string | null =
-        f.loc === TYPED ? (picked ? placeText(picked) : f.locText.trim() || null) : null;
-      if (f.loc === TYPED && saveLoc && locationText) {
+        !isVirtual && f.loc === TYPED
+          ? picked
+            ? placeText(picked)
+            : f.locText.trim() || null
+          : null;
+      if (!isVirtual && f.loc === TYPED && saveLoc && locationText) {
         // A picked place keeps its full address and coordinates; typed text saves as a name only.
         const r = await addLocation(client, {
           team_id: teamId,
@@ -191,7 +210,8 @@ function EventFormBody({
 
       if (editing) {
         const patch: Record<string, unknown> = {};
-        if (f.title.trim() !== editing.title) patch.title = f.title.trim();
+        if (title !== editing.title) patch.title = title;
+        if ((url || null) !== (editing.virtual_url ?? null)) patch.virtual_url = url || null;
         if ((f.notes || null) !== (editing.notes ?? null)) patch.notes = f.notes || null;
         const locChanged =
           (editing.location_id ?? null) !== locationId ||
@@ -233,7 +253,7 @@ function EventFormBody({
       const input = {
         team_id: teamId,
         type: f.type,
-        title: f.title,
+        title,
         starts_at: startsAt,
         ends_at: endsAt,
         timezone: f.timezone,
@@ -242,6 +262,7 @@ function EventFormBody({
         opponent_id: opponentId,
         home_away: isGame && f.homeAway ? f.homeAway : null,
         notes: f.notes || null,
+        virtual_url: url || null,
         arrive_early_minutes: f.arrive === '' ? null : Number(f.arrive),
         recurrence: repeat
           ? {
@@ -264,7 +285,12 @@ function EventFormBody({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={editing ? 'Edit event' : 'New event'}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={editing ? 'Edit event' : 'New event'}
+      placement="right"
+    >
       <form
         className={styles.form}
         onSubmit={(e) => {
@@ -284,14 +310,16 @@ function EventFormBody({
             options={EVENT_TYPES.map((t) => ({ value: t, label: EVENT_TYPE_LABELS[t] }))}
           />
         ) : null}
-        <TextField
-          label="Title"
-          value={f.title}
-          onChange={(e) => set('title', e.target.value)}
-          placeholder={isGame ? 'Game vs. …' : 'Practice'}
-          required
-          maxLength={120}
-        />
+        {!isGame ? (
+          <TextField
+            label="Title"
+            value={f.title}
+            onChange={(e) => set('title', e.target.value)}
+            placeholder="Practice"
+            required
+            maxLength={120}
+          />
+        ) : null}
         {!multi ? (
           <DatePicker
             label="Date"
@@ -314,41 +342,67 @@ function EventFormBody({
             options={zones.map((z) => ({ value: z, label: z.replaceAll('_', ' ') }))}
           />
         ) : null}
-        <Select
-          label="Location"
-          value={f.loc}
-          onChange={(e) => set('loc', e.target.value)}
-          options={[
-            { value: NONE, label: 'No location' },
-            ...locations.map((l) => ({ value: l.id, label: l.name })),
-            { value: TYPED, label: 'Add a new place…' },
-          ]}
-        />
-        {f.loc === TYPED ? (
+        {f.type === 'event' ? (
+          <SegmentedControl
+            label="Where"
+            value={isVirtual ? 'virtual' : 'in_person'}
+            onChange={(v) => set('virtual', v === 'virtual')}
+            options={[
+              { value: 'in_person', label: 'In person' },
+              { value: 'virtual', label: 'Virtual' },
+            ]}
+          />
+        ) : null}
+        {isVirtual ? (
+          <TextField
+            label="Meeting link"
+            type="url"
+            inputMode="url"
+            placeholder="https://"
+            value={f.url}
+            onChange={(e) => set('url', e.target.value)}
+            maxLength={500}
+            required
+          />
+        ) : (
           <>
-            <PlaceAutocomplete
-              label="Place name or address"
-              value={f.locText}
-              verified={picked !== null}
-              onChange={(text) => set('locText', text)}
-              onSelect={(p) => {
-                setPicked(p);
-                set('locText', p.formattedAddress);
-              }}
-              onClear={() => {
-                setPicked(null);
-                set('locText', '');
-              }}
+            <Select
+              label="Location"
+              value={f.loc}
+              onChange={(e) => set('loc', e.target.value)}
+              options={[
+                { value: NONE, label: 'No location' },
+                ...locations.map((l) => ({ value: l.id, label: l.name })),
+                { value: TYPED, label: 'Add a new place…' },
+              ]}
             />
-            {!editing ? (
-              <div className={styles.chips}>
-                <Chip selected={saveLoc} onClick={() => setSaveLoc(!saveLoc)}>
-                  Save for next time
-                </Chip>
-              </div>
+            {f.loc === TYPED ? (
+              <>
+                <PlaceAutocomplete
+                  label="Place name or address"
+                  value={f.locText}
+                  verified={picked !== null}
+                  onChange={(text) => set('locText', text)}
+                  onSelect={(p) => {
+                    setPicked(p);
+                    set('locText', p.formattedAddress);
+                  }}
+                  onClear={() => {
+                    setPicked(null);
+                    set('locText', '');
+                  }}
+                />
+                {!editing ? (
+                  <div className={styles.chips}>
+                    <Chip selected={saveLoc} onClick={() => setSaveLoc(!saveLoc)}>
+                      Save for next time
+                    </Chip>
+                  </div>
+                ) : null}
+              </>
             ) : null}
           </>
-        ) : null}
+        )}
         {isGame ? (
           <>
             <Select

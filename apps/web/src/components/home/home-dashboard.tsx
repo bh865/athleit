@@ -2,6 +2,7 @@
 
 import {
   capabilitiesForPlace,
+  mapEmbedUrl,
   homeTileIds,
   rolesLabel,
   describeEventTime,
@@ -9,7 +10,6 @@ import {
   previewOf,
   teamForScreen,
   type RsvpStatus,
-  mapsUrl,
 } from '@athleit/core';
 import { getJoinRequests, getRoster, getThreadList } from '@athleit/db/api';
 import { getNextUp } from '@athleit/db/scheduling';
@@ -78,8 +78,7 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
   }
   const t = describeEventTime(top.starts_at, top.ends_at, top.timezone, zone ?? 'UTC');
   const place = top.location_name ?? top.location_text ?? null;
-  const mapHref = mapsUrl({
-    placeId: top.location_place_id,
+  const embedSrc = mapEmbedUrl({
     lat: top.location_lat,
     lng: top.location_lng,
     address: top.location_address,
@@ -141,20 +140,15 @@ function NextUpHero({ canManage }: { canManage: boolean }) {
           />
         ))}
       </div>
-      {place ? (
-        <div className={styles.tile}>
-          <span className={styles.pin}>
-            <Icon name="map-pin" weight="fill" size="lg" />
-          </span>
-          <Text variant="bodyBold">{place}</Text>
-          <a
-            className={styles.mapLink}
-            href={mapHref ?? undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open in Maps
-          </a>
+      {embedSrc ? (
+        <div className={styles.mapTile} data-testid="next-up-map">
+          <iframe
+            className={styles.mapFrame}
+            title={`Map: ${place ?? 'event location'}`}
+            loading="lazy"
+            src={embedSrc}
+          />
+          {place ? <Text variant="bodyBold">{place}</Text> : null}
         </div>
       ) : null}
     </Card>

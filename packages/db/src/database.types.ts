@@ -443,6 +443,7 @@ export type Database = {
           title: string
           type: string
           updated_at: string
+          virtual_url: string | null
         }
         Insert: {
           arrive_early_minutes?: number | null
@@ -466,6 +467,7 @@ export type Database = {
           title: string
           type: string
           updated_at?: string
+          virtual_url?: string | null
         }
         Update: {
           arrive_early_minutes?: number | null
@@ -489,6 +491,7 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          virtual_url?: string | null
         }
         Relationships: [
           {
@@ -3314,6 +3317,7 @@ export type Database = {
           p_timezone: string
           p_title: string
           p_type: string
+          p_virtual_url?: string
         }
         Returns: {
           event_id: string
@@ -3541,6 +3545,7 @@ export type Database = {
           timezone: string
           title: string
           type: string
+          virtual_url: string
         }[]
       }
       get_guardian_contacts: {
