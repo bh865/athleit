@@ -6,7 +6,7 @@ import {
   type DeleteAccountDeps,
 } from '../../../supabase/functions/_shared/account/delete-account';
 
-const none: Blockers = { teams: [], clubs: [], households: [] };
+const none: Blockers = { teams: [], clubs: [], households: [], plans: [] };
 function deps(blockers: Blockers = none): DeleteAccountDeps & {
   removeAvatars: ReturnType<typeof vi.fn>;
   deleteUser: ReturnType<typeof vi.fn>;
@@ -38,6 +38,12 @@ describe('deleteAccount', () => {
   it('is blocked when the user is the only guardian of children', async () => {
     const d = deps({ ...none, households: [{ id: 'h1', name: 'Hayes family' }] });
     expect(await deleteAccount('u1', 'DELETE', d)).toMatchObject({ ok: false, status: 409 });
+  });
+
+  it('is blocked while a payment plan still has installments to pay', async () => {
+    const d = deps({ ...none, plans: [{ id: 'r1', name: 'Season dues · PR-1' }] });
+    expect(await deleteAccount('u1', 'DELETE', d)).toMatchObject({ ok: false, status: 409 });
+    expect(d.deleteUser).not.toHaveBeenCalled();
   });
 
   it('removes the photo and then deletes only the caller', async () => {

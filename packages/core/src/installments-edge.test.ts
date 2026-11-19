@@ -25,19 +25,17 @@ const log = vi.fn();
 
 function fakeStore(over: Record<string, unknown> = {}) {
   return {
-    claimDueInstallments: vi
-      .fn()
-      .mockResolvedValue([
-        {
-          installment_id: uuid(1),
-          request_id: uuid(4),
-          payer: uuid(5),
-          household_id: uuid(2),
-          customer: 'cus_1',
-          payment_method: 'pm_1',
-          attempt: 0,
-        },
-      ]),
+    claimDueInstallments: vi.fn().mockResolvedValue([
+      {
+        installment_id: uuid(1),
+        request_id: uuid(4),
+        payer: uuid(5),
+        household_id: uuid(2),
+        customer: 'cus_1',
+        payment_method: 'pm_1',
+        attempt: 0,
+      },
+    ]),
     reserveInstallments: vi.fn().mockResolvedValue(reserve()),
     reservePlan: vi
       .fn()
@@ -107,19 +105,17 @@ describe('chargeDueInstallments', () => {
   });
   it('a retry uses a new key (the attempt number moved), so a declined charge can be tried again', async () => {
     const store = fakeStore({
-      claimDueInstallments: vi
-        .fn()
-        .mockResolvedValue([
-          {
-            installment_id: uuid(1),
-            request_id: uuid(4),
-            payer: uuid(5),
-            household_id: uuid(2),
-            customer: 'cus_1',
-            payment_method: 'pm_1',
-            attempt: 1,
-          },
-        ]),
+      claimDueInstallments: vi.fn().mockResolvedValue([
+        {
+          installment_id: uuid(1),
+          request_id: uuid(4),
+          payer: uuid(5),
+          household_id: uuid(2),
+          customer: 'cus_1',
+          payment_method: 'pm_1',
+          attempt: 1,
+        },
+      ]),
     });
     const post = vi.fn().mockResolvedValue({ id: 'pi_y', status: 'succeeded' });
     await chargeDueInstallments({ store, stripe: { get: vi.fn(), post }, log });
@@ -175,14 +171,11 @@ describe('chargeDueInstallments', () => {
 describe('createPaymentIntent with a plan', () => {
   it('starts the plan, creates the customer on the connected account and asks Stripe to save the card for later', async () => {
     const store = fakeStore();
-    const post = vi
-      .fn()
-      .mockResolvedValueOnce({ id: 'cus_new' })
-      .mockResolvedValueOnce({
-        id: 'pi_new',
-        client_secret: 'secret',
-        status: 'requires_payment_method',
-      });
+    const post = vi.fn().mockResolvedValueOnce({ id: 'cus_new' }).mockResolvedValueOnce({
+      id: 'pi_new',
+      client_secret: 'secret',
+      status: 'requires_payment_method',
+    });
     const r = await createPaymentIntent(
       uuid(5),
       { plan: { requestId: uuid(4), size: 4, autopay: true } },

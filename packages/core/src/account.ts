@@ -129,10 +129,12 @@ export interface DeletionBlockers {
   teams: { id: string; name: string }[];
   clubs: { id: string; name: string }[];
   households: { id: string; name: string }[];
+  /** Payment plans with installments still to be paid. */
+  plans: { id: string; name: string }[];
 }
 
 export const noDeletionBlockers = (b: DeletionBlockers) =>
-  b.teams.length + b.clubs.length + b.households.length === 0;
+  b.teams.length + b.clubs.length + b.households.length + b.plans.length === 0;
 
 /** "Aug 2025" for the account header. */
 export function memberSince(createdAt: string, locale = 'en-US'): string {

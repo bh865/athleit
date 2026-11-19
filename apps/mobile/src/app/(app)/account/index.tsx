@@ -191,6 +191,9 @@ export default function AccountScreen() {
         {blockers?.clubs.map((c) => (
           <Text key={c.id}>You’re the only admin of {c.name}.</Text>
         ))}
+        {blockers?.plans.map((p) => (
+          <Text key={p.id}>{p.name} has installments still to pay.</Text>
+        ))}
         {blockers?.households.map((h) => (
           <Text key={h.id}>You’re the only guardian of the children in {h.name}.</Text>
         ))}

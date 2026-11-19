@@ -5,6 +5,7 @@ export interface Blockers {
   teams: { id: string; name: string }[];
   clubs: { id: string; name: string }[];
   households: { id: string; name: string }[];
+  plans: { id: string; name: string }[];
 }
 
 export interface DeleteAccountDeps {
@@ -30,7 +31,12 @@ export async function deleteAccount(
 ): Promise<DeleteResult> {
   if (confirm !== CONFIRM_WORD) return { ok: false, status: 400, error: 'confirmation_required' };
   const blockers = await deps.blockers();
-  if (blockers.teams.length || blockers.clubs.length || blockers.households.length)
+  if (
+    blockers.teams.length ||
+    blockers.clubs.length ||
+    blockers.households.length ||
+    blockers.plans.length
+  )
     return { ok: false, status: 409, error: 'blocked', blockers };
   // Photos first: if this fails nothing is deleted yet and the user can retry. After the user is
   // gone the folder could no longer be cleaned by anyone but the service role.

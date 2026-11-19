@@ -880,6 +880,7 @@ export interface AccountBlockers {
   teams: { id: string; name: string }[];
   clubs: { id: string; name: string }[];
   households: { id: string; name: string }[];
+  plans: { id: string; name: string }[];
 }
 
 /** What must be handed over before this account can be deleted (empty lists = nothing). */

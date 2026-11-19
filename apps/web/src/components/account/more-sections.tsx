@@ -167,6 +167,9 @@ export function AccountActions() {
             {blockers?.clubs.map((c) => (
               <li key={c.id}>{c.name} · only admin</li>
             ))}
+            {blockers?.plans.map((p) => (
+              <li key={p.id}>{p.name} · payment plan with installments still to pay</li>
+            ))}
             {blockers?.households.map((h) => (
               <li key={h.id}>{h.name} · only guardian of children</li>
             ))}
