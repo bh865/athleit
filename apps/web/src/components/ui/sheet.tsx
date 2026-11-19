@@ -14,6 +14,7 @@ export function Sheet({
   title,
   level = 'sheet',
   placement = 'center',
+  role = 'dialog',
   children,
 }: {
   open: boolean;
@@ -22,6 +23,8 @@ export function Sheet({
   level?: 'sheet' | 'modal';
   /** `center` (default) for a dialog, `bottom` for a draggable sheet, `right` for a side drawer that overlaps the page. */
   placement?: 'bottom' | 'center' | 'right';
+  /** `alertdialog` for confirmations that interrupt the user. */
+  role?: 'dialog' | 'alertdialog';
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export function Sheet({
         tabIndex={-1}
         level={level}
         solid={placement === 'right'}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-label={title}
         className={styles.sheet}

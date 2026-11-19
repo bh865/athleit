@@ -16,7 +16,8 @@ import { Button, Text, TextField, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
-import { Badge, Choice, FormMessage, H2, ListItem, LoadState, Notice } from './kit';
+import { FamilyCodePanel } from './family-code-panel';
+import { Badge, Choice, FormMessage, H2, ListItem, LoadState, Notice, Segmented } from './kit';
 
 export interface RoleOption {
   value: string;
@@ -40,6 +41,37 @@ function status(inv: {
 
 /** Create invite links (QR, share sheet, copy), list them, and revoke. */
 export function InvitePanel({
+  target,
+  roles,
+  childNames = [],
+}: {
+  target: InviteTarget;
+  roles: readonly RoleOption[];
+  /** Household invites only: the children named in the approve confirmation. */
+  childNames?: readonly string[];
+}) {
+  const [tab, setTab] = useState<'link' | 'code'>('link');
+  if (!('householdId' in target)) return <LinkInvitePanel target={target} roles={roles} />;
+  return (
+    <View style={{ gap: space[4] }}>
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'link', label: 'Link' },
+          { value: 'code', label: 'Code' },
+        ]}
+      />
+      {tab === 'link' ? (
+        <LinkInvitePanel target={target} roles={roles} />
+      ) : (
+        <FamilyCodePanel householdId={target.householdId} childNames={childNames} />
+      )}
+    </View>
+  );
+}
+
+function LinkInvitePanel({
   target,
   roles,
 }: {

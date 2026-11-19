@@ -9,13 +9,14 @@ import {
 } from '@athleit/db/api';
 import { friendlyError } from '@athleit/core';
 import QRCode from 'qrcode';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import { Badge, Button, Icon, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 import styles from './app.module.css';
+import { FamilyCodePanel } from './family-code-panel';
 import { FormMessage, LoadState } from './states';
 
 export interface RoleOption {
@@ -53,6 +54,95 @@ function status(inv: {
 
 /** Create invite links (with QR + copy), list them, and revoke. Roles shown depend on the caller. */
 export function InvitePanel({
+  target,
+  roles,
+  childNames = [],
+}: {
+  target: InviteTarget;
+  roles: readonly RoleOption[];
+  /** Household invites only: the children named in the approve confirmation. */
+  childNames?: readonly string[];
+}) {
+  if ('householdId' in target)
+    return (
+      <HouseholdInvite householdId={target.householdId} roles={roles} childNames={childNames}>
+        <LinkInvitePanel target={target} roles={roles} />
+      </HouseholdInvite>
+    );
+  return <LinkInvitePanel target={target} roles={roles} />;
+}
+
+/** Household invite card body: a Link | Code tablist (arrow keys move between tabs). */
+function HouseholdInvite({
+  householdId,
+  childNames,
+  children,
+}: {
+  householdId: string;
+  roles: readonly RoleOption[];
+  childNames: readonly string[];
+  children: React.ReactNode;
+}) {
+  const id = useId();
+  const [tab, setTab] = useState<'link' | 'code'>('link');
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const tabs = [
+    { key: 'link', label: 'Link' },
+    { key: 'code', label: 'Code' },
+  ] as const;
+  function onKey(e: KeyboardEvent) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const i = tabs.findIndex((t) => t.key === tab);
+    const next =
+      e.key === 'Home'
+        ? 0
+        : e.key === 'End'
+          ? tabs.length - 1
+          : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const k = tabs[next]!.key;
+    setTab(k);
+    refs.current[k]?.focus();
+  }
+  return (
+    <div className={styles.stack}>
+      <div role="tablist" aria-label="Invite method" className={styles.tabs} onKeyDown={onKey}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            ref={(el) => {
+              refs.current[t.key] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${id}-${t.key}-tab`}
+            aria-selected={tab === t.key}
+            aria-controls={`${id}-${t.key}-panel`}
+            tabIndex={tab === t.key ? 0 : -1}
+            className={`${styles.tab} ${tab === t.key ? styles.tabActive : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${id}-${tab}-panel`}
+        aria-labelledby={`${id}-${tab}-tab`}
+        tabIndex={0}
+      >
+        {tab === 'link' ? (
+          children
+        ) : (
+          <FamilyCodePanel householdId={householdId} childNames={childNames} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LinkInvitePanel({
   target,
   roles,
 }: {
