@@ -9,29 +9,29 @@ create function pg_temp.login(u uuid) returns void language plpgsql as $f$ begin
 insert into auth.users (id, email) values
   ('a1111111-1111-1111-1111-111111111111', 'coach@example.test'), ('a2222222-2222-2222-2222-222222222222', 'parent.ava@example.test'),
   ('a3333333-3333-3333-3333-333333333333', 'parent.ben@example.test'), ('a8888888-8888-8888-8888-888888888888', 'admin@example.test');
-insert into public.teams (id, name, sport, season_label, join_code) values ('a300000-0000-0000-0000-00000000000a', 'Team A', 'soccer', 'Fall 2026', 'TEAMA00001');
+insert into public.teams (id, name, sport, season_label, join_code) values ('a1000000-0000-0000-0000-00000000000a', 'Team A', 'soccer', 'Fall 2026', 'TEAMA00001');
 insert into public.team_memberships (team_id, profile_id, role) values
-  ('a300000-0000-0000-0000-00000000000a', 'a8888888-8888-8888-8888-888888888888', 'admin'),
-  ('a300000-0000-0000-0000-00000000000a', 'a1111111-1111-1111-1111-111111111111', 'coach');
-insert into public.households (id, name) values ('1300000-0000-0000-0000-000000000001', 'Adams family'), ('22000000-0000-0000-0000-000000000002', 'Brown family');
+  ('a1000000-0000-0000-0000-00000000000a', 'a8888888-8888-8888-8888-888888888888', 'admin'),
+  ('a1000000-0000-0000-0000-00000000000a', 'a1111111-1111-1111-1111-111111111111', 'coach');
+insert into public.households (id, name) values ('11000000-0000-0000-0000-000000000001', 'Adams family'), ('22000000-0000-0000-0000-000000000002', 'Brown family');
 insert into public.household_members (household_id, profile_id) values
-  ('1300000-0000-0000-0000-000000000001', 'a2222222-2222-2222-2222-222222222222'), ('22000000-0000-0000-0000-000000000002', 'a3333333-3333-3333-3333-333333333333');
+  ('11000000-0000-0000-0000-000000000001', 'a2222222-2222-2222-2222-222222222222'), ('22000000-0000-0000-0000-000000000002', 'a3333333-3333-3333-3333-333333333333');
 insert into public.players (id, household_id, first_name, last_name, date_of_birth) values
-  ('9300000-0000-0000-0000-000000000001', '1300000-0000-0000-0000-000000000001', 'Ava', 'Adams', current_date - interval '10 years'),
+  ('91000000-0000-0000-0000-000000000001', '11000000-0000-0000-0000-000000000001', 'Ava', 'Adams', current_date - interval '10 years'),
   ('92000000-0000-0000-0000-000000000002', '22000000-0000-0000-0000-000000000002', 'Ben', 'Brown', current_date - interval '9 years'),
-  ('93000000-0000-0000-0000-000000000003', '1300000-0000-0000-0000-000000000001', 'Cleo', 'Adams', current_date - interval '8 years');
+  ('93000000-0000-0000-0000-000000000003', '11000000-0000-0000-0000-000000000001', 'Cleo', 'Adams', current_date - interval '8 years');
 insert into public.connected_accounts (id, team_id, stripe_account_id, details_submitted, charges_enabled, payouts_enabled, onboarding_status) values
-  ('ca000000-0000-0000-0000-00000000000a', 'a300000-0000-0000-0000-00000000000a', 'acct_TestTeamA', true, true, true, 'ready');
+  ('ca000000-0000-0000-0000-00000000000a', 'a1000000-0000-0000-0000-00000000000a', 'acct_TestTeamA', true, true, true, 'ready');
 -- $100.00, absorb, Athleit charge 50c + 1%, plans {1,2,3,4} weekly, due in 60 days.
 insert into public.payment_events (id, team_id, title, amount_cents, due_at, fee_policy, status, created_by, plan_options, plan_cadence) values
-  ('e300000-0000-0000-0000-000000000001', 'a300000-0000-0000-0000-00000000000a', 'Season dues', 3000, now() + interval '60 days', 'absorb', 'draft',
+  ('e1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-00000000000a', 'Season dues', 3000, now() + interval '60 days', 'absorb', 'draft',
    'a8888888-8888-8888-8888-888888888888', array[1,2,3], 'weekly');
 update public.payment_events set status = 'published', published_at = now(), connected_account_id = 'ca000000-0000-0000-0000-00000000000a',
-  fee_config = '{"platform_fee_flat_cents":50,"platform_fee_bps":100,"stripe_fee_bps":290,"stripe_fee_fixed_cents":30}' where id = 'e300000-0000-0000-0000-000000000001';
+  fee_config = '{"platform_fee_flat_cents":50,"platform_fee_bps":100,"stripe_fee_bps":290,"stripe_fee_fixed_cents":30}' where id = 'e1000000-0000-0000-0000-000000000001';
 insert into public.payment_requests (id, payment_event_id, player_id, household_id, amount_cents, due_at, display_id) values
-  ('b300000-0000-0000-0000-000000000001', 'e300000-0000-0000-0000-000000000001', '9300000-0000-0000-0000-000000000001', '1300000-0000-0000-0000-000000000001', 3000, now() + interval '60 days', 'PR-9201'),
-  ('b2000000-0000-0000-0000-000000000002', 'e300000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000002', '22000000-0000-0000-0000-000000000002', 3000, now() + interval '60 days', 'PR-9202'),
-  ('b3000000-0000-0000-0000-000000000003', 'e300000-0000-0000-0000-000000000001', '93000000-0000-0000-0000-000000000003', '1300000-0000-0000-0000-000000000001', 3000, now() + interval '60 days', 'PR-9203');
+  ('b1000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', '11000000-0000-0000-0000-000000000001', 3000, now() + interval '60 days', 'PR-9201'),
+  ('b2000000-0000-0000-0000-000000000002', 'e1000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000002', '22000000-0000-0000-0000-000000000002', 3000, now() + interval '60 days', 'PR-9202'),
+  ('b3000000-0000-0000-0000-000000000003', 'e1000000-0000-0000-0000-000000000001', '93000000-0000-0000-0000-000000000003', '11000000-0000-0000-0000-000000000001', 3000, now() + interval '60 days', 'PR-9203');
 
 
 -- Plan of 3 x $10.00: installment 1 paid alone, installments 2 and 3 paid together later ($10.60 each... one fee: 2 x $10 = $20 + 50c + 20c).
@@ -64,7 +64,7 @@ select is((select count(*)::int from public.refunds where payment_id = (select i
 select is((select r.base_cents from public.refunds r join public.payment_items i on i.id = r.payment_item_id join public.payment_request_installments n on n.id = i.installment_id where n.sequence = 3), 1000, 'installment 3 is refunded first, in full');
 select is((select r.base_cents from public.refunds r join public.payment_items i on i.id = r.payment_item_id join public.payment_request_installments n on n.id = i.installment_id where n.sequence = 2), 500, 'then installment 2, for the rest');
 select pg_temp.login('a8888888-8888-8888-8888-888888888888');
-select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 99999) $$, '23514', 'refund_exceeds_payment', 'more than was paid is refused');
+select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 100) $$, '23514', 'payment_disputed', 'an allocation that reaches the disputed payment is refused');
 reset role;
 select pg_temp.login('a2222222-2222-2222-2222-222222222222');
 select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 100) $$, '42501', 'not_authorized', 'a parent cannot refund');
@@ -84,6 +84,10 @@ select is((select count(*)::int from public.refunds where payment_id = (select i
 -- The dispute is won: flags clear.
 select public.svc_dispute_event('pi_one', 'dp_1', 'closed', 'won', null, null);
 select is((select disputed from public.payments where stripe_payment_intent_id = 'pi_one') or (select disputed from public.payment_requests where id = 'b1000000-0000-0000-0000-000000000001'), false, 'winning the dispute clears the flags');
+
+select pg_temp.login('a8888888-8888-8888-8888-888888888888');
+select throws_ok($$ select public.prepare_request_refund('b1000000-0000-0000-0000-000000000001', 99999) $$, '23514', 'refund_exceeds_payment', 'more than was paid is refused');
+reset role;
 
 -- Export: one row per installment, with plan context.
 select pg_temp.login('a8888888-8888-8888-8888-888888888888');
