@@ -71,10 +71,13 @@ select is(public.svc_payment_succeeded('pi_plan1', null, 'ch_plan1', 100), 'noop
 -- Pay the remaining three together: ONE fee on the summed base ----------------------------------------------------
 create temp table rest as select array_agg(id order by sequence) as ids from public.payment_request_installments where request_id = 'b1000000-0000-0000-0000-000000000001' and sequence > 1;
 grant select on rest to public;
+select public.svc_create_plan('b2000000-0000-0000-0000-000000000002', 2);
+create temp table brown as select array_agg(id) as ids from public.payment_request_installments where request_id = 'b2000000-0000-0000-0000-000000000002';
+grant select on brown to public;
 select pg_temp.login('a2222222-2222-2222-2222-222222222222');
 select is((public.payer_installment_quote((select ids from rest)) ->> 'total_cents')::int, 7625, 'the remaining 3 x $25.00 cost $76.25 together (one flat charge), not 3 x $25.75');
 select is((public.payer_installment_quote((select ids from rest)) ->> 'platform_fee_cents')::int, 125, 'one Athleit charge on the summed base');
-select throws_ok($$ select public.payer_installment_quote((select array_agg(id) from public.payment_request_installments where request_id = 'b2000000-0000-0000-0000-000000000002')) $$, '42501', null, 'another family''s installments cannot be quoted');
+select throws_ok($$ select public.payer_installment_quote((select ids from brown)) $$, '42501', 'not_authorized', 'another family''s installments cannot be quoted');
 reset role;
 
 -- Dunning for an off-session charge of installment 2 -----------------------------------------------------------------

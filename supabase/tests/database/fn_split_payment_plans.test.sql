@@ -168,7 +168,7 @@ select lives_ok($$ insert into public.payment_items (payment_id, payment_request
   where request_id = 'b3000000-0000-0000-0000-000000000003' and sequence = 2 $$, 'a different installment of the same request can be in another payment');
 update public.payment_items set is_active = false where payment_id = 'd2000000-0000-0000-0000-000000000002';
 select throws_ok($$ insert into public.payment_items (payment_id, payment_request_id, installment_id, amount_cents)
-  select 'd2000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001', id, 1500 from public.payment_request_installments
+  select 'd1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', id, 1500 from public.payment_request_installments
   where request_id = 'b3000000-0000-0000-0000-000000000003' and sequence = 2 $$, '23503', null, 'an item cannot pair an installment with another request');
 select throws_ok($$ update public.payment_items set installment_id = null where payment_id = 'd1000000-0000-0000-0000-000000000001' $$, '23514', 'payment_item_immutable', 'an item''s installment is immutable');
 select * from finish();
