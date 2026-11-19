@@ -10,9 +10,14 @@ import {
   MIN_CHARGE_CENTS,
   parseDollarsToCents,
   ATHLEIT_CHARGE_LABEL,
+  PLAN_CADENCE_LABEL,
+  PLAN_CADENCES,
+  planFeeImpact,
+  planFits,
   SERVICE_FEE_LABEL,
   type CollectionState,
   type FeePolicy,
+  type PlanCadence,
 } from '@athleit/core';
 import {
   createPaymentEvent,
@@ -24,6 +29,7 @@ import {
   recordOfflinePayment,
   sendPaymentReminders,
   setDefaultFeePolicy,
+  setPaymentEventPlan,
   waiveRequest,
   type CollectionRow,
   type CollectionSummary,
@@ -40,6 +46,7 @@ import {
   Avatar,
   Button,
   Card,
+  Chip,
   DatePicker,
   Icon,
   IconButton,
@@ -102,6 +109,8 @@ function NewRequest({
   const [amount, setAmount] = useState('');
   const [due, setDue] = useState('');
   const [policy, setPolicy] = useState<FeePolicy>(defaultPolicy);
+  const [planSizes, setPlanSizes] = useState<Set<number>>(new Set([1]));
+  const [cadence, setCadence] = useState<PlanCadence>('monthly');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cfg = useLoad(() => getActiveFeeConfig(supabase), []);
@@ -113,6 +122,25 @@ function NewRequest({
         : null,
     [cents, policy, cfg.data],
   );
+  // What each chosen plan would cost a family who started it today (the server decides again at checkout).
+  const planPreview = useMemo(() => {
+    if (cents === null || cents < MIN_CHARGE_CENTS || !cfg.data || !/^\d{4}-\d{2}-\d{2}$/.test(due))
+      return [];
+    const start = new Date();
+    const dueAt = new Date(`${due}T23:59:00`);
+    return [...planSizes]
+      .filter((n) => n > 1)
+      .sort((a, b) => a - b)
+      .map((n) =>
+        planFits(cents, n, cadence, start, dueAt)
+          ? {
+              n,
+              fits: true as const,
+              impact: planFeeImpact(cents, n, cadence, start, policy, cfg.data!),
+            }
+          : { n, fits: false as const },
+      );
+  }, [cents, cfg.data, due, planSizes, cadence, policy]);
 
   const submit = async () => {
     setError(null);
@@ -142,6 +170,14 @@ function NewRequest({
     if (made.error) {
       setBusy(false);
       return setError(friendlyError(made.error));
+    }
+    const sizes = [...planSizes].sort((a, b) => a - b);
+    if (sizes.length !== 1 || sizes[0] !== 1) {
+      const plan = await setPaymentEventPlan(supabase, made.data, sizes, cadence);
+      if (plan.error) {
+        setBusy(false);
+        return setError(`${friendlyError(plan.error)} Your request was saved as a draft.`);
+      }
     }
     const sent = await publishPaymentEvent(supabase, made.data);
     setBusy(false);
@@ -200,9 +236,55 @@ function NewRequest({
           <Line k="Each family pays" cents={preview.totalCents} big />
         </View>
       ) : null}
+      <View style={{ gap: space[2] }} testID="plan-options">
+        <Text variant="bodyBold">How families can pay</Text>
+        <Text variant="caption" muted>
+          Plans that would not finish before the due date are not offered.
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <Chip
+              key={n}
+              label={n === 1 ? 'Pay in full' : `${n} payments`}
+              selected={planSizes.has(n)}
+              onPress={() => {
+                const next = new Set(planSizes);
+                if (next.has(n)) next.delete(n);
+                else next.add(n);
+                if (next.size > 0) setPlanSizes(next);
+              }}
+            />
+          ))}
+        </View>
+        {[...planSizes].some((n) => n > 1) ? (
+          <SegmentedControl
+            label="Payments are spaced"
+            value={cadence}
+            onChange={setCadence}
+            options={PLAN_CADENCES.map((c) => ({ value: c, label: PLAN_CADENCE_LABEL[c] }))}
+          />
+        ) : null}
+        {planPreview.map((p) =>
+          p.fits ? (
+            <View key={p.n} testID="plan-preview">
+              <Line k={`${p.n} payments, total`} cents={p.impact.totalCents} />
+              <Text variant="caption" muted>
+                {p.impact.extraCents > 0
+                  ? `${formatCents(p.impact.extraCents)} more than paying in full, because each payment is its own card transaction.`
+                  : 'Costs the same as paying in full.'}
+              </Text>
+            </View>
+          ) : (
+            <Text key={p.n} variant="caption" muted>
+              {p.n} payments: not offered with this due date or amount.
+            </Text>
+          ),
+        )}
+      </View>
       <FormMessage error={error} />
       <Button
         title="Send request"
+
         size="lg"
         loading={busy}
         disabled={!canSend}
