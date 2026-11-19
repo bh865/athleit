@@ -62,7 +62,12 @@ export function buildAttentionItems(i: AttentionInput): AttentionItem[] {
         dueAt: e.starts_at,
         dueMode: 'event',
         eventNoun: e.type === 'game' ? 'Game' : e.type === 'practice' ? 'Practice' : 'Event',
-        action: { type: 'rsvp', eventId: e.event_id, playerId: c.player_id, firstName: c.first_name },
+        action: {
+          type: 'rsvp',
+          eventId: e.event_id,
+          playerId: c.player_id,
+          firstName: c.first_name,
+        },
         ...fam,
       });
     }

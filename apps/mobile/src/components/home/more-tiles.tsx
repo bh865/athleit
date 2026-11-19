@@ -1,14 +1,7 @@
-import { formatCents, previewOf, sumCents } from '@athleit/core';
-import {
-  getNotificationFailures,
-  getRoster,
-  getThreadList,
-  listChildren,
-  type Result,
-} from '@athleit/db/api';
+import { formatCents, sumCents } from '@athleit/core';
+import { getRoster, listChildren, type Result } from '@athleit/db/api';
 import {
   getCollectionSummary,
-  getConnectedAccountStatus,
   getHouseholdPayments,
   listPaymentEvents,
   type Owner,
@@ -26,36 +19,6 @@ import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
 import { Tile } from './tiles';
-
-/** Latest announcement (read counts are staff-only and not shown). */
-export function AnnouncementTile({ teamId }: { teamId: string }) {
-  const router = useRouter();
-  const res = useLoad(() => getThreadList(supabase, teamId), [teamId]);
-  const row = (res.data ?? []).find((t) => t.type === 'announcement' && t.last_body !== null);
-  return (
-    <Tile
-      id="home-announcement"
-      title="Latest announcement"
-      res={res}
-      hasData={res.data !== null}
-      empty={!row}
-    >
-      {row ? (
-        <ListGroup>
-          <ListItem
-            title={row.title ?? 'Announcement'}
-            subtitle={previewOf({
-              body: row.last_body ?? '',
-              deleted: row.last_deleted,
-              hidden: row.last_hidden,
-            })}
-            onPress={() => router.push(`/messages/${row.thread_id}` as never)}
-          />
-        </ListGroup>
-      ) : null}
-    </Tile>
-  );
-}
 
 /** Pinned or recent documents; read-only here. */
 export function DocumentsTile({ teamId }: { teamId: string }) {
@@ -190,44 +153,6 @@ export function CollectionTile({ owner }: { owner: Owner }) {
           />
         </ListGroup>
       ) : null}
-    </Tile>
-  );
-}
-
-/** Payout status: a dot with a word, never colour alone. */
-export function PayoutsTile({ owner }: { owner: Owner }) {
-  const res = useLoad(
-    () => getConnectedAccountStatus(supabase, owner),
-    [owner.teamId, owner.clubId],
-  );
-  const s = res.data;
-  const ready = Boolean(s?.charges_enabled && s?.payouts_enabled);
-  return (
-    <Tile id="home-payouts" title="Payouts" res={res} hasData={!res.loading} empty={false}>
-      <View>
-        {ready ? (
-          <Badge tone="success">Ready</Badge>
-        ) : (
-          <Badge tone="warning">{s?.exists_account ? 'Needs information' : 'Not set up'}</Badge>
-        )}
-      </View>
-    </Tile>
-  );
-}
-
-/** Admin only: failed notification deliveries. Hidden when none. */
-export function NotificationHealthTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getNotificationFailures(supabase, teamId), [teamId]);
-  const n = (res.data ?? []).length;
-  return (
-    <Tile
-      id="home-notification-health"
-      title="Notification health"
-      res={res}
-      hasData={res.data !== null}
-      empty={n === 0}
-    >
-      <Badge tone="danger">{`${n} failed ${n === 1 ? 'delivery' : 'deliveries'}`}</Badge>
     </Tile>
   );
 }

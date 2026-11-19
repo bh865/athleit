@@ -152,10 +152,14 @@ const dayNumber = (instant: Date, zone: string) => {
   return Math.floor(Date.UTC(y!, m! - 1, d!) / 86_400_000);
 };
 const shortDate = (instant: Date, zone: string) =>
-  new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric' }).format(instant);
+  new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric' }).format(
+    instant,
+  );
 const localHour = (instant: Date, zone: string) =>
   Number(
-    new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', hour: 'numeric' }).format(instant),
+    new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', hour: 'numeric' }).format(
+      instant,
+    ),
   );
 
 /**
@@ -171,10 +175,12 @@ export function attentionChip(i: AttentionItem, now: Date, zone: string): Attent
   const mode = i.dueMode ?? DEFAULT_MODE[i.kind];
   const noun = i.eventNoun ?? 'Event';
   const diff = t - now.getTime();
-  if (mode === 'expired') return { text: `Expired ${shortDate(due, zone)}`, tone: 'urgent', icon: 'warning' };
+  if (mode === 'expired')
+    return { text: `Expired ${shortDate(due, zone)}`, tone: 'urgent', icon: 'warning' };
   const days = dayNumber(due, zone) - dayNumber(now, zone);
   if (diff < 0) {
-    if (mode === 'event') return { text: `Played ${shortDate(due, zone)}`, tone: 'urgent', icon: 'warning' };
+    if (mode === 'event')
+      return { text: `Played ${shortDate(due, zone)}`, tone: 'urgent', icon: 'warning' };
     const late = -days;
     return {
       text: late <= 0 ? 'Overdue today' : `Overdue ${late} day${late === 1 ? '' : 's'}`,
@@ -186,13 +192,19 @@ export function attentionChip(i: AttentionItem, now: Date, zone: string): Attent
   const tone: AttentionChipTone = days <= 2 ? 'soon' : 'calm';
   const mins = Math.max(1, Math.ceil(diff / 60_000));
   if (mins < 60)
-    return { text: mode === 'event' ? `${noun} in ${mins} min` : `Closes in ${mins} min`, tone: 'soon', icon: 'clock' };
+    return {
+      text: mode === 'event' ? `${noun} in ${mins} min` : `Closes in ${mins} min`,
+      tone: 'soon',
+      icon: 'clock',
+    };
   if (days <= 0) {
     const night = localHour(due, zone) >= 17;
-    if (mode === 'event') return { text: `${noun} ${night ? 'tonight' : 'today'}`, tone: 'soon', icon: 'clock' };
+    if (mode === 'event')
+      return { text: `${noun} ${night ? 'tonight' : 'today'}`, tone: 'soon', icon: 'clock' };
     return { text: night ? 'Closes tonight' : 'Closes today', tone: 'soon', icon: 'clock' };
   }
-  if (days === 1) return { text: mode === 'event' ? `${noun} tomorrow` : 'Due tomorrow', tone, icon: 'clock' };
+  if (days === 1)
+    return { text: mode === 'event' ? `${noun} tomorrow` : 'Due tomorrow', tone, icon: 'clock' };
   if (days <= 7) return { text: `${lead} in ${days} days`, tone, icon: 'clock' };
   return { text: `${lead} ${shortDate(due, zone)}`, tone: 'calm', icon: 'clock' };
 }

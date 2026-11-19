@@ -1,12 +1,31 @@
-import type { AttentionItem, AttentionKind } from '@athleit/core';
+import {
+  attentionActionLabel,
+  attentionChip,
+  friendlyError,
+  type AttentionItem,
+  type AttentionKind,
+  type AttentionResult,
+} from '@athleit/core';
+import { decideJoinRequest, decidePlayerLoginClaim } from '@athleit/db/api';
+import { setRsvp } from '@athleit/db/scheduling';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import type { IconName } from '@athleit/ui-core';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Badge, Card, Icon, ListGroup, Sheet, Text, useTheme } from '@/components/ui';
-import { ListItem } from '@/components/app/kit';
+import {
+  Button,
+  Card,
+  ErrorState,
+  Icon,
+  LoadingSkeleton,
+  Sheet,
+  Text,
+  useTheme,
+} from '@/components/ui';
+import { supabase } from '@/lib/supabase';
+import { viewerZone } from '@/lib/viewer-zone';
 
 const ICON: Record<AttentionKind, IconName> = {
   rsvp: 'question',
@@ -22,117 +41,301 @@ const ICON: Record<AttentionKind, IconName> = {
   setup: 'list-checks',
 };
 
-/**
- * Horizontal attention chips. Only the first is lime; each pairs an icon with its text. When nothing is
- * open, one quiet line instead of a strip ("You're all caught up").
- */
-export function AttentionStrip({
-  shown,
-  more,
-  loading,
+/** Trailing control(s) for one row: resolve in place where an action exists, else deep-link. */
+function Actions({
+  item,
+  primary,
+  onResolved,
 }: {
-  shown: readonly AttentionItem[];
-  more: readonly AttentionItem[];
-  loading: boolean;
+  item: AttentionItem;
+  primary: boolean;
+  onResolved: (key: string) => void;
+}) {
+  const router = useRouter();
+  const { theme } = useTheme();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const a = item.action;
+
+  async function run(job: () => PromiseLike<{ error: unknown }>) {
+    setBusy(true);
+    setError(null);
+    const res = await job();
+    setBusy(false);
+    if (res.error) setError(friendlyError(res.error as never));
+    else onResolved(item.key);
+  }
+  const err = error ? (
+    <Text variant="caption" accessibilityRole="alert" style={{ color: theme.color.bad }}>
+      {error}
+    </Text>
+  ) : null;
+
+  if (a?.type === 'rsvp')
+    return (
+      <View style={{ alignItems: 'flex-end', gap: space[1] }}>
+        <Button
+          title="Going"
+          variant={primary ? 'primary' : 'secondary'}
+          loading={busy}
+          accessibilityLabel={`${a.firstName}: Going`}
+          onPress={() => run(() => setRsvp(supabase, a.eventId, a.playerId, 'going'))}
+        />
+        {err}
+      </View>
+    );
+  if (a?.type === 'decide') {
+    const decide = (approve: boolean) =>
+      run(() =>
+        a.what === 'join'
+          ? decideJoinRequest(supabase, a.id, approve)
+          : decidePlayerLoginClaim(supabase, a.id, approve),
+      );
+    return (
+      <View style={{ gap: space[1] }}>
+        <View style={{ flexDirection: 'row', gap: space[2] }}>
+          <Button
+            title="Approve"
+            variant={primary ? 'primary' : 'secondary'}
+            loading={busy}
+            onPress={() => decide(true)}
+          />
+          <Button title="Decline" variant="ghost" loading={busy} onPress={() => decide(false)} />
+        </View>
+        {err}
+      </View>
+    );
+  }
+  return (
+    <Button
+      title={attentionActionLabel(item)}
+      variant={primary ? 'primary' : 'secondary'}
+      onPress={() => router.push(item.href as never)}
+    />
+  );
+}
+
+/** Time-pressure chip: icon and words together, never colour alone. */
+function Chip({ item, now }: { item: AttentionItem; now: Date }) {
+  const { theme } = useTheme();
+  const c = theme.color;
+  const chip = attentionChip(item, now, viewerZone());
+  if (!chip) return null;
+  const tone =
+    chip.tone === 'urgent'
+      ? { bg: c.badSoft, fg: c.bad }
+      : chip.tone === 'soon'
+        ? { bg: c.warnSoft, fg: c.warn }
+        : { bg: c.surfaceAlt, fg: c.ink };
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: space[2],
+        paddingVertical: space[1],
+        paddingHorizontal: space[3],
+        borderRadius: radius.pill,
+        backgroundColor: tone.bg,
+      }}
+    >
+      <Icon name={chip.icon} weight="fill" size="sm" color={tone.fg} />
+      <Text variant="bodyBold" style={{ color: tone.fg }}>
+        {chip.text}
+      </Text>
+    </View>
+  );
+}
+
+function Row({
+  item,
+  now,
+  lead,
+  onResolved,
+}: {
+  item: AttentionItem;
+  now: Date;
+  lead?: boolean;
+  onResolved: (key: string) => void;
 }) {
   const { theme } = useTheme();
   const c = theme.color;
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  if (shown.length === 0) {
-    return loading ? null : (
-      <Text variant="caption" muted testID="home-caught-up">
-        You’re all caught up
-      </Text>
-    );
-  }
-  const chip = (primary: boolean) => ({
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: space[3],
-    minHeight: componentTokens.iconButton.size,
-    paddingHorizontal: space[4],
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: primary ? c.accent : c.line,
-    backgroundColor: primary ? c.accent : c.surface,
-  });
+  const size = componentTokens.avatar.md;
   return (
-    <Card style={{ gap: space[3] }} testID="home-attention">
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
-        <Text variant="label" muted accessibilityRole="header">
-          NEEDS YOUR ATTENTION
-        </Text>
-        <Badge tone="count">{String(shown.length + more.length)}</Badge>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: space[3] }}
+    <View
+      testID="attention-row"
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: space[3],
+        minHeight: componentTokens.listRow.height,
+        paddingVertical: space[2],
+      }}
+    >
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: c.surfaceAlt,
+        }}
       >
-        {shown.map((i, n) => (
-          <Pressable
-            key={i.key}
-            accessibilityRole="link"
-            accessibilityLabel={i.detail ? `${i.label}, ${i.detail}` : i.label}
-            onPress={() => router.push(i.href as never)}
-            style={chip(n === 0)}
+        <Icon name={ICON[item.kind]} weight={lead ? 'fill' : 'regular'} color={c.ink} />
+      </View>
+      <View style={{ flex: 1, minWidth: 140, gap: space[1] }}>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={item.detail ? `${item.label}, ${item.detail}` : item.label}
+          onPress={() => router.push(item.href as never)}
+          style={{ minHeight: componentTokens.iconButton.size / 2, justifyContent: 'center' }}
+        >
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space[2] }}
           >
-            <View
-              style={{
-                width: componentTokens.iconButton.size * 0.7,
-                height: componentTokens.iconButton.size * 0.7,
-                borderRadius: radius.pill,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: c.surface,
-              }}
-            >
-              <Icon name={ICON[i.kind]} size="sm" color={c.ink} />
-            </View>
-            <View>
-              <Text variant="bodyBold" style={n === 0 ? { color: c.accentInk } : undefined}>
-                {i.label}
-              </Text>
-              {i.detail ? (
-                <Text
-                  variant="label"
-                  muted={n !== 0}
-                  style={n === 0 ? { color: c.accentInk } : undefined}
-                >
-                  {i.detail}
+            <Text variant="bodyBold">{item.label}</Text>
+            {item.placeTag ? (
+              <View
+                style={{
+                  paddingHorizontal: space[2],
+                  borderRadius: radius.pill,
+                  backgroundColor: c.surfaceAlt,
+                }}
+              >
+                <Text variant="label" muted>
+                  {item.placeTag}
                 </Text>
-              ) : null}
-            </View>
-            <Icon name="caret-right" size="sm" color={n === 0 ? c.accentInk : c.ink} />
-          </Pressable>
-        ))}
-        {more.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${more.length} more`}
-            onPress={() => setOpen(true)}
-            style={chip(false)}
-          >
-            <Text variant="bodyBold">+{more.length} more</Text>
-          </Pressable>
-        ) : null}
-      </ScrollView>
-      <Sheet open={open} onClose={() => setOpen(false)} title="Needs your attention">
-        <ListGroup>
-          {[...shown, ...more].map((i) => (
-            <ListItem
+              </View>
+            ) : null}
+          </View>
+          {item.detail ? (
+            <Text variant="caption" muted>
+              {item.detail}
+            </Text>
+          ) : null}
+        </Pressable>
+        <Chip item={item} now={now} />
+      </View>
+      <Actions item={item} primary={Boolean(lead)} onResolved={onResolved} />
+    </View>
+  );
+}
+
+/**
+ * "Needs your attention", compact triage list: every item and its action visible without swiping, the lead row
+ * carrying the lime action. At most 4 rows then "+N more" in a Sheet. One merged list for dual roles (place tags).
+ * States: loading skeleton, error with retry, and a quiet "all caught up" line.
+ */
+export function AttentionStrip({
+  attention,
+  loading,
+  error,
+  onRetry,
+  onResolved,
+  now,
+}: {
+  attention: AttentionResult;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onResolved: () => void;
+  now: Date;
+}) {
+  const { theme } = useTheme();
+  const c = theme.color;
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState<ReadonlySet<string>>(new Set());
+  const settle = (key: string) => {
+    setDone((d) => new Set(d).add(key));
+    onResolved();
+  };
+  const shown = attention.shown.filter((i) => !done.has(i.key));
+  const more = attention.more.filter((i) => !done.has(i.key));
+  const total = shown.length + more.length;
+
+  const head = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+      <Text variant="label" muted accessibilityRole="header">
+        NEEDS YOUR ATTENTION
+      </Text>
+      {total > 0 ? (
+        <View
+          accessibilityLabel={`${total} need you`}
+          style={{
+            minWidth: componentTokens.badge.minWidth,
+            height: componentTokens.badge.height,
+            paddingHorizontal: space[2],
+            borderRadius: radius.pill,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: c.accent,
+          }}
+        >
+          <Text variant="mono" style={{ color: c.accentInk }}>
+            {total}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View style={{ gap: space[3] }} testID="home-attention" accessibilityLiveRegion="polite">
+      {head}
+      {total === 0 && loading ? (
+        <Card>
+          <LoadingSkeleton rows={3} />
+        </Card>
+      ) : total === 0 && error ? (
+        <Card>
+          <ErrorState message="Couldn’t load what needs you." onRetry={onRetry} />
+        </Card>
+      ) : total === 0 ? (
+        <View
+          style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}
+          testID="home-caught-up"
+        >
+          <Icon name="check-circle" weight="fill" color={c.muted} />
+          <Text variant="bodyBold" muted>
+            You’re all caught up
+          </Text>
+        </View>
+      ) : (
+        <Card style={{ gap: space[1] }}>
+          {shown.map((i, n) => (
+            <View
               key={i.key}
-              title={i.label}
-              subtitle={i.detail}
-              onPress={() => {
-                setOpen(false);
-                router.push(i.href as never);
-              }}
-            />
+              style={n > 0 ? { borderTopWidth: 1, borderTopColor: c.line } : undefined}
+            >
+              <Row item={i} now={now} lead={n === 0} onResolved={settle} />
+            </View>
           ))}
-        </ListGroup>
+          {more.length > 0 ? (
+            <Button title={`+${more.length} more`} variant="ghost" onPress={() => setOpen(true)} />
+          ) : null}
+          {error ? (
+            <Text variant="caption" muted>
+              Some items didn’t load.{' '}
+              <Text variant="bodyBold" onPress={onRetry} accessibilityRole="button">
+                Retry
+              </Text>
+            </Text>
+          ) : null}
+        </Card>
+      )}
+      <Sheet open={open} onClose={() => setOpen(false)} title="Needs your attention">
+        <View style={{ gap: space[1] }}>
+          {[...shown, ...more].map((i) => (
+            <Row key={i.key} item={i} now={now} onResolved={settle} />
+          ))}
+        </View>
       </Sheet>
-    </Card>
+    </View>
   );
 }

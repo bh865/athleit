@@ -27,18 +27,29 @@ describe('attentionRank (priority tiers)', () => {
   });
   it('2: time-boxed and close', () => {
     expect(attentionRank(item({ kind: 'result', key: 'r' }), NOW)).toBe(2);
-    expect(attentionRank(item({ kind: 'rsvp', key: 'r', dueAt: '2026-11-21T00:00:00Z' }), NOW)).toBe(2);
+    expect(
+      attentionRank(item({ kind: 'rsvp', key: 'r', dueAt: '2026-11-21T00:00:00Z' }), NOW),
+    ).toBe(2);
     expect(
       attentionRank(item({ kind: 'payment', key: 'a', dueAt: '2026-11-25T00:00:00Z' }), NOW),
     ).toBe(2);
   });
   it('3: decisions others wait on', () => {
-    for (const kind of ['joinRequests', 'loginClaims', 'linkRequests', 'registrationsToDecide'] as const)
+    for (const kind of [
+      'joinRequests',
+      'loginClaims',
+      'linkRequests',
+      'registrationsToDecide',
+    ] as const)
       expect(attentionRank(item({ kind, key: kind }), NOW)).toBe(3);
   });
   it('4: everything else', () => {
-    expect(attentionRank(item({ kind: 'rsvp', key: 'r', dueAt: '2026-11-24T00:00:00Z' }), NOW)).toBe(4);
-    expect(attentionRank(item({ kind: 'payment', key: 'a', dueAt: '2026-12-30T00:00:00Z' }), NOW)).toBe(4);
+    expect(
+      attentionRank(item({ kind: 'rsvp', key: 'r', dueAt: '2026-11-24T00:00:00Z' }), NOW),
+    ).toBe(4);
+    expect(
+      attentionRank(item({ kind: 'payment', key: 'a', dueAt: '2026-12-30T00:00:00Z' }), NOW),
+    ).toBe(4);
     expect(attentionRank(item({ kind: 'registrationStep', key: 'x' }), NOW)).toBe(4);
     expect(attentionRank(item({ kind: 'setup', key: 'x' }), NOW)).toBe(4);
   });
@@ -102,7 +113,11 @@ describe('attentionChip wording', () => {
   const at = (iso: string) => ({ dueAt: iso });
 
   it('under an hour: Closes in N min', () => {
-    expect(chip(at('2026-11-19T17:40:00Z'))).toMatchObject({ text: 'Closes in 40 min', tone: 'soon', icon: 'clock' });
+    expect(chip(at('2026-11-19T17:40:00Z'))).toMatchObject({
+      text: 'Closes in 40 min',
+      tone: 'soon',
+      icon: 'clock',
+    });
   });
   it('same day: tonight in the evening, today otherwise', () => {
     expect(chip(at('2026-11-20T02:00:00Z'))?.text).toBe('Closes tonight'); // 9 pm EST
@@ -117,7 +132,8 @@ describe('attentionChip wording', () => {
       chip({ kind: 'rsvp', dueAt: '2026-11-21T15:00:00Z', dueMode: 'event', eventNoun: 'Game' }),
     ).toMatchObject({ text: 'Game in 2 days', tone: 'soon' });
     expect(
-      chip({ kind: 'rsvp', dueAt: '2026-11-19T17:30:00Z', dueMode: 'event', eventNoun: 'Practice' })?.text,
+      chip({ kind: 'rsvp', dueAt: '2026-11-19T17:30:00Z', dueMode: 'event', eventNoun: 'Practice' })
+        ?.text,
     ).toBe('Practice in 30 min');
   });
   it('further out: Due Dec 1, calm', () => {
@@ -133,7 +149,9 @@ describe('attentionChip wording', () => {
     expect(chip(at('2026-11-19T15:00:00Z'))?.text).toBe('Overdue today');
   });
   it('expired: Expired Nov 15', () => {
-    expect(chip({ kind: 'waiver', dueAt: '2026-11-15T17:00:00Z', dueMode: 'expired' })).toMatchObject({
+    expect(
+      chip({ kind: 'waiver', dueAt: '2026-11-15T17:00:00Z', dueMode: 'expired' }),
+    ).toMatchObject({
       text: 'Expired Nov 15',
       tone: 'urgent',
     });

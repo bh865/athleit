@@ -20,7 +20,15 @@ const ids = (contexts: never[], active: never | null) =>
   new Set<HomeTileId>(homeTileIds(contexts, active));
 
 const SCHEDULE: HomeTileId[] = ['nextUp', 'scheduleChanges', 'teamRecord'];
-const REMOVED = ['thisWeek', 'messages', 'announcement', 'payouts', 'places', 'calendar', 'notificationHealth'];
+const REMOVED = [
+  'thisWeek',
+  'messages',
+  'announcement',
+  'payouts',
+  'places',
+  'calendar',
+  'notificationHealth',
+];
 const STAFF_ONLY: HomeTileId[] = ['collection', 'members'];
 
 describe('homeTileIds per persona', () => {
@@ -47,8 +55,7 @@ describe('homeTileIds per persona', () => {
 
   it('parent not yet placed (household only): no schedule or team tiles', () => {
     const t = ids([family], family);
-    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[])
-      expect(t.has(id), id).toBe(false);
+    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[]) expect(t.has(id), id).toBe(false);
     for (const id of ['amountDue', 'family', 'waivers', 'attention'] as HomeTileId[])
       expect(t.has(id), id).toBe(true);
   });
@@ -56,8 +63,7 @@ describe('homeTileIds per persona', () => {
   it('player 13+: schedule and messages, amount due read-only, no staff tiles', () => {
     const list = homeTileIds([player], player);
     const t = new Set(list);
-    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[])
-      expect(t.has(id), id).toBe(true);
+    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[]) expect(t.has(id), id).toBe(true);
     expect(t.has('amountDue')).toBe(true);
     for (const id of [
       ...STAFF_ONLY,
