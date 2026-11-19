@@ -19,7 +19,16 @@ const clubAdmin = ctx('club', 'c1', 'admin');
 const ids = (contexts: never[], active: never | null) =>
   new Set<HomeTileId>(homeTileIds(contexts, active));
 
-const SCHEDULE: HomeTileId[] = ['nextUp', 'thisWeek', 'scheduleChanges', 'teamRecord'];
+const SCHEDULE: HomeTileId[] = ['nextUp', 'scheduleChanges', 'teamRecord'];
+const REMOVED = [
+  'thisWeek',
+  'messages',
+  'announcement',
+  'payouts',
+  'places',
+  'calendar',
+  'notificationHealth',
+];
 const STAFF_ONLY: HomeTileId[] = ['collection', 'members'];
 
 describe('homeTileIds per persona', () => {
@@ -28,8 +37,6 @@ describe('homeTileIds per persona', () => {
     for (const id of [
       ...SCHEDULE,
       'attention',
-      'messages',
-      'announcement',
       'amountDue',
       'waivers',
       'family',
@@ -37,21 +44,18 @@ describe('homeTileIds per persona', () => {
       'documents',
     ] as HomeTileId[])
       expect(t.has(id), id).toBe(true);
-    for (const id of [...STAFF_ONLY, 'payouts', 'setup', 'club'] as HomeTileId[])
+    for (const id of [...STAFF_ONLY, 'setup', 'club'] as HomeTileId[])
       expect(t.has(id), id).toBe(false);
-    expect(t.has('places')).toBe(true);
   });
 
   it('two-team parent: tiles load once, places tile shows', () => {
     const list = homeTileIds([family, parent1, parent2], parent1);
     expect(new Set(list).size).toBe(list.length);
-    expect(list).toContain('places');
   });
 
   it('parent not yet placed (household only): no schedule or team tiles', () => {
     const t = ids([family], family);
-    for (const id of [...SCHEDULE, 'messages', 'announcement', 'roster'] as HomeTileId[])
-      expect(t.has(id), id).toBe(false);
+    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[]) expect(t.has(id), id).toBe(false);
     for (const id of ['amountDue', 'family', 'waivers', 'attention'] as HomeTileId[])
       expect(t.has(id), id).toBe(true);
   });
@@ -59,12 +63,10 @@ describe('homeTileIds per persona', () => {
   it('player 13+: schedule and messages, amount due read-only, no staff tiles', () => {
     const list = homeTileIds([player], player);
     const t = new Set(list);
-    for (const id of [...SCHEDULE, 'messages', 'roster'] as HomeTileId[])
-      expect(t.has(id), id).toBe(true);
+    for (const id of [...SCHEDULE, 'roster'] as HomeTileId[]) expect(t.has(id), id).toBe(true);
     expect(t.has('amountDue')).toBe(true);
     for (const id of [
       ...STAFF_ONLY,
-      'payouts',
       'approvals',
       'family',
       'setup',
@@ -84,24 +86,21 @@ describe('homeTileIds per persona', () => {
       'waivers',
       'registrations',
       'members',
-      'payouts',
     ] as HomeTileId[])
       expect(t.has(id), id).toBe(true);
     for (const id of ['amountDue', 'family', 'setup'] as HomeTileId[])
       expect(t.has(id), id).toBe(false);
   });
 
-  it('manager: registration manage gives the setup checklist; payouts are status only', () => {
+  it('manager: registration manage gives the setup checklist', () => {
     const t = ids([manager], manager);
     expect(t.has('setup')).toBe(true);
-    expect(t.has('payouts')).toBe(true);
   });
 
   it('admin + parent in one place: every admin tile plus every parent tile', () => {
     const t = ids([family, adminParent], adminParent);
     for (const id of [
       'collection',
-      'payouts',
       'approvals',
       'setup',
       'members',
@@ -119,7 +118,7 @@ describe('homeTileIds per persona', () => {
     const t = ids([clubAdmin], clubAdmin);
     for (const id of ['club', 'approvals', 'collection', 'attention'] as HomeTileId[])
       expect(t.has(id), id).toBe(true);
-    for (const id of [...SCHEDULE, 'messages', 'amountDue', 'family'] as HomeTileId[])
+    for (const id of [...SCHEDULE, 'amountDue', 'family'] as HomeTileId[])
       expect(t.has(id), id).toBe(false);
   });
 
@@ -134,6 +133,20 @@ describe('homeTileIds per persona', () => {
   });
 });
 
+describe('removed tiles', () => {
+  it('no persona is ever given a removed tile id', () => {
+    const personas: [never[], never][] = [
+      [[family, parent1] as never[], parent1 as never],
+      [[player] as never[], player as never],
+      [[coach] as never[], coach as never],
+      [[family, adminParent] as never[], adminParent as never],
+      [[clubAdmin] as never[], clubAdmin as never],
+    ];
+    for (const [c, a] of personas)
+      for (const id of REMOVED) expect(homeTileIds(c, a) as string[]).not.toContain(id);
+  });
+});
+
 describe('deriveAttention', () => {
   const item = (
     o: Partial<AttentionItem> & Pick<AttentionItem, 'kind' | 'key'>,
@@ -143,16 +156,19 @@ describe('deriveAttention', () => {
     ...o,
   });
 
-  it('orders by tier, then overdue, then soonest, then larger count', () => {
-    const r = deriveAttention([
-      item({ kind: 'setup', key: 's' }),
-      item({ kind: 'payment', key: 'p-late', dueAt: '2026-11-10T00:00:00Z', overdue: true }),
-      item({ kind: 'payment', key: 'p-soon', dueAt: '2026-11-19T00:00:00Z' }),
-      item({ kind: 'rsvp', key: 'r' }),
-      item({ kind: 'joinRequests', key: 'j2', count: 2 }),
-      item({ kind: 'joinRequests', key: 'j5', count: 5 }),
-    ]);
-    expect(r.all.map((i) => i.key)).toEqual(['r', 'p-late', 'p-soon', 'j5', 'j2', 's']);
+  it('orders by tier, then oldest due date, then larger count', () => {
+    const r = deriveAttention(
+      [
+        item({ kind: 'setup', key: 's' }),
+        item({ kind: 'payment', key: 'p-late', dueAt: '2026-11-10T00:00:00Z', overdue: true }),
+        item({ kind: 'payment', key: 'p-soon', dueAt: '2026-11-21T00:00:00Z' }),
+        item({ kind: 'rsvp', key: 'r', dueAt: '2026-11-20T00:00:00Z' }),
+        item({ kind: 'joinRequests', key: 'j2', count: 2 }),
+        item({ kind: 'joinRequests', key: 'j5', count: 5 }),
+      ],
+      new Date('2026-11-19T12:00:00Z'),
+    );
+    expect(r.all.map((i) => i.key)).toEqual(['p-late', 'r', 'p-soon', 'j5', 'j2', 's']);
   });
 
   it('dedupes one chip per action per child', () => {
@@ -164,11 +180,11 @@ describe('deriveAttention', () => {
     expect(r.all).toHaveLength(2);
   });
 
-  it('caps at 4 chips with the last slot as "+N more"', () => {
+  it('shows 4 rows, the rest go to "+N more"', () => {
     const many = Array.from({ length: 7 }, (_, i) => item({ kind: 'waiver', key: `w${i}` }));
     const r = deriveAttention(many);
-    expect(r.shown).toHaveLength(3);
-    expect(r.more).toHaveLength(4);
+    expect(r.shown).toHaveLength(4);
+    expect(r.more).toHaveLength(3);
     expect(deriveAttention(many.slice(0, 4)).more).toHaveLength(0);
   });
 
@@ -209,6 +225,7 @@ describe('buildAttentionItems', () => {
       ],
     });
     expect(items.map((i) => i.label)).toEqual(['RSVP for Maya']);
+    expect(items[0]!.action).toMatchObject({ type: 'rsvp', eventId: 'e1', playerId: 'p1' });
   });
 
   it('flags overdue payments and ignores ones the person cannot pay', () => {

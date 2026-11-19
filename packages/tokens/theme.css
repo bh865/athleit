@@ -121,6 +121,9 @@
   --size-sidebar-width: 248px;
   --size-sidebar-radius: 28px;
   --size-sidebar-item-height: 44px;
+  --size-content-column-gap: 20px;
+  --size-content-gutter-start: 40px;
+  --size-content-gutter-end: 56px;
   --size-bubble-radius: 22px;
   --size-bubble-tail: 6px;
   --size-bubble-max-width-web: 420px;

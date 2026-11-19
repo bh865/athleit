@@ -22,5 +22,12 @@
   .layout {
     flex-direction: row;
     align-items: flex-start;
+    /* The content gutter below is measured from the sidebar's edge, so no extra gap here. */
+    gap: 0;
+  }
+  /* Content gutter (Home round 2): 40 from the sidebar edge, 56 on the right. Narrower screens keep the base padding. */
+  .main {
+    padding-left: var(--size-content-gutter-start);
+    padding-right: var(--size-content-gutter-end);
   }
 }

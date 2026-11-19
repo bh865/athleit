@@ -14,6 +14,8 @@ export const componentTokens = {
   card: { radius: 24, border: 1 },
   tabBar: { height: 68, radius: 34, itemWidth: 64, itemHeight: 54 },
   sidebar: { width: 248, radius: 28, itemHeight: 44 },
+  /** Web content pane (Home round 2): 12 columns, 20px column gap, 40 from the sidebar edge, 56 on the right. */
+  content: { columnGap: 20, gutterStart: 40, gutterEnd: 56 },
   bubble: { radius: 22, tail: 6, maxWidthWeb: 420, maxWidthMobile: 270 },
   chat: {
     threadListWidth: 340,

@@ -11,25 +11,18 @@ import { teamForScreen } from './places';
 export type HomeTileId =
   | 'attention'
   | 'nextUp'
-  | 'thisWeek'
   | 'scheduleChanges'
   | 'teamRecord'
-  | 'messages'
-  | 'announcement'
   | 'amountDue'
   | 'collection'
-  | 'payouts'
   | 'registrations'
   | 'waivers'
   | 'approvals'
   | 'roster'
   | 'documents'
   | 'family'
-  | 'places'
   | 'members'
   | 'club'
-  | 'calendar'
-  | 'notificationHealth'
   | 'setup';
 
 /** "team" tiles are staff work, "family" tiles are per child, "shared" tiles merge both. */
@@ -58,7 +51,6 @@ interface Scope {
   /** Only a team player role (13+), no household: sees payments read-only. */
   playerOnly: boolean;
   staffPayments: boolean;
-  payoutsAdmin: boolean;
   placeCount: number;
 }
 
@@ -74,22 +66,14 @@ const DEFS: Def[] = [
   { id: 'attention', group: 'top', visible: (s) => s.placeCount > 0 },
   // A guardian with no team yet has no schedule: the schedule tiles need a team the person sits on.
   { id: 'nextUp', group: 'shared', visible: (s) => has(s, 'schedule.view') },
-  { id: 'thisWeek', group: 'shared', visible: (s) => has(s, 'schedule.view') },
   { id: 'scheduleChanges', group: 'shared', visible: (s) => has(s, 'schedule.view') },
   { id: 'teamRecord', group: 'shared', visible: (s) => has(s, 'schedule.view') },
-  { id: 'messages', group: 'shared', visible: (s) => s.teamId !== null },
-  { id: 'announcement', group: 'shared', visible: (s) => s.teamId !== null },
   {
     id: 'amountDue',
     group: 'family',
     visible: (s) => (s.guardian ? true : s.playerOnly ? 'limited' : false),
   },
   { id: 'collection', group: 'team', visible: (s) => s.staffPayments },
-  {
-    id: 'payouts',
-    group: 'team',
-    visible: (s) => (s.staffPayments ? (s.payoutsAdmin ? true : 'limited') : false),
-  },
   {
     id: 'registrations',
     group: 'team',
@@ -118,15 +102,12 @@ const DEFS: Def[] = [
     group: 'family',
     visible: (s) => s.guardian,
   },
-  { id: 'places', group: 'more', visible: (s) => s.placeCount >= 2 },
   {
     id: 'members',
     group: 'more',
     visible: (s) => has(s, 'members.manage', 'invites.createFamily'),
   },
   { id: 'club', group: 'team', visible: (s) => s.clubCaps.has('club.view') },
-  { id: 'calendar', group: 'more', visible: (s) => has(s, 'schedule.view') },
-  { id: 'notificationHealth', group: 'more', visible: (s) => s.placeCount > 0 },
   { id: 'setup', group: 'team', visible: (s) => has(s, 'team.edit', 'registration.manage') },
 ];
 
@@ -145,7 +126,6 @@ function scopeFor(contexts: readonly Ctx[], active: Active): Scope {
     ? capabilitiesForPlace(contexts, 'club', club.id)
     : new Set<Capability>();
   const pay = payViewsFor(contexts, active);
-  const staffCaps = pay.staff ? capabilitiesForPlace(contexts, pay.staff.kind, pay.staff.id) : null;
   const roles = team
     ? contexts
         .filter((c) => c.kind === 'team' && c.id === team.id)
@@ -159,7 +139,6 @@ function scopeFor(contexts: readonly Ctx[], active: Active): Scope {
     guardian: pay.payer,
     playerOnly: !pay.payer && roles.length > 0 && roles.every((r) => r === 'player'),
     staffPayments: pay.staff !== null,
-    payoutsAdmin: Boolean(staffCaps?.has('payments.setup')),
     placeCount: contexts.length,
   };
 }

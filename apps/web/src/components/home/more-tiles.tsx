@@ -1,52 +1,24 @@
 'use client';
 
-import { can, previewOf, sumCents, teamTabHref, type AppContext } from '@athleit/core';
+import { sumCents, teamTabHref } from '@athleit/core';
+import { getPhotoUrl, getRoster, listChildren, type Result } from '@athleit/db/api';
 import {
-  getNotificationFailures,
-  getRoster,
-  getThreadList,
-  listChildren,
-  type Result,
-} from '@athleit/db/api';
-import { getConnectedAccountStatus, getHouseholdPayments } from '@athleit/db/payments';
+  getCollectionSummary,
+  getHouseholdPayments,
+  listPaymentEvents,
+  type Owner,
+} from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
-import { getFeedTokenStatus, getNextUp } from '@athleit/db/scheduling';
+import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
-import { useApp } from '@/components/app/app-provider';
 import { Amount, dueText } from '@/components/payments/money';
-import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
+import { Avatar, Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 import styles from './home.module.css';
 import { TileShell } from './tile-shell';
-
-/** Latest announcement in the team's announcement thread. Read counts are staff-only and not shown here. */
-export function AnnouncementTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getThreadList(getClient(), teamId), [teamId]);
-  const row = (res.data ?? []).find((t) => t.type === 'announcement' && t.last_body !== null);
-  return (
-    <TileShell
-      id="home-announcement"
-      title="Latest announcement"
-      href={row ? `/messages/${row.thread_id}` : '/messages'}
-      res={res}
-      empty={!row}
-      hasData={res.data !== null}
-    >
-      {row ? (
-        <Text as="p">
-          {previewOf({
-            body: row.last_body ?? '',
-            deleted: row.last_deleted,
-            hidden: row.last_hidden,
-          })}
-        </Text>
-      ) : null}
-    </TileShell>
-  );
-}
 
 /** Pinned or recent documents. Read-only for families; uploading lives on the documents page. */
 export function DocumentsTile({ teamId }: { teamId: string }) {
@@ -80,6 +52,40 @@ export function DocumentsTile({ teamId }: { teamId: string }) {
 }
 
 /** My children: first names and the teams they are on. */
+function ChildRow({
+  child,
+}: {
+  child: {
+    id: string;
+    first_name: string;
+    photo_path?: string | null;
+    team_players?: { teams?: { name: string } | null }[] | null;
+  };
+}) {
+  const path = child.photo_path ?? null;
+  const photo = useLoad(
+    () =>
+      path
+        ? getPhotoUrl(getClient(), path)
+        : Promise.resolve({ data: null, error: null } as Result<string | null>),
+    [path],
+  );
+  return (
+    <Link href={`/family/children/${child.id}`} className={styles.thread}>
+      <Avatar name={child.first_name} size="md" src={photo.data} />
+      <span className={styles.threadText}>
+        <span className={styles.threadTitle}>{child.first_name}</span>
+        <span className={styles.threadPreview}>
+          {(child.team_players ?? [])
+            .map((tp) => tp.teams?.name)
+            .filter(Boolean)
+            .join(', ') || 'Not on a team yet'}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export function FamilyTile() {
   const res = useLoad(() => listChildren(getClient()), []);
   const kids = res.data ?? [];
@@ -87,8 +93,6 @@ export function FamilyTile() {
     <TileShell
       id="home-family"
       title="My children"
-      href="/family"
-      linkLabel="Manage"
       res={res}
       empty={kids.length === 0}
       hasData={res.data !== null}
@@ -96,86 +100,13 @@ export function FamilyTile() {
       <ul className={styles.threads}>
         {kids.slice(0, 4).map((k) => (
           <li key={k.id}>
-            <Link href={`/family/children/${k.id}`} className={styles.thread}>
-              <span className={styles.threadText}>
-                <span className={styles.threadTitle}>{k.first_name}</span>
-                <span className={styles.threadPreview}>
-                  {(k.team_players ?? [])
-                    .map((tp) => tp.teams?.name)
-                    .filter(Boolean)
-                    .join(', ') || 'Not on a team yet'}
-                </span>
-              </span>
-            </Link>
+            <ChildRow child={k} />
           </li>
         ))}
       </ul>
-    </TileShell>
-  );
-}
-
-/** Payout account status: an icon and a word, never colour alone. Coach and manager see status only. */
-export function PayoutsTile({ owner }: { owner: { teamId?: string; clubId?: string } }) {
-  const res = useLoad(
-    () => getConnectedAccountStatus(getClient(), owner),
-    [owner.teamId, owner.clubId],
-  );
-  const s = res.data;
-  const ready = Boolean(s?.charges_enabled && s?.payouts_enabled);
-  return (
-    <TileShell
-      id="home-payouts"
-      title="Payouts"
-      href="/pay"
-      res={res}
-      empty={false}
-      hasData={res.data !== null || !res.loading}
-    >
-      {ready ? (
-        <Badge tone="success">Ready</Badge>
-      ) : s?.exists_account ? (
-        <Badge tone="warning">Needs information</Badge>
-      ) : (
-        <Badge tone="warning">Not set up</Badge>
-      )}
-    </TileShell>
-  );
-}
-
-/** Families can subscribe once; the tile disappears after the first feed link exists. */
-export function CalendarTile() {
-  const res = useLoad(() => getFeedTokenStatus(getClient()), []);
-  return (
-    <TileShell
-      id="home-calendar"
-      title="Add to your calendar"
-      href="/schedule"
-      linkLabel="Get link"
-      res={res}
-      empty={(res.data ?? []).length > 0}
-      hasData={res.data !== null}
-    >
-      <Text muted as="p">
-        One link keeps games and practices in sync with your phone calendar.
-      </Text>
-    </TileShell>
-  );
-}
-
-/** Admin only: failed notification deliveries. Hidden when there are none. */
-export function NotificationHealthTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getNotificationFailures(getClient(), teamId), [teamId]);
-  const n = (res.data ?? []).length;
-  return (
-    <TileShell
-      id="home-notification-health"
-      title="Notification health"
-      href="/notifications/settings"
-      res={res}
-      empty={n === 0}
-      hasData={res.data !== null}
-    >
-      <Badge tone="danger">{`${n} failed ${n === 1 ? 'delivery' : 'deliveries'}`}</Badge>
+      <ButtonLink href="/family" variant="secondary" className={styles.bottomButton}>
+        View family
+      </ButtonLink>
     </TileShell>
   );
 }
@@ -225,56 +156,6 @@ export function SetupTile({ teamId }: { teamId: string }) {
   );
 }
 
-/** Two or more places: quick jumps. Hidden with a single place. */
-export function PlacesTile({
-  places,
-}: {
-  places: readonly Pick<
-    AppContext,
-    'key' | 'title' | 'subtitle' | 'kind' | 'id' | 'role' | 'roles'
-  >[];
-}) {
-  const { setActive } = useApp();
-  if (places.length < 2) return null;
-  const href = (p: { kind: string; id: string }) =>
-    p.kind === 'team' ? `/teams/${p.id}` : p.kind === 'club' ? `/clubs/${p.id}` : '/family';
-  return (
-    <TileShell
-      id="home-places"
-      title="Your places"
-      res={{ loading: false, error: null, reload: () => undefined }}
-      empty={false}
-      hasData
-    >
-      <ul className={styles.threads}>
-        {places.slice(0, 5).map((p) => (
-          <li key={p.key}>
-            {p.kind === 'team' && !can(p, 'team.details') ? (
-              <button
-                type="button"
-                className={`${styles.thread} ${styles.threadButton}`}
-                onClick={() => setActive(p.key)}
-              >
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>{p.title}</span>
-                  <span className={styles.threadPreview}>{p.subtitle}</span>
-                </span>
-              </button>
-            ) : (
-              <Link href={href(p)} className={styles.thread}>
-                <span className={styles.threadText}>
-                  <span className={styles.threadTitle}>{p.title}</span>
-                  <span className={styles.threadPreview}>{p.subtitle}</span>
-                </span>
-              </Link>
-            )}
-          </li>
-        ))}
-      </ul>
-    </TileShell>
-  );
-}
-
 /** Amount due for the family: big mono total, what it is for, when, and one Pay button. */
 export function DueTile({ id }: { id: string }) {
   const res = useLoad(() => getHouseholdPayments(getClient()), []);
@@ -294,6 +175,63 @@ export function DueTile({ id }: { id: string }) {
             · due {dueText(first.due_at)}
           </Text>
           <ButtonLink href="/pay">Pay {`$${(total / 100).toFixed(2)}`}</ButtonLink>
+        </div>
+      ) : null}
+    </TileShell>
+  );
+}
+
+/** Staff: what is still owed across open requests, styled like Amount due. Hidden when nothing is open. */
+export function OutstandingTile({ owner }: { owner: Owner }) {
+  const res = useLoad(async (): Promise<
+    Result<{ outstanding: number; expected: number; collected: number; count: number }>
+  > => {
+    const c = getClient();
+    const events = await listPaymentEvents(c, owner);
+    if (events.error) return events;
+    const open = events.data.filter((e) => e.status === 'published').slice(0, 10);
+    const sums = await Promise.all(open.map((e) => getCollectionSummary(c, e.id)));
+    const rows = sums.flatMap((s) => (s.data ? [s.data] : []));
+    return {
+      data: {
+        outstanding: sumCents(rows.map((r) => Number(r.outstanding_cents))),
+        expected: sumCents(rows.map((r) => Number(r.expected_cents))),
+        collected: sumCents(rows.map((r) => Number(r.collected_cents))),
+        count: open.length,
+      },
+      error: null,
+    };
+  }, [owner.teamId, owner.clubId]);
+  const d = res.data;
+  const pct = d && d.expected > 0 ? Math.min(100, Math.floor((d.collected * 100) / d.expected)) : 0;
+  return (
+    <TileShell
+      id="home-payments"
+      title="Outstanding payments"
+      res={res}
+      empty={!d || d.count === 0}
+      hasData={d !== null}
+    >
+      {d ? (
+        <div className={styles.amount} data-testid="payments-card">
+          <Badge tone="neutral">{`${d.count} open request${d.count === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={d.outstanding} variant="monoLg" label="Outstanding" />
+          <div
+            className={styles.bar}
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Collected"
+          >
+            <span className={styles.barFill} style={{ width: `${pct}%` }} />
+          </div>
+          <Text variant="caption" muted>
+            {pct}% collected
+          </Text>
+          <ButtonLink href="/pay" variant="secondary">
+            View payments
+          </ButtonLink>
         </div>
       ) : null}
     </TileShell>

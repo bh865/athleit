@@ -1,7 +1,5 @@
 import {
-  can,
   capabilitiesForPlace,
-  contextPath,
   homeTileIds,
   rolesLabel,
   payViewsFor,
@@ -10,32 +8,24 @@ import {
 import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { View } from 'react-native';
 
 import { AppScreen } from '@/components/app/app-screen';
-import { H1, ListItem } from '@/components/app/kit';
+import { H1 } from '@/components/app/kit';
 import { AttentionStrip } from '@/components/home/attention-strip';
+import { ApprovalsTile, RecordTile, RegistrationsTile, WaiversTile } from '@/components/home/tiles';
 import {
-  ApprovalsTile,
-  RecordTile,
-  RegistrationsTile,
-  WaiversTile,
-  WeekTile,
-} from '@/components/home/tiles';
-import {
-  AnnouncementTile,
-  CollectionTile,
   DocumentsTile,
   DueTile,
   FamilyTile,
   GroupHead,
-  NotificationHealthTile,
-  PayoutsTile,
+  OutstandingTile,
+  RosterTile,
   SetupTile,
 } from '@/components/home/more-tiles';
 import { useHomeData } from '@/components/home/use-home-data';
 import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Button, Card, ListGroup, Text } from '@/components/ui';
+import { Button, Card, Text } from '@/components/ui';
+import { View } from 'react-native';
 import { useApp } from '@/lib/app-provider';
 import { kv, PENDING_INVITE_KEY } from '@/lib/kv';
 
@@ -59,13 +49,13 @@ const greeting = () => {
 };
 
 /**
- * Home (design system): greeting, attention chips, Next up, capability-driven tiles and your places. Resumes a pending invite first.
+ * Home: greeting, Needs your attention, Next up with Team record, capability-driven team and family tiles, Documents. Resumes a pending invite first.
  * It never redirects into a team or family page: those are one tap away below, and the role
  * switcher in the header still jumps straight to them.
  */
 export default function HomeScreen() {
-  const { contexts, active, displayName, addActions, status, setActive } = useApp();
-  const { attention, loading } = useHomeData(contexts, active);
+  const { contexts, active, displayName, addActions, status } = useApp();
+  const { attention, loading, error, reload, refresh, tick, now } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const team = teamForScreen(contexts, active);
   const caps = team ? capabilitiesForPlace(contexts, 'team', team.id) : new Set<string>();
@@ -109,13 +99,22 @@ export default function HomeScreen() {
             {greeting()}
             {displayName ? `,\n${displayName.split(' ')[0]}` : ''}
           </H1>
-          <AttentionStrip shown={attention.shown} more={attention.more} loading={loading} />
-          <NextUpCard />
-          {tiles.has('thisWeek') ? (
-            <WeekTile teamId={team?.id ?? null} staff={Boolean(team?.isStaff)} />
+          <AttentionStrip
+            attention={attention}
+            loading={loading}
+            error={error}
+            onRetry={reload}
+            onResolved={refresh}
+            now={now}
+          />
+          {tiles.has('nextUp') ? (
+            <NextUpCard
+              teamId={team?.id ?? null}
+              canManage={Boolean(team?.isStaff)}
+              reloadKey={tick}
+            />
           ) : null}
           {tiles.has('teamRecord') && team ? <RecordTile teamId={team.id} /> : null}
-          {tiles.has('announcement') && team ? <AnnouncementTile teamId={team.id} /> : null}
           {team?.isStaff || owner ? (
             <>
               {payer ? (
@@ -133,12 +132,11 @@ export default function HomeScreen() {
               {staffReg && tiles.has('registrations') ? (
                 <RegistrationsTile teamId={team?.id ?? null} staff />
               ) : null}
-              {owner && caps.has('payments.view') ? <CollectionTile owner={owner} /> : null}
-              {owner && tiles.has('payouts') ? <PayoutsTile owner={owner} /> : null}
-              {tiles.has('setup') && team ? <SetupTile teamId={team.id} /> : null}
-              {tiles.has('notificationHealth') && team && caps.has('members.manage') ? (
-                <NotificationHealthTile teamId={team.id} />
+              {owner && caps.has('payments.view') ? <OutstandingTile owner={owner} /> : null}
+              {team && caps.has('roster.viewLimited') ? (
+                <RosterTile teamId={team.id} staff={caps.has('roster.viewFull')} />
               ) : null}
+              {tiles.has('setup') && team ? <SetupTile teamId={team.id} /> : null}
             </>
           ) : null}
           {payer ? (
@@ -154,28 +152,10 @@ export default function HomeScreen() {
               {tiles.has('family') ? <FamilyTile /> : null}
             </>
           ) : null}
+          {team && caps.has('roster.viewLimited') && !(team.isStaff || owner) ? (
+            <RosterTile teamId={team.id} staff={false} />
+          ) : null}
           {tiles.has('documents') && team ? <DocumentsTile teamId={team.id} /> : null}
-          <View style={{ gap: space[3] }}>
-            <Text variant="label" muted accessibilityRole="header">
-              YOUR PLACES
-            </Text>
-            <ListGroup>
-              {contexts.map((c) => (
-                <ListItem
-                  key={c.key}
-                  title={c.title}
-                  subtitle={c.subtitle}
-                  avatarName={c.title}
-                  onPress={() =>
-                    c.kind === 'team' && !can(c, 'team.details')
-                      ? setActive(c.key)
-                      : router.push(contextPath(c) as never)
-                  }
-                  testID={`place-${c.kind}`}
-                />
-              ))}
-            </ListGroup>
-          </View>
         </>
       ) : (
         <Card style={{ gap: space[4] }}>

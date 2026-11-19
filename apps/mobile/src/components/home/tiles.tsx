@@ -1,4 +1,4 @@
-import { describeEventTime, teamTabParams } from '@athleit/core';
+import { teamTabParams } from '@athleit/core';
 import { getJoinRequests, type Result } from '@athleit/db/api';
 import {
   getCapacitySummary,
@@ -6,12 +6,7 @@ import {
   listMyRegistrations,
   listRegistrationEvents,
 } from '@athleit/db/registration';
-import {
-  getHouseholdScheduleRange,
-  getTeamRecord,
-  getTeamSchedule,
-  getTeamScheduleRange,
-} from '@athleit/db/scheduling';
+import { getTeamRecord, getTeamSchedule } from '@athleit/db/scheduling';
 import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
@@ -30,14 +25,6 @@ import {
 } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
-import { viewerZone } from '@/lib/viewer-zone';
-
-const DAY = 24 * 60 * 60 * 1000;
-const RSVP_LABEL: Record<string, string> = {
-  going: 'Going',
-  not_going: 'Can’t go',
-  maybe: 'Maybe',
-};
 
 interface LoadResult {
   loading: boolean;
@@ -98,87 +85,6 @@ export function Stat({ v, l }: { v: number; l: string }) {
         {l}
       </Text>
     </View>
-  );
-}
-
-interface WeekRow {
-  key: string;
-  id: string;
-  title: string;
-  starts_at: string;
-  ends_at: string;
-  timezone: string;
-  meta: string;
-}
-
-/** The next 7 days: staff see RSVP counts; families see each child's RSVP ("Maya: Going"). */
-export function WeekTile({ teamId, staff }: { teamId: string | null; staff: boolean }) {
-  const router = useRouter();
-  const res = useLoad(async (): Promise<Result<WeekRow[]>> => {
-    const from = new Date();
-    const to = new Date(from.getTime() + 7 * DAY);
-    if (staff && teamId) {
-      const r = await getTeamScheduleRange(supabase, teamId, from.toISOString(), to.toISOString());
-      if (r.error) return r;
-      return {
-        data: r.data.map((e) => ({
-          key: e.id,
-          id: e.id,
-          title: e.title,
-          starts_at: e.starts_at,
-          ends_at: e.ends_at,
-          timezone: e.timezone,
-          meta:
-            e.status === 'cancelled' ? 'Cancelled' : `${e.going} going · ${e.no_reply} no reply`,
-        })),
-        error: null,
-      };
-    }
-    const r = await getHouseholdScheduleRange(supabase, from.toISOString(), to.toISOString());
-    if (r.error) return r;
-    return {
-      data: r.data.map((e) => ({
-        key: `${e.event_id}:${e.player_id}`,
-        id: e.event_id,
-        title: e.title,
-        starts_at: e.starts_at,
-        ends_at: e.ends_at,
-        timezone: e.timezone,
-        meta: `${e.player_first_name}: ${
-          e.status === 'cancelled'
-            ? 'Cancelled'
-            : e.rsvp_status
-              ? (RSVP_LABEL[e.rsvp_status] ?? e.rsvp_status)
-              : 'No reply'
-        }`,
-      })),
-      error: null,
-    };
-  }, [teamId, staff]);
-  const rows = (res.data ?? []).slice(0, 5);
-  return (
-    <Tile
-      id="home-week"
-      title="This week"
-      res={res}
-      hasData={res.data !== null}
-      empty={rows.length === 0}
-    >
-      <ListGroup>
-        {rows.map((e) => {
-          const t = describeEventTime(e.starts_at, e.ends_at, e.timezone, viewerZone());
-          return (
-            <ListItem
-              key={e.key}
-              title={e.title}
-              subtitle={`${t.weekdayShort} ${t.startLabel}${e.meta.includes(': ') ? ` · ${e.meta.split(': ')[0]}` : ''}`}
-              right={<Badge>{e.meta.split(': ').pop() ?? e.meta}</Badge>}
-              onPress={() => router.push(`/events/${e.id}` as never)}
-            />
-          );
-        })}
-      </ListGroup>
-    </Tile>
   );
 }
 

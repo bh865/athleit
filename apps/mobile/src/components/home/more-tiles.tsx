@@ -1,61 +1,24 @@
-import { formatCents, previewOf, sumCents } from '@athleit/core';
-import {
-  getNotificationFailures,
-  getRoster,
-  getThreadList,
-  listChildren,
-  type Result,
-} from '@athleit/db/api';
+import { formatCents, sumCents } from '@athleit/core';
+import { getJoinRequests, getRoster, listChildren, type Result } from '@athleit/db/api';
 import {
   getCollectionSummary,
-  getConnectedAccountStatus,
   getHouseholdPayments,
   listPaymentEvents,
   type Owner,
 } from '@athleit/db/payments';
 import { listDocuments } from '@athleit/db/registration';
 import { getNextUp } from '@athleit/db/scheduling';
-import { space } from '@athleit/tokens';
+import { radius, space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { ListItem } from '@/components/app/kit';
 import { Amount, dueText } from '@/components/payments/money';
-import { Badge, Button, ListGroup, Text } from '@/components/ui';
+import { Avatar, Badge, Button, ListGroup, Text, useTheme } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
-import { Tile } from './tiles';
-
-/** Latest announcement (read counts are staff-only and not shown). */
-export function AnnouncementTile({ teamId }: { teamId: string }) {
-  const router = useRouter();
-  const res = useLoad(() => getThreadList(supabase, teamId), [teamId]);
-  const row = (res.data ?? []).find((t) => t.type === 'announcement' && t.last_body !== null);
-  return (
-    <Tile
-      id="home-announcement"
-      title="Latest announcement"
-      res={res}
-      hasData={res.data !== null}
-      empty={!row}
-    >
-      {row ? (
-        <ListGroup>
-          <ListItem
-            title={row.title ?? 'Announcement'}
-            subtitle={previewOf({
-              body: row.last_body ?? '',
-              deleted: row.last_deleted,
-              hidden: row.last_hidden,
-            })}
-            onPress={() => router.push(`/messages/${row.thread_id}` as never)}
-          />
-        </ListGroup>
-      ) : null}
-    </Tile>
-  );
-}
+import { Stat, Tile } from './tiles';
 
 /** Pinned or recent documents; read-only here. */
 export function DocumentsTile({ teamId }: { teamId: string }) {
@@ -98,7 +61,7 @@ export function FamilyTile() {
       hasData={res.data !== null}
       empty={kids.length === 0}
     >
-      <ListGroup>
+      <View>
         {kids.slice(0, 4).map((k) => (
           <ListItem
             key={k.id}
@@ -113,7 +76,12 @@ export function FamilyTile() {
             onPress={() => router.push(`/family/children/${k.id}` as never)}
           />
         ))}
-      </ListGroup>
+      </View>
+      <Button
+        title="View family"
+        variant="secondary"
+        onPress={() => router.push('/family' as never)}
+      />
     </Tile>
   );
 }
@@ -150,9 +118,10 @@ export function DueTile() {
   );
 }
 
-/** Staff: outstanding across open requests, totals only. */
-export function CollectionTile({ owner }: { owner: Owner }) {
+/** Staff: what is still owed across open requests, styled like Amount due. Hidden when nothing is open. */
+export function OutstandingTile({ owner }: { owner: Owner }) {
   const router = useRouter();
+  const { theme } = useTheme();
   const res = useLoad(async (): Promise<
     Result<{ outstanding: number; collected: number; expected: number; count: number }>
   > => {
@@ -172,62 +141,93 @@ export function CollectionTile({ owner }: { owner: Owner }) {
     };
   }, [owner.teamId, owner.clubId]);
   const d = res.data;
+  const pct = d && d.expected > 0 ? Math.min(100, Math.floor((d.collected * 100) / d.expected)) : 0;
   return (
     <Tile
-      id="home-collection"
-      title="Collection"
+      id="home-payments"
+      title="Outstanding payments"
       res={res}
       hasData={d !== null}
       empty={!d || d.count === 0}
     >
       {d ? (
-        <ListGroup>
-          <ListItem
-            title="Outstanding"
-            subtitle={`${d.count} open request${d.count === 1 ? '' : 's'}`}
-            right={<Amount cents={d.outstanding} variant="monoLg" label="Outstanding" />}
-            onPress={() => router.push('/pay' as never)}
-          />
-        </ListGroup>
+        <View style={{ gap: space[2], alignItems: 'flex-start' }}>
+          <Badge>{`${d.count} open request${d.count === 1 ? '' : 's'}`}</Badge>
+          <Amount cents={d.outstanding} variant="monoXl" label="Outstanding" />
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Collected"
+            accessibilityValue={{ min: 0, max: 100, now: pct }}
+            style={{
+              alignSelf: 'stretch',
+              height: space[2],
+              borderRadius: radius.pill,
+              overflow: 'hidden',
+              backgroundColor: theme.color.surfaceAlt,
+            }}
+          >
+            <View
+              style={{
+                width: `${pct}%`,
+                height: '100%',
+                borderRadius: radius.pill,
+                backgroundColor: theme.color.accent,
+              }}
+            />
+          </View>
+          <Text variant="caption" muted>
+            {pct}% collected
+          </Text>
+          <View style={{ alignSelf: 'stretch' }}>
+            <Button
+              title="View payments"
+              variant="secondary"
+              onPress={() => router.push('/pay' as never)}
+            />
+          </View>
+        </View>
       ) : null}
     </Tile>
   );
 }
 
-/** Payout status: a dot with a word, never colour alone. */
-export function PayoutsTile({ owner }: { owner: Owner }) {
-  const res = useLoad(
-    () => getConnectedAccountStatus(supabase, owner),
-    [owner.teamId, owner.clubId],
+/** Players, and for staff active and pending counts, with an avatar stack. */
+export function RosterTile({ teamId, staff }: { teamId: string; staff: boolean }) {
+  const router = useRouter();
+  const roster = useLoad(() => getRoster(supabase, teamId), [teamId]);
+  const pending = useLoad(
+    () =>
+      staff
+        ? getJoinRequests(supabase, teamId)
+        : Promise.resolve({ data: [] as { status: string }[], error: null }),
+    [teamId, staff],
   );
-  const s = res.data;
-  const ready = Boolean(s?.charges_enabled && s?.payouts_enabled);
+  const rows = (roster.data ?? []) as { first_name: string; status?: string }[];
+  const active = rows.filter((r) => r.status === undefined || r.status === 'active');
+  const waiting = (pending.data ?? []).filter((r) => r.status === 'pending').length;
   return (
-    <Tile id="home-payouts" title="Payouts" res={res} hasData={!res.loading} empty={false}>
-      <View>
-        {ready ? (
-          <Badge tone="success">Ready</Badge>
-        ) : (
-          <Badge tone="warning">{s?.exists_account ? 'Needs information' : 'Not set up'}</Badge>
-        )}
+    <Tile id="home-roster" title="Roster" res={roster} hasData={roster.data !== null} empty={false}>
+      <View style={{ flexDirection: 'row', gap: space[6] }}>
+        <Stat v={rows.length} l="Players" />
+        {staff ? (
+          <>
+            <Stat v={active.length} l="Active" />
+            <Stat v={waiting} l="Pending" />
+          </>
+        ) : null}
       </View>
-    </Tile>
-  );
-}
-
-/** Admin only: failed notification deliveries. Hidden when none. */
-export function NotificationHealthTile({ teamId }: { teamId: string }) {
-  const res = useLoad(() => getNotificationFailures(supabase, teamId), [teamId]);
-  const n = (res.data ?? []).length;
-  return (
-    <Tile
-      id="home-notification-health"
-      title="Notification health"
-      res={res}
-      hasData={res.data !== null}
-      empty={n === 0}
-    >
-      <Badge tone="danger">{`${n} failed ${n === 1 ? 'delivery' : 'deliveries'}`}</Badge>
+      <View style={{ flexDirection: 'row' }} accessibilityElementsHidden>
+        {rows.slice(0, 5).map((r, i) => (
+          <View key={`${r.first_name}${i}`} style={{ marginLeft: i === 0 ? 0 : -space[2] }}>
+            <Avatar name={r.first_name} size="sm" />
+          </View>
+        ))}
+      </View>
+      <Button
+        title="Open roster"
+        variant="secondary"
+        onPress={() => router.push('/roster' as never)}
+      />
     </Tile>
   );
 }
