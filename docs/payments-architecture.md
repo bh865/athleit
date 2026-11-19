@@ -65,3 +65,11 @@ estimated and actual Stripe fee is the **team's** under both policies (as in Par
    the real `stripe-webhook` function.
 2. Current Connect pricing: with `fees.payer=account` Stripe's docs say it charges no Connect fees to the account or the platform; confirm on the pricing page.
 3. Stripe recommends Accounts v2 for new platforms; v1 controller properties are used here and remain supported.
+
+## Installment plans: charge flow
+
+- **Plan checkout** (`create-payment-intent` with `{ plan: { requestId, size, autopay } }`): `svc_reserve_plan` creates the plan, the consent record and the reservation for installment 1 in one transaction. With autopay the intent is created with a `customer` (created once per household and account, ids and no names in metadata) and `setup_future_usage: 'off_session'`. After success the webhook handler stores the PaymentMethod id for that household (`svc_save_card_for_payment`, derived from the payment, never from the caller).
+- **Later installments**: the family pays them with `{ installmentIds }` (one, several or all); the scheduler pays them off-session. `payment_items` carries `installment_id` and is unique per installment, so an installment is in at most one live payment.
+- **Scheduler** (`charge-installments`, cron every 15 minutes, `x-reconcile-secret` shared with `reconcile-payments`, Vault secret `charge_function_url`): claim, reserve (`off_session = true`), create the PaymentIntent on the connected account with `off_session: true, confirm: true`, attach. A `card_error` (declined, authentication required) is recorded as a failed attempt; any other error releases the reservation without counting an attempt. The test-mode body may carry `now` to advance the clock.
+- **Webhook**: `payment_intent.succeeded` settles the installment (the request status follows by trigger); a failed off-session payment records the attempt and cancels the payment so the retry or a manual payment can proceed; the amount, currency, destination and application-fee checks are unchanged.
+- **Reconcile**: also frees installments left `processing` with no live payment (`svc_repair_installments`).

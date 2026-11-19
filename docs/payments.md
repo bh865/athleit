@@ -132,3 +132,52 @@ confirms it shows **Processing** until the webhook marks the payment paid, then 
 receipt notification arrives); all amounts are mono with spoken labels; Stripe's UI is themed from the semantic tokens.
 Notifications (category `payments`, deep links to the exact request or event): new request, reminder (staff, once per request per 24 h), due in 3 days
 and overdue (hourly cron, once each), receipt, refund; to staff: payment received, needs refund, dispute opened, payout action required.
+
+## Installment plans (split payments)
+
+Full design notes, rules as built and the build log: [split-payments.md](split-payments.md). Summary:
+
+- **Terms.** A payment event (draft) or registration event offers any subset of {1..6} plan sizes and a cadence (weekly, every 2 weeks, monthly). The default is `{1}`: nothing changes. Payment-event terms freeze at publish (`guard_payment_event`); registration terms lock once registrations exist, like price and timing.
+- **One request, several transactions.** The request amount stays the source of truth. Choosing a plan creates `payment_request_installments` (even split, remainder cents on installment 1; installment 1 due at checkout, the rest every cadence step in UTC, the last on or before the deadline, each at least 50 cents) in the same transaction as the first payment (`svc_reserve_plan`). The server decides which sizes are offered (`payer_plan_quote`); if none fit, pay in full.
+- **Fees repeat per installment.** Each installment is its own Stripe transaction with its own `fee_breakdown` from the event's frozen `fee_config`: the Athleit flat charge and Stripe's fixed fee are charged every time. Paying several installments in one checkout computes the fee once on the summed base and allocates by largest remainder (so paying the whole remaining balance costs the same as paying in full). Worked example below.
+- **Autopay is opt-in.** The family ticks a box next to the consent wording; the wording version, time, IP and user agent are recorded (`payment_plan_consents`). The first payment is created with `setup_future_usage = off_session` on a Customer of the connected account; only Stripe ids are stored (`payer_payment_methods`). Brand, last four and expiry are read from Stripe when needed.
+- **Own scheduler, no Stripe Subscriptions.** `charge-installments` (pg_cron, every 15 minutes) takes `svc_claim_due_installments` (`for update skip locked`; skips households with a dispute) and creates off-session PaymentIntents with the idempotency key `athleit:inst:<installment id>:<attempt>`. The fee module, ledger, receipts and refunds stay the single source of truth.
+- **Dunning.** A declined or authentication-required charge notifies the household with a link to pay by hand and retries after 3 days, then 5 more; after the third failure the installment is overdue and staff are told. A missed installment never cancels the request or removes a player: staff decide. A card that expires before an installment is due is warned about 7 days ahead.
+
+### Installment states
+
+```
+installment: scheduled -> due | processing | paid | paid_offline | waived | cancelled
+             due -> scheduled | processing | paid | paid_offline | waived | cancelled
+             processing -> scheduled | due | paid | failed | cancelled
+             failed -> due | processing | paid | paid_offline | waived | cancelled
+             paid -> partially_refunded -> refunded           paid -> refunded
+request:     unpaid -> processing -> partially_paid -> paid   (derived from the installments by a trigger)
+             nothing open left: any waived -> waived, else any cancelled -> cancelled
+             refunds roll up to partially_refunded / refunded
+```
+
+Amount, sequence and request are immutable; `due_at` moves only while an installment is open (staff restructure).
+
+### Worked example: $100.00 in 4 installments, biweekly, `absorb`, Athleit charge 50c + 1%
+
+| Installment | Base   | Athleit charge | Payer pays |
+| ----------: | ------ | -------------- | ---------- |
+|           1 | $25.00 | $0.75          | $25.75     |
+|           2 | $25.00 | $0.75          | $25.75     |
+|           3 | $25.00 | $0.75          | $25.75     |
+|           4 | $25.00 | $0.75          | $25.75     |
+
+Total $103.00 against $101.50 in full: the plan costs the family $1.50 more. Paying installments 2 to 4 together instead costs $76.25 (one charge of $1.25), the same as paying them in full. Under `pass_on` the Stripe fixed fee repeats per installment too. The vectors are in `packages/core/src/payment-plans.test.ts` and `supabase/tests/database/fn_split_payment_checkout.test.sql`.
+
+### Staff operations (all audited, issuer staff only)
+
+Mark an installment paid offline, waive an installment or the whole remaining balance, send an installment reminder (once per 24 hours), retry a failed charge now, restructure what is still owed (a new count and next date; the total never changes and the family is notified), and refund an amount against a plan request: it is taken from the most recently paid installment first, then backwards (`prepare_request_refund`). Cancelling an event cancels its open installments; a player leaving the roster cancels theirs for that team's events; paid installments are left for staff to refund.
+
+### Refunds, disputes, reporting
+
+Refunds are per installment payment, with the policy flags applied per installment. A dispute is flagged on the payment (`payments.disputed`) and the request: it blocks refunds of that payment only, never cancels the plan, and pauses autopay for the household until staff resolve it. `event_collection_summary` counts "collected" from settled installments only and adds scheduled amounts, families on plans and overdue installments. `export-payments` writes one row per installment. A household with an active plan cannot delete its account.
+
+### Known limits
+
+A plan, once chosen, cannot change size (paying the remaining installments together costs exactly what paying in full costs). The saved card cannot be changed yet. Due instants are computed in UTC.

@@ -1,6 +1,6 @@
 # Split payments (installment plans)
 
-Status: **step 1 of 6 done** (database and core). Branch `feat/split-payments`. Test-mode Stripe only.
+Status: database, Edge Functions, web and mobile UI built (see the build log below); the Stripe test-card runs, Playwright/Axe specs and the final review are still to do. Branch `feat/split-payments`. Test-mode Stripe only.
 This file is the working plan plus the rules as built; [payments.md](payments.md) and [payments-architecture.md](payments-architecture.md) stay the source of truth for everything not mentioned here.
 
 ## Rules as built (step 1)
