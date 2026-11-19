@@ -28,7 +28,7 @@ test.describe.serial('places, home and roster', () => {
   });
 
   test('add or join stays reachable from the account menu', async () => {
-    await page.getByTestId('account-add').click();
+    await page.getByTestId('account-chip').click();
     await expect(page.getByRole('link', { name: 'Create a club' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Join a team' })).toBeVisible();
     await page.keyboard.press('Escape');
