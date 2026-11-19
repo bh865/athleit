@@ -1,5 +1,4 @@
 import {
-  attentionActionLabel,
   attentionChip,
   friendlyError,
   type AttentionItem,
@@ -42,7 +41,6 @@ function Actions({
   primary: boolean;
   onResolved: (key: string) => void;
 }) {
-  const router = useRouter();
   const { theme } = useTheme();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,22 +95,8 @@ function Actions({
       </View>
     );
   }
-  return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={`${attentionActionLabel(item)}: ${item.label}`}
-      onPress={() => router.push(item.href as never)}
-      hitSlop={space[2]}
-      style={{
-        width: componentTokens.iconButton.size,
-        height: componentTokens.iconButton.size,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Icon name="caret-right" color={theme.color.ink} />
-    </Pressable>
-  );
+  // Link-only items have no trailing control: the title (and the card) open the screen.
+  return null;
 }
 
 /** Time-pressure chip: icon and words together, never colour alone. */
