@@ -61,7 +61,7 @@ export function FamilyTile() {
       hasData={res.data !== null}
       empty={kids.length === 0}
     >
-      <ListGroup>
+      <View>
         {kids.slice(0, 4).map((k) => (
           <ListItem
             key={k.id}
@@ -76,7 +76,12 @@ export function FamilyTile() {
             onPress={() => router.push(`/family/children/${k.id}` as never)}
           />
         ))}
-      </ListGroup>
+      </View>
+      <Button
+        title="View family"
+        variant="secondary"
+        onPress={() => router.push('/family' as never)}
+      />
     </Tile>
   );
 }

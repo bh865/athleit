@@ -1,7 +1,7 @@
 'use client';
 
 import { sumCents, teamTabHref } from '@athleit/core';
-import { getRoster, listChildren, type Result } from '@athleit/db/api';
+import { getPhotoUrl, getRoster, listChildren, type Result } from '@athleit/db/api';
 import {
   getCollectionSummary,
   getHouseholdPayments,
@@ -13,7 +13,7 @@ import { getNextUp } from '@athleit/db/scheduling';
 import Link from 'next/link';
 
 import { Amount, dueText } from '@/components/payments/money';
-import { Badge, ButtonLink, Icon, Text } from '@/components/ui';
+import { Avatar, Badge, ButtonLink, Icon, Text } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -52,6 +52,40 @@ export function DocumentsTile({ teamId }: { teamId: string }) {
 }
 
 /** My children: first names and the teams they are on. */
+function ChildRow({
+  child,
+}: {
+  child: {
+    id: string;
+    first_name: string;
+    photo_path?: string | null;
+    team_players?: { teams?: { name: string } | null }[] | null;
+  };
+}) {
+  const path = child.photo_path ?? null;
+  const photo = useLoad(
+    () =>
+      path
+        ? getPhotoUrl(getClient(), path)
+        : Promise.resolve({ data: null, error: null } as Result<string | null>),
+    [path],
+  );
+  return (
+    <Link href={`/family/children/${child.id}`} className={styles.thread}>
+      <Avatar name={child.first_name} size="md" src={photo.data} />
+      <span className={styles.threadText}>
+        <span className={styles.threadTitle}>{child.first_name}</span>
+        <span className={styles.threadPreview}>
+          {(child.team_players ?? [])
+            .map((tp) => tp.teams?.name)
+            .filter(Boolean)
+            .join(', ') || 'Not on a team yet'}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
 export function FamilyTile() {
   const res = useLoad(() => listChildren(getClient()), []);
   const kids = res.data ?? [];
@@ -59,8 +93,6 @@ export function FamilyTile() {
     <TileShell
       id="home-family"
       title="My children"
-      href="/family"
-      linkLabel="Manage"
       res={res}
       empty={kids.length === 0}
       hasData={res.data !== null}
@@ -68,20 +100,13 @@ export function FamilyTile() {
       <ul className={styles.threads}>
         {kids.slice(0, 4).map((k) => (
           <li key={k.id}>
-            <Link href={`/family/children/${k.id}`} className={styles.thread}>
-              <span className={styles.threadText}>
-                <span className={styles.threadTitle}>{k.first_name}</span>
-                <span className={styles.threadPreview}>
-                  {(k.team_players ?? [])
-                    .map((tp) => tp.teams?.name)
-                    .filter(Boolean)
-                    .join(', ') || 'Not on a team yet'}
-                </span>
-              </span>
-            </Link>
+            <ChildRow child={k} />
           </li>
         ))}
       </ul>
+      <ButtonLink href="/family" variant="secondary" className={styles.bottomButton}>
+        View family
+      </ButtonLink>
     </TileShell>
   );
 }
