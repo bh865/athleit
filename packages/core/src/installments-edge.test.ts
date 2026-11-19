@@ -292,3 +292,10 @@ describe('warnExpiringCards', () => {
     expect(out).toEqual({ checked: 0, warned: 0 });
   });
 });
+
+it('the autopay consent version shown to families is the one the server records', async () => {
+  const { AUTOPAY_CONSENT_VERSION: server } =
+    await import('../../../supabase/functions/_shared/payments/schemas');
+  const { AUTOPAY_CONSENT_VERSION: client } = await import('./payment-plans');
+  expect(client).toBe(server);
+});

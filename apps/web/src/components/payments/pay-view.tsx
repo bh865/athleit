@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/use-load';
 
 import { CheckoutSheet } from './checkout';
 import { DueView } from './due-view';
+import { PlansPanel } from './plans-panel';
 import styles from './parent-pay.module.css';
 import { ReceiptsView } from './receipts-view';
 
@@ -24,6 +25,8 @@ export function PayView() {
   const [tab, setTab] = useState<Tab>('due');
   const linked = useSearchParams().get('request');
   const [checkout, setCheckout] = useState<string[] | null>(null);
+  const [checkoutInstallments, setCheckoutInstallments] = useState<string[] | null>(null);
+  const [plansKey, setPlansKey] = useState(0);
   const due = useLoad(() => getHouseholdPayments(getClient()), []);
   const receipts = useLoad(() => getHouseholdReceipts(getClient()), []);
   const open = useLoad(() => getOpenPayments(getClient()), []);
@@ -39,6 +42,7 @@ export function PayView() {
           { value: 'receipts', label: 'Receipts' },
         ]}
       />
+      {tab === 'due' ? <PlansPanel onPay={setCheckoutInstallments} refreshKey={plansKey} /> : null}
       {tab === 'due' ? (
         <DueView
           rows={due.data}
@@ -64,14 +68,18 @@ export function PayView() {
       )}
       <CheckoutSheet
         requestIds={checkout}
+        installmentIds={checkoutInstallments}
         rows={(due.data ?? []) as unknown as PayRow[]}
         onClose={() => {
           setCheckout(null);
+          setCheckoutInstallments(null);
+          setPlansKey((k) => k + 1);
           // Opening checkout reserves the requests, so refresh what is shown when it closes.
           due.reload();
           open.reload();
         }}
         onFinished={() => {
+          setPlansKey((k) => k + 1);
           due.reload();
           receipts.reload();
           open.reload();

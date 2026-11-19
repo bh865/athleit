@@ -139,3 +139,10 @@ export function planFeeImpact(
     athleitChargeCents: installments.reduce((s, i) => s + i.fees.platformFeeCents, 0),
   };
 }
+
+/** Version of the autopay consent wording. The server records it with the consent (supabase/functions/_shared/payments/schemas.ts). */
+export const AUTOPAY_CONSENT_VERSION = 'autopay-2026-11';
+export const autopayConsentText = (payee: string) =>
+  `I authorize ${payee} to charge the card I use today for each remaining payment on its due date. I can turn automatic payments off, change the card, or pay early at any time in Pay.`;
+export const installmentLabel = (sequence: number, count: number) =>
+  `Installment ${sequence} of ${count}`;

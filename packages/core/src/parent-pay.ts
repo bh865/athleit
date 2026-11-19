@@ -88,8 +88,8 @@ export const filterOf = (r: Pick<PayRow, 'status' | 'can_pay'>): DueFilter | nul
     ? 'needs'
     : r.status === 'processing'
       ? 'processing'
-      : r.status === 'cancelled'
-        ? null
+      : r.status === 'cancelled' || r.status === 'partially_paid'
+        ? null // a plan in progress is shown in the payment plans panel, not as a request to pay
         : 'paid';
 
 export function filterCounts(rows: readonly PayRow[]): Record<DueFilter, number> {
