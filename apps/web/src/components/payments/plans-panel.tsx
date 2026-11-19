@@ -1,6 +1,6 @@
 'use client';
 
-import { friendlyError, formatCents, installmentLabel } from '@athleit/core';
+import { friendlyError, installmentLabel } from '@athleit/core';
 import { setPlanAutopay, type InstallmentRow, type InstallmentStatus } from '@athleit/db/payments';
 import { useState } from 'react';
 
