@@ -5,10 +5,11 @@ import {
   hasUpdate,
   mapEmbedUrl,
   mapsUrl,
+  buildNextUpViews,
   nextUpHeadline,
   pickNextUp,
   rsvpSegments,
-  type NextUpEvent,
+  type NextUpView,
 } from '@athleit/core';
 import { getNextUp, getTeamSchedule } from '@athleit/db/scheduling';
 import Link from 'next/link';
@@ -29,26 +30,6 @@ import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 import styles from './next-up.module.css';
-
-interface Child {
-  player_id: string;
-  first_name: string;
-  status: 'going' | 'not_going' | 'maybe' | null;
-}
-interface View {
-  event: NextUpEvent;
-  place: string | null;
-  address: string | null;
-  lat: number | null;
-  lng: number | null;
-  placeId: string | null;
-  homeAway: string | null;
-  opponent: string | null;
-  arriveEarly: number | null;
-  counts: { going: number; not_going: number; maybe: number; no_reply: number } | null;
-  children: Child[];
-  staff: boolean;
-}
 
 /** A clock that ticks without refetching: the relative label ("in 38 min", "Live now") stays right. */
 function useNow(everyMs = 30_000) {
@@ -94,68 +75,14 @@ export function NextUpHero({ teamId, canManage }: { teamId: string | null; canMa
       teamId ? getTeamSchedule(c, teamId, 'past', 3) : Promise.resolve(null),
     ]);
     if (next.error) return next;
-    const views = new Map<string, View>();
-    for (const r of next.data) {
-      views.set(r.event_id, {
-        event: {
-          eventId: r.event_id,
-          type: r.type,
-          title: r.title,
-          startsAt: r.starts_at,
-          endsAt: r.ends_at,
-          timezone: r.timezone,
-          status: 'scheduled',
-          revision: r.revision,
-        },
-        place: r.location_name ?? r.location_text ?? null,
-        address: r.location_address ?? null,
-        lat: r.location_lat ?? null,
-        lng: r.location_lng ?? null,
-        placeId: r.location_place_id ?? null,
-        homeAway: r.home_away ?? null,
-        opponent: r.opponent_name ?? null,
-        arriveEarly: r.arrive_early_minutes ?? null,
-        counts: { going: r.going, not_going: r.not_going, maybe: r.maybe, no_reply: r.no_reply },
-        children: (r.children as unknown as Child[]) ?? [],
-        staff: r.is_staff,
-      });
-    }
-    // The team schedule adds what next_up leaves out: a cancelled event and a game that just ended.
-    for (const r of [...(up?.data ?? []), ...(past?.data ?? [])]) {
-      if (views.has(r.id)) continue;
-      views.set(r.id, {
-        event: {
-          eventId: r.id,
-          type: r.type,
-          title: r.title,
-          startsAt: r.starts_at,
-          endsAt: r.ends_at,
-          timezone: r.timezone,
-          status: r.status,
-          cancelledReason: r.cancelled_reason,
-          ourScore: r.our_score,
-          theirScore: r.their_score,
-          revision: r.revision,
-        },
-        place: r.location_name ?? r.location_text ?? null,
-        address: r.location_address ?? null,
-        lat: r.location_lat ?? null,
-        lng: r.location_lng ?? null,
-        placeId: r.location_place_id ?? null,
-        homeAway: r.home_away ?? null,
-        opponent: r.opponent_name ?? null,
-        arriveEarly: r.arrive_early_minutes ?? null,
-        counts: { going: r.going, not_going: r.not_going, maybe: r.maybe, no_reply: r.no_reply },
-        children: [],
-        staff: canManage,
-      });
-    }
-    // A finished game from the schedule carries its score; a live next_up row does not.
-    for (const r of past?.data ?? []) {
-      const v = views.get(r.id);
-      if (v) v.event = { ...v.event, ourScore: r.our_score, theirScore: r.their_score };
-    }
-    return { data: [...views.values()], error: null };
+    return {
+      data: buildNextUpViews(
+        next.data as never,
+        [...(up?.data ?? []), ...(past?.data ?? [])] as never,
+        canManage,
+      ),
+      error: null,
+    };
   }, [teamId, canManage]);
 
   const data = res.data;
@@ -195,16 +122,33 @@ export function NextUpHero({ teamId, canManage }: { teamId: string | null; canMa
   return <NextUpCard view={view} now={now} zone={zone} />;
 }
 
-function NextUpCard({ view, now, zone }: { view: View; now: Date; zone: string }) {
+/**
+ * The card itself, separate from loading so the design gallery can render every state with fixtures.
+ * `mapSrc` overrides the embed URL (the gallery passes a blank page so baselines never depend on the network).
+ */
+export function NextUpCard({
+  view,
+  now,
+  zone,
+  mapSrc,
+}: {
+  view: NextUpView;
+  now: Date;
+  zone: string;
+  mapSrc?: string | null;
+}) {
   const { event: e } = view;
   const h = nextUpHeadline(e, now, zone);
   const noun = eventNoun(e.type);
-  const embedSrc = mapEmbedUrl({
-    lat: view.lat,
-    lng: view.lng,
-    address: view.address,
-    name: view.place,
-  });
+  const embedSrc =
+    mapSrc !== undefined
+      ? mapSrc
+      : mapEmbedUrl({
+          lat: view.lat,
+          lng: view.lng,
+          address: view.address,
+          name: view.place,
+        });
   const openMaps = mapsUrl({
     placeId: view.placeId,
     lat: view.lat,

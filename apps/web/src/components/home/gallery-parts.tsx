@@ -1,10 +1,11 @@
 'use client';
 
-import { deriveAttention, type AttentionItem } from '@athleit/core';
+import { deriveAttention, type AttentionItem, type NextUpView } from '@athleit/core';
 
 import { Badge, ButtonLink, Text } from '@/components/ui';
 
 import { AttentionStrip } from './attention-strip';
+import { NextUpCard } from './next-up-hero';
 import styles from './home.module.css';
 import { TileShell } from './tile-shell';
 
@@ -51,6 +52,35 @@ const ITEMS: AttentionItem[] = [
   },
   { kind: 'setup', key: 'e', label: 'Finish team setup', href: '#', placeTag: 'U12 Falcons' },
 ];
+const ZONE = 'America/New_York';
+const GAME: NextUpView = {
+  event: {
+    eventId: 'g1',
+    type: 'game',
+    title: 'Game vs. Hawks',
+    startsAt: '2026-11-21T15:00:00Z',
+    endsAt: '2026-11-21T17:00:00Z',
+    timezone: ZONE,
+    status: 'scheduled',
+    revision: 1,
+  },
+  place: 'Field 3, Riverside Park',
+  address: null,
+  lat: null,
+  lng: null,
+  placeId: null,
+  homeAway: 'home',
+  opponent: 'Hawks',
+  arriveEarly: 30,
+  counts: { going: 11, not_going: 2, maybe: 1, no_reply: 4 },
+  children: [
+    { player_id: 'p1', first_name: 'Maya', status: 'going' },
+    { player_id: 'p2', first_name: 'Eli', status: null },
+  ],
+  staff: false,
+};
+const STAFF: NextUpView = { ...GAME, children: [], staff: true };
+const BLANK_MAP = 'about:blank';
 const OK = { loading: false, error: null, reload: () => undefined };
 const NONE = { shown: [], more: [], all: [], lead: null };
 const noop = () => undefined;
@@ -76,10 +106,12 @@ export function HomeGallery() {
         now={NOW}
       />
       <div className={styles.heroRow}>
-        <TileShell id="g-hero" title="Next up" res={OK} empty={false} hasData>
-          <Text variant="heading">Game vs. Hawks</Text>
-          <Text muted>Sat 10:00 AM · Field 3, Riverside Park</Text>
-        </TileShell>
+        <NextUpCard
+          view={GAME}
+          now={new Date('2026-11-19T15:00:00Z')}
+          zone={ZONE}
+          mapSrc={BLANK_MAP}
+        />
         <TileShell id="g-record" title="Fall 2026 · Record" href="#" res={OK} empty={false} hasData>
           <span className={styles.record}>5–2–1</span>
           <Text variant="caption" muted>
@@ -87,6 +119,33 @@ export function HomeGallery() {
           </Text>
         </TileShell>
       </div>
+      <NextUpCard
+        view={STAFF}
+        now={new Date('2026-11-21T16:00:00Z')}
+        zone={ZONE}
+        mapSrc={BLANK_MAP}
+      />
+      <NextUpCard view={STAFF} now={new Date('2026-11-21T18:00:00Z')} zone={ZONE} mapSrc={null} />
+      <NextUpCard
+        view={{
+          ...GAME,
+          event: { ...GAME.event, status: 'cancelled', cancelledReason: 'Field closed' },
+        }}
+        now={new Date('2026-11-19T15:00:00Z')}
+        zone={ZONE}
+        mapSrc={null}
+      />
+      <NextUpCard
+        view={{
+          ...GAME,
+          event: { ...GAME.event, type: 'practice', title: 'Practice' },
+          homeAway: null,
+          opponent: null,
+        }}
+        now={new Date('2026-11-19T15:00:00Z')}
+        zone={ZONE}
+        mapSrc={null}
+      />
       <div className={styles.tiles}>
         <TileShell id="g-due" title="Amount due" res={OK} empty={false} hasData>
           <div className={styles.amount}>

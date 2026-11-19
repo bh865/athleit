@@ -12,7 +12,7 @@ import { decideJoinRequest, decidePlayerLoginClaim } from '@athleit/db/api';
 import { setRsvp } from '@athleit/db/scheduling';
 import type { IconName } from '@athleit/ui-core';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { useViewerZone } from '@/components/schedule/use-viewer-zone';
 import {
@@ -188,6 +188,7 @@ export function AttentionStrip({
   now: Date;
 }) {
   const zone = useViewerZone() ?? 'UTC';
+  const headId = useId();
   const [open, setOpen] = useState(false);
   // Hide a settled item at once; the refetch removes it for good.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
@@ -202,13 +203,13 @@ export function AttentionStrip({
 
   return (
     <section
-      aria-labelledby="home-attention"
+      aria-labelledby={headId}
       className={styles.section}
       data-testid="home-attention"
       aria-busy={loading || undefined}
     >
       <div className={styles.head}>
-        <h2 id="home-attention" className={styles.heading}>
+        <h2 id={headId} className={styles.heading}>
           Needs your attention
         </h2>
         {total > 0 ? (
