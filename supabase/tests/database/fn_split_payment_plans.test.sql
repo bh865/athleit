@@ -149,8 +149,10 @@ reset role;
 
 -- payment_items: one live payment per installment -----------------------------------------------------------------
 -- (request b1 is fully settled by now, so use a fresh request and plan.)
+insert into public.players (id, household_id, first_name, last_name, date_of_birth) values
+  ('93000000-0000-0000-0000-000000000003', '11000000-0000-0000-0000-000000000001', 'Cleo', 'Adams', current_date - interval '8 years');
 insert into public.payment_requests (id, payment_event_id, player_id, household_id, amount_cents, due_at, display_id) values
-  ('b3000000-0000-0000-0000-000000000003', 'e1000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', '11000000-0000-0000-0000-000000000001', 3000, now() + interval '40 days', 'PR-9103');
+  ('b3000000-0000-0000-0000-000000000003', 'e1000000-0000-0000-0000-000000000001', '93000000-0000-0000-0000-000000000003', '11000000-0000-0000-0000-000000000001', 3000, now() + interval '40 days', 'PR-9103');
 select public.svc_create_plan('b3000000-0000-0000-0000-000000000003', 2);
 insert into public.payments (id, connected_account_id, household_id, fee_policy, base_cents, total_charged_cents, estimated_stripe_fee_cents, application_fee_cents, request_set_key) values
   ('d1000000-0000-0000-0000-000000000001', 'ca000000-0000-0000-0000-00000000000a', '11000000-0000-0000-0000-000000000001', 'absorb', 1500, 1500, 74, 0, 'setkey-installment-1'),
@@ -164,6 +166,7 @@ select throws_ok($$ insert into public.payment_items (payment_id, payment_reques
 select lives_ok($$ insert into public.payment_items (payment_id, payment_request_id, installment_id, amount_cents)
   select 'd2000000-0000-0000-0000-000000000002', request_id, id, amount_cents from public.payment_request_installments
   where request_id = 'b3000000-0000-0000-0000-000000000003' and sequence = 2 $$, 'a different installment of the same request can be in another payment');
+update public.payment_items set is_active = false where payment_id = 'd2000000-0000-0000-0000-000000000002';
 select throws_ok($$ insert into public.payment_items (payment_id, payment_request_id, installment_id, amount_cents)
   select 'd2000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001', id, 1500 from public.payment_request_installments
   where request_id = 'b3000000-0000-0000-0000-000000000003' and sequence = 2 $$, '23503', null, 'an item cannot pair an installment with another request');
