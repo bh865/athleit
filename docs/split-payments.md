@@ -45,3 +45,21 @@ Core: `parent-pay.ts`, `payments.ts`, `team-details.ts`, `errors.ts`. Web: `paym
 
 - Fees repeat per installment; autopay is opt-in with recorded consent; own scheduler with off-session PaymentIntents (no Subscriptions); missed installments never auto-cancel; the spot hold is satisfied by installment 1; plan terms freeze at publish; refunds apply to the latest paid installment first.
 - Added while building: due instants are computed in UTC; if no plan size fits, "pay in full" is offered; the request status is derived from installments by a trigger; the deposit is reserved but disabled.
+
+## Build log
+
+Migrations (all applied to the linked Dev project and tested through a rollback shim; none run under a real `pnpm db:test` yet):
+
+| Migration                                                                                    | What                                                                                                  |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `20260405000000_account_avatars`, `20260405000100_account_deletion_blockers`                 | Account work this branch builds on                                                                    |
+| `20260406000000_split_payment_plans`, `20260406000100_split_plan_due_at_utc`                 | Plan terms, installments table and state machine, roll-up, schedule generator                         |
+| `20260407000000_split_payment_checkout`, `20260407000100_items_per_installment`              | Consent and saved-card ids, quotes, reserve plan/installments, settle, dunning, scheduler claim, cron |
+| `20260408000000_split_payment_money_ops`                                                     | Per-payment disputes, refunds across installments, repair, installment export                         |
+| `20260409000000_split_payment_staff_ops`                                                     | Offline, waive, retry, remind, restructure; event cancel and roster exit; deletion blocker            |
+| `20260410000000_split_payment_reporting_notices`                                             | Plan-aware collection summary and detail, installment notices, card-expiry warning                    |
+| `20260411000000_split_payment_registrations`, `20260411000100_restore_registration_id_guard` | Registration events, hold rule, balance flags; restores a guard lost in step 1                        |
+
+Edge Functions: `create-payment-intent` (plan, installments, autopay customer), `charge-installments` (new), `stripe-webhook` handlers (card saving), `refund-payment` (by request), `reconcile-payments` (repair), `export-payments` (per installment). Secrets/Vault: `charge_function_url` (the shared `reconcile_secret` is reused).
+
+Not done: the Stripe test-card runs and `scripts/payments-integration.mjs` extension, Playwright and Axe specs, a hard block on roster placement for a required unpaid balance, changing the saved card, mobile registration-builder controls, a clean-database run of four older pgTAP tests (`fn_svc_webhook_handlers`, `fn_prepare_refund`, `fn_svc_reserve_payment`, `fn_payment_review_fixes`) that assume an empty `payments` table, the final code review and the PR.
