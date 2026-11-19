@@ -9,6 +9,7 @@ export interface InAppPayload {
   body?: string;
   sensitive?: boolean;
   request_id?: string | null;
+  installment_id?: string | null;
   payment_event_id?: string;
   team_id?: string | null;
   club_id?: string | null;

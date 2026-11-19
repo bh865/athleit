@@ -75,9 +75,12 @@ function pill(
 export function PlansPanel({
   onPay,
   refreshKey,
+  linked = null,
 }: {
   onPay: (installmentIds: string[]) => void;
   refreshKey: number;
+  /** A request id from a notification link: that plan is scrolled into view and marked current. */
+  linked?: string | null;
 }) {
   const toast = useToast();
   const plans = useLoad(async () => {
@@ -112,7 +115,13 @@ export function PlansPanel({
         const remaining = open.reduce((s, i) => s + i.amount_cents, 0);
         const next = open[0];
         return (
-          <Card key={r.id} className={styles.summary} data-testid="plan-card">
+          <Card
+            key={r.id}
+            className={styles.summary}
+            data-testid="plan-card"
+            aria-current={linked === r.id ? 'true' : undefined}
+            ref={linked === r.id ? (el) => el?.scrollIntoView?.({ block: 'center' }) : undefined}
+          >
             <div className={styles.row} style={{ justifyContent: 'space-between' }}>
               <div>
                 <Text variant="bodyBold">{r.payment_events?.title ?? 'Payment'}</Text>

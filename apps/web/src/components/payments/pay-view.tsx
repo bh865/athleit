@@ -42,7 +42,9 @@ export function PayView() {
           { value: 'receipts', label: 'Receipts' },
         ]}
       />
-      {tab === 'due' ? <PlansPanel onPay={setCheckoutInstallments} refreshKey={plansKey} /> : null}
+      {tab === 'due' ? (
+        <PlansPanel onPay={setCheckoutInstallments} refreshKey={plansKey} linked={linked} />
+      ) : null}
       {tab === 'due' ? (
         <DueView
           rows={due.data}
