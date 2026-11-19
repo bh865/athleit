@@ -42,12 +42,9 @@ function RosterCard({ teamId, staff }: { teamId: string; staff: boolean }) {
   const waiting = (pending.data ?? []).filter((r) => r.status === 'pending').length;
   return (
     <Card className={styles.card} data-testid="home-roster">
-      <div className={styles.cardHead}>
-        <Text variant="bodyBold">Roster</Text>
-        <Link href="/roster" className={styles.cardLink}>
-          Open
-        </Link>
-      </div>
+      <Text variant="bodyBold" as="h2">
+        Roster
+      </Text>
       <div className={styles.stats}>
         <div className={styles.count}>
           <span className={styles.countValue}>{rows.length}</span>
@@ -71,6 +68,9 @@ function RosterCard({ teamId, staff }: { teamId: string; staff: boolean }) {
           <Avatar key={`${r.first_name}${i}`} name={r.first_name} size="sm" />
         ))}
       </div>
+      <ButtonLink href="/roster" variant="secondary">
+        View roster
+      </ButtonLink>
     </Card>
   );
 }
