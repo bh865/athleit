@@ -50,6 +50,7 @@ function fakeStore(over: Record<string, unknown> = {}) {
     saveCustomer: vi.fn().mockResolvedValue(undefined),
     reservePayment: vi.fn(),
     ...over,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a partial fake of the Store interface
   } as any;
 }
 
