@@ -1,14 +1,11 @@
-import { payViewsFor } from '@athleit/core';
 import { componentTokens, space } from '@athleit/tokens';
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Backdrop, TabBar, Text, type TabItem } from '@/components/ui';
+import { Backdrop, Text } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
-
-import { useUnread } from '@/lib/use-unread';
 
 import { AppHeader } from './app-header';
 import { BackLink } from './kit';
@@ -19,49 +16,24 @@ import { ScreenTitleContext, type ScreenTitle } from './screen-title';
 
 /** Screens that show the brand header (the rest are detail screens with a back button). */
 
-const ROOT_PATHS = new Set(['/', '/schedule', '/messages', '/pay', '/family', '/notifications', '/more']);
+const ROOT_PATHS = new Set([
+  '/',
+  '/schedule',
+  '/messages',
+  '/pay',
+  '/family',
+  '/notifications',
+  '/more',
+]);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
 export function AppScreen({ children }: { children: ReactNode }) {
-  const { status, contexts, userId } = useApp();
-  const router = useRouter();
+  const { status } = useApp();
   const pathname = usePathname();
   const [screenTitle, setScreenTitle] = useState<ScreenTitle | null>(null);
   const [footer, setFooter] = useState<ReactNode>(null);
   const insets = useSafeAreaInsets();
   const isRoot = ROOT_PATHS.has(pathname);
-
-  const hasFamily = contexts.some((c) => c.kind === 'family');
-  const hasTeam = contexts.some((c) => c.kind === 'team');
-  const pv = payViewsFor(contexts, null);
-  const showPay = pv.payer;
-  const unread = useUnread(userId, hasTeam);
-  const tabs: TabItem[] = [
-    { key: 'home', label: 'Home', icon: 'house' },
-    ...(contexts.length > 0
-      ? [{ key: 'schedule', label: 'Schedule', icon: 'calendar-blank' } as TabItem]
-      : []),
-    ...(hasTeam
-      ? [{ key: 'messages', label: 'Messages', icon: 'chat-circle', badge: unread } as TabItem]
-      : []),
-    ...(showPay ? [{ key: 'pay', label: 'Pay', icon: 'credit-card' } as TabItem] : []),
-    ...(hasFamily ? [{ key: 'family', label: 'Family', icon: 'house-line' } as TabItem] : []),
-    { key: 'more', label: 'More', icon: 'dots-three-circle' },
-  ];
-  const showTabs = tabs.length > 5 ? tabs.filter((t) => t.key !== 'family') : tabs;
-  const active = pathname.startsWith('/more')
-    ? 'more'
-    : pathname.startsWith('/schedule') || pathname.startsWith('/events')
-      ? 'schedule'
-      : pathname.startsWith('/messages')
-        ? 'messages'
-        : pathname.startsWith('/pay')
-          ? 'pay'
-          : pathname.startsWith('/family')
-            ? 'family'
-            : pathname === '/'
-              ? 'home'
-              : null;
 
   return (
     <Backdrop>
@@ -129,25 +101,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
           {footer}
         </View>
       ) : null}
-      <TabBar
-        items={showTabs}
-        active={active}
-        onSelect={(key) => {
-          router.replace(
-            key === 'home'
-              ? '/'
-              : key === 'schedule'
-                ? '/schedule'
-                : key === 'messages'
-                  ? '/messages'
-                  : key === 'pay'
-                    ? '/pay'
-                    : key === 'more'
-                      ? ('/more' as never)
-                      : '/family',
-          );
-        }}
-      />
+      {/* The tab bar lives in the (app) layout so it stays put while screens slide. */}
     </Backdrop>
   );
 }
