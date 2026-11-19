@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       api_rate_limits: {
@@ -1347,6 +1322,7 @@ export type Database = {
       offline_payments: {
         Row: {
           id: string
+          installment_id: string | null
           method: string
           note: string | null
           payment_request_id: string
@@ -1355,6 +1331,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          installment_id?: string | null
           method: string
           note?: string | null
           payment_request_id: string
@@ -1363,6 +1340,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          installment_id?: string | null
           method?: string
           note?: string | null
           payment_request_id?: string
@@ -1371,9 +1349,16 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "offline_payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "payment_request_installments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "offline_payments_payment_request_id_fkey"
             columns: ["payment_request_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "payment_requests"
             referencedColumns: ["id"]
           },
@@ -1428,6 +1413,61 @@ export type Database = {
           },
         ]
       }
+      payer_payment_methods: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          household_id: string
+          id: string
+          saved_by: string | null
+          stripe_customer_id: string
+          stripe_payment_method_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          household_id: string
+          id?: string
+          saved_by?: string | null
+          stripe_customer_id: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          saved_by?: string | null
+          stripe_customer_id?: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payer_payment_methods_connected_account_id_fkey"
+            columns: ["connected_account_id"]
+            isOneToOne: false
+            referencedRelation: "connected_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payer_payment_methods_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payer_payment_methods_saved_by_fkey"
+            columns: ["saved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_events: {
         Row: {
           amount_cents: number
@@ -1445,6 +1485,10 @@ export type Database = {
           fee_policy: string
           id: string
           kind: string
+          plan_cadence: string
+          plan_deposit_kind: string | null
+          plan_deposit_value: number | null
+          plan_options: number[]
           published_at: string | null
           registration_event_id: string | null
           status: string
@@ -1468,6 +1512,10 @@ export type Database = {
           fee_policy?: string
           id?: string
           kind?: string
+          plan_cadence?: string
+          plan_deposit_kind?: string | null
+          plan_deposit_value?: number | null
+          plan_options?: number[]
           published_at?: string | null
           registration_event_id?: string | null
           status?: string
@@ -1491,6 +1539,10 @@ export type Database = {
           fee_policy?: string
           id?: string
           kind?: string
+          plan_cadence?: string
+          plan_deposit_kind?: string | null
+          plan_deposit_value?: number | null
+          plan_options?: number[]
           published_at?: string | null
           registration_event_id?: string | null
           status?: string
@@ -1541,6 +1593,7 @@ export type Database = {
           amount_cents: number
           created_at: string
           id: string
+          installment_id: string | null
           is_active: boolean
           payment_id: string
           payment_request_id: string
@@ -1551,6 +1604,7 @@ export type Database = {
           amount_cents: number
           created_at?: string
           id?: string
+          installment_id?: string | null
           is_active?: boolean
           payment_id: string
           payment_request_id: string
@@ -1561,6 +1615,7 @@ export type Database = {
           amount_cents?: number
           created_at?: string
           id?: string
+          installment_id?: string | null
           is_active?: boolean
           payment_id?: string
           payment_request_id?: string
@@ -1568,6 +1623,13 @@ export type Database = {
           processing_fee_passthrough_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_items_installment_fk"
+            columns: ["installment_id", "payment_request_id"]
+            isOneToOne: false
+            referencedRelation: "payment_request_installments"
+            referencedColumns: ["id", "request_id"]
+          },
           {
             foreignKeyName: "payment_items_payment_id_fkey"
             columns: ["payment_id"]
@@ -1584,9 +1646,140 @@ export type Database = {
           },
         ]
       }
+      payment_plan_consents: {
+        Row: {
+          autopay: boolean
+          consent_version: string
+          consented_at: string
+          ip: string | null
+          plan_count: number
+          profile_id: string | null
+          request_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          autopay: boolean
+          consent_version: string
+          consented_at?: string
+          ip?: string | null
+          plan_count: number
+          profile_id?: string | null
+          request_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          autopay?: boolean
+          consent_version?: string
+          consented_at?: string
+          ip?: string | null
+          plan_count?: number
+          profile_id?: string | null
+          request_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_plan_consents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_plan_consents_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_request_installments: {
+        Row: {
+          amount_cents: number
+          attempt_count: number
+          card_expiry_warned_at: string | null
+          created_at: string
+          due_at: string
+          due_soon_notified_at: string | null
+          id: string
+          last_attempt_at: string | null
+          last_reminded_at: string | null
+          next_retry_at: string | null
+          note: string | null
+          overdue_notified_at: string | null
+          paid_at: string | null
+          request_id: string
+          sequence: number
+          status: string
+          updated_at: string
+          waived_at: string | null
+          waived_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          attempt_count?: number
+          card_expiry_warned_at?: string | null
+          created_at?: string
+          due_at: string
+          due_soon_notified_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          last_reminded_at?: string | null
+          next_retry_at?: string | null
+          note?: string | null
+          overdue_notified_at?: string | null
+          paid_at?: string | null
+          request_id: string
+          sequence: number
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          attempt_count?: number
+          card_expiry_warned_at?: string | null
+          created_at?: string
+          due_at?: string
+          due_soon_notified_at?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          last_reminded_at?: string | null
+          next_retry_at?: string | null
+          note?: string | null
+          overdue_notified_at?: string | null
+          paid_at?: string | null
+          request_id?: string
+          sequence?: number
+          status?: string
+          updated_at?: string
+          waived_at?: string | null
+          waived_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_request_installments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "payment_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_request_installments_waived_by_fkey"
+            columns: ["waived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_requests: {
         Row: {
           amount_cents: number
+          autopay: boolean
+          autopay_by: string | null
           created_at: string
           display_id: string
           disputed: boolean
@@ -1599,6 +1792,7 @@ export type Database = {
           overdue_notified_at: string | null
           paid_at: string | null
           payment_event_id: string
+          plan_count: number | null
           player_id: string
           registration_id: string | null
           status: string
@@ -1608,6 +1802,8 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          autopay?: boolean
+          autopay_by?: string | null
           created_at?: string
           display_id: string
           disputed?: boolean
@@ -1620,6 +1816,7 @@ export type Database = {
           overdue_notified_at?: string | null
           paid_at?: string | null
           payment_event_id: string
+          plan_count?: number | null
           player_id: string
           registration_id?: string | null
           status?: string
@@ -1629,6 +1826,8 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          autopay?: boolean
+          autopay_by?: string | null
           created_at?: string
           display_id?: string
           disputed?: boolean
@@ -1641,6 +1840,7 @@ export type Database = {
           overdue_notified_at?: string | null
           paid_at?: string | null
           payment_event_id?: string
+          plan_count?: number | null
           player_id?: string
           registration_id?: string | null
           status?: string
@@ -1649,6 +1849,13 @@ export type Database = {
           waived_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_requests_autopay_by_fkey"
+            columns: ["autopay_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_requests_household_id_fkey"
             columns: ["household_id"]
@@ -1693,11 +1900,13 @@ export type Database = {
           connected_account_id: string
           created_at: string
           currency: string
+          disputed: boolean
           estimated_stripe_fee_cents: number
           fee_policy: string
           household_id: string
           id: string
           net_to_account_cents: number | null
+          off_session: boolean
           payer_profile_id: string | null
           platform_fee_cents: number
           processing_fee_passthrough_cents: number
@@ -1717,11 +1926,13 @@ export type Database = {
           connected_account_id: string
           created_at?: string
           currency?: string
+          disputed?: boolean
           estimated_stripe_fee_cents: number
           fee_policy: string
           household_id: string
           id?: string
           net_to_account_cents?: number | null
+          off_session?: boolean
           payer_profile_id?: string | null
           platform_fee_cents?: number
           processing_fee_passthrough_cents?: number
@@ -1741,11 +1952,13 @@ export type Database = {
           connected_account_id?: string
           created_at?: string
           currency?: string
+          disputed?: boolean
           estimated_stripe_fee_cents?: number
           fee_policy?: string
           household_id?: string
           id?: string
           net_to_account_cents?: number | null
+          off_session?: boolean
           payer_profile_id?: string | null
           platform_fee_cents?: number
           processing_fee_passthrough_cents?: number
@@ -2121,8 +2334,11 @@ export type Database = {
           opens_at: string | null
           payment_hold_minutes: number
           payment_timing: string
+          plan_cadence: string
+          plan_options: number[]
           price_cents: number | null
           published_at: string | null
+          require_full_balance: string
           roster_behavior: string
           slug: string
           sport: Database["public"]["Enums"]["sport"] | null
@@ -2159,8 +2375,11 @@ export type Database = {
           opens_at?: string | null
           payment_hold_minutes?: number
           payment_timing?: string
+          plan_cadence?: string
+          plan_options?: number[]
           price_cents?: number | null
           published_at?: string | null
+          require_full_balance?: string
           roster_behavior?: string
           slug: string
           sport?: Database["public"]["Enums"]["sport"] | null
@@ -2197,8 +2416,11 @@ export type Database = {
           opens_at?: string | null
           payment_hold_minutes?: number
           payment_timing?: string
+          plan_cadence?: string
+          plan_options?: number[]
           price_cents?: number | null
           published_at?: string | null
+          require_full_balance?: string
           roster_behavior?: string
           slug?: string
           sport?: Database["public"]["Enums"]["sport"] | null
@@ -3241,10 +3463,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      account_deletion_blockers: {
-        Args: never
-        Returns: Json
-      }
       accept_invite: {
         Args: { p_token: string }
         Returns: {
@@ -3254,6 +3472,7 @@ export type Database = {
           team_id: string
         }[]
       }
+      account_deletion_blockers: { Args: never; Returns: Json }
       add_child: {
         Args: {
           p_date_of_birth: string
@@ -3272,10 +3491,6 @@ export type Database = {
         Returns: string
       }
       archive_document: { Args: { p_document_id: string }; Returns: undefined }
-      cancel_open_payment: {
-        Args: { p_payment_id: string }
-        Returns: undefined
-      }
       archive_form: { Args: { p_form_id: string }; Returns: undefined }
       archive_registration_event: {
         Args: { p_event_id: string }
@@ -3314,6 +3529,10 @@ export type Database = {
       cancel_event: {
         Args: { p_event_id: string; p_reason: string; p_scope: string }
         Returns: number
+      }
+      cancel_open_payment: {
+        Args: { p_payment_id: string }
+        Returns: undefined
       }
       cancel_payment_event: { Args: { p_event_id: string }; Returns: number }
       claim_notifications: {
@@ -3507,13 +3726,19 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: {
           amount_cents: number
+          autopay: boolean
           display_id: string
           disputed: boolean
           due_at: string
           household_name: string
+          installments_paid: number
           last_reminded_at: string
+          next_due_at: string
+          overdue: boolean
           paid_at: string
+          paid_cents: number
           paid_via: string
+          plan_count: number
           player_name: string
           receipt_display_id: string
           request_id: string
@@ -3528,11 +3753,15 @@ export type Database = {
           due_at: string
           expected_cents: number
           outstanding_cents: number
+          overdue_installments: number
           paid_count: number
+          partially_paid_count: number
+          plans_count: number
           processing_count: number
           progress_percent: number
           refunded_cents: number
           refunded_count: number
+          scheduled_cents: number
           status: string
           total_requests: number
           unpaid_count: number
@@ -4003,6 +4232,12 @@ export type Database = {
         }[]
       }
       payer_checkout_quote: { Args: { p_request_ids: string[] }; Returns: Json }
+      payer_installment_quote: {
+        Args: { p_installment_ids: string[] }
+        Returns: Json
+      }
+      payer_plan_options: { Args: { p_request_id: string }; Returns: Json }
+      payer_plan_quote: { Args: { p_request_id: string }; Returns: Json }
       payment_event_export: {
         Args: { p_event_id: string }
         Returns: {
@@ -4011,6 +4246,26 @@ export type Database = {
           display_id: string
           due_at: string
           household_name: string
+          paid_at: string
+          paid_via: string
+          player_name: string
+          receipt_display_id: string
+          refunded_cents: number
+          service_fee_cents: number
+          status: string
+          total_charged_cents: number
+        }[]
+      }
+      payment_event_installment_export: {
+        Args: { p_event_id: string }
+        Returns: {
+          athleit_charge_cents: number
+          base_cents: number
+          display_id: string
+          due_at: string
+          household_name: string
+          installment_count: number
+          installment_number: number
           paid_at: string
           paid_via: string
           player_name: string
@@ -4049,6 +4304,10 @@ export type Database = {
         }
         Returns: Json
       }
+      prepare_request_refund: {
+        Args: { p_base_cents?: number; p_reason?: string; p_request_id: string }
+        Returns: Json
+      }
       preview_invite: {
         Args: { p_token: string }
         Returns: {
@@ -4077,6 +4336,10 @@ export type Database = {
         }
         Returns: string
       }
+      record_offline_installment: {
+        Args: { p_installment_id: string; p_method: string; p_note?: string }
+        Returns: undefined
+      }
       record_offline_payment: {
         Args: { p_method: string; p_note?: string; p_request_id: string }
         Returns: undefined
@@ -4101,6 +4364,18 @@ export type Database = {
           p_token: string
         }
         Returns: string
+      }
+      registration_balances: {
+        Args: { p_event_id: string }
+        Returns: {
+          balance_cents: number
+          balance_required: boolean
+          installments_paid: number
+          next_due_at: string
+          overdue: boolean
+          plan_count: number
+          registration_id: string
+        }[]
       }
       registration_capacity_summary: {
         Args: { p_event_id: string }
@@ -4157,6 +4432,19 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      restructure_plan: {
+        Args: {
+          p_next_due: string
+          p_note?: string
+          p_remaining: number
+          p_request_id: string
+        }
+        Returns: undefined
+      }
+      retry_installment_charge: {
+        Args: { p_installment_id: string }
+        Returns: undefined
+      }
       review_report: {
         Args: { p_report_id: string; p_status: string }
         Returns: undefined
@@ -4182,6 +4470,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      send_installment_reminder: {
+        Args: { p_installment_id: string }
+        Returns: boolean
+      }
       send_message: {
         Args: {
           p_attachments?: Json
@@ -4198,6 +4490,23 @@ export type Database = {
       }
       set_default_fee_policy: {
         Args: { p_club_id?: string; p_policy?: string; p_team_id?: string }
+        Returns: undefined
+      }
+      set_payment_event_plan: {
+        Args: { p_cadence: string; p_event_id: string; p_options: number[] }
+        Returns: undefined
+      }
+      set_plan_autopay: {
+        Args: { p_autopay: boolean; p_request_id: string }
+        Returns: undefined
+      }
+      set_registration_event_plan: {
+        Args: {
+          p_cadence: string
+          p_event_id: string
+          p_options: number[]
+          p_require_full_balance?: string
+        }
         Returns: undefined
       }
       set_rsvp: {
@@ -4250,6 +4559,11 @@ export type Database = {
         Args: { p_acceptance_id: string; p_path: string }
         Returns: undefined
       }
+      svc_cards_to_check: { Args: { p_now?: string }; Returns: Json }
+      svc_claim_due_installments: {
+        Args: { p_limit?: number; p_now?: string }
+        Returns: Json
+      }
       svc_claim_registration: {
         Args: { p_token_hash: string; p_user_id: string }
         Returns: string
@@ -4262,6 +4576,10 @@ export type Database = {
           registration_id: string
           status: string
         }[]
+      }
+      svc_create_plan: {
+        Args: { p_n: number; p_request_id: string; p_start?: string }
+        Returns: number
       }
       svc_create_registration: {
         Args: {
@@ -4310,6 +4628,14 @@ export type Database = {
       svc_finish_event: {
         Args: { p_error?: string; p_event_id: string; p_final?: boolean }
         Returns: undefined
+      }
+      svc_get_customer: {
+        Args: { p_connected_account_id: string; p_household_id: string }
+        Returns: string
+      }
+      svc_installment_charge_failed: {
+        Args: { p_payment_id: string }
+        Returns: string
       }
       svc_issue_claim_token: {
         Args: {
@@ -4406,8 +4732,32 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: undefined
       }
+      svc_repair_installments: {
+        Args: { p_older_than?: string }
+        Returns: number
+      }
+      svc_reserve_installments: {
+        Args: {
+          p_installment_ids: string[]
+          p_off_session?: boolean
+          p_uid: string
+        }
+        Returns: Json
+      }
       svc_reserve_payment: {
         Args: { p_request_ids: string[]; p_uid: string }
+        Returns: Json
+      }
+      svc_reserve_plan: {
+        Args: {
+          p_autopay: boolean
+          p_consent_version: string
+          p_ip?: string
+          p_n: number
+          p_request_id: string
+          p_uid: string
+          p_user_agent?: string
+        }
         Returns: Json
       }
       svc_resolve_sign_token: {
@@ -4417,6 +4767,24 @@ export type Database = {
       svc_run_registration_retention: {
         Args: { p_months?: number; p_sensitive_days?: number }
         Returns: Json
+      }
+      svc_save_card_for_payment: {
+        Args: {
+          p_customer: string
+          p_payment_id: string
+          p_payment_method: string
+        }
+        Returns: string
+      }
+      svc_save_payment_method: {
+        Args: {
+          p_connected_account_id: string
+          p_customer: string
+          p_household_id: string
+          p_payment_method: string
+          p_uid: string
+        }
+        Returns: undefined
       }
       svc_set_account_status: {
         Args: {
@@ -4432,6 +4800,18 @@ export type Database = {
       svc_verify_registration: {
         Args: { p_registration_id: string }
         Returns: string
+      }
+      svc_warn_card_expiring: {
+        Args: { p_installment_id: string }
+        Returns: string
+      }
+      team_player_balances: {
+        Args: { p_team_id: string }
+        Returns: {
+          balance_cents: number
+          overdue: boolean
+          player_id: string
+        }[]
       }
       team_record: {
         Args: { p_team_id: string }
@@ -4557,6 +4937,14 @@ export type Database = {
       update_registration_event: {
         Args: { p_data: Json; p_event_id: string }
         Returns: undefined
+      }
+      waive_installment: {
+        Args: { p_installment_id: string; p_note?: string }
+        Returns: undefined
+      }
+      waive_remaining_balance: {
+        Args: { p_note?: string; p_request_id: string }
+        Returns: number
       }
       waive_request: {
         Args: { p_note?: string; p_request_id: string }
@@ -4721,9 +5109,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       club_role: ["admin", "manager"],
