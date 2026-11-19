@@ -44,7 +44,7 @@ export const eventNoun = (type: string): string =>
 
 /**
  * Which event owns the card: a live one, else a game that finished within FINAL_WINDOW_MS, else the soonest
- * upcoming event (a cancelled one still shows, so families see it is off). Null when nothing qualifies.
+ * upcoming event (cancelled events are never picked). Null when nothing qualifies.
  */
 export function pickNextUp(events: readonly NextUpEvent[], now: Date): NextUpEvent | null {
   const t = now.getTime();
@@ -61,7 +61,9 @@ export function pickNextUp(events: readonly NextUpEvent[], now: Date): NextUpEve
     )
     .sort((a, b) => Date.parse(b.endsAt) - Date.parse(a.endsAt))[0];
   if (final) return final;
-  return events.filter((e) => Date.parse(e.startsAt) > t).sort(by)[0] ?? null;
+  return (
+    events.filter((e) => e.status !== 'cancelled' && Date.parse(e.startsAt) > t).sort(by)[0] ?? null
+  );
 }
 
 /** "in 38 min", "in 3 hr", "tomorrow", "in 2 days". Calendar days are counted in the viewer's zone. */
@@ -276,6 +278,7 @@ export function buildNextUpViews(
       staff: r.is_staff,
     });
   for (const r of schedule) {
+    if (r.status === 'cancelled') continue;
     const have = out.get(r.id);
     if (have) {
       have.event = {

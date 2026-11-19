@@ -117,10 +117,10 @@ describe('pickNextUp', () => {
       pickNextUp([game({ type: 'practice' }), later], new Date('2026-11-21T18:00:00Z'))?.eventId,
     ).toBe('later');
   });
-  it('a cancelled upcoming event still shows', () => {
-    expect(
-      pickNextUp([game({ status: 'cancelled' })], new Date('2026-11-19T15:00:00Z'))?.eventId,
-    ).toBe('g1');
+  it('never picks a cancelled event, even when it is the soonest', () => {
+    const now = new Date('2026-11-19T15:00:00Z');
+    expect(pickNextUp([game({ status: 'cancelled' })], now)).toBeNull();
+    expect(pickNextUp([game({ status: 'cancelled' }), later], now)?.eventId).toBe('later');
   });
   it('is null when nothing is scheduled', () => {
     expect(pickNextUp([], new Date())).toBeNull();
@@ -165,13 +165,10 @@ describe('buildNextUpViews', () => {
     ...o,
   });
 
-  it('keeps next_up children and adds cancelled events from the schedule', () => {
+  it('keeps next_up children and drops cancelled events from the schedule', () => {
     const v = buildNextUpViews([row()], [sched()], true);
-    expect(v).toHaveLength(2);
+    expect(v).toHaveLength(1);
     expect(v[0]!.children).toHaveLength(1);
-    const c = v.find((x) => x.event.eventId === 's1')!;
-    expect(c.event).toMatchObject({ status: 'cancelled', cancelledReason: 'Field closed' });
-    expect(c.staff).toBe(true);
   });
   it('lets next_up win for an event both know and adds only the score', () => {
     const v = buildNextUpViews(
@@ -182,14 +179,6 @@ describe('buildNextUpViews', () => {
     expect(v).toHaveLength(1);
     expect(v[0]!.event).toMatchObject({ status: 'scheduled', ourScore: 3, theirScore: 2 });
     expect(v[0]!.staff).toBe(false);
-  });
-  it('picks the cancelled event when it is the soonest', () => {
-    const v = buildNextUpViews([row()], [sched()], false);
-    const pick = pickNextUp(
-      v.map((x) => x.event),
-      new Date('2026-11-19T15:00:00Z'),
-    );
-    expect(pick?.eventId).toBe('s1');
   });
   it('hides an upcoming scheduled event next_up omitted for a non-staff viewer, keeps it for staff', () => {
     const extra = sched({

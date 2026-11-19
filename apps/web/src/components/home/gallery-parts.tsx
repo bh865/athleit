@@ -129,15 +129,6 @@ export function HomeGallery() {
       <NextUpCard
         view={{
           ...GAME,
-          event: { ...GAME.event, status: 'cancelled', cancelledReason: 'Field closed' },
-        }}
-        now={new Date('2026-11-19T15:00:00Z')}
-        zone={ZONE}
-        mapSrc={null}
-      />
-      <NextUpCard
-        view={{
-          ...GAME,
           event: { ...GAME.event, type: 'practice', title: 'Practice' },
           homeAway: null,
           opponent: null,
