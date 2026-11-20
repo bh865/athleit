@@ -1,4 +1,4 @@
-import { useId, type ComponentProps } from 'react';
+import { useId, type ComponentProps, type ReactNode } from 'react';
 
 import styles from './text-field.module.css';
 
@@ -8,9 +8,19 @@ export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'id'> {
   hint?: string;
   /** Use the monospace face for codes, IDs and amounts. */
   mono?: boolean;
+  /** A control inside the field's right edge (for example Show/Hide), at least 44px wide and high. */
+  trailing?: ReactNode;
 }
 
-export function TextField({ label, error, hint, mono, className, ...input }: TextFieldProps) {
+export function TextField({
+  label,
+  error,
+  hint,
+  mono,
+  trailing,
+  className,
+  ...input
+}: TextFieldProps) {
   const id = useId();
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
@@ -18,15 +28,23 @@ export function TextField({ label, error, hint, mono, className, ...input }: Tex
       <label htmlFor={id} className={styles.label}>
         {label}
       </label>
-      <input
-        {...input}
-        id={id}
-        className={[styles.input, mono ? styles.mono : '', error ? styles.invalid : '']
-          .filter(Boolean)
-          .join(' ')}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-      />
+      <div className={styles.control}>
+        <input
+          {...input}
+          id={id}
+          className={[
+            styles.input,
+            mono ? styles.mono : '',
+            error ? styles.invalid : '',
+            trailing ? styles.withTrailing : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+        />
+        {trailing ? <div className={styles.trailing}>{trailing}</div> : null}
+      </div>
       {error ? (
         <p id={`${id}-error`} className={styles.error} role="alert">
           {error}

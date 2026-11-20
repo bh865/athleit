@@ -7,6 +7,8 @@ import { env } from '@/env';
 const PUBLIC_PATHS = [
   '/sign-in',
   '/sign-up',
+  '/forgot-password',
+  '/check-email',
   '/auth',
   '/dev',
   '/.well-known',

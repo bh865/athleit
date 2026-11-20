@@ -1,0 +1,105 @@
+.passwordWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.toggle {
+  min-width: var(--size-min-target);
+  min-height: var(--size-min-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-body-bold-weight);
+  cursor: pointer;
+  border-radius: var(--size-input-radius);
+}
+.toggle:focus-visible {
+  outline: var(--size-focus-ring-width) solid var(--color-bubble-own);
+  outline-offset: 0;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.caps {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--color-warn);
+}
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.bars {
+  display: flex;
+  gap: var(--space-1);
+}
+.bar,
+.barOn {
+  flex: 1;
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+}
+.bar {
+  background: var(--color-line);
+}
+.barOn {
+  background: var(--meter-color);
+}
+.meter[data-level='weak'] {
+  --meter-color: var(--color-bad);
+}
+.meter[data-level='fair'] {
+  --meter-color: var(--color-warn);
+}
+.meter[data-level='strong'] {
+  --meter-color: var(--color-ok);
+}
+.meterText {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  color: var(--meter-color);
+}
+.consent {
+  margin: 0;
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-leading);
+  color: var(--color-muted);
+}
+.consent a {
+  color: var(--color-ink);
+  font-weight: var(--text-body-bold-weight);
+  text-decoration: underline;
+}
+.resend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.resendButton {
+  min-height: var(--size-min-target);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: var(--text-body-bold-weight);
+  cursor: pointer;
+}
+.resendButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.resendError {
+  margin: 0;
+  color: var(--color-bad);
+  font-size: var(--text-caption-size);
+}
