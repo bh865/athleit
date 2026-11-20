@@ -1,0 +1,10 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(28ch, 1fr));
+  gap: var(--space-4);
+}

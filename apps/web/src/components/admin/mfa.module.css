@@ -1,0 +1,75 @@
+.page {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  min-height: 100dvh;
+  padding: var(--space-6);
+  background: var(--color-background);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 60ch;
+  padding: var(--space-8);
+  border: var(--size-card-border) solid var(--color-line);
+  border-radius: var(--size-card-radius);
+  background: var(--color-surface);
+}
+.chips {
+  display: flex;
+  gap: var(--space-2);
+}
+.chip {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  color: var(--color-muted);
+  font-size: var(--text-caption-size);
+}
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin: 0;
+  padding-left: var(--space-6);
+}
+.steps li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.qr,
+.qrWait {
+  width: var(--size-qr-size);
+  height: var(--size-qr-size);
+  border-radius: var(--radius-md);
+  background: var(--color-qr-surface);
+}
+.secret {
+  display: block;
+  margin: var(--space-2) 0;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 56ch;
+}
+.signOut {
+  display: flex;
+}
