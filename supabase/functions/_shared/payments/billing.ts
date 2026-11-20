@@ -28,7 +28,12 @@ export interface CheckoutContext {
   stripe_status?: string | null;
   automatic_tax?: boolean;
   stripe_product_id?: string | null;
-  price_version?: { id: string; amount_cents: number; currency: string; stripe_price_id: string | null };
+  price_version?: {
+    id: string;
+    amount_cents: number;
+    currency: string;
+    stripe_price_id: string | null;
+  };
 }
 
 export interface TeamBillingView {
@@ -46,9 +51,15 @@ export interface BillingStore {
   teamByCustomer(customerId: string): Promise<string | null>;
   applySnapshot(teamId: string, snapshot: Record<string, unknown>, at: string): Promise<string>;
   upsertInvoice(teamId: string, invoice: Record<string, unknown>): Promise<string>;
-  invoiceCharge(invoiceId: string, refundedCents: number | null, disputed: boolean): Promise<string>;
+  invoiceCharge(
+    invoiceId: string,
+    refundedCents: number | null,
+    disputed: boolean,
+  ): Promise<string>;
   notify(teamId: string, notice: string, key: string): Promise<boolean>;
-  reconcileCandidates(limit: number): Promise<{ team_id: string; stripe_subscription_id: string }[]>;
+  reconcileCandidates(
+    limit: number,
+  ): Promise<{ team_id: string; stripe_subscription_id: string }[]>;
 }
 
 export interface BillingDeps {
@@ -76,7 +87,8 @@ export function snapshotFromSubscription(sub: StripeObject): Record<string, unkn
     status: sub.status,
     current_period_end: isoFromEpoch(periodEnd),
     cancel_at_period_end:
-      !!sub.cancel_at_period_end || (cancelAt !== null && typeof periodEnd === 'number' && cancelAt <= periodEnd),
+      !!sub.cancel_at_period_end ||
+      (cancelAt !== null && typeof periodEnd === 'number' && cancelAt <= periodEnd),
     canceled_at: isoFromEpoch(sub.canceled_at),
     ended_at: isoFromEpoch(sub.ended_at),
     price_version_id: UUID.test(String(sub.metadata?.price_version_id ?? ''))
@@ -84,7 +96,9 @@ export function snapshotFromSubscription(sub: StripeObject): Record<string, unkn
       : null,
     unit_amount: typeof price.unit_amount === 'number' ? price.unit_amount : null,
     currency: price.currency ?? sub.currency ?? null,
-    subscribed_by: UUID.test(String(sub.metadata?.initiated_by ?? '')) ? sub.metadata.initiated_by : null,
+    subscribed_by: UUID.test(String(sub.metadata?.initiated_by ?? ''))
+      ? sub.metadata.initiated_by
+      : null,
   };
 }
 
@@ -137,7 +151,11 @@ async function teamFor(
 }
 
 /** Mirror one invoice (fetched, never taken from the event) into the team's invoice list. */
-async function mirrorInvoice(teamId: string, invoiceId: string, d: BillingDeps): Promise<StripeObject> {
+async function mirrorInvoice(
+  teamId: string,
+  invoiceId: string,
+  d: BillingDeps,
+): Promise<StripeObject> {
   const inv = await d.stripe.get(`/v1/invoices/${invoiceId}`);
   await d.store.upsertInvoice(teamId, invoiceRow(inv));
   return inv;
@@ -155,14 +173,21 @@ export function isBillingEvent(event: StripeObject): boolean {
   return false;
 }
 
-export async function handleBillingEvent(event: StripeObject, d: BillingDeps): Promise<BillingOutcome> {
+export async function handleBillingEvent(
+  event: StripeObject,
+  d: BillingDeps,
+): Promise<BillingOutcome> {
   const type = String(event.type);
   const obj = (event.data?.object ?? {}) as StripeObject;
 
   if (type === 'checkout.session.completed') {
     if (obj.mode !== 'subscription') return 'ignored';
     const sub = idOf(obj.subscription);
-    const team = await teamFor(obj.client_reference_id ?? obj.metadata?.team_id, idOf(obj.customer), d);
+    const team = await teamFor(
+      obj.client_reference_id ?? obj.metadata?.team_id,
+      idOf(obj.customer),
+      d,
+    );
     if (!sub || !team) return unknownTeam(event, d);
     return refreshSubscription(team, sub, d);
   }
@@ -177,7 +202,12 @@ export async function handleBillingEvent(event: StripeObject, d: BillingDeps): P
   if (/^invoice\./.test(type)) {
     const subId = subscriptionOfInvoice(obj);
     if (!subId) return 'ignored'; // not a subscription invoice
-    const team = await teamFor(obj.subscription_details?.metadata?.team_id ?? obj.parent?.subscription_details?.metadata?.team_id, idOf(obj.customer), d);
+    const team = await teamFor(
+      obj.subscription_details?.metadata?.team_id ??
+        obj.parent?.subscription_details?.metadata?.team_id,
+      idOf(obj.customer),
+      d,
+    );
     if (!team) return unknownTeam(event, d);
     await mirrorInvoice(team, obj.id, d);
     if (type === 'invoice.payment_action_required')
@@ -247,7 +277,8 @@ export async function createBillingCheckout(
   await requireAdmin(teamId, d);
   const ctx = await d.store.checkoutContext(teamId);
   if (!ctx.enabled || ctx.state === 'off') throw new Error('billing_disabled');
-  if (['active', 'cancel_scheduled', 'comped'].includes(ctx.state)) throw new Error('already_subscribed');
+  if (['active', 'cancel_scheduled', 'comped'].includes(ctx.state))
+    throw new Error('already_subscribed');
   const ver = ctx.price_version;
   if (!ver) throw new Error('billing_unavailable');
 
@@ -319,7 +350,9 @@ export async function createBillingCheckout(
       metadata: meta,
       subscription_data: {
         metadata: meta,
-        ...(trial.mode === 'trial' ? { trial_end: Math.floor(trial.trialEnd.getTime() / 1000) } : {}),
+        ...(trial.mode === 'trial'
+          ? { trial_end: Math.floor(trial.trialEnd.getTime() / 1000) }
+          : {}),
       },
       ...(ctx.automatic_tax
         ? {
@@ -357,14 +390,20 @@ export async function createPortalSession(teamId: string, d: FlowDeps): Promise<
 export async function getCardSummary(
   teamId: string,
   d: FlowDeps,
-): Promise<{ brand: string | null; last4: string | null; expMonth: number | null; expYear: number | null } | null> {
+): Promise<{
+  brand: string | null;
+  last4: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+} | null> {
   await requireAdmin(teamId, d);
   const ctx = await d.store.checkoutContext(teamId);
   if (!ctx.stripe_customer_id) return null;
   const cust = await d.stripe.get(`/v1/customers/${ctx.stripe_customer_id}`, {
     expand: ['invoice_settings.default_payment_method'],
   });
-  let pm = cust.invoice_settings?.default_payment_method as StripeObject | string | null | undefined;
+  let pm = cust.invoice_settings?.default_payment_method as
+    StripeObject | string | null | undefined;
   if (!pm && ctx.stripe_subscription_id) {
     const sub = await d.stripe.get(`/v1/subscriptions/${ctx.stripe_subscription_id}`, {
       expand: ['default_payment_method'],
@@ -400,7 +439,10 @@ export async function updateSubscription(
   );
   const snap = snapshotFromSubscription(sub);
   await d.store.applySnapshot(teamId, snap, (d.now?.() ?? new Date()).toISOString());
-  return { state: action === 'cancel' ? 'cancel_scheduled' : 'active', currentPeriodEnd: (snap.current_period_end as string | null) ?? null };
+  return {
+    state: action === 'cancel' ? 'cancel_scheduled' : 'active',
+    currentPeriodEnd: (snap.current_period_end as string | null) ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -418,11 +460,17 @@ export async function reconcileBilling(
       const r = await refreshSubscription(c.team_id, c.stripe_subscription_id, d);
       if (r === 'applied') out.applied++;
       else if (r === 'stale') out.stale++;
-      const invs = await d.stripe.get('/v1/invoices', { subscription: c.stripe_subscription_id, limit: 3 });
-      for (const inv of (invs.data ?? []) as StripeObject[]) await d.store.upsertInvoice(c.team_id, invoiceRow(inv));
+      const invs = await d.stripe.get('/v1/invoices', {
+        subscription: c.stripe_subscription_id,
+        limit: 3,
+      });
+      for (const inv of (invs.data ?? []) as StripeObject[])
+        await d.store.upsertInvoice(c.team_id, invoiceRow(inv));
     } catch (e) {
       out.errors++;
-      d.log('error', 'billing.reconcile_item_failed', { error: String((e as Error).message).slice(0, 80) });
+      d.log('error', 'billing.reconcile_item_failed', {
+        error: String((e as Error).message).slice(0, 80),
+      });
     }
   }
   d.log('info', 'billing.reconcile_done', out);

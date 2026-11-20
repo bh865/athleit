@@ -23,16 +23,16 @@ charge) is untouched.
 
 ### States
 
-| State              | Meaning                                                              | Access                                  |
-| ------------------ | -------------------------------------------------------------------- | --------------------------------------- |
-| `off`              | billing disabled (the switch, or no billing row)                     | full                                    |
-| `trialing`         | inside the Athleit trial, no Stripe subscription                     | full                                    |
-| `active`           | Stripe subscription `active` or Stripe-`trialing`                    | full                                    |
-| `cancel_scheduled` | `cancel_at_period_end`, paid through the period                      | full until the period ends              |
-| `past_due`         | latest invoice failed, inside grace                                  | **grace** (full access, loud banner)    |
-| `trial_expired`    | trial ended, no subscription                                         | **restricted**                          |
-| `lapsed`           | subscription ended, or past due beyond grace                         | **restricted**                          |
-| `comped`           | complimentary until a date (or no date)                              | full                                    |
+| State              | Meaning                                           | Access                               |
+| ------------------ | ------------------------------------------------- | ------------------------------------ |
+| `off`              | billing disabled (the switch, or no billing row)  | full                                 |
+| `trialing`         | inside the Athleit trial, no Stripe subscription  | full                                 |
+| `active`           | Stripe subscription `active` or Stripe-`trialing` | full                                 |
+| `cancel_scheduled` | `cancel_at_period_end`, paid through the period   | full until the period ends           |
+| `past_due`         | latest invoice failed, inside grace               | **grace** (full access, loud banner) |
+| `trial_expired`    | trial ended, no subscription                      | **restricted**                       |
+| `lapsed`           | subscription ended, or past due beyond grace      | **restricted**                       |
+| `comped`           | complimentary until a date (or no date)           | full                                 |
 
 A payment that succeeds at any time returns the team to `active`. An `incomplete` first payment falls back to the trial rules.
 
@@ -75,13 +75,13 @@ Stripe Subscriptions, hosted Checkout, the Billing Portal and Smart Retries (not
 fixed monthly cycle, so re-implementing dunning and proration would add risk; split payments differ because they charge connected-account
 families through the fee module).
 
-| Function                         | Who            | What                                                                                                                          |
-| -------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `create-billing-checkout`        | team admin     | Checkout Session, subscription mode, `client_reference_id` = team. Redirect URLs from `APP_URL` only. Returns `{ url }`.     |
-| `create-billing-portal-session`  | team admin     | Billing Portal (payment method and invoice history only). Return URL from config.                                             |
-| `update-team-subscription`       | team admin     | `cancel` / `resume` = `cancel_at_period_end` true / false. Never ends service early.                                          |
-| `get-billing-card`               | team admin     | Card brand and last four from Stripe on demand (nothing stored).                                                              |
-| `reconcile-billing`              | pg_cron        | Every 15 minutes: refresh stale, past-due or unexpected subscriptions; mirror recent invoices. Safe to run concurrently.      |
+| Function                        | Who        | What                                                                                                                     |
+| ------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `create-billing-checkout`       | team admin | Checkout Session, subscription mode, `client_reference_id` = team. Redirect URLs from `APP_URL` only. Returns `{ url }`. |
+| `create-billing-portal-session` | team admin | Billing Portal (payment method and invoice history only). Return URL from config.                                        |
+| `update-team-subscription`      | team admin | `cancel` / `resume` = `cancel_at_period_end` true / false. Never ends service early.                                     |
+| `get-billing-card`              | team admin | Card brand and last four from Stripe on demand (nothing stored).                                                         |
+| `reconcile-billing`             | pg_cron    | Every 15 minutes: refresh stale, past-due or unexpected subscriptions; mirror recent invoices. Safe to run concurrently. |
 
 Subscribing during the Athleit trial passes `subscription_data.trial_end = trial_ends_at`, so no trial days are lost and the first charge
 is when the trial would have ended. Stripe needs `trial_end` at least 48 hours ahead (`scripts/billing-integration.mjs` checks this in test
@@ -123,20 +123,20 @@ Connect payments (which key on `metadata.athleit_payment_id`).
 Sent by `private.notify_team_billing` (once per team and key) to all current admins, category `billing`. Coaches and managers receive only the
 restricted notice ("ask a team admin", no amounts).
 
-| Notice                      | When                                                                     |
-| --------------------------- | ------------------------------------------------------------------------ |
-| Trial started               | Hourly sweep, once admins exist (the end date)                           |
-| Trial ending                | Sweep, at each `trial_reminder_days` value (only the closest if late)    |
-| Trial ended / restricted    | Sweep, when the trial ends with no subscription (admins) and staff       |
-| Subscribed                  | Snapshot transition into `active` (next charge date and amount)          |
-| Payment failed              | Snapshot transition into `past_due` (what to do and the deadline)        |
-| Needs authentication        | `invoice.payment_action_required`                                        |
-| Final warning               | Sweep, one day before `grace_ends_at`                                    |
-| Restricted for non-payment  | Sweep, when grace ends                                                   |
-| Payment recovered           | Snapshot transition `past_due` to `active`                               |
-| Cancellation scheduled      | Snapshot transition to `cancel_scheduled` (end date)                     |
-| Subscription resumed        | Snapshot transition `cancel_scheduled` to `active`                       |
-| Subscription ended          | Snapshot transition from paying to `lapsed`                              |
+| Notice                     | When                                                                  |
+| -------------------------- | --------------------------------------------------------------------- |
+| Trial started              | Hourly sweep, once admins exist (the end date)                        |
+| Trial ending               | Sweep, at each `trial_reminder_days` value (only the closest if late) |
+| Trial ended / restricted   | Sweep, when the trial ends with no subscription (admins) and staff    |
+| Subscribed                 | Snapshot transition into `active` (next charge date and amount)       |
+| Payment failed             | Snapshot transition into `past_due` (what to do and the deadline)     |
+| Needs authentication       | `invoice.payment_action_required`                                     |
+| Final warning              | Sweep, one day before `grace_ends_at`                                 |
+| Restricted for non-payment | Sweep, when grace ends                                                |
+| Payment recovered          | Snapshot transition `past_due` to `active`                            |
+| Cancellation scheduled     | Snapshot transition to `cancel_scheduled` (end date)                  |
+| Subscription resumed       | Snapshot transition `cancel_scheduled` to `active`                    |
+| Subscription ended         | Snapshot transition from paying to `lapsed`                           |
 
 State changes themselves are computed from time. The sweep only sends notices and writes team audit events (`billing.trial_expired`,
 `billing.restricted`, and one per snapshot transition) once.
@@ -150,7 +150,7 @@ No admin route or screen exists yet. The data and functions the portal will need
   (MFA). An admin must enrol TOTP before the portal can write; enrolment is not built. Reads need an admin session only.
 - `platform_admin_role()` (a client learns only its own role), `admin_list_settings()`, `admin_set_setting(key, value, reason)` (the key's
   write role or higher; reason required; validates type and bounds; history and platform audit), `admin_list_team_billing(state, search,
-  limit, cursor)` (keyset), `admin_get_team_billing`, `admin_billing_metrics` (teams per state, MRR = sum of locked prices of `active` and
+limit, cursor)` (keyset), `admin_get_team_billing`, `admin_billing_metrics` (teams per state, MRR = sum of locked prices of `active` and
   `cancel_scheduled`, trials ending in 7 days, past-due count), and the writes `admin_extend_trial`, `admin_comp_team`, `admin_clear_comp`.
 - `platform_audit_log` holds admin actions and setting changes and is readable only by platform admins. Team-visible lifecycle events go to the
   team's `audit_log` through `private.write_audit`. Admin actions never appear there.

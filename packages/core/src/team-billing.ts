@@ -132,7 +132,11 @@ export type CheckoutTrial =
  * Expired or lapsed teams get no trial and are charged immediately. With less than Stripe's minimum left the
  * trial end is pushed to the minimum (and `extendedToMinimum` tells the UI to say so).
  */
-export function checkoutTrial(trialEndsAt: Date | string, state: BillingState, now: Date): CheckoutTrial {
+export function checkoutTrial(
+  trialEndsAt: Date | string,
+  state: BillingState,
+  now: Date,
+): CheckoutTrial {
   const end = ms(trialEndsAt) as number;
   if (state !== 'trialing' || end <= now.getTime()) return { mode: 'charge_now' };
   const min = now.getTime() + STRIPE_MIN_TRIAL_MS + STRIPE_TRIAL_MARGIN_MS;

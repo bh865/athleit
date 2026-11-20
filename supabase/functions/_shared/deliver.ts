@@ -19,7 +19,13 @@ export interface OutboxRow {
   id: string;
   profile_id: string;
   category:
-    'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'billing' | 'payments_reserved';
+    | 'messages'
+    | 'announcements'
+    | 'schedule'
+    | 'payments'
+    | 'registration'
+    | 'billing'
+    | 'payments_reserved';
   channel: 'push' | 'email';
   payload: NotificationPayload;
   attempts: number;

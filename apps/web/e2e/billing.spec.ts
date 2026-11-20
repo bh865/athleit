@@ -24,7 +24,10 @@ const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
 
 test.describe('team billing', () => {
   test.describe.configure({ mode: 'serial' });
-  test.skip(!enabled, 'set BILLING_E2E=1 and E2E_SUPABASE_SERVICE_ROLE_KEY (flips the global billing switch)');
+  test.skip(
+    !enabled,
+    'set BILLING_E2E=1 and E2E_SUPABASE_SERVICE_ROLE_KEY (flips the global billing switch)',
+  );
 
   let admin: Page;
   let teamId = '';
@@ -75,7 +78,11 @@ test.describe('team billing', () => {
     teamPath = new URL(admin.url()).pathname;
     teamId = teamPath.split('/')[2]!;
     expect(teamId).toMatch(/^[0-9a-f-]{36}$/);
-    const row = await db().from('team_billing').select('trial_ends_at').eq('team_id', teamId).single();
+    const row = await db()
+      .from('team_billing')
+      .select('trial_ends_at')
+      .eq('team_id', teamId)
+      .single();
     expect(row.error).toBeNull();
   });
 
@@ -95,7 +102,9 @@ test.describe('team billing', () => {
     await setFacts({ trial_ends_at: iso(1.5 * DAY) });
     await admin.goto(`${teamPath}/people`);
     await expect(admin.getByTestId('billing-banner')).toContainText('Your free trial is ending');
-    await expect(admin.getByTestId('billing-banner').getByRole('link', { name: 'Subscribe' })).toBeVisible();
+    await expect(
+      admin.getByTestId('billing-banner').getByRole('link', { name: 'Subscribe' }),
+    ).toBeVisible();
   });
 
   test('payment problem: loud banner with the grace deadline and Update payment method', async () => {
@@ -123,15 +132,27 @@ test.describe('team billing', () => {
 
     // The invite control explains itself and is disabled.
     await admin.goto(`${teamPath}/people?view=invites`);
-    await expect(admin.getByTestId('billing-gate-note')).toContainText('Creating invites is paused');
+    await expect(admin.getByTestId('billing-gate-note')).toContainText(
+      'Creating invites is paused',
+    );
     await expect(admin.getByRole('button', { name: 'Create invite link' })).toBeDisabled();
 
     // Asked directly (as any client could), the DATABASE refuses: billing_restricted.
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.E2E_SUPABASE_ANON_KEY ?? '';
-    const client = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
-    const login = await client.auth.signInWithPassword({ email: emailFor('billing-admin'), password: PASSWORD });
+    const anon =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.E2E_SUPABASE_ANON_KEY ?? '';
+    const client = createClient(url, anon, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const login = await client.auth.signInWithPassword({
+      email: emailFor('billing-admin'),
+      password: PASSWORD,
+    });
     expect(login.error).toBeNull();
-    const refused = await client.rpc('create_invite', { p_team_id: teamId, p_club_id: null as never, p_role: 'parent' });
+    const refused = await client.rpc('create_invite', {
+      p_team_id: teamId,
+      p_club_id: null as never,
+      p_role: 'parent',
+    });
     expect(refused.error?.message).toContain('billing_restricted');
     // Never gated: reading billing itself still works while restricted.
     const read = await client.rpc('get_team_billing', { p_team_id: teamId });
@@ -149,7 +170,10 @@ test.describe('team billing', () => {
       current_period_end: iso(12 * DAY),
     });
     await admin.goto(`${teamPath}/billing`);
-    await expect(admin.getByTestId('billing-panel')).toHaveAttribute('data-state', 'cancel_scheduled');
+    await expect(admin.getByTestId('billing-panel')).toHaveAttribute(
+      'data-state',
+      'cancel_scheduled',
+    );
     await expect(admin.getByText(/Everything keeps working until then/)).toBeVisible();
     await expect(admin.getByRole('button', { name: 'Resume subscription' })).toBeVisible();
 
@@ -170,12 +194,16 @@ test.describe('team billing', () => {
       stripe_status: 'active',
       current_period_end: iso(30 * DAY),
     });
-    await expect(admin.getByRole('heading', { name: 'You’re subscribed' })).toBeVisible({ timeout: 30_000 });
+    await expect(admin.getByRole('heading', { name: 'You’re subscribed' })).toBeVisible({
+      timeout: 30_000,
+    });
     await admin.goto(`${teamPath}/billing/cancelled`);
     await expect(admin.getByRole('heading', { name: 'You weren’t charged' })).toBeVisible();
   });
 
-  test('a signed-in non-member sees no billing and a parent cannot open the team area', async ({ browser }) => {
+  test('a signed-in non-member sees no billing and a parent cannot open the team area', async ({
+    browser,
+  }) => {
     const { page } = await newSession(browser);
     await signUp(page, 'billing-stranger', 'Sam Stranger');
     await page.goto(`${teamPath}/billing`);
@@ -189,7 +217,9 @@ test.describe('team billing', () => {
     await admin.setViewportSize({ width: 375, height: 800 });
     await admin.goto(teamPath);
     await expect(admin.getByTestId('billing-banner')).toBeVisible();
-    const overflow = await admin.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    const overflow = await admin.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
     expect(overflow).toBe(false);
   });
 });

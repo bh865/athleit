@@ -64,8 +64,7 @@ const fact = (label: string, value: string, mono = false) => (
   </div>
 );
 
-const fullDate = (d: string) =>
-  `${billingDate(d)}, ${new Date(d).getUTCFullYear()}`;
+const fullDate = (d: string) => `${billingDate(d)}, ${new Date(d).getUTCFullYear()}`;
 
 /**
  * Team subscription: every state for admins, a status line for coaches and managers. All numbers come from the server
@@ -81,12 +80,12 @@ export function BillingPanel({ teamId }: { teamId: string }) {
   const live = view && ['active', 'cancel_scheduled', 'past_due'].includes(view.state);
 
   const invoices = useLoad(
-    async () => (admin && live ? getTeamBillingInvoices(getClient(), teamId) : { data: [], error: null }),
+    async () =>
+      admin && live ? getTeamBillingInvoices(getClient(), teamId) : { data: [], error: null },
     [teamId, admin, live, view?.state],
   );
   const card = useLoad(
-    async () =>
-      admin && live ? getBillingCard(getClient(), teamId) : { data: null, error: null },
+    async () => (admin && live ? getBillingCard(getClient(), teamId) : { data: null, error: null }),
     [teamId, admin, live],
   );
 
@@ -159,7 +158,8 @@ export function BillingPanel({ teamId }: { teamId: string }) {
 
             {view.price_mismatch && admin ? (
               <Text variant="caption" muted as="p" role="status">
-                We noticed the amount on this subscription differs from the plan price. Athleit support has been flagged.
+                We noticed the amount on this subscription differs from the plan price. Athleit
+                support has been flagged.
               </Text>
             ) : null}
 
@@ -170,7 +170,9 @@ export function BillingPanel({ teamId }: { teamId: string }) {
                     {view.state === 'past_due' ? 'Subscribe again' : 'Subscribe'}
                   </Button>
                 ) : null}
-                {view.state === 'past_due' || view.state === 'active' || view.state === 'cancel_scheduled' ? (
+                {view.state === 'past_due' ||
+                view.state === 'active' ||
+                view.state === 'cancel_scheduled' ? (
                   <Button
                     variant={view.state === 'past_due' ? 'primary' : 'secondary'}
                     loading={busy === 'portal'}
@@ -206,12 +208,15 @@ export function BillingPanel({ teamId }: { teamId: string }) {
             <Card className={styles.panel}>
               <Text variant="bodyBold">Payment method</Text>
               <Text variant="body">
-                <span style={{ textTransform: 'capitalize' }}>{card.data.brand ?? 'Card'}</span> ending in{' '}
-                <Mono>{card.data.last4}</Mono>
+                <span style={{ textTransform: 'capitalize' }}>{card.data.brand ?? 'Card'}</span>{' '}
+                ending in <Mono>{card.data.last4}</Mono>
                 {card.data.expMonth && card.data.expYear ? (
                   <>
                     {' '}
-                    · expires <Mono>{String(card.data.expMonth).padStart(2, '0')}/{card.data.expYear}</Mono>
+                    · expires{' '}
+                    <Mono>
+                      {String(card.data.expMonth).padStart(2, '0')}/{card.data.expYear}
+                    </Mono>
                   </>
                 ) : null}
               </Text>
@@ -230,14 +235,25 @@ export function BillingPanel({ teamId }: { teamId: string }) {
               >
                 <ul className={styles.invoices}>
                   {(invoices.data ?? []).map((i) => (
-                    <li className={styles.invoice} key={i.invoice_number ?? `${i.period_start}-${i.status}`}>
+                    <li
+                      className={styles.invoice}
+                      key={i.invoice_number ?? `${i.period_start}-${i.status}`}
+                    >
                       <div className={styles.grow}>
                         <Mono>{formatCents(i.amount_due_cents)}</Mono>{' '}
                         <Text variant="caption" muted>
                           {i.period_start ? fullDate(i.period_start) : ''}
                         </Text>
                       </div>
-                      <Badge tone={i.status === 'paid' ? 'success' : i.status === 'open' ? 'warning' : 'neutral'}>
+                      <Badge
+                        tone={
+                          i.status === 'paid'
+                            ? 'success'
+                            : i.status === 'open'
+                              ? 'warning'
+                              : 'neutral'
+                        }
+                      >
                         {i.status === 'paid' ? 'Paid' : i.status === 'open' ? 'Open' : i.status}
                       </Badge>
                       {i.hosted_invoice_url ? (
@@ -258,7 +274,8 @@ export function BillingPanel({ teamId }: { teamId: string }) {
           ) : null}
           {terms && admin && view.state === 'trialing' ? (
             <Text variant="caption" muted as="p">
-              After your trial: {formatMonthlyPrice(view.price_cents ?? terms.price_cents)}, billed monthly. Cancel any time.
+              After your trial: {formatMonthlyPrice(view.price_cents ?? terms.price_cents)}, billed
+              monthly. Cancel any time.
             </Text>
           ) : null}
         </div>
@@ -276,8 +293,8 @@ export function BillingPanel({ teamId }: { teamId: string }) {
           {view?.current_period_end
             ? `Your team keeps full access until ${fullDate(view.current_period_end)}.`
             : 'Your team keeps full access until the end of this billing period.'}{' '}
-          After that, new payment requests, registrations, invites and join approvals pause. Nothing is deleted, and
-          you can subscribe again any time.
+          After that, new payment requests, registrations, invites and join approvals pause. Nothing
+          is deleted, and you can subscribe again any time.
         </Text>
       </ConfirmSheet>
     </LoadState>
@@ -324,12 +341,14 @@ function StateBody({ view, now, admin }: { view: TeamBillingView; now: Date; adm
       return (
         <>
           <Text variant="body" as="p">
-            {view.state === 'trial_expired' ? 'The free trial has ended.' : 'The subscription has ended.'}{' '}
+            {view.state === 'trial_expired'
+              ? 'The free trial has ended.'
+              : 'The subscription has ended.'}{' '}
             {banner?.body}
           </Text>
           <Text variant="caption" muted as="p">
-            Still working: messages, schedule and RSVPs, editing or cancelling existing events, exports, refunds, and your
-            families’ payments and registrations that are already open.
+            Still working: messages, schedule and RSVPs, editing or cancelling existing events,
+            exports, refunds, and your families’ payments and registrations that are already open.
           </Text>
         </>
       );

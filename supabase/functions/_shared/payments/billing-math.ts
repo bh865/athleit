@@ -17,7 +17,11 @@ export type CheckoutTrial =
   | { mode: 'charge_now' }
   | { mode: 'trial'; trialEnd: Date; extendedToMinimum: boolean; realEnd: Date };
 
-export function checkoutTrial(trialEndsAt: Date | string, state: BillingState, now: Date): CheckoutTrial {
+export function checkoutTrial(
+  trialEndsAt: Date | string,
+  state: BillingState,
+  now: Date,
+): CheckoutTrial {
   const end = (trialEndsAt instanceof Date ? trialEndsAt : new Date(trialEndsAt)).getTime();
   if (state !== 'trialing' || end <= now.getTime()) return { mode: 'charge_now' };
   const min = now.getTime() + STRIPE_MIN_TRIAL_MS + STRIPE_TRIAL_MARGIN_MS;
