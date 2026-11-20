@@ -6,6 +6,8 @@ import {
   getPlatformMetrics,
   type AdminRange,
 } from '@athleit/db/admin';
+import { adminSupportMetrics } from '@athleit/db/support';
+import Link from 'next/link';
 
 import { ChartCard, Spark } from '@/components/admin/chart';
 import {
@@ -52,11 +54,12 @@ export default async function AdminOverviewPage({
   const bucket = bucketFor(range);
   const money = canSeeMoney(ctx.role);
 
-  const [billing, platform, snaps, payments] = await Promise.all([
+  const [billing, platform, snaps, payments, support] = await Promise.all([
     getBillingMetrics(supabase),
     getPlatformMetrics(supabase, range, bucket),
     getBillingSnapshots(supabase, range === '7d' ? '30d' : range),
     money ? getPaymentMetrics(supabase, range, bucket) : Promise.resolve(null),
+    adminSupportMetrics(supabase, '30d'),
   ]);
   const href = hrefBuilder('/admin', sp);
   const ranges = rangeOptions('/admin', sp, RANGES, range);
@@ -109,6 +112,58 @@ export default async function AdminOverviewPage({
           href="/admin/subscriptions?state=past_due"
         />
       </TileGrid>
+      {support.data ? (
+        <>
+          <TileGrid>
+            <StatTile
+              label="Open tickets"
+              value={String(support.data.overview.open)}
+              href="/admin/support/tickets"
+              sr={`Open tickets, ${support.data.overview.open}, as of ${time}`}
+            />
+            <StatTile
+              label="Oldest unanswered"
+              value={
+                support.data.overview.oldest_unanswered
+                  ? `${Math.max(1, Math.floor((new Date(asOf).getTime() - new Date(support.data.overview.oldest_unanswered).getTime()) / 3_600_000))} h`
+                  : '—'
+              }
+              href="/admin/support/tickets?view=overdue"
+              sr={`Oldest unanswered ticket, as of ${time}`}
+            />
+            <StatTile
+              label="First reply, median"
+              value={
+                support.data.first_reply_hours.median === null
+                  ? '—'
+                  : `${support.data.first_reply_hours.median} h`
+              }
+              href="/admin/support/reports"
+              sr={`Median first reply time, as of ${time}`}
+            />
+          </TileGrid>
+          {support.data.overview.overdue > 0 || support.data.overview.stale_articles > 0 ? (
+            <Panel title="Needs attention">
+              <ul>
+                {support.data.overview.overdue > 0 ? (
+                  <li>
+                    <Link href="/admin/support/tickets?view=overdue">
+                      {support.data.overview.overdue} tickets overdue
+                    </Link>
+                  </li>
+                ) : null}
+                {support.data.overview.stale_articles > 0 ? (
+                  <li>
+                    <Link href="/admin/support/articles?filter=stale">
+                      {support.data.overview.stale_articles} articles stale
+                    </Link>
+                  </li>
+                ) : null}
+              </ul>
+            </Panel>
+          ) : null}
+        </>
+      ) : null}
 
       <ChartGrid>
         <ChartCard

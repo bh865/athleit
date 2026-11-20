@@ -17,10 +17,10 @@ import {
 } from './admin';
 
 describe('admin module registry', () => {
-  it('has the fourteen modules with unique keys and routes', () => {
-    expect(ADMIN_MODULES).toHaveLength(14);
-    expect(new Set(ADMIN_MODULES.map((m) => m.key)).size).toBe(14);
-    expect(new Set(ADMIN_MODULES.map((m) => m.route)).size).toBe(14);
+  it('has the eighteen modules with unique keys and routes', () => {
+    expect(ADMIN_MODULES).toHaveLength(18);
+    expect(new Set(ADMIN_MODULES.map((m) => m.key)).size).toBe(18);
+    expect(new Set(ADMIN_MODULES.map((m) => m.route)).size).toBe(18);
     for (const m of ADMIN_MODULES) expect(m.route.startsWith('/admin')).toBe(true);
   });
   it('shows each role exactly what the "who sees what" matrix says', () => {
@@ -32,6 +32,10 @@ describe('admin module registry', () => {
       'people',
       'subscriptions',
       'reports',
+      'support-tickets',
+      'support-feedback',
+      'support-articles',
+      'support-reports',
       'audit',
     ]);
     expect(keys('admin')).not.toContain('admins');
@@ -45,7 +49,7 @@ describe('admin module registry', () => {
         'settings',
       ]),
     );
-    expect(keys('owner')).toHaveLength(14);
+    expect(keys('owner')).toHaveLength(18);
     expect(modulesFor(null)).toEqual([]);
   });
   it('resolves the longest matching route and guards paths by role', () => {
@@ -73,6 +77,7 @@ describe('admin module registry', () => {
       'Customers',
       'Money',
       'Trust and safety',
+      'Support',
       'Audit',
     ]);
     expect(navGroups('owner').map((g) => g.group)).toContain('Admins');
@@ -96,6 +101,26 @@ describe('admin roles', () => {
     expect(canDo('support', 'reveal_message')).toBe(false);
     expect(canDo('admin', 'reveal_message')).toBe(true);
     expect(canDo('support', 'review_report')).toBe(true);
+  });
+  it('lets support work tickets but keeps the sensitive support actions for admins', () => {
+    expect(canDo('support', 'support_reply')).toBe(true);
+    for (const a of [
+      'support_merge',
+      'support_spam',
+      'support_redact',
+      'support_delete_attachment',
+      'support_export',
+      'support_manage_canned',
+      'support_feedback_status',
+    ] as const) {
+      expect(canDo('support', a)).toBe(false);
+      expect(canDo('admin', a)).toBe(true);
+    }
+  });
+  it('routes the support module paths to the right module', () => {
+    expect(moduleForPath('/admin/support/tickets/abc')?.key).toBe('support-tickets');
+    expect(moduleForPath('/admin/support/articles')?.key).toBe('support-articles');
+    expect(canViewPath('support', '/admin/support/reports')).toBe(true);
   });
   it('respects a setting definition write role', () => {
     expect(canWriteSetting('admin', 'owner')).toBe(false);
