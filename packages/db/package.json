@@ -13,7 +13,8 @@
     "./registration": "./src/registration-api.ts",
     "./places": "./src/places-api.ts",
     "./billing": "./src/billing-api.ts",
-    "./admin": "./src/admin-api.ts"
+    "./admin": "./src/admin-api.ts",
+    "./support": "./src/support-api.ts"
   },
   "scripts": {
     "lint": "eslint .",
