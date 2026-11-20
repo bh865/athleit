@@ -1,7 +1,7 @@
 import { teamForScreen } from '@athleit/core';
 
 import { AppScreen } from '@/components/app/app-screen';
-import { BackLink, H1 } from '@/components/app/kit';
+import { H1 } from '@/components/app/kit';
 import { RosterScreen } from '@/components/roster/roster-screen';
 import { TeamProvider } from '@/components/team/team-context';
 import { EmptyState, LoadingSkeleton } from '@/components/ui';
@@ -16,7 +16,6 @@ export default function RosterRoute() {
   const team = teamForScreen(contexts, active);
   return (
     <AppScreen>
-      <BackLink label="More" />
       <H1>Roster</H1>
       {status === 'loading' ? (
         <LoadingSkeleton />
