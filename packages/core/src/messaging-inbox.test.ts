@@ -13,7 +13,7 @@ const ME = 'me';
 
 const row = (o: Partial<InboxRow> = {}): InboxRow => ({
   threadId: 't1', type: 'group', title: 'Bus times', archivedAt: null,
-  lastMessageAt: '2026-11-20T14:00:00.000Z', lastBody: 'See you at 5', lastSenderId: 'sam',
+  lastMessageAt: '2026-11-20T14:00:00.000Z', lastMessageId: 'm1', lastBody: 'See you at 5', lastSenderId: 'sam',
   lastSenderName: 'Sam Lee', lastDeleted: false, lastHidden: false,
   lastCreatedAt: '2026-11-20T14:00:00.000Z', unreadCount: 0, memberCount: 4, otherName: null,
   otherProfileId: null, mutedUntil: null, teamId: 'A', teamName: 'Team A', sport: 'soccer',
@@ -23,7 +23,7 @@ const row = (o: Partial<InboxRow> = {}): InboxRow => ({
 describe('inboxRowFromDb', () => {
   it('camelCases and defaults nullable flags', () => {
     const raw = {
-      thread_id: 'x', type: 'direct', title: null, archived_at: null, last_message_at: 'a',
+      thread_id: 'x', type: 'direct', title: null, archived_at: null, last_message_at: 'a', last_message_id: 'm',
       last_body: 'hi', last_sender_id: 's', last_sender_name: 'S', last_deleted: null,
       last_hidden: null, last_created_at: 'a', unread_count: 2, member_count: 2,
       other_name: 'O', other_profile_id: 'p', muted_until: null, team_id: 'A', team_name: 'T',

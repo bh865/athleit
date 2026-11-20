@@ -3,6 +3,7 @@
  * status, optimistic-send merging and screen-reader labels. No I/O, no React.
  */
 
+import type { AppContext } from './context';
 import { ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE } from './constants';
 
 export type SendState = 'sent' | 'sending' | 'failed';
@@ -212,6 +213,7 @@ export interface InboxRow {
   lastBody: string | null;
   lastSenderId: string | null;
   lastSenderName: string | null;
+  lastMessageId: string | null;
   lastDeleted: boolean;
   lastHidden: boolean;
   lastCreatedAt: string | null;
@@ -237,6 +239,7 @@ export interface RawInboxRow {
   title: string | null;
   archived_at: string | null;
   last_message_at: string;
+  last_message_id: string | null;
   last_body: string | null;
   last_sender_id: string | null;
   last_sender_name: string | null;
@@ -264,6 +267,7 @@ export function inboxRowFromDb(r: RawInboxRow): InboxRow {
     title: r.title,
     archivedAt: r.archived_at,
     lastMessageAt: r.last_message_at,
+    lastMessageId: r.last_message_id,
     lastBody: r.last_body,
     lastSenderId: r.last_sender_id,
     lastSenderName: r.last_sender_name,
@@ -558,3 +562,20 @@ export const attachmentProblemText = (p: AttachmentProblem) =>
     bad_type: 'Only JPEG, PNG, WebP, GIF and PDF files can be attached.',
     empty: 'That file is empty.',
   })[p];
+
+// Places -------------------------------------------------------------------------------------
+
+
+/** The teams whose conversations appear in the inbox (every team the person is in). */
+export const messagingTeams = (contexts: readonly AppContext[]) =>
+  contexts.filter((c) => c.kind === 'team');
+
+/** A player 13 to 17 only: a player role and nothing else on any team (no chips, search only). */
+export const isPlayerOnly = (contexts: readonly AppContext[]) => {
+  const teams = messagingTeams(contexts);
+  return teams.length > 0 && teams.every((t) => t.roles.every((r) => r === 'player'));
+};
+
+/** Staff of at least one team (can start groups and announcements). */
+export const isStaffAnywhere = (contexts: readonly AppContext[]) =>
+  messagingTeams(contexts).some((t) => t.roles.some((r) => r === 'admin' || r === 'coach' || r === 'manager'));
