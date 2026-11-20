@@ -16,9 +16,9 @@ const ICON: Record<OnboardingIntent, IconName> = {
 };
 const HREF: Record<OnboardingIntent, string> = {
   parent: '/onboarding/parent',
-  coach: '/teams/new',
-  club: '/clubs/new',
-  player: '/onboarding/code',
+  coach: '/onboarding/coach',
+  club: '/onboarding/club',
+  player: '/onboarding/player',
   code: '/onboarding/code',
 };
 const SUBTITLE: Record<OnboardingIntent, string> = {

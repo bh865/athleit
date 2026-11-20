@@ -115,13 +115,14 @@ describe('readCodeInput', () => {
 describe('paths and step counter', () => {
   it('counts steps for multi-step paths only', () => {
     expect(stepLabel('parent', 2)).toBe('Step 2 of 3');
-    expect(stepLabel('club', 1)).toBe('Step 1 of 2');
+    expect(stepLabel('club', 1)).toBe('Step 1 of 3');
+    expect(stepLabel('coach', 4)).toBe('Step 4 of 4');
     expect(stepLabel('player', 1)).toBeNull();
     expect(stepLabel('code', 1)).toBeNull();
   });
   it('clamps out-of-range steps', () => {
-    expect(stepLabel('coach', 9)).toBe('Step 3 of 3');
-    expect(stepLabel('coach', 0)).toBe('Step 1 of 3');
+    expect(stepLabel('coach', 9)).toBe('Step 4 of 4');
+    expect(stepLabel('coach', 0)).toBe('Step 1 of 4');
   });
   it('has the five intents in order', () => {
     expect(

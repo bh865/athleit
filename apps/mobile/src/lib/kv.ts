@@ -33,3 +33,5 @@ export const POST_AUTH_INTENT_KEY = 'athleit.postAuthIntent';
 export const HUB_DONE_KEY = 'athleit.hubDone';
 /** Set when the person chose "Skip for now" on the hub. */
 export const HUB_SKIPPED_KEY = 'athleit.hubSkipped';
+/** Set once the notifications soft-ask was answered ("Turn on" or "Not now"). */
+export const NOTIF_ASKED_KEY = 'athleit.notifAsked';

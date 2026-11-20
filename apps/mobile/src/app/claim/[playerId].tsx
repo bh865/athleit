@@ -97,7 +97,8 @@ export default function ClaimScreen() {
         )}
         {outcome === 'pending' && (
           <Notice testID="claim-pending">
-            Request sent. Your parent or guardian needs to approve it before your login is linked.
+            Waiting for your parent. Your email didn’t match, so a parent needs to approve. We’ll
+            tell you when they do.
           </Notice>
         )}
         {!outcome && (

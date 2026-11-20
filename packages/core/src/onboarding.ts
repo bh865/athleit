@@ -167,7 +167,7 @@ export interface IntentPath {
   intent: OnboardingIntent;
   title: string;
   hint: string;
-  /** Counted steps. The "Request sent" and "You're set" end screens are not counted. */
+  /** Counted steps, including the closing screen ("You’re set"), as the board counts them. */
   steps: readonly string[];
 }
 
@@ -182,13 +182,13 @@ export const ONBOARDING_PATHS: readonly IntentPath[] = [
     intent: 'coach',
     title: 'I coach or manage a team',
     hint: 'Create your team and invite families.',
-    steps: ['Create your team', 'Invite your families', 'Add your first event'],
+    steps: ['Create your team', 'Invite your families', 'Add your first event', 'You’re set'],
   },
   {
     intent: 'club',
     title: 'I run a club',
     hint: 'Create your club and bring your teams.',
-    steps: ['Create your club', 'Bring your teams'],
+    steps: ['Create your club', 'Bring in your teams', 'You’re set'],
   },
   {
     intent: 'player',

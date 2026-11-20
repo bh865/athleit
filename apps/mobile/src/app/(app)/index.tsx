@@ -22,6 +22,7 @@ import {
   SetupTile,
 } from '@/components/home/more-tiles';
 import { useHomeData } from '@/components/home/use-home-data';
+import { NotificationsAsk } from '@/components/onboarding/notifications-ask';
 import { FirstRun, PendingStrip } from '@/components/onboarding/first-run';
 import { NextUpCard } from '@/components/schedule/next-up-card';
 import { useApp } from '@/lib/app-provider';
@@ -78,6 +79,7 @@ export default function HomeScreen() {
 
   return (
     <AppScreen>
+      <NotificationsAsk />
       {contexts.length > 0 ? (
         <>
           <PendingStrip />
