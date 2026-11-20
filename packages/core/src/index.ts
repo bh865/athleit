@@ -19,6 +19,7 @@ export * from './schemas/payments';
 export * from './capabilities';
 export * from './context';
 export * from './errors';
+export * from './onboarding';
 export * from './schemas/registration';
 export * from './registration';
 export * from './pay-views';
