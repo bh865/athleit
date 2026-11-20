@@ -403,3 +403,16 @@ describe('billing notification content', () => {
     });
   });
 });
+
+describe('getCardSummary', () => {
+  it('returns only brand, last four and expiry for admins, and null without a customer', async () => {
+    const { getCardSummary } = await import('../../../supabase/functions/_shared/payments/billing');
+    const { store } = fakeStore(ctx({ stripe_customer_id: 'cus_1', state: 'active' }));
+    const { stripe } = fakeStripe({
+      '/v1/customers/': () => ({ invoice_settings: { default_payment_method: { card: { brand: 'visa', last4: '4242', exp_month: 4, exp_year: 2030, fingerprint: 'secret' } } } }),
+    });
+    expect(await getCardSummary(TEAM, flow(store, stripe))).toEqual({ brand: 'visa', last4: '4242', expMonth: 4, expYear: 2030 });
+    expect(await getCardSummary(TEAM, flow(fakeStore(ctx()).store, stripe))).toBeNull();
+    await expect(getCardSummary(TEAM, flow(store, stripe, { viewAsUser: async () => ({ state: 'active', can_manage: false }) }))).rejects.toThrow('not_authorized');
+  });
+});

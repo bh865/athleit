@@ -353,6 +353,35 @@ export async function createPortalSession(teamId: string, d: FlowDeps): Promise<
   return { url: s.url };
 }
 
+/** Card brand and last four of the team's default payment method, read from Stripe on demand (nothing is stored). */
+export async function getCardSummary(
+  teamId: string,
+  d: FlowDeps,
+): Promise<{ brand: string | null; last4: string | null; expMonth: number | null; expYear: number | null } | null> {
+  await requireAdmin(teamId, d);
+  const ctx = await d.store.checkoutContext(teamId);
+  if (!ctx.stripe_customer_id) return null;
+  const cust = await d.stripe.get(`/v1/customers/${ctx.stripe_customer_id}`, {
+    expand: ['invoice_settings.default_payment_method'],
+  });
+  let pm = cust.invoice_settings?.default_payment_method as StripeObject | string | null | undefined;
+  if (!pm && ctx.stripe_subscription_id) {
+    const sub = await d.stripe.get(`/v1/subscriptions/${ctx.stripe_subscription_id}`, {
+      expand: ['default_payment_method'],
+    });
+    pm = sub.default_payment_method;
+  }
+  const card = typeof pm === 'object' && pm ? (pm.card as StripeObject | undefined) : undefined;
+  return card
+    ? {
+        brand: card.brand ?? null,
+        last4: card.last4 ?? null,
+        expMonth: card.exp_month ?? null,
+        expYear: card.exp_year ?? null,
+      }
+    : null;
+}
+
 /** Cancel (at period end) or resume. Never ends service early; the snapshot is applied at once so the UI is current. */
 export async function updateSubscription(
   teamId: string,

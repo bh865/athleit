@@ -159,6 +159,8 @@ export interface BillingTerms {
   enabled: boolean;
   price_cents: number;
   trial_days: number;
+  /** Days before the trial ends to remind admins (also the window of the trial banner). */
+  trial_reminder_days?: number[];
 }
 
 /** The one-line note on team creation: "14-day free trial, then $10/month. No card needed to start." Null when billing is off. */

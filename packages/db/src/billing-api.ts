@@ -17,6 +17,7 @@ export interface BillingTermsRow {
   interval: string;
   trial_days: number;
   grace_days: number;
+  trial_reminder_days: number[];
 }
 export interface TeamBillingRow {
   state:
@@ -112,3 +113,13 @@ export const updateTeamSubscription = (c: Client, teamId: string, action: 'cance
     teamId,
     action,
   });
+
+export interface BillingCard {
+  brand: string | null;
+  last4: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+}
+/** Card brand and last four, fetched from Stripe on demand (never stored). Admins only. */
+export const getBillingCard = (c: Client, teamId: string) =>
+  invoke<BillingCard | null>(c, 'get-billing-card', { teamId });

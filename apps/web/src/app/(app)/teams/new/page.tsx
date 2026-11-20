@@ -2,12 +2,14 @@
 
 import {
   createTeamSchema,
+  trialTermsLine,
   fieldErrors,
   friendlyError,
   SPORTS,
   type FieldErrors,
 } from '@athleit/core';
 import { createTeam, findClub } from '@athleit/db/api';
+import { getBillingTerms } from '@athleit/db/billing';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
@@ -17,6 +19,7 @@ import { formText } from '@/components/app/form-utils';
 import { FormMessage } from '@/components/app/states';
 import { Button, Card, PageHeader, Select, TextField } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
+import { useLoad } from '@/lib/use-load';
 
 const SPORT_OPTIONS = SPORTS.map((s) => ({
   value: s,
@@ -31,6 +34,9 @@ export default function NewTeamPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // "14-day free trial, then $10/month" comes from the server's terms; nothing renders while billing is off.
+  const terms = useLoad(() => getBillingTerms(getClient()), []);
+  const termsLine = trialTermsLine(terms.data);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -101,6 +107,11 @@ export default function NewTeamPage() {
             autoCapitalize="none"
             error={errors.clubSlug}
           />
+          {termsLine ? (
+            <p className="t-caption t-muted" data-testid="billing-terms">
+              {termsLine}
+            </p>
+          ) : null}
           <FormMessage error={error} />
           <Button type="submit" loading={busy}>
             Create team

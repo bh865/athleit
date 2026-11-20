@@ -25,6 +25,8 @@ import { Badge, Button, Card, Icon, Select, TextField, useToast } from '@/compon
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
+import { SubscriptionSummary } from '@/components/billing/subscription-summary';
+
 import { ConfirmSheet, ListState } from './parts';
 import { HeaderAction } from './team-hub';
 import styles from './team.module.css';
@@ -106,6 +108,7 @@ export function SettingsTab() {
           </dl>
         )}
       </Card>
+      <SubscriptionSummary teamId={team.id} />
       <ClubAffiliation />
     </div>
   );

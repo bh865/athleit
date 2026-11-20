@@ -258,7 +258,8 @@ as $$
            'price_cents', private.setting_int('team_subscription.price_cents'),
            'currency', 'usd', 'interval', 'month',
            'trial_days', private.setting_int('team_subscription.trial_days'),
-           'grace_days', private.setting_int('team_subscription.grace_days')) end;
+           'grace_days', private.setting_int('team_subscription.grace_days'),
+           'trial_reminder_days', to_jsonb(private.setting_int_array('team_subscription.trial_reminder_days'))) end;
 $$;
 
 -- Admin: the full picture. Coach/manager: status only. Everyone else: null. Billing off: state 'off'.

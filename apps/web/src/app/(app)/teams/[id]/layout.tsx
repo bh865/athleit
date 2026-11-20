@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from 'react';
 
 import styles from '@/components/app/app.module.css';
 import { TeamProvider, useTeam } from '@/components/app/team-context';
+import { BillingBanner } from '@/components/billing/billing-banner';
 import { TabRow } from '@/components/team/tab-row';
 import { HeaderSlot, TeamHubProvider, useTeamHub } from '@/components/team/team-hub';
 import teamStyles from '@/components/team/team.module.css';
@@ -40,6 +41,7 @@ function TeamHeader({ active }: { active: TeamTab | null }) {
         actions={<HeaderSlot className={teamStyles.slot} />}
       />
       <TabRow teamId={team.id} tabs={tabs} active={active ?? 'overview'} counts={hub.counts} />
+      {caps.has('billing.view') ? <BillingBanner teamId={team.id} /> : null}
     </>
   );
 }
