@@ -3980,6 +3980,17 @@ export type Database = {
           slug: string
         }[]
       }
+      get_compose_people: {
+        Args: { p_team_id: string }
+        Returns: {
+          can_direct: boolean
+          display_name: string
+          is_minor: boolean
+          profile_id: string
+          reason: string
+          role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
       get_event: {
         Args: { p_event_id: string }
         Returns: {
@@ -4029,17 +4040,6 @@ export type Database = {
           profile_id: string
         }[]
       }
-      get_compose_people: {
-        Args: { p_team_id: string }
-        Returns: {
-          can_direct: boolean
-          display_name: string
-          is_minor: boolean
-          profile_id: string
-          reason: string
-          role: Database["public"]["Enums"]["team_role"]
-        }[]
-      }
       get_hidden_message: {
         Args: { p_message_id: string }
         Returns: {
@@ -4069,35 +4069,6 @@ export type Database = {
           requester_name: string
         }[]
       }
-      get_join_requests: {
-        Args: { p_team_id: string }
-        Returns: {
-          created_at: string
-          id: string
-          message: string
-          player_first_name: string
-          player_id: string
-          player_last_name: string
-          requester_id: string
-          requester_name: string
-          status: Database["public"]["Enums"]["request_status"]
-        }[]
-      }
-      get_link_requests: {
-        Args: { p_club_id?: string; p_team_id?: string }
-        Returns: {
-          club_id: string
-          club_name: string
-          created_at: string
-          id: string
-          requested_by_name: string
-          season_label: string
-          sport: Database["public"]["Enums"]["sport"]
-          status: Database["public"]["Enums"]["request_status"]
-          team_id: string
-          team_name: string
-        }[]
-      }
       get_inbox: {
         Args: { p_before_at?: string; p_before_id?: string; p_limit?: number }
         Returns: {
@@ -4125,6 +4096,35 @@ export type Database = {
           title: string
           type: string
           unread_count: number
+        }[]
+      }
+      get_join_requests: {
+        Args: { p_team_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string
+          player_first_name: string
+          player_id: string
+          player_last_name: string
+          requester_id: string
+          requester_name: string
+          status: Database["public"]["Enums"]["request_status"]
+        }[]
+      }
+      get_link_requests: {
+        Args: { p_club_id?: string; p_team_id?: string }
+        Returns: {
+          club_id: string
+          club_name: string
+          created_at: string
+          id: string
+          requested_by_name: string
+          season_label: string
+          sport: Database["public"]["Enums"]["sport"]
+          status: Database["public"]["Enums"]["request_status"]
+          team_id: string
+          team_name: string
         }[]
       }
       get_messageable_people: {
@@ -4733,6 +4733,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_messages: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          created_at: string
+          message_id: string
+          other_name: string
+          sender_name: string
+          snippet: string
+          team_id: string
+          team_name: string
+          thread_id: string
+          thread_title: string
+          thread_type: string
+        }[]
+      }
       send_installment_reminder: {
         Args: { p_installment_id: string }
         Returns: boolean
@@ -4785,35 +4800,20 @@ export type Database = {
         Args: { p_required: boolean; p_team_id: string; p_waiver_id: string }
         Returns: undefined
       }
-      search_messages: {
-        Args: { p_limit?: number; p_query: string }
-        Returns: {
-          created_at: string
-          message_id: string
-          other_name: string
-          sender_name: string
-          snippet: string
-          team_id: string
-          team_name: string
-          thread_id: string
-          thread_title: string
-          thread_type: string
-        }[]
+      set_thread_archived: {
+        Args: { p_archived: boolean; p_thread_id: string }
+        Returns: undefined
       }
       set_thread_archived_for_me: {
         Args: { p_archived: boolean; p_thread_id: string }
         Returns: undefined
       }
-      set_thread_archived: {
-        Args: { p_archived: boolean; p_thread_id: string }
+      set_thread_mute: {
+        Args: { p_thread_id: string; p_until: string }
         Returns: undefined
       }
       set_thread_pinned: {
         Args: { p_pinned: boolean; p_thread_id: string }
-        Returns: undefined
-      }
-      set_thread_mute: {
-        Args: { p_thread_id: string; p_until: string }
         Returns: undefined
       }
       staff_set_rsvp: {
