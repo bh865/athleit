@@ -45,6 +45,7 @@ import {
   ErrorState,
   Icon,
   LoadingSkeleton,
+  Sheet,
   Text,
   useToast,
 } from '@/components/ui';
@@ -104,6 +105,7 @@ export function ThreadList({ onCompose }: { onCompose?: () => void }) {
   const [filter, setFilter] = useState<InboxFilter>({ kind: 'all' });
   const [query, setQuery] = useState('');
   const [muteFor, setMuteFor] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   type Hit = {
     thread_id: string;
@@ -157,6 +159,9 @@ export function ThreadList({ onCompose }: { onCompose?: () => void }) {
       if (e.key === '/') {
         e.preventDefault();
         searchRef.current?.focus();
+      } else if (e.key === '?') {
+        e.preventDefault();
+        setHelpOpen(true);
       } else if (e.key === 'c' && onCompose) {
         e.preventDefault();
         onCompose();
@@ -400,6 +405,29 @@ export function ThreadList({ onCompose }: { onCompose?: () => void }) {
       ) : null}
       {list.error && list.data ? <Text variant="caption" muted>Showing saved messages. You may be offline.</Text> : null}
       {body}
+      <Sheet open={helpOpen} onClose={() => setHelpOpen(false)} title="Keyboard shortcuts">
+        <Text variant="heading" as="h2">
+          Keyboard shortcuts
+        </Text>
+        <dl className={styles.shortcuts}>
+          {[
+            ['↑ ↓', 'Move between conversations'],
+            ['Enter', 'Open the conversation'],
+            ['/', 'Search'],
+            ['c', 'New message'],
+            ['Esc', 'Close the info panel'],
+            ['Enter / Shift+Enter', 'Send / new line in a message'],
+            ['?', 'Show this list'],
+          ].map(([k, d]) => (
+            <div key={k}>
+              <dt>
+                <kbd>{k}</kbd>
+              </dt>
+              <dd>{d}</dd>
+            </div>
+          ))}
+        </dl>
+      </Sheet>
     </div>
   );
 }
