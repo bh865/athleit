@@ -52,13 +52,13 @@ reset role;
 select pg_temp.login('d5000000-0000-0000-0000-000000000003', 'aal1');
 select lives_ok(format($$ select public.admin_get_support_request(%L) $$, (select j ->> 'id' from made)), 'support reads at aal1');
 create temp table staffmsg as select public.admin_reply_support_request((select (j ->> 'id')::uuid from made), 'Thanks, looking now', false, null) id;
-select is((select status from public.support_requests where id = (select (j ->> 'id')::uuid from made)), 'waiting_on_requester', 'staff reply waits on requester');
-select isnt((select first_reply_at from public.support_requests where id = (select (j ->> 'id')::uuid from made)), null, 'first_reply_at set');
+select is((select public.admin_get_support_request((select (j ->> 'id')::uuid from made)) -> 'request' ->> 'status'), 'waiting_on_requester', 'staff reply waits on requester');
+select isnt((select public.admin_get_support_request((select (j ->> 'id')::uuid from made)) -> 'request' ->> 'first_reply_at'), null, 'first_reply_at set');
 reset role;
 select pg_temp.login('d5000000-0000-0000-0000-000000000003', 'aal1');
-create temp table fr as select first_reply_at t from public.support_requests where id = (select (j ->> 'id')::uuid from made);
+create temp table fr as select (select public.admin_get_support_request((select (j ->> 'id')::uuid from made)) -> 'request' ->> 'first_reply_at') t;
 select public.admin_reply_support_request((select (j ->> 'id')::uuid from made), 'Second reply', false, null);
-select is((select first_reply_at from public.support_requests where id = (select (j ->> 'id')::uuid from made)), (select t from fr), 'first_reply_at is set once');
+select is((select public.admin_get_support_request((select (j ->> 'id')::uuid from made)) -> 'request' ->> 'first_reply_at'), (select t from fr), 'first_reply_at is set once');
 select public.admin_reply_support_request((select (j ->> 'id')::uuid from made), 'Private note', true, null);
 reset role;
 
@@ -83,10 +83,15 @@ select throws_ok(format($$ select public.admin_mark_support_spam(%L, 'a long eno
 reset role;
 select pg_temp.login('d5000000-0000-0000-0000-000000000004');
 select throws_ok(format($$ select public.admin_mark_support_spam(%L, 'short') $$, (select j ->> 'id' from made)), '22023', null, 'short reason rejected');
+reset role;
 create temp table msgs as select id from public.support_messages where body = 'Thanks, looking now';
+grant select on msgs to authenticated;
+select pg_temp.login('d5000000-0000-0000-0000-000000000004');
 select lives_ok(format($$ select public.admin_redact_support_message(%L, 'removed a phone number') $$, (select id from msgs)), 'admin redacts with reason at aal2');
-select is((select body from public.support_messages where id = (select id from msgs)), '[removed by Athleit Support]', 'text replaced');
+select ok(exists (select 1 from jsonb_array_elements(public.admin_get_support_request((select (j ->> 'id')::uuid from made)) -> 'messages') m where m ->> 'body' = '[removed by Athleit Support]' and (m ->> 'redacted')::boolean), 'text replaced');
+reset role;
 select is((select count(*)::int from public.platform_audit_log where action = 'support.redact' and before::text not like '%looking now%' and after is null), 1, 'audit row written without the removed text');
+select pg_temp.login('d5000000-0000-0000-0000-000000000004');
 select throws_ok(format($$ select public.admin_redact_support_message(%L, 'removed a phone number') $$, (select id from msgs)), '22023', 'already_redacted', 'cannot redact twice');
 
 -- Merge --------------------------------------------------------------------------------------------------------------------------------
@@ -94,8 +99,8 @@ reset role;
 insert into public.support_requests (id, type, subject, requester_email) values ('d6000000-0000-0000-0000-000000000001', 'question', 'Duplicate', 'x@example.test');
 select pg_temp.login('d5000000-0000-0000-0000-000000000004');
 select lives_ok(format($$ select public.admin_merge_support_requests('d6000000-0000-0000-0000-000000000001', %L, 'duplicate of the same issue') $$, (select j ->> 'id' from made)), 'merge with reason');
-select is((select status from public.support_requests where id = 'd6000000-0000-0000-0000-000000000001'), 'closed', 'merged source closes');
-select is((select merged_into from public.support_requests where id = 'd6000000-0000-0000-0000-000000000001'), (select (j ->> 'id')::uuid from made), 'merged_into set');
+select is((select public.admin_get_support_request('d6000000-0000-0000-0000-000000000001') -> 'request' ->> 'status'), 'closed', 'merged source closes');
+select is((select public.admin_get_support_request('d6000000-0000-0000-0000-000000000001') -> 'request' ->> 'merged_into'), (select j ->> 'id' from made), 'merged_into set');
 select throws_ok(format($$ select public.admin_merge_support_requests(%L, %L, 'a long enough reason') $$, (select j ->> 'id' from made), (select j ->> 'id' from made)), '22023', 'same_request', 'cannot merge into itself');
 
 -- Solved, reopen window, satisfaction ----------------------------------------------------------------------------------------------------
