@@ -350,7 +350,7 @@ button.tile {
 }
 .bigJersey {
   font-family: var(--font-mono);
-  font-size: var(--text-display-size, var(--text-title-size));
+  font-size: var(--text-mono-xl-size);
   font-weight: var(--text-mono-weight);
   line-height: 1;
 }

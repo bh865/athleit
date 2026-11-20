@@ -12,6 +12,7 @@ import {
   parseJersey,
   playerCountLabel,
   positionOptions,
+  readyChildren,
   rosterCounts,
   sortRoster,
   squadRows,
@@ -179,5 +180,26 @@ describe('positionOptions', () => {
     expect(positionOptions(null)).toEqual([]);
     positionOptions('soccer').push('X');
     expect(positionOptions('soccer')).toHaveLength(4);
+  });
+});
+
+describe('readyChildren', () => {
+  const req = (status: string, id: string | null, first = 'Leo', last = 'Shah') => ({
+    status,
+    player_id: id,
+    player_first_name: first,
+    player_last_name: last,
+  });
+  it('keeps approved requests whose child is not on the roster', () => {
+    const rows = [{ player_id: 'a' }, { player_id: 'b' }];
+    const out = readyChildren(
+      [req('approved', 'a'), req('approved', 'c'), req('pending', 'd'), req('approved', null)],
+      rows,
+    );
+    expect(out).toEqual([{ playerId: 'c', firstName: 'Leo', name: 'Leo Shah' }]);
+  });
+  it('lists a child once and counts an inactive roster player as on the roster', () => {
+    expect(readyChildren([req('approved', 'c'), req('approved', 'c')], [])).toHaveLength(1);
+    expect(readyChildren([req('approved', 'a')], [{ player_id: 'a' }])).toHaveLength(0);
   });
 });

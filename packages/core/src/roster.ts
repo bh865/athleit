@@ -181,3 +181,39 @@ export const squadRows = <T extends RosterRowLike>(rows: readonly T[]): T[] =>
   );
 
 export const playerCountLabel = (n: number) => `${n} ${n === 1 ? 'player' : 'players'}`;
+
+export interface ReadyChild {
+  playerId: string;
+  name: string;
+  firstName: string;
+}
+
+/**
+ * "Ready to add": approved join requests whose child is not on the roster yet (any status counts as
+ * on the roster, since a team_players row already exists for inactive players). Order follows the
+ * requests; a child asked for twice appears once.
+ */
+export function readyChildren(
+  requests: readonly {
+    status: string;
+    player_id: string | null;
+    player_first_name: string | null;
+    player_last_name: string | null;
+  }[],
+  rows: readonly Pick<RosterRowLike, 'player_id'>[],
+): ReadyChild[] {
+  const onRoster = new Set(rows.map((r) => r.player_id));
+  const seen = new Set<string>();
+  const out: ReadyChild[] = [];
+  for (const r of requests) {
+    if (r.status !== 'approved' || !r.player_id) continue;
+    if (onRoster.has(r.player_id) || seen.has(r.player_id)) continue;
+    seen.add(r.player_id);
+    out.push({
+      playerId: r.player_id,
+      firstName: r.player_first_name ?? '',
+      name: `${r.player_first_name ?? ''} ${r.player_last_name ?? ''}`.trim(),
+    });
+  }
+  return out;
+}

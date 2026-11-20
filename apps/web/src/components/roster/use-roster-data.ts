@@ -1,6 +1,6 @@
 'use client';
 
-import { ageOn, type RosterRowLike } from '@athleit/core';
+import { ageOn, readyChildren, type ReadyChild, type RosterRowLike } from '@athleit/core';
 import { getJoinRequests, getPlayersFacts, getRoster } from '@athleit/db/api';
 import { useMemo } from 'react';
 
@@ -9,12 +9,7 @@ import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
 export type RosterRow = RosterRowLike;
-
-export interface ReadyChild {
-  playerId: string;
-  name: string;
-  firstName: string;
-}
+export type { ReadyChild };
 
 export interface PlayerFacts {
   dateOfBirth: string;
@@ -67,16 +62,7 @@ export function useRosterData() {
     return m;
   }, [factsRes.data]);
 
-  const ready = useMemo<ReadyChild[]>(() => {
-    const onRoster = new Set(rows.map((r) => r.player_id));
-    return (requests.data ?? [])
-      .filter((r) => r.status === 'approved' && r.player_id && !onRoster.has(r.player_id))
-      .map((r) => ({
-        playerId: r.player_id as string,
-        firstName: r.player_first_name ?? '',
-        name: `${r.player_first_name ?? ''} ${r.player_last_name ?? ''}`.trim(),
-      }));
-  }, [requests.data, rows]);
+  const ready = useMemo(() => readyChildren(requests.data ?? [], rows), [requests.data, rows]);
 
   const reloadAll = () => {
     roster.reload();
