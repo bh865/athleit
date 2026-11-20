@@ -2,7 +2,9 @@ import {
   deliveryStatus,
   friendlyError,
   groupMessages,
+  joinedLateNotice,
   memberCountLabel,
+  newMessagesDividerIndex,
   REACTIONS,
   type ChatItem,
   type ChatMessage,
@@ -10,15 +12,16 @@ import {
 } from '@athleit/core';
 import {
   deleteMessage,
+  getMyParticipation,
   hideMessage,
   reportMessage,
-  setThreadMute,
   toggleReaction,
 } from '@athleit/db/api';
 import { componentTokens, radius, space } from '@athleit/tokens';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -37,6 +40,7 @@ import {
 } from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { reportOpenThread, setOpenThread } from '@/lib/push';
+import { useLoad } from '@/lib/use-load';
 import { supabase } from '@/lib/supabase';
 
 import { Bubble, REACTION_ICON, REACTION_LABEL } from './bubble';
@@ -53,7 +57,7 @@ export function Conversation({ threadId }: { threadId: string }) {
   const toast = useToast();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const list = useRef<FlatList<ChatItem>>(null);
+  const list = useRef<FlatList<ChatItem | { kind: 'divider'; key: string }>>(null);
   const atBottom = useRef(true);
   const [showPill, setShowPill] = useState(false);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -61,14 +65,38 @@ export function Conversation({ threadId }: { threadId: string }) {
   const [reporting, setReporting] = useState<ChatMessage | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
+  const [readBy, setReadBy] = useState<ChatMessage | null>(null);
+  const [scrolledUp, setScrolledUp] = useState(false);
 
   const isStaff = t.thread ? isTeamStaff(contexts, t.thread.team_id) : false;
   const isAnnouncement = t.thread?.type === 'announcement';
   const archived = Boolean(t.thread?.archived_at);
   const canPost = isAnnouncement ? isStaff : true;
+  // Who can unarchive: staff of an announcement, a group's owner or a team admin (matches the database).
+  const teamRoles = contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
+  const canManage =
+    isStaff && (isAnnouncement || teamRoles.includes('admin') || t.thread?.created_by === me);
+  const mine0 = useLoad(() => getMyParticipation(supabase, threadId, me), [threadId, me]);
+  const joinedLate =
+    !isAnnouncement &&
+    joinedLateNotice(isStaff, mine0.data?.joined_at ?? null, t.thread?.created_at ?? null);
+  // The last-read marker as it was when the conversation opened (it moves as we read).
+  const [openedReadAt, setOpenedReadAt] = useState<string | null | undefined>(undefined);
+  if (openedReadAt === undefined && t.state === 'ready') {
+    setOpenedReadAt(t.reads.find((r) => r.profile_id === me)?.last_read_at ?? null);
+  }
 
   const items = useMemo(() => groupMessages(t.messages, me), [t.messages, me]);
-  const inverted = useMemo(() => [...items].reverse(), [items]);
+  const dividerAt = useMemo(() => {
+    if (openedReadAt === undefined) return -1;
+    const i = newMessagesDividerIndex(t.messages, openedReadAt, me);
+    return i < 0 ? -1 : items.findIndex((it) => it.kind === 'message' && it.message.id === t.messages[i]!.id);
+  }, [t.messages, items, me, openedReadAt]);
+  const inverted = useMemo(() => {
+    const out: Array<ChatItem | { kind: 'divider'; key: string }> = [...items];
+    if (dividerAt >= 0) out.splice(dividerAt, 0, { kind: 'divider', key: 'new-divider' });
+    return out.reverse();
+  }, [items, dividerAt]);
   const byId = useMemo(() => new Map(t.messages.map((m) => [m.id, m])), [t.messages]);
   const othersRead = useMemo(
     () => t.reads.filter((r) => r.profile_id !== me).map((r) => r.last_read_at),
@@ -77,6 +105,7 @@ export function Conversation({ threadId }: { threadId: string }) {
   const title =
     t.thread?.title ?? [...t.names.entries()].find(([id]) => id !== me)?.[1] ?? 'Message';
   const count = t.messages.length;
+  const teamTitle = contexts.filter((c) => c.kind === 'team').length > 1 ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '') : '';
 
   // While this conversation is open: no foreground banner for it, and the worker skips push for this device.
   useEffect(() => {
@@ -160,28 +189,27 @@ export function Conversation({ threadId }: { threadId: string }) {
           >
             <Icon name="caret-left" />
           </Pressable>
-          <View style={{ flex: 1, alignItems: 'center' }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${title}. Open conversation info`}
+            onPress={() => router.push(`/messages/info/${threadId}` as never)}
+            style={{ flex: 1, alignItems: 'center', minHeight: componentTokens.minTarget, justifyContent: 'center' }}
+          >
             <Text variant="bodyBold" numberOfLines={1}>
               {title}
             </Text>
-            <Text variant="caption" muted>
-              {isAnnouncement ? 'Announcements' : memberCountLabel(t.memberCount)}
+            <Text variant="caption" muted numberOfLines={1}>
+              {t.typing.length > 0
+                ? 'typing…'
+                : isAnnouncement
+                  ? 'Announcements'
+                  : `${teamTitle ? `${teamTitle} · ` : ''}${memberCountLabel(t.memberCount)}`}
             </Text>
-          </View>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Mute notifications for 8 hours"
-            onPress={() =>
-              void act(
-                () =>
-                  setThreadMute(
-                    supabase,
-                    threadId,
-                    new Date(Date.now() + 8 * 3600_000).toISOString(),
-                  ),
-                'Muted for 8 hours',
-              )
-            }
+            accessibilityLabel="Conversation info"
+            onPress={() => router.push(`/messages/info/${threadId}` as never)}
             style={{
               width: componentTokens.minTarget,
               height: componentTokens.minTarget,
@@ -189,7 +217,7 @@ export function Conversation({ threadId }: { threadId: string }) {
               justifyContent: 'center',
             }}
           >
-            <Icon name="bell-slash" />
+            <Icon name="info" />
           </Pressable>
         </Glass>
 
@@ -218,6 +246,7 @@ export function Conversation({ threadId }: { threadId: string }) {
             onEndReachedThreshold={0.4}
             onScroll={(e) => {
               atBottom.current = e.nativeEvent.contentOffset.y < NEAR_BOTTOM;
+              setScrolledUp(e.nativeEvent.contentOffset.y > NEAR_BOTTOM * 6);
               if (atBottom.current && showPill) {
                 setShowPill(false);
                 void t.markRead();
@@ -261,7 +290,19 @@ export function Conversation({ threadId }: { threadId: string }) {
               ) : undefined
             }
             renderItem={({ item }) =>
-              item.kind === 'day' ? (
+              item.kind === 'divider' ? (
+                <View
+                  accessibilityRole="text"
+                  accessibilityLabel="New messages"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingVertical: space[2] }}
+                >
+                  <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: theme.color.line }} />
+                  <Text variant="caption" style={{ color: theme.color.ink }}>
+                    New messages
+                  </Text>
+                  <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: theme.color.line }} />
+                </View>
+              ) : item.kind === 'day' ? (
                 <Text
                   variant="caption"
                   muted
@@ -297,7 +338,7 @@ export function Conversation({ threadId }: { threadId: string }) {
           />
         )}
 
-        {showPill ? (
+        {showPill || scrolledUp ? (
           <View
             pointerEvents="box-none"
             style={{
@@ -308,7 +349,7 @@ export function Conversation({ threadId }: { threadId: string }) {
           >
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Scroll to newest messages"
+              accessibilityLabel={showPill ? 'Scroll to new messages' : 'Jump to latest message'}
               onPress={() => {
                 list.current?.scrollToOffset({ offset: 0, animated: true });
                 setShowPill(false);
@@ -327,18 +368,26 @@ export function Conversation({ threadId }: { threadId: string }) {
                 }}
               >
                 <Icon name="arrow-down" size="sm" />
-                <Text variant="bodyBold">New messages</Text>
+                <Text variant="bodyBold">{showPill ? 'New messages' : 'Jump to latest'}</Text>
               </Glass>
             </Pressable>
           </View>
         ) : null}
 
+        {joinedLate ? (
+          <Text variant="caption" muted style={{ textAlign: 'center', paddingHorizontal: space[4] }}>
+            You joined this conversation after it started, so you see messages from when you joined.
+          </Text>
+        ) : null}
         {archived ? (
           <Text variant="caption" muted style={{ textAlign: 'center', padding: space[4] }}>
-            This conversation is archived.
+            {canManage
+              ? 'This conversation is archived. Unarchive it from the info page to reply.'
+              : 'This conversation is archived.'}
           </Text>
         ) : canPost ? (
           <Composer
+            threadId={threadId}
             replyTo={replyTo}
             onClearReply={() => setReplyTo(null)}
             onTyping={t.notifyTyping}
@@ -394,6 +443,29 @@ export function Conversation({ threadId }: { threadId: string }) {
             }}
           />
         ) : null}
+        {actions && !actions.deleted && !actions.hidden ? (
+          <Button
+            title="Copy"
+            variant="secondary"
+            icon="copy"
+            onPress={() => {
+              void Clipboard.setStringAsync(actions.body);
+              toast('Copied');
+              setActions(null);
+            }}
+          />
+        ) : null}
+        {isStaff && mine ? (
+          <Button
+            title="Seen by"
+            variant="secondary"
+            icon="eye"
+            onPress={() => {
+              setReadBy(actions);
+              setActions(null);
+            }}
+          />
+        ) : null}
         {mine ? (
           <Button
             title="Delete"
@@ -430,6 +502,22 @@ export function Conversation({ threadId }: { threadId: string }) {
             }}
           />
         ) : null}
+      </Sheet>
+
+      <Sheet open={readBy !== null} onClose={() => setReadBy(null)} title="Seen by">
+        <Text variant="heading">Seen by</Text>
+        {(() => {
+          const seen = readBy
+            ? t.reads.filter((r) => r.profile_id !== me && r.last_read_at >= readBy.createdAt)
+            : [];
+          return seen.length === 0 ? (
+            <Text muted>No one has seen this yet.</Text>
+          ) : (
+            seen.map((r) => (
+              <Text key={r.profile_id}>{t.names.get(r.profile_id) ?? 'Member'}</Text>
+            ))
+          );
+        })()}
       </Sheet>
 
       <Sheet open={reporting !== null} onClose={() => setReporting(null)} title="Report message">

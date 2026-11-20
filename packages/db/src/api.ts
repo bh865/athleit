@@ -564,6 +564,17 @@ export const getMessagesPage = (
   return run(q, []);
 };
 
+/** The caller's own participation row (join time); a non-participant gets null. */
+export const getMyParticipation = (client: Client, threadId: string, profileId: string) =>
+  run(
+    client
+      .from('thread_participants')
+      .select('joined_at, role, muted_until, pinned_at, archived_at')
+      .eq('thread_id', threadId)
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+  );
+
 export const getMessage = (client: Client, messageId: string) =>
   run(client.from('messages').select(MESSAGE_COLUMNS).eq('id', messageId).single());
 
