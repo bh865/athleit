@@ -56,7 +56,7 @@ export function RsvpChipRow({
   }
 
   return (
-    <div className={styles.chipRow} data-testid="rsvp-controls" data-player={child.first_name}>
+    <div className={styles.chipRow} data-testid="rsvp-chip" data-player={child.first_name}>
       <span className={`${styles.rsvpChip} ${status ? '' : styles.rsvpChipEmpty}`}>
         <Icon name={status ? STATUS_ICON[status] : 'circle-dashed'} weight={status ? 'fill' : 'regular'} size="sm" />
         <span>

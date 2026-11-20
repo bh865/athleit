@@ -52,7 +52,7 @@ export function RsvpChipRow({
   }
 
   return (
-    <View style={{ gap: space[2] }} testID="rsvp-controls">
+    <View style={{ gap: space[2] }} testID="rsvp-chip">
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2] }}>
         <View
           accessible

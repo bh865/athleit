@@ -9,6 +9,7 @@ import type { ScheduleItem } from '@/components/schedule/items';
 import { MonthGrid } from '@/components/schedule/month-grid';
 import styles from '@/components/schedule/schedule.module.css';
 import { ScopePicker } from '@/components/schedule/scope-picker';
+import { WeekGrid } from '@/components/schedule/week-grid';
 import {
   Button,
   Chip,
@@ -88,6 +89,28 @@ export function ScheduleRowsDemo() {
         <EventRow key={r.id} item={r} now={NOW} selected={i === 1} showCounts={i === 1} onSelect={noop} />
       ))}
     </ul>
+  );
+}
+
+/** The staff Week grid on a fixed week: a game with counts, an overlapping practice and a cancelled event. */
+export function WeekDemo() {
+  const week = ['2026-11-22', '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28'];
+  const items: ScheduleItem[] = [
+    { ...ROWS[0]!, id: 'w1', starts_at: '2026-11-24T15:00:00Z', ends_at: '2026-11-24T17:00:00Z', counts: { going: 8, not_going: 1, maybe: 2, no_reply: 3 } },
+    { ...ROWS[1]!, id: 'w2', starts_at: '2026-11-24T16:00:00Z', ends_at: '2026-11-24T17:30:00Z', counts: { going: 5, not_going: 0, maybe: 1, no_reply: 6 } },
+    { ...ROWS[2]!, id: 'w3', starts_at: '2026-11-27T23:00:00Z', ends_at: '2026-11-28T00:00:00Z' },
+  ];
+  return (
+    <WeekGrid
+      days={week}
+      items={items}
+      now={NOW}
+      today="2026-11-24"
+      zone={ZONE}
+      showCounts
+      selectedId={null}
+      onSelect={noop}
+    />
   );
 }
 
