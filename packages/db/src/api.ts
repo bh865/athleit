@@ -407,8 +407,7 @@ export const requestToJoin = (
   );
 
 /** The caller's own join requests (both kinds). A team or family name is present only once approved. */
-export const getMyJoinRequests = (client: Client) =>
-  run(client.rpc('get_my_join_requests'), []);
+export const getMyJoinRequests = (client: Client) => run(client.rpc('get_my_join_requests'), []);
 
 /** Cancels the caller's own pending request. `kind` is 'team' or 'household'. */
 export const cancelJoinRequest = (client: Client, kind: 'team' | 'household', id: string) =>
@@ -577,7 +576,9 @@ export const setThreadArchived = (client: Client, threadId: string, archived: bo
 
 /** Per person: archived until the next message. Thread-wide archive is setThreadArchived. */
 export const setThreadArchivedForMe = (client: Client, threadId: string, archived: boolean) =>
-  runVoid(client.rpc('set_thread_archived_for_me', { p_thread_id: threadId, p_archived: archived }));
+  runVoid(
+    client.rpc('set_thread_archived_for_me', { p_thread_id: threadId, p_archived: archived }),
+  );
 
 export const getUnreadTotal = (client: Client) => run(client.rpc('get_unread_total'), 0);
 
@@ -861,7 +862,8 @@ export const saveNotificationPreference = (
   client: Client,
   userId: string,
   channel: 'push' | 'email',
-  category: 'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'billing',
+  category:
+    'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'billing' | 'support',
   patch: {
     enabled?: boolean;
     quiet_hours_start?: string | null;

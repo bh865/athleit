@@ -38,6 +38,7 @@ const LABEL = {
   payments: 'Payments',
   registration: 'Registrations and waivers',
   billing: 'Team billing (admins)',
+  support: 'Support replies',
 } as const;
 const zones = (): string[] => {
   try {
