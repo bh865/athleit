@@ -154,7 +154,7 @@ a.card:focus-visible {
 .results a[aria-selected='true'] {
   background: var(--color-surface-alt);
 }
-mark {
+.mark {
   background: var(--color-accent);
   color: var(--color-accent-ink);
   border-radius: var(--radius-md);

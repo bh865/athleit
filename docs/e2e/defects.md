@@ -1,0 +1,6 @@
+# Defects found in the first E2E pass
+
+| ID | Sev | Area | Summary | Status |
+|---|---|---|---|---|
+| D-001 | blocker | web build | `help.module.css` had a bare `mark {}` selector; Turbopack CSS modules reject impure selectors, so `next build` (and every production-build Playwright run) failed. Persona: none (build). Root cause: element selector in a CSS module on buildout (support-center merge). Fix: `.mark` class + `className={styles.mark}`. Regression guard: `pnpm build` (the Playwright webServer builds first, CI builds). | fixed |
+| D-002 | major | db tests | `pnpm db:test` fails its gate "no table ships without RLS tests": 17 tables have no `<table>_rls.test.sql` (admin_notes, billing_daily_snapshots, event_nudges, event_seen, help_article_feedback, help_article_status, help_search_misses, payer_payment_methods, payment_plan_consents, payment_request_installments, support_access_tokens, support_attachments, support_canned_replies, support_email_queue, support_events, support_messages, support_requests). | open |
