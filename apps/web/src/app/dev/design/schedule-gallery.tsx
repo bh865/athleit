@@ -9,6 +9,7 @@ import type { ScheduleItem } from '@/components/schedule/items';
 import { MonthGrid } from '@/components/schedule/month-grid';
 import styles from '@/components/schedule/schedule.module.css';
 import { ScopePicker } from '@/components/schedule/scope-picker';
+import { WeekGrid } from '@/components/schedule/week-grid';
 import {
   Button,
   Chip,
@@ -40,6 +41,14 @@ const ROWS: ScheduleItem[] = [
     type: 'game',
     starts_at: '2026-11-21T15:00:00Z',
     ends_at: '2026-11-21T17:00:00Z',
+    opponent: 'Hawks',
+    home_away: 'home',
+    revision: 2,
+    seen_revision: null,
+    children: [
+      { player_id: 'p1', first_name: 'Maya', status: null },
+      { player_id: 'p2', first_name: 'Eli', status: 'going' },
+    ],
   }),
   item({
     id: 'r2',
@@ -48,6 +57,8 @@ const ROWS: ScheduleItem[] = [
     starts_at: '2026-11-24T22:30:00Z',
     ends_at: '2026-11-25T00:00:00Z',
     location: 'Gym B',
+    series_id: 's1',
+    counts: { going: 8, not_going: 1, maybe: 2, no_reply: 3 },
   }),
   item({
     id: 'r3',
@@ -68,14 +79,38 @@ const ROWS: ScheduleItem[] = [
   }),
 ];
 const noop = () => undefined;
+/** Fixed clock so the rows never change with the day. */
+const NOW = new Date('2026-11-20T12:00:00Z');
 
 export function ScheduleRowsDemo() {
   return (
     <ul className={`${styles.list} ${styles.demoRows}`}>
       {ROWS.map((r, i) => (
-        <EventRow key={r.id} item={r} selected={i === 1} onSelect={noop} />
+        <EventRow key={r.id} item={r} now={NOW} selected={i === 1} showCounts={i === 1} onSelect={noop} />
       ))}
     </ul>
+  );
+}
+
+/** The staff Week grid on a fixed week: a game with counts, an overlapping practice and a cancelled event. */
+export function WeekDemo() {
+  const week = ['2026-11-22', '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28'];
+  const items: ScheduleItem[] = [
+    { ...ROWS[0]!, id: 'w1', starts_at: '2026-11-24T15:00:00Z', ends_at: '2026-11-24T17:00:00Z', counts: { going: 8, not_going: 1, maybe: 2, no_reply: 3 } },
+    { ...ROWS[1]!, id: 'w2', starts_at: '2026-11-24T16:00:00Z', ends_at: '2026-11-24T17:30:00Z', counts: { going: 5, not_going: 0, maybe: 1, no_reply: 6 } },
+    { ...ROWS[2]!, id: 'w3', starts_at: '2026-11-27T23:00:00Z', ends_at: '2026-11-28T00:00:00Z' },
+  ];
+  return (
+    <WeekGrid
+      days={week}
+      items={items}
+      now={NOW}
+      today="2026-11-24"
+      zone={ZONE}
+      showCounts
+      selectedId={null}
+      onSelect={noop}
+    />
   );
 }
 
@@ -95,7 +130,6 @@ export function MonthDemo() {
       pickedDay="2026-11-24"
       itemsByDay={byDay}
       onPickDay={noop}
-      onSelect={noop}
     />
   );
 }

@@ -48,7 +48,7 @@ export function CancelSheet({
         <Text muted as="p">
           Families are told, and the event stays on the schedule marked cancelled.
         </Text>
-        {event.series_id ? <ScopePicker value={scope} onChange={setScope} /> : null}
+        {event.series_id ? <ScopePicker kind="cancel" value={scope} onChange={setScope} /> : null}
         <TextArea
           label="Reason (shown to families)"
           value={reason}
