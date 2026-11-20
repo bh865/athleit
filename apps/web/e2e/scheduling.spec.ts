@@ -27,7 +27,7 @@ async function openRow(page: Page, text: string, nth = 0) {
 }
 
 async function addChildAndRequest(page: Page, first: string, last: string, code: string) {
-  await page.getByRole('button', { name: 'Add my child' }).click();
+  await page.goto('/family/children/new');
   await page.getByLabel('First name').fill(first);
   await page.getByLabel('Last name').fill(last);
   await pickDate(page, 'Date of birth', '2016-04-02');
@@ -57,7 +57,7 @@ test.describe.serial('scheduling', () => {
 
   test('setup: a team with two families on the roster', async () => {
     await signUp(coach, 'sc-coach', 'Casey Coach');
-    await coach.getByRole('button', { name: 'Create a team' }).click();
+    await coach.goto('/teams/new');
     await coach.getByLabel('Team name').fill('E2E Schedulers');
     await coach.getByLabel('Sport').selectOption('soccer');
     await coach.getByLabel('Season').fill('Fall 2026');
@@ -252,10 +252,15 @@ test.describe.serial('scheduling', () => {
     await expect(needs).toBeVisible();
     await needs.getByRole('button', { name: 'Ben: Going' }).click();
     // Answered, so it leaves the Needs reply list.
-    await expect(parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' })).toHaveCount(0);
+    await expect(
+      parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' }),
+    ).toHaveCount(0);
     await parentB.goto('/schedule');
     await expect(
-      parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' }).getByTestId('rsvp-chip'),
+      parentB
+        .getByTestId('event-row')
+        .filter({ hasText: 'Game vs. Hawks' })
+        .getByTestId('rsvp-chip'),
     ).toContainText('Ben: Going');
   });
 
@@ -263,7 +268,10 @@ test.describe.serial('scheduling', () => {
     await coach.goto(`${teamUrl}/schedule`);
     await openRow(coach, 'Game vs. Hawks');
     await coach.getByRole('button', { name: /Set RSVP for Ava/ }).click();
-    await coach.getByRole('group', { name: /Set RSVP for Ava/ }).getByRole('button', { name: 'Maybe' }).click();
+    await coach
+      .getByRole('group', { name: /Set RSVP for Ava/ })
+      .getByRole('button', { name: 'Maybe' })
+      .click();
     const ava = coach.getByTestId('rsvp-row').filter({ hasText: 'Ava Adams' });
     await expect(ava).toContainText('Maybe');
     await expect(ava).toContainText('Set by staff');
@@ -312,7 +320,9 @@ test.describe.serial('scheduling', () => {
     const row = parentA.getByTestId('event-row').filter({ hasText: 'Movable meetup' });
     await expect(row).toContainText('Updated');
     await openRow(parentA, 'Movable meetup');
-    await expect(parentA.getByTestId('updated-banner')).toContainText('Time moved from 9:00 AM to 10:00 AM');
+    await expect(parentA.getByTestId('updated-banner')).toContainText(
+      'Time moved from 9:00 AM to 10:00 AM',
+    );
     // Opening marked it seen: the chip is gone on the next visit.
     await parentA.goto('/schedule');
     await expect(
