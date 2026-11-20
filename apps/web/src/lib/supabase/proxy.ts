@@ -15,6 +15,8 @@ const PUBLIC_PATHS = [
   '/r',
   '/register/verify',
   '/captcha',
+  // Public help center. /help/requests and below enforce sign-in themselves (see app/help/requests/layout.tsx).
+  '/help',
 ];
 const AUTH_ONLY_GUEST_PATHS = ['/sign-in', '/sign-up'];
 
