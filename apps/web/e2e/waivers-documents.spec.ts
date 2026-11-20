@@ -38,7 +38,7 @@ test.describe.serial('waivers and documents', () => {
     await expect(page.getByText(/\d+ \/ 50,000/)).toBeVisible();
     await page.getByRole('button', { name: 'Initials line' }).click();
     await expect(page.getByLabel('Waiver text')).toHaveValue(/Initials: ____/);
-    await expect(page.getByText('Draft v1')).toBeVisible();
+    await expect(page.getByText('Draft v1').first()).toBeVisible();
     await page.waitForURL(/\/manage\/waivers\/[0-9a-f-]{36}/);
     await page.getByRole('radio', { name: 'Preview' }).click();
     await expect(page.getByText('Preview · this is what parents see')).toBeVisible();

@@ -48,7 +48,7 @@ test.describe.serial('people, teams and rosters', () => {
     await coach.getByRole('button', { name: 'Create team' }).click();
     await expect(coach.getByRole('heading', { name: 'E2E Hawks' })).toBeVisible();
     teamUrl = new URL(coach.url()).pathname;
-    await coach.getByRole('link', { name: 'Settings' }).click();
+    await coach.getByTestId('team-tabs').getByRole('link', { name: 'Settings' }).click();
     code = (await coach.getByTestId('join-code').textContent())?.trim() ?? '';
     expect(code).toMatch(/^[A-Z0-9]{10}$/);
   });

@@ -38,7 +38,7 @@ test.describe.serial('builders', () => {
     await expect(page.getByRole('listitem').first()).toContainText('Player full name');
 
     // "/" inserts a question type; Cmd or Ctrl D duplicates the selected one.
-    await page.locator('main').click({ position: { x: 5, y: 5 } });
+    await page.getByTestId('form-builder').getByRole('main').click({ position: { x: 5, y: 5 } });
     await page.keyboard.press('/');
     await page.getByLabel('Search question types').fill('phone');
     await page.keyboard.press('Enter');

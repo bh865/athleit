@@ -84,7 +84,7 @@ test.describe.serial('first run: the parent path and Pending card', () => {
     await coach.getByLabel('Sport').selectOption('soccer');
     await coach.getByLabel('Season').fill('Fall 2026');
     await coach.getByRole('button', { name: 'Create team' }).click();
-    await coach.getByRole('link', { name: 'Settings' }).click();
+    await coach.getByTestId('team-tabs').getByRole('link', { name: 'Settings' }).click();
     code = (await coach.getByTestId('join-code').textContent())?.trim() ?? '';
     expect(code).toMatch(/^[A-Z0-9]{10}$/);
   });

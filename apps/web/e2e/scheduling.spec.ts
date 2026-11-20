@@ -64,7 +64,7 @@ test.describe.serial('scheduling', () => {
     await coach.getByRole('button', { name: 'Create team' }).click();
     await expect(coach.getByRole('heading', { name: 'E2E Schedulers' })).toBeVisible();
     teamUrl = new URL(coach.url()).pathname;
-    await coach.getByRole('link', { name: 'Settings' }).click();
+    await coach.getByTestId('team-tabs').getByRole('link', { name: 'Settings' }).click();
     const code = (await coach.getByTestId('join-code').textContent())?.trim() ?? '';
 
     await signUp(parentA, 'sc-a', 'Pat Parent');
