@@ -14,13 +14,15 @@ import { cleanup, created, emailFor, listAllUsers, newSession, PASSWORD, signUp 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.E2E_SUPABASE_URL ?? '';
 const service = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY ?? '';
 const enabled = process.env.ADMIN_E2E === '1' && !!service && !!url;
-const db = () => createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
+const db = () =>
+  createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 
 // RFC 6238 TOTP (SHA-1, 6 digits, 30 s) from a base32 secret.
 function totp(secret: string, atMs = Date.now()): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = '';
-  for (const ch of secret.replace(/[\s=]/g, '').toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, '0');
+  for (const ch of secret.replace(/[\s=]/g, '').toUpperCase())
+    bits += alphabet.indexOf(ch).toString(2).padStart(5, '0');
   const key = Buffer.from(bits.match(/.{8}/g)!.map((b) => parseInt(b, 2)));
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(atMs / 30_000)));
@@ -34,7 +36,10 @@ let lastCode = '';
 async function freshCode(secret: string): Promise<string> {
   for (;;) {
     const c = totp(secret);
-    if (c !== lastCode) { lastCode = c; return c; }
+    if (c !== lastCode) {
+      lastCode = c;
+      return c;
+    }
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
@@ -57,12 +62,16 @@ async function signIn(page: Page, email: string) {
 test.describe('admin portal', () => {
   test.describe.configure({ mode: 'serial' });
   test.skip(!enabled, 'set ADMIN_E2E=1 and E2E_SUPABASE_SERVICE_ROLE_KEY');
-  test.afterAll(async () => { await cleanup(); });
+  test.afterAll(async () => {
+    await cleanup();
+  });
 
   let secret = '';
   const ownerEmail = emailFor('admin-owner');
 
-  test('a signed-in non-admin gets the ordinary not-found, never "access denied"', async ({ browser }) => {
+  test('a signed-in non-admin gets the ordinary not-found, never "access denied"', async ({
+    browser,
+  }) => {
     const { page, context } = await newSession(browser);
     await signUp(page, 'admin-plain', 'Plain User');
     for (const path of ['/admin', '/admin/settings']) {
@@ -73,7 +82,9 @@ test.describe('admin portal', () => {
     await context.close();
   });
 
-  test('an admin with no authenticator is sent to setup, and enrolling turns editing on', async ({ browser }) => {
+  test('an admin with no authenticator is sent to setup, and enrolling turns editing on', async ({
+    browser,
+  }) => {
     const { page, context } = await newSession(browser);
     await signUp(page, 'admin-owner', 'Owner One');
     await makeAdmin(ownerEmail, 'owner');
@@ -100,13 +111,19 @@ test.describe('admin portal', () => {
     await context.close();
   });
 
-  test('a write at aal1 opens the step-up sheet, keeps the change, applies it after verifying, and is audited', async ({ browser }) => {
+  test('a write at aal1 opens the step-up sheet, keeps the change, applies it after verifying, and is audited', async ({
+    browser,
+  }) => {
     const key = 'team_subscription.grace_days';
-    const before = (await db().from('platform_settings').select('value').eq('key', key).single()).data?.value;
+    const before = (await db().from('platform_settings').select('value').eq('key', key).single())
+      .data?.value;
     const { page, context } = await newSession(browser);
     await signIn(page, ownerEmail);
     await page.goto('/admin/settings');
-    await page.getByRole('article', { name: 'Grace after a failed payment' }).getByRole('button', { name: 'Edit' }).click();
+    await page
+      .getByRole('article', { name: 'Grace after a failed payment' })
+      .getByRole('button', { name: 'Edit' })
+      .click();
     const sheet = page.getByRole('alertdialog');
     await sheet.getByLabel('New value').fill('9');
     await sheet.getByLabel('Reason').fill('Playwright admin test');
@@ -115,7 +132,14 @@ test.describe('admin portal', () => {
     await page.getByLabel('6-digit code').fill(await freshCode(secret));
     await page.getByRole('button', { name: 'Verify and continue' }).click();
     await expect(sheet.getByText('Saved. This change is in the audit log.')).toBeVisible();
-    const audit = await db().from('platform_audit_log').select('reason, before, after').eq('action', 'setting.change').eq('target_id', key).order('at', { ascending: false }).limit(1).single();
+    const audit = await db()
+      .from('platform_audit_log')
+      .select('reason, before, after')
+      .eq('action', 'setting.change')
+      .eq('target_id', key)
+      .order('at', { ascending: false })
+      .limit(1)
+      .single();
     expect(audit.data?.reason).toBe('Playwright admin test');
     expect(audit.data?.after).toEqual({ value: 9 });
     await db().from('platform_settings').update({ value: before }).eq('key', key); // restore

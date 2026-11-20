@@ -2,7 +2,16 @@
 
 import { EDIT_WINDOW_MINUTES, editSecondsLeft, type PlatformRole } from '@athleit/core';
 import { useRouter } from 'next/navigation';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { getClient } from '@/lib/supabase/browser';
 
@@ -53,7 +62,10 @@ export function AdminProvider({
   const verified = Math.max(localVerified ?? 0, verifiedAt ?? 0) || null;
   const [secondsLeft, setSecondsLeft] = useState(() => editSecondsLeft(verifiedAt));
   const [sheetOpen, setSheetOpen] = useState(false);
-  const waiting = useRef<{ resolve: (ok: boolean) => void; pending?: () => void | Promise<void> } | null>(null);
+  const waiting = useRef<{
+    resolve: (ok: boolean) => void;
+    pending?: () => void | Promise<void>;
+  } | null>(null);
 
   useEffect(() => {
     const tick = () => setSecondsLeft(editSecondsLeft(verified));

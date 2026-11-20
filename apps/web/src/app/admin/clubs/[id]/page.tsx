@@ -15,16 +15,43 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
   const { club, teams, admins, notes } = res.data;
   return (
     <>
-      <Crumbs items={[{ label: 'Customers' }, { label: 'Clubs', href: '/admin/clubs' }, { label: club.name }]} />
-      <PageTitle title={club.name} sub={`Created ${new Date(club.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`} />
+      <Crumbs
+        items={[
+          { label: 'Customers' },
+          { label: 'Clubs', href: '/admin/clubs' },
+          { label: club.name },
+        ]}
+      />
+      <PageTitle
+        title={club.name}
+        sub={`Created ${new Date(club.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+      />
       <Panel title="Teams" source="teams">
-        <KeyValue rows={teams.map((t) => ({ k: t.name, v: <><Link href={`/admin/teams/${t.id}`}>{t.sport}</Link> <BillingPill state={t.billing_state} /></> }))} />
+        <KeyValue
+          rows={teams.map((t) => ({
+            k: t.name,
+            v: (
+              <>
+                <Link href={`/admin/teams/${t.id}`}>{t.sport}</Link>{' '}
+                <BillingPill state={t.billing_state} />
+              </>
+            ),
+          }))}
+        />
       </Panel>
       <Panel title="Club admins" source="club_memberships">
-        <KeyValue rows={admins.map((a) => ({ k: a.name, v: `${a.role}${a.email ? ` · ${a.email}` : ''}` }))} />
+        <KeyValue
+          rows={admins.map((a) => ({ k: a.name, v: `${a.role}${a.email ? ` · ${a.email}` : ''}` }))}
+        />
       </Panel>
       <Panel title="Support notes" source="admin_notes">
-        <Timeline items={notes.map((n) => ({ title: n.note, meta: `${n.author ?? 'Unknown'} · ${new Date(n.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` }))} empty="No notes yet." />
+        <Timeline
+          items={notes.map((n) => ({
+            title: n.note,
+            meta: `${n.author ?? 'Unknown'} · ${new Date(n.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+          }))}
+          empty="No notes yet."
+        />
         <NoteForm subjectType="club" subjectId={id} />
       </Panel>
     </>

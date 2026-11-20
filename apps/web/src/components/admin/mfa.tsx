@@ -33,8 +33,12 @@ export function MfaSetup({ role, stripeMode }: { role: string; stripeMode: 'test
     void (async () => {
       // A half-finished earlier attempt leaves an unverified factor behind; clear it so enrolling again works.
       const { data: list } = await supabase.auth.mfa.listFactors();
-      for (const f of list?.all ?? []) if (f.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: f.id });
-      const { data, error: e } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `Athleit admin ${Date.now()}` });
+      for (const f of list?.all ?? [])
+        if (f.status === 'unverified') await supabase.auth.mfa.unenroll({ factorId: f.id });
+      const { data, error: e } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: `Athleit admin ${Date.now()}`,
+      });
       if (e || !data) return setError('We couldn’t start setup. Refresh the page to try again.');
       setEnrol({ id: data.id, secret: data.totp.secret, uri: data.totp.uri });
       setQr(await QRCode.toDataURL(data.totp.uri, { margin: QR_MARGIN, width: QR_SIZE }));
@@ -46,7 +50,10 @@ export function MfaSetup({ role, stripeMode }: { role: string; stripeMode: 'test
     if (!enrol || code.length !== 6) return;
     setBusy(true);
     setError(null);
-    const { error: err } = await getClient().auth.mfa.challengeAndVerify({ factorId: enrol.id, code });
+    const { error: err } = await getClient().auth.mfa.challengeAndVerify({
+      factorId: enrol.id,
+      code,
+    });
     setBusy(false);
     if (err) return setError(WRONG);
     router.refresh();
@@ -59,32 +66,72 @@ export function MfaSetup({ role, stripeMode }: { role: string; stripeMode: 'test
           <span className={styles.chip}>{stripeMode === 'live' ? 'Live' : 'Test mode'}</span>
           <span className={styles.chip}>{role[0]!.toUpperCase() + role.slice(1)}</span>
         </div>
-        <Text variant="heading" as="h1" id="mfa-setup-title">Set up two-step verification</Text>
-        <Text variant="body">Athleit admin needs a second step before you can change anything. You can read without it.</Text>
+        <Text variant="heading" as="h1" id="mfa-setup-title">
+          Set up two-step verification
+        </Text>
+        <Text variant="body">
+          Athleit admin needs a second step before you can change anything. You can read without it.
+        </Text>
         <ol className={styles.steps}>
           <li>
             <strong>Scan the code</strong>
             <span>Open an authenticator app and scan.</span>
-            {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL; next/image adds nothing */}
-            {qr ? <img src={qr} alt="QR code for your authenticator app" width={QR_SIZE} height={QR_SIZE} className={styles.qr} /> : <div className={styles.qrWait} aria-hidden />}
+            {qr ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a data: URL; next/image adds nothing
+              <img
+                src={qr}
+                alt="QR code for your authenticator app"
+                width={QR_SIZE}
+                height={QR_SIZE}
+                className={styles.qr}
+              />
+            ) : (
+              <div className={styles.qrWait} aria-hidden />
+            )}
             <details>
               <summary>Can’t scan? Enter this key</summary>
-              <code className={styles.secret}>{enrol ? enrol.secret.replace(/(.{4})/g, '$1 ').trim() : '…'}</code>
-              <Button type="button" variant="ghost" onClick={() => enrol && void navigator.clipboard?.writeText(enrol.secret)}>Copy key</Button>
+              <code className={styles.secret}>
+                {enrol ? enrol.secret.replace(/(.{4})/g, '$1 ').trim() : '…'}
+              </code>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => enrol && void navigator.clipboard?.writeText(enrol.secret)}
+              >
+                Copy key
+              </Button>
             </details>
           </li>
           <li>
             <strong>Enter the 6-digit code</strong>
             <span>The code changes every 30 seconds.</span>
-            <TextField label="6-digit code" mono inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} error={error ?? undefined} onChange={(e) => setCode(clean(e.target.value))} />
+            <TextField
+              label="6-digit code"
+              mono
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={code}
+              error={error ?? undefined}
+              onChange={(e) => setCode(clean(e.target.value))}
+            />
           </li>
         </ol>
-        <Text variant="caption">Keep access recoverable. If you lose your authenticator, another owner has to reset it. Save the key in your team password manager.</Text>
+        <Text variant="caption">
+          Keep access recoverable. If you lose your authenticator, another owner has to reset it.
+          Save the key in your team password manager.
+        </Text>
         <div className={styles.actions}>
-          <Button type="submit" loading={busy} disabled={!enrol || code.length !== 6}>Turn on</Button>
+          <Button type="submit" loading={busy} disabled={!enrol || code.length !== 6}>
+            Turn on
+          </Button>
         </div>
       </form>
-      <form action={signOut} className={styles.signOut}><Button type="submit" variant="ghost">Sign out</Button></form>
+      <form action={signOut} className={styles.signOut}>
+        <Button type="submit" variant="ghost">
+          Sign out
+        </Button>
+      </form>
     </main>
   );
 }
@@ -123,10 +170,23 @@ export function VerifyForm({
   }
   return (
     <form onSubmit={submit} className={styles.verify}>
-      <TextField label="6-digit code" mono autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} error={error ?? undefined} onChange={(e) => setCode(clean(e.target.value))} hint={`Codes refresh every 30 seconds. After verifying you can edit for ${minutes} minutes.`} />
+      <TextField
+        label="6-digit code"
+        mono
+        autoFocus
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        value={code}
+        error={error ?? undefined}
+        onChange={(e) => setCode(clean(e.target.value))}
+        hint={`Codes refresh every 30 seconds. After verifying you can edit for ${minutes} minutes.`}
+      />
       <div className={styles.actions}>
         {secondary}
-        <Button type="submit" loading={busy} disabled={code.length !== 6}>{submitLabel}</Button>
+        <Button type="submit" loading={busy} disabled={code.length !== 6}>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );
@@ -134,7 +194,12 @@ export function VerifyForm({
 
 /** The step-up sheet: opened by a write at aal1 (the pending change is kept by the provider and applied after verifying). */
 export function StepUpSheet({
-  open, factorId, minutes, client, onCancel, onVerified,
+  open,
+  factorId,
+  minutes,
+  client,
+  onCancel,
+  onVerified,
 }: {
   open: boolean;
   factorId: string;
@@ -146,9 +211,22 @@ export function StepUpSheet({
   return (
     <Sheet open={open} onClose={onCancel} title="Verify to make this change" level="modal">
       <div className={styles.sheet}>
-        <Text variant="heading" as="h2">Verify to make this change</Text>
+        <Text variant="heading" as="h2">
+          Verify to make this change
+        </Text>
         <Text variant="body">Your change is kept here and applied right after you verify.</Text>
-        <VerifyForm factorId={factorId} minutes={minutes} client={client} onVerified={onVerified} submitLabel="Verify and continue" secondary={<Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>} />
+        <VerifyForm
+          factorId={factorId}
+          minutes={minutes}
+          client={client}
+          onVerified={onVerified}
+          submitLabel="Verify and continue"
+          secondary={
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+          }
+        />
       </div>
     </Sheet>
   );

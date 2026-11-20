@@ -9,7 +9,8 @@ import { createClient } from '@/lib/supabase/server';
 export type StripeMode = 'test' | 'live';
 
 /** The Stripe mode comes from server config only (ADMIN_STRIPE_MODE), never from the client. Test unless set to "live". */
-export const getStripeMode = (): StripeMode => (process.env.ADMIN_STRIPE_MODE === 'live' ? 'live' : 'test');
+export const getStripeMode = (): StripeMode =>
+  process.env.ADMIN_STRIPE_MODE === 'live' ? 'live' : 'test';
 
 export interface AdminContext {
   userId: string;
@@ -46,7 +47,9 @@ const loadContext = cache(async (): Promise<AdminContext> => {
     supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
   ]);
   const factorId = factors?.totp.find((f) => f.status === 'verified')?.id ?? null;
-  const totp = aal?.currentAuthenticationMethods.find((m) => typeof m !== 'string' && m.method === 'totp');
+  const totp = aal?.currentAuthenticationMethods.find(
+    (m) => typeof m !== 'string' && m.method === 'totp',
+  );
   const totpAt = totp && typeof totp !== 'string' ? totp.timestamp : null;
 
   return {

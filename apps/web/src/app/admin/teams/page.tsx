@@ -1,6 +1,14 @@
 import { listTeams } from '@athleit/db/admin';
 
-import { BillingPill, DataTable, PageTitle, decodeCursor, encodeCursor, hrefBuilder, type Column } from '@/components/admin/kit';
+import {
+  BillingPill,
+  DataTable,
+  PageTitle,
+  decodeCursor,
+  encodeCursor,
+  hrefBuilder,
+  type Column,
+} from '@/components/admin/kit';
 import { ErrorState } from '@/components/ui';
 import { getAdminContext } from '@/lib/admin/context';
 import { one, type SearchParams } from '@/lib/admin/view';
@@ -21,7 +29,16 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     { key: 'club', header: 'Club', cell: (r) => r.club_name ?? '—' },
     { key: 'members', header: 'Members', align: 'right', cell: (r) => r.members },
     { key: 'billing', header: 'Billing', cell: (r) => <BillingPill state={r.billing_state} /> },
-    { key: 'created', header: 'Created', cell: (r) => new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+    {
+      key: 'created',
+      header: 'Created',
+      cell: (r) =>
+        new Date(r.created_at).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+    },
   ];
   return (
     <>
@@ -36,9 +53,17 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
       {res.error ? (
         <ErrorState message="Couldn’t load teams. Nothing was changed." />
       ) : (
-        <DataTable caption="Teams" columns={cols} rows={res.data.items} rowKey={(r) => r.id} rowHref={(r) => `/admin/teams/${r.id}`} buildHref={href}
-          nextCursor={encodeCursor(res.data.next_cursor)} density={one(sp.density) === 'dense' ? 'dense' : 'comfortable'}
-          empty={q ? `No teams match “${q}”.` : 'No teams yet.'} />
+        <DataTable
+          caption="Teams"
+          columns={cols}
+          rows={res.data.items}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/teams/${r.id}`}
+          buildHref={href}
+          nextCursor={encodeCursor(res.data.next_cursor)}
+          density={one(sp.density) === 'dense' ? 'dense' : 'comfortable'}
+          empty={q ? `No teams match “${q}”.` : 'No teams yet.'}
+        />
       )}
     </>
   );

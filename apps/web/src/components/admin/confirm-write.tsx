@@ -23,7 +23,15 @@ export interface ChangeRow {
  * it right after verifying (useAdmin().withEditing). Typed errors map to messages; none is swallowed.
  */
 export function ConfirmWrite({
-  open, onClose, title, rows, impact, confirmLabel = 'Confirm', onSubmit, onDone, children,
+  open,
+  onClose,
+  title,
+  rows,
+  impact,
+  confirmLabel = 'Confirm',
+  onSubmit,
+  onDone,
+  children,
 }: {
   open: boolean;
   onClose: () => void;
@@ -47,7 +55,10 @@ export function ConfirmWrite({
   function close() {
     onClose();
     // Reset after the sheet closes so a reopened sheet starts clean.
-    setReason(''); setTouched(false); setError(null); setSaved(false);
+    setReason('');
+    setTouched(false);
+    setError(null);
+    setSaved(false);
   }
   function confirm() {
     setTouched(true);
@@ -57,19 +68,28 @@ export function ConfirmWrite({
       setError(null);
       const r = await onSubmit(reason.trim());
       setBusy(false);
-      if (r.ok) { setSaved(true); onDone?.(); } else setError(adminErrorMessage(r.code, r.message));
+      if (r.ok) {
+        setSaved(true);
+        onDone?.();
+      } else setError(adminErrorMessage(r.code, r.message));
     });
   }
 
   return (
     <Sheet open={open} onClose={close} title={title} level="modal" role="alertdialog">
       <div className={styles.body}>
-        <Text variant="heading" as="h2">{title}</Text>
+        <Text variant="heading" as="h2">
+          {title}
+        </Text>
         {saved ? (
           <>
-            <Text variant="body" role="status">Saved. This change is in the audit log.</Text>
+            <Text variant="body" role="status">
+              Saved. This change is in the audit log.
+            </Text>
             <div className={styles.actions}>
-              <Link href="/admin/audit" className={styles.link}>View audit entry</Link>
+              <Link href="/admin/audit" className={styles.link}>
+                View audit entry
+              </Link>
               <Button onClick={close}>Done</Button>
             </div>
           </>
@@ -79,11 +99,18 @@ export function ConfirmWrite({
               {rows.map((r) => (
                 <div key={r.label} className={styles.row}>
                   <dt>{r.label}</dt>
-                  <dd><span className={styles.before}>{r.before}</span> <span aria-hidden>→</span> <span className={styles.after}>{r.after}</span></dd>
+                  <dd>
+                    <span className={styles.before}>{r.before}</span> <span aria-hidden>→</span>{' '}
+                    <span className={styles.after}>{r.after}</span>
+                  </dd>
                 </div>
               ))}
             </dl>
-            {impact ? <Text variant="body" className={styles.impact}>{impact}</Text> : null}
+            {impact ? (
+              <Text variant="body" className={styles.impact}>
+                {impact}
+              </Text>
+            ) : null}
             {children}
             <TextArea
               label="Reason"
@@ -94,12 +121,22 @@ export function ConfirmWrite({
               hint="Saved to the audit log with your name."
             />
             <Text variant="caption" muted role="status">
-              {editing ? `Editing is on, ${formatCountdown(secondsLeft)} left.` : 'Verify to make this change. You’ll be asked for a code when you confirm.'}
+              {editing
+                ? `Editing is on, ${formatCountdown(secondsLeft)} left.`
+                : 'Verify to make this change. You’ll be asked for a code when you confirm.'}
             </Text>
-            {error ? <Text variant="body" role="alert" className={styles.error}>{error}</Text> : null}
+            {error ? (
+              <Text variant="body" role="alert" className={styles.error}>
+                {error}
+              </Text>
+            ) : null}
             <div className={styles.actions}>
-              <Button variant="ghost" onClick={close}>Cancel</Button>
-              <Button loading={busy} onClick={confirm}>{confirmLabel}</Button>
+              <Button variant="ghost" onClick={close}>
+                Cancel
+              </Button>
+              <Button loading={busy} onClick={confirm}>
+                {confirmLabel}
+              </Button>
             </div>
           </>
         )}

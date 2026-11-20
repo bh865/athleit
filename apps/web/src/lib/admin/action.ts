@@ -8,8 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 
 /** What every admin server action returns. Errors are typed so the UI maps them to the design's states; none is swallowed. */
 export type ActionResult<T = null> =
-  | { ok: true; data: T }
-  | { ok: false; code: AdminErrorCode; message: string };
+  { ok: true; data: T } | { ok: false; code: AdminErrorCode; message: string };
 
 /**
  * Run an admin action with the CALLER'S session (never a service role). The role is re-checked here for a clean
@@ -23,7 +22,12 @@ export async function runAdminAction<T>(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, code: 'not_authenticated', message: 'Your session expired. Sign in again to keep going.' };
+  if (!user)
+    return {
+      ok: false,
+      code: 'not_authenticated',
+      message: 'Your session expired. Sign in again to keep going.',
+    };
   const role = await getPlatformRole(supabase);
   if (role.error || !roleAtLeast(role.data, minRole)) {
     return { ok: false, code: 'not_authorized', message: 'Page not found.' };

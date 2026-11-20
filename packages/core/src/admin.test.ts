@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  ADMIN_MODULES, EDIT_WINDOW_MINUTES, canDo, canViewPath, canWriteSetting, editSecondsLeft, formatCountdown,
-  isReasonValid, moduleForPath, modulesFor, navGroups, roleAtLeast, toCsv,
+  ADMIN_MODULES,
+  EDIT_WINDOW_MINUTES,
+  canDo,
+  canViewPath,
+  canWriteSetting,
+  editSecondsLeft,
+  formatCountdown,
+  isReasonValid,
+  moduleForPath,
+  modulesFor,
+  navGroups,
+  roleAtLeast,
+  toCsv,
 } from './admin';
 
 describe('admin module registry', () => {
@@ -14,9 +25,26 @@ describe('admin module registry', () => {
   });
   it('shows each role exactly what the "who sees what" matrix says', () => {
     const keys = (r: 'support' | 'admin' | 'owner') => modulesFor(r).map((m) => m.key);
-    expect(keys('support')).toEqual(['overview', 'teams', 'clubs', 'people', 'subscriptions', 'reports', 'audit']);
+    expect(keys('support')).toEqual([
+      'overview',
+      'teams',
+      'clubs',
+      'people',
+      'subscriptions',
+      'reports',
+      'audit',
+    ]);
     expect(keys('admin')).not.toContain('admins');
-    expect(keys('admin')).toEqual(expect.arrayContaining(['payments', 'connect', 'disputes', 'notifications', 'jobs', 'settings']));
+    expect(keys('admin')).toEqual(
+      expect.arrayContaining([
+        'payments',
+        'connect',
+        'disputes',
+        'notifications',
+        'jobs',
+        'settings',
+      ]),
+    );
     expect(keys('owner')).toHaveLength(14);
     expect(modulesFor(null)).toEqual([]);
   });
@@ -31,10 +59,22 @@ describe('admin module registry', () => {
     expect(canViewPath('owner', '/admin/unknown')).toBe(false);
   });
   it('only lets Overview, search and the queues show on a phone', () => {
-    expect(ADMIN_MODULES.filter((m) => m.phone).map((m) => m.key)).toEqual(['overview', 'people', 'subscriptions', 'disputes', 'reports']);
+    expect(ADMIN_MODULES.filter((m) => m.phone).map((m) => m.key)).toEqual([
+      'overview',
+      'people',
+      'subscriptions',
+      'disputes',
+      'reports',
+    ]);
   });
   it('groups the navigation and drops empty groups', () => {
-    expect(navGroups('support').map((g) => g.group)).toEqual(['Overview', 'Customers', 'Money', 'Trust and safety', 'Audit']);
+    expect(navGroups('support').map((g) => g.group)).toEqual([
+      'Overview',
+      'Customers',
+      'Money',
+      'Trust and safety',
+      'Audit',
+    ]);
     expect(navGroups('owner').map((g) => g.group)).toContain('Admins');
   });
 });
@@ -82,12 +122,19 @@ describe('reason and edit window', () => {
 });
 
 describe('toCsv', () => {
-  const rows = [{ name: 'Riverside, 14U', cents: 1050, note: '=SUM(A1)' }, { name: 'He said "hi"', cents: 0, note: null }];
-  const csv = toCsv(rows, [
-    { header: 'Team', value: (r) => r.name },
-    { header: 'Fees', value: (r) => r.cents, cents: true },
-    { header: 'Note', value: (r) => r.note },
-  ], '2026-11-20 14:32 UTC');
+  const rows = [
+    { name: 'Riverside, 14U', cents: 1050, note: '=SUM(A1)' },
+    { name: 'He said "hi"', cents: 0, note: null },
+  ];
+  const csv = toCsv(
+    rows,
+    [
+      { header: 'Team', value: (r) => r.name },
+      { header: 'Fees', value: (r) => r.cents, cents: true },
+      { header: 'Note', value: (r) => r.note },
+    ],
+    '2026-11-20 14:32 UTC',
+  );
   it('writes a header row, quotes commas and quotes, and the as-of line', () => {
     const lines = csv.trimEnd().split('\r\n');
     expect(lines[0]).toBe('Team,Fees,Note');

@@ -9,7 +9,11 @@ import { createClient } from '@/lib/supabase/server';
 const RANGES: AdminRange[] = ['30d', '90d', '12m'];
 
 /** Counts from the payment ledger and the Stripe event ledger. There is no per-dispute table yet. */
-export default async function DisputesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+export default async function DisputesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const sp = await searchParams;
   await getAdminContext('admin');
   const range = parseRange(sp, RANGES, '90d');
@@ -21,7 +25,12 @@ export default async function DisputesPage({ searchParams }: { searchParams: Pro
         <StatTile label="Refunds" value={String(res.data?.refunds ?? '—')} />
         <StatTile label="Disputes opened" value={String(res.data?.disputes ?? '—')} />
       </TileGrid>
-      <Panel title="Dispute queue"><Text variant="body" muted>Individual disputes are recorded as Stripe events (see Jobs and webhooks). A per-dispute queue needs a dispute table, which does not exist yet.</Text></Panel>
+      <Panel title="Dispute queue">
+        <Text variant="body" muted>
+          Individual disputes are recorded as Stripe events (see Jobs and webhooks). A per-dispute
+          queue needs a dispute table, which does not exist yet.
+        </Text>
+      </Panel>
     </>
   );
 }

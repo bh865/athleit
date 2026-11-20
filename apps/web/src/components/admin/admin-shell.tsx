@@ -20,20 +20,35 @@ const subscribe = (cb: () => void) => {
   mq.addEventListener('change', cb);
   return () => mq.removeEventListener('change', cb);
 };
-const useIsSmall = () => useSyncExternalStore(subscribe, () => window.matchMedia(SMALL).matches, () => false);
+const useIsSmall = () =>
+  useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(SMALL).matches,
+    () => false,
+  );
 
 const asOfLabel = (iso: string) =>
-  new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  new Date(iso).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
 /** Environment badge: "Test mode" quiet, "Live" solid. The mode is passed down from the server. */
 export function EnvBadge({ mode }: { mode: 'test' | 'live' }) {
   return (
-    <span className={`${styles.env} ${mode === 'live' ? styles.live : ''}`} title={mode === 'live' ? 'Live mode' : 'Stripe is in test mode. No real money moves.'}>
+    <span
+      className={`${styles.env} ${mode === 'live' ? styles.live : ''}`}
+      title={mode === 'live' ? 'Live mode' : 'Stripe is in test mode. No real money moves.'}
+    >
       {mode === 'live' ? 'Live' : 'Test mode'}
     </span>
   );
 }
-export const RoleChip = ({ role }: { role: PlatformRole }) => <span className={styles.chip}>{role[0]!.toUpperCase() + role.slice(1)}</span>;
+export const RoleChip = ({ role }: { role: PlatformRole }) => (
+  <span className={styles.chip}>{role[0]!.toUpperCase() + role.slice(1)}</span>
+);
 
 export function EditChip() {
   const { editing, secondsLeft } = useAdmin();
@@ -55,7 +70,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className={styles.layout}>
       <Glass as="nav" level="bar" className={styles.rail} aria-label="Admin">
-        <Link href="/admin" className={styles.brand}>athleit <span>ADMIN</span></Link>
+        <Link href="/admin" className={styles.brand}>
+          athleit <span>ADMIN</span>
+        </Link>
         {navGroups(role).map(({ group, items }) => (
           <div key={group} className={styles.group}>
             {group !== 'Overview' && <div className={styles.groupLabel}>{group}</div>}
@@ -63,7 +80,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
               const ico = ADMIN_ICONS[m.icon];
               const active = current?.key === m.key;
               return (
-                <Link key={m.key} href={m.route} className={`${styles.item} ${active ? styles.active : ''}`} aria-current={active ? 'page' : undefined}>
+                <Link
+                  key={m.key}
+                  href={m.route}
+                  className={`${styles.item} ${active ? styles.active : ''}`}
+                  aria-current={active ? 'page' : undefined}
+                >
                   {ico ? <Icon name={ico} weight={active ? 'fill' : 'regular'} /> : null}
                   <span className={styles.itemLabel}>{m.label}</span>
                 </Link>
@@ -80,18 +102,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <RoleChip role={role} />
             <EditChip />
             <span className={styles.asOf}>As of {asOfLabel(asOf)}</span>
-            <span className={styles.avatar} title={displayName} aria-label={displayName}>{displayName.slice(0, 2).toUpperCase()}</span>
+            <span className={styles.avatar} title={displayName} aria-label={displayName}>
+              {displayName.slice(0, 2).toUpperCase()}
+            </span>
           </div>
         </header>
         {!editing && (
           <div className={styles.banner} role="status">
             <Text variant="body">You’re in read-only mode. Verify to make changes.</Text>
-            <Button variant="secondary" onClick={() => void verify()}>Verify</Button>
+            <Button variant="secondary" onClick={() => void verify()}>
+              Verify
+            </Button>
           </div>
         )}
         <main className={styles.content} data-testid="admin-main">
           {small && !phoneOk ? (
-            <div className={styles.larger}><Text variant="body">This page works best on a larger screen.</Text></div>
+            <div className={styles.larger}>
+              <Text variant="body">This page works best on a larger screen.</Text>
+            </div>
           ) : (
             children
           )}

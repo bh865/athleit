@@ -7,15 +7,15 @@ through one confirm-with-reason sheet. The database is the authority: the UI hid
 
 `platform_admins` holds three roles. A client can learn only its own (`platform_admin_role()`).
 
-| Area                                                        | Support | Admin | Owner |
-| ----------------------------------------------------------- | :-----: | :---: | :---: |
+| Area                                                          | Support | Admin | Owner |
+| ------------------------------------------------------------- | :-----: | :---: | :---: |
 | Overview, Teams, Clubs, People, Subscriptions, Reports, Audit |    ✓    |   ✓   |   ✓   |
-| Payments and fees, Connect, Disputes                         |    –    |   ✓   |   ✓   |
-| Notifications, Jobs and webhooks, Settings (view)            |    –    |   ✓   |   ✓   |
-| Admins                                                       |    –    |   –   |   ✓   |
-| Extend trial, comp, clear comp, price/trial/grace/reminders  |    –    |   ✓   |   ✓   |
-| Reveal a reported message (with a reason)                    |    –    |   ✓   |   ✓   |
-| Team billing on/off, automatic tax, fee config, admins       |    –    |   –   |   ✓   |
+| Payments and fees, Connect, Disputes                          |    –    |   ✓   |   ✓   |
+| Notifications, Jobs and webhooks, Settings (view)             |    –    |   ✓   |   ✓   |
+| Admins                                                        |    –    |   –   |   ✓   |
+| Extend trial, comp, clear comp, price/trial/grace/reminders   |    –    |   ✓   |   ✓   |
+| Reveal a reported message (with a reason)                     |    –    |   ✓   |   ✓   |
+| Team billing on/off, automatic tax, fee config, admins        |    –    |   –   |   ✓   |
 
 Emails are visible to every role. Phone numbers are masked (last four digits). A non-admin, and an admin opening a page above their role,
 gets the app's ordinary not-found, never "access denied".

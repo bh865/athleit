@@ -22,7 +22,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const ctx = await getAdminContext();
   if (!ctx.factorId) return <MfaSetup role={ctx.role} stripeMode={ctx.stripeMode} />;
   return (
-    <AdminProvider role={ctx.role} displayName={ctx.displayName} stripeMode={ctx.stripeMode} asOf={ctx.asOf} factorId={ctx.factorId} verifiedAt={ctx.verifiedAt}>
+    <AdminProvider
+      role={ctx.role}
+      displayName={ctx.displayName}
+      stripeMode={ctx.stripeMode}
+      asOf={ctx.asOf}
+      factorId={ctx.factorId}
+      verifiedAt={ctx.verifiedAt}
+    >
       <AdminShell>{children}</AdminShell>
     </AdminProvider>
   );
