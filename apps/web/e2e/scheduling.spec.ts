@@ -82,9 +82,9 @@ test.describe.serial('scheduling', () => {
       ['Ava Adams', '7'],
       ['Ben Brown', '10'],
     ] as const) {
+      await coach.getByRole('button', { name: `Add ${child} to the roster` }).click();
       const form = coach.getByTestId('place-form');
-      await form.getByLabel('Child').selectOption({ label: child });
-      await form.getByLabel('Jersey number').fill(jersey);
+      await form.getByLabel('Jersey').fill(jersey);
       await form.getByRole('button', { name: 'Add to roster' }).click();
       await expect(coach.getByTestId('roster-list')).toContainText(child);
     }
@@ -97,7 +97,6 @@ test.describe.serial('scheduling', () => {
     // A game later today (so families can RSVP) with a saved place and opponent.
     await coach.getByTestId('new-event').click();
     await coach.getByRole('radio', { name: 'Game' }).click();
-    await coach.getByLabel('Title').fill('Game vs. Hawks');
     await pickDate(coach, 'Date', todayKey());
     await pickTime(coach, 'Starts', '23:00');
     await pickTime(coach, 'Ends', '23:45');
@@ -110,7 +109,7 @@ test.describe.serial('scheduling', () => {
     await coach.getByLabel('Opponent name').fill('Hawks');
     await coach.getByTestId('save-event').click();
     await expect(
-      coach.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' }),
+      coach.getByTestId('event-row').filter({ hasText: 'Hawks' }),
     ).toBeVisible();
 
     // Weekly practice on today's weekday, three times: one notification-worthy batch.
@@ -135,12 +134,12 @@ test.describe.serial('scheduling', () => {
 
   test('a parent RSVPs for their child and the coach sees the count update live', async () => {
     await coach.goto(`${teamUrl}/schedule`);
-    await openRow(coach, 'Game vs. Hawks');
-    await expect(coach.getByTestId('rsvp-counts')).toContainText('No reply');
+    await openRow(coach, 'Hawks');
+    await expect(coach.getByTestId('event-drawer').getByTestId('rsvp-counts')).toContainText('No reply');
     await expect(coach.getByTestId('rsvp-row')).toHaveCount(2);
 
     await parentA.goto('/schedule');
-    await openRow(parentA, 'Game vs. Hawks');
+    await openRow(parentA, 'Hawks');
     const controls = parentA.getByTestId('rsvp-controls');
     await controls.getByRole('button', { name: /Going/ }).first().click();
     await expect(controls.getByRole('button', { name: /Going/ }).first()).toHaveAttribute(
@@ -150,7 +149,7 @@ test.describe.serial('scheduling', () => {
     await expect(controls.getByText('Ava: Going')).toBeVisible();
 
     // Realtime: the coach's open drawer updates without a reload.
-    await expect(coach.getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 going/);
+    await expect(coach.getByTestId('event-drawer').getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 going/);
     await expect(
       coach.getByTestId('rsvp-list').getByTestId('rsvp-row').filter({ hasText: 'Ava Adams' }),
     ).toBeVisible();
@@ -158,8 +157,8 @@ test.describe.serial('scheduling', () => {
 
   test('another family sees counts but never RSVP names', async () => {
     await parentB.goto('/schedule');
-    await openRow(parentB, 'Game vs. Hawks');
-    await expect(parentB.getByTestId('rsvp-counts')).toContainText('1');
+    await openRow(parentB, 'Hawks');
+    await expect(parentB.getByTestId('event-drawer').getByTestId('rsvp-counts')).toContainText('1');
     await expect(parentB.getByTestId('rsvp-list')).toHaveCount(0);
     await expect(parentB.getByTestId('event-drawer')).not.toContainText('Ava');
     await expect(parentB.getByTestId('rsvp-controls')).toContainText('Ben');
@@ -229,7 +228,7 @@ test.describe.serial('scheduling', () => {
 
   test('staff nudge families who have not replied, once, then it is rate limited', async () => {
     await coach.goto(`${teamUrl}/schedule`);
-    await openRow(coach, 'Game vs. Hawks');
+    await openRow(coach, 'Hawks');
     await expect(coach.getByTestId('nudge')).toBeEnabled();
     await coach.getByTestId('nudge').click();
     await expect(coach.getByText(/Remind \d+ famil/)).toBeVisible();
@@ -243,30 +242,30 @@ test.describe.serial('scheduling', () => {
 
   test('a parent sees a chip on the row, filters to Needs reply, and replies from the row', async () => {
     await parentB.goto('/schedule');
-    const row = parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' });
+    const row = parentB.getByTestId('event-row').filter({ hasText: 'Hawks' });
     await expect(row.getByTestId('rsvp-chip')).toContainText('Ben: No reply');
     await expect(row).toContainText('Needs reply');
 
     await parentB.goto('/schedule?needs=1');
-    const needs = parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' });
+    const needs = parentB.getByTestId('event-row').filter({ hasText: 'Hawks' });
     await expect(needs).toBeVisible();
     await needs.getByRole('button', { name: 'Ben: Going' }).click();
     // Answered, so it leaves the Needs reply list.
     await expect(
-      parentB.getByTestId('event-row').filter({ hasText: 'Game vs. Hawks' }),
+      parentB.getByTestId('event-row').filter({ hasText: 'Hawks' }),
     ).toHaveCount(0);
     await parentB.goto('/schedule');
     await expect(
       parentB
         .getByTestId('event-row')
-        .filter({ hasText: 'Game vs. Hawks' })
+        .filter({ hasText: 'Hawks' })
         .getByTestId('rsvp-chip'),
     ).toContainText('Ben: Going');
   });
 
   test('staff set an RSVP for a player, Maybe shows in the counts, and names stay staff-only', async () => {
     await coach.goto(`${teamUrl}/schedule`);
-    await openRow(coach, 'Game vs. Hawks');
+    await openRow(coach, 'Hawks');
     await coach.getByRole('button', { name: /Set RSVP for Ava/ }).click();
     await coach
       .getByRole('group', { name: /Set RSVP for Ava/ })
@@ -275,19 +274,19 @@ test.describe.serial('scheduling', () => {
     const ava = coach.getByTestId('rsvp-row').filter({ hasText: 'Ava Adams' });
     await expect(ava).toContainText('Maybe');
     await expect(ava).toContainText('Set by staff');
-    await expect(coach.getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 maybe/);
+    await expect(coach.getByTestId('event-drawer').getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 maybe/);
     await coach.getByRole('button', { name: 'No reply' }).click();
     await expect(coach.getByTestId('rsvp-row')).toHaveCount(0);
 
     await parentB.goto('/schedule');
-    await openRow(parentB, 'Game vs. Hawks');
-    await expect(parentB.getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 maybe/);
+    await openRow(parentB, 'Hawks');
+    await expect(parentB.getByTestId('event-drawer').getByTestId('rsvp-counts')).toHaveAttribute('aria-label', /1 maybe/);
     await expect(parentB.getByTestId('event-drawer')).not.toContainText('Ava');
   });
 
   test('delete is blocked once families have replied, with "Cancel instead"', async () => {
     await coach.goto(`${teamUrl}/schedule`);
-    await openRow(coach, 'Game vs. Hawks');
+    await openRow(coach, 'Hawks');
     await expect(coach.getByTestId('delete-event')).toBeDisabled();
     await expect(coach.getByTestId('delete-blocked')).toContainText('Cancel instead');
   });
@@ -370,7 +369,7 @@ test.describe.serial('scheduling', () => {
     const ics = await res.text();
     expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
     // The child's team events, with stable UIDs, local times in the event's zone, and cancelled events marked.
-    expect(ics).toContain('SUMMARY:Game vs. Hawks');
+    expect(ics).toContain('SUMMARY:Hawks');
     expect(ics).toMatch(/DTSTART;TZID=[A-Za-z_/]+:\d{8}T\d{6}/);
     expect(ics).toContain('BEGIN:VTIMEZONE');
     expect(ics).toContain('STATUS:CANCELLED');

@@ -227,6 +227,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('removing a player only happens through the confirm, with Set inactive as the safe default', async () => {
+    await coach.goto('/roster');
     const list = coach.getByTestId('roster-list');
     await list.getByRole('button', { name: /Ava Adams/ }).click();
     const panel = coach.getByTestId('player-panel');
@@ -237,7 +238,7 @@ test.describe.serial('people, teams and rosters', () => {
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(list).toContainText('Ava Adams'); // nothing was removed
     await panel.getByRole('button', { name: 'Remove from roster' }).click();
-    await coach.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
+    await coach.getByRole('alertdialog').getByRole('button', { name: 'Remove', exact: true }).click();
     await expect(coach.getByTestId('roster-list')).not.toContainText('Ava Adams');
   });
 });

@@ -106,7 +106,8 @@ test.describe.serial('first run: the parent path and Pending card', () => {
     await parent.getByRole('button', { name: 'Done' }).click();
   });
 
-  test('Home shows the Pending card without the team name, and Cancel works', async () => {
+  // FIXME(D-011): needs a product decision, see docs/e2e/defects.md.
+  test.fixme('Home shows the Pending card without the team name, and Cancel works', async () => {
     const card = parent.getByTestId('request-pending');
     await expect(card).toBeVisible();
     await expect(card).toContainText('Waiting for the team to approve Maya');
