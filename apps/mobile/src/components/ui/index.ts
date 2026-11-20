@@ -15,7 +15,7 @@ export { EmptyState, ErrorState, LoadingSkeleton } from './states';
 export { StatusDot } from './status-dot';
 export { TabBar, type TabItem } from './tab-bar';
 export { Heading, Label, Mono, Text, type TextProps } from './text';
-export { TextField, type TextFieldProps } from './text-field';
+export { TextField, type TextFieldInput, type TextFieldProps } from './text-field';
 export { ThemeProvider, ThemeScope, useTheme } from './theme';
 export { ThemeToggle } from './theme-toggle';
 export { ToastProvider, useToast } from './toast';

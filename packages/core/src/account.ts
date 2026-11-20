@@ -80,6 +80,27 @@ export function passwordStrength(pw: string): PasswordStrength {
   return { level: 'strong', hint: 'Looks strong.' };
 }
 
+export const PASSWORD_STRENGTH_WORD: Record<PasswordStrength['level'], string> = {
+  weak: 'Weak',
+  fair: 'Fair',
+  strong: 'Strong',
+};
+
+/** What the meter says in words, so strength is never carried by colour alone. */
+export function passwordStrengthLabel(pw: string): {
+  text: string;
+  level: PasswordStrength['level'] | null;
+  filled: 0 | 1 | 2 | 3;
+} {
+  if (pw.length === 0) return { text: '', level: null, filled: 0 };
+  const { level } = passwordStrength(pw);
+  return {
+    text: `Password strength: ${PASSWORD_STRENGTH_WORD[level]}`,
+    level,
+    filled: level === 'weak' ? 1 : level === 'fair' ? 2 : 3,
+  };
+}
+
 /** Change password. The current password is only asked for when the account already has one. */
 export const changePasswordSchema = z
   .object({

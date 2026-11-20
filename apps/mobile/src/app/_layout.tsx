@@ -13,7 +13,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { fontAssets } from '@/lib/fonts';
 
 // Where a signed-out user lands when they hit a guarded route.
-export const unstable_settings = { anchor: 'sign-in' };
+export const unstable_settings = { anchor: 'welcome' };
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 WebBrowser.maybeCompleteAuthSession();
@@ -36,9 +36,16 @@ function Routes() {
         <Stack.Screen name="(app)" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
+        <Stack.Screen name="forgot-password" />
       </Stack.Protected>
+      {/* These work in either state: a link can arrive while the person is signed out (the account is
+          created or the password reset on this very screen, so a new session must not unmount it). */}
+      <Stack.Screen name="check-email" />
+      <Stack.Screen name="auth/reset" />
+      <Stack.Screen name="auth/callback" />
       {/* Invite and player-login links work in either state: signed-out users are asked to sign in first. */}
       <Stack.Screen name="invite/[token]" />
       <Stack.Screen name="claim/[playerId]" />

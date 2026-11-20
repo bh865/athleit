@@ -18,6 +18,7 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/already_affiliated/, 'This team already belongs to a club. Unlink it first.'],
   [/not_affiliated/, 'This team is not linked to a club.'],
   [/request_not_pending/, 'That request was already decided.'],
+  [/request_not_found/, 'That request could not be found.'],
   [/player_under_13/, 'Children under 13 cannot have their own login.'],
   [/player_not_found/, 'That player could not be found. Check the link you were given.'],
   [/player_already_linked/, 'This player already has a login.'],
@@ -82,8 +83,14 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/invalid_attachment_path/, 'That attachment could not be sent. Try uploading it again.'],
   [/invalid_timezone/, 'Choose a valid timezone.'],
   [/not_a_participant/, 'You are not part of this conversation.'],
-  [/events_location_id_fkey/, 'This place is used by events, so it can’t be removed. Change those events first.'],
-  [/events_opponent_id_fkey/, 'This opponent is used by games, so it can’t be removed. Change those games first.'],
+  [
+    /events_location_id_fkey/,
+    'This place is used by events, so it can’t be removed. Change those events first.',
+  ],
+  [
+    /events_opponent_id_fkey/,
+    'This opponent is used by games, so it can’t be removed. Change those games first.',
+  ],
   [/event_cancelled/, 'This event was cancelled.'],
   [/nudged_recently/, 'Already reminded recently. Try again later.'],
   [/already_cancelled/, 'This event is already cancelled.'],
@@ -143,4 +150,142 @@ export function friendlyError(error: DbErrorLike | null | undefined): string {
   if (error.code === '23505') return 'That already exists.';
   if (error.code === '23514') return 'Check the values you entered and try again.';
   return 'Something went wrong. Try again.';
+}
+
+// Sign-in, sign-up and reset ---------------------------------------------------------------------
+// Supabase Auth errors carry a stable `code` (and an HTTP `status`); the message is backend text
+// and must never reach the screen. Every row of the design's copy deck is a kind here.
+
+export interface AuthErrorLike {
+  message?: string | undefined;
+  code?: string | undefined;
+  status?: number | undefined;
+  name?: string | undefined;
+}
+
+export type AuthErrorKind =
+  | 'wrong_credentials'
+  | 'email_in_use'
+  | 'registered_social'
+  | 'weak_password'
+  | 'too_many_attempts'
+  | 'offline'
+  | 'server'
+  | 'link_expired'
+  | 'social_cancelled'
+  | 'email_not_confirmed'
+  | 'invalid_input';
+
+export interface AuthErrorOptions {
+  /**
+   * Providers the existing account was created with (for example ['google']), only when the app can
+   * truly tell. Without it a clash is reported as the generic "already registered".
+   */
+  providers?: readonly string[] | undefined;
+  /** Seconds the server asked the caller to wait, when it said so. Never guessed. */
+  retryAfterSeconds?: number | undefined;
+}
+
+const PROVIDER_LABEL: Record<string, string> = { google: 'Google', apple: 'Apple' };
+
+/** Which social provider (if any) an account can sign in with and has no password for. */
+export function socialOnlyProvider(providers: readonly string[] | undefined): string | null {
+  if (!providers || providers.length === 0 || providers.includes('email')) return null;
+  return providers.find((p) => p in PROVIDER_LABEL) ?? null;
+}
+
+export function classifyAuthError(
+  error: AuthErrorLike | null | undefined,
+  opts: AuthErrorOptions = {},
+): AuthErrorKind {
+  const e = error ?? {};
+  const text = `${e.message ?? ''}`;
+  const code = e.code ?? '';
+  if (
+    e.name === 'AuthRetryableFetchError' ||
+    e.status === 0 ||
+    /network request failed|failed to fetch|fetch failed|network error|offline/i.test(text)
+  ) {
+    return 'offline';
+  }
+  if (code === 'user_cancelled' || code === 'access_denied' || /cancel/i.test(text)) {
+    return 'social_cancelled';
+  }
+  if (code.startsWith('over_') || e.status === 429 || /rate limit|too many/i.test(text)) {
+    return 'too_many_attempts';
+  }
+  if (code === 'email_not_confirmed' || /email not confirmed/i.test(text)) {
+    return 'email_not_confirmed';
+  }
+  if (code === 'invalid_credentials' || /invalid login credentials/i.test(text)) {
+    return 'wrong_credentials';
+  }
+  if (
+    code === 'user_already_exists' ||
+    code === 'email_exists' ||
+    /already (been )?registered/i.test(text)
+  ) {
+    return socialOnlyProvider(opts.providers) ? 'registered_social' : 'email_in_use';
+  }
+  if (code === 'weak_password' || /password (should|must) be at least|weak password/i.test(text)) {
+    return 'weak_password';
+  }
+  if (code === 'otp_expired' || /expired|invalid.*(token|link)|link.*invalid/i.test(text)) {
+    return 'link_expired';
+  }
+  // Any other client error (bad email format, sign-ups closed, ...) is not the server's fault.
+  if (e.status !== undefined && e.status >= 400 && e.status < 500) return 'invalid_input';
+  return 'server';
+}
+
+const minutesLabel = (seconds: number) => {
+  const m = Math.max(1, Math.ceil(seconds / 60));
+  return `${m} ${m === 1 ? 'minute' : 'minutes'}`;
+};
+
+/** The design's copy deck. Pass `provider` for 'registered_social'. */
+export function authCopy(
+  kind: AuthErrorKind,
+  opts: { provider?: string | null | undefined; retryAfterSeconds?: number | undefined } = {},
+): string {
+  switch (kind) {
+    case 'wrong_credentials':
+      return 'That email and password don’t match. Check them and try again, or reset your password.';
+    case 'email_in_use':
+      return 'This email is already registered. Sign in instead.';
+    case 'registered_social': {
+      const name = PROVIDER_LABEL[opts.provider ?? ''] ?? 'Google';
+      return `You signed up with ${name}. Use the ${name} button to sign in.`;
+    }
+    case 'weak_password':
+      return 'Use at least 8 characters. A longer phrase is stronger.';
+    case 'too_many_attempts':
+      return opts.retryAfterSeconds
+        ? `Too many attempts. Try again in ${minutesLabel(opts.retryAfterSeconds)}, or reset your password.`
+        : 'Too many attempts. Try again in a few minutes, or reset your password.';
+    case 'offline':
+      return 'No connection. Check your internet and try again.';
+    case 'server':
+      return 'Something went wrong on our side. Nothing was changed. Try again in a moment.';
+    case 'link_expired':
+      return 'This link has expired. Ask for a new one.';
+    case 'social_cancelled':
+      return 'Sign-in was cancelled. Try again, or use your email.';
+    case 'email_not_confirmed':
+      return 'Confirm your email first. Check your inbox, or ask for a new link.';
+    case 'invalid_input':
+      return 'We couldn’t use that. Check what you entered and try again.';
+  }
+}
+
+/** One call for screens: classify a Supabase Auth or network error and return the board's sentence. */
+export function friendlyAuthError(
+  error: AuthErrorLike | null | undefined,
+  opts: AuthErrorOptions = {},
+): string {
+  const kind = classifyAuthError(error, opts);
+  return authCopy(kind, {
+    provider: socialOnlyProvider(opts.providers),
+    retryAfterSeconds: opts.retryAfterSeconds,
+  });
 }

@@ -6,15 +6,7 @@ import { View } from 'react-native';
 import { AppScreen } from '@/components/app/app-screen';
 import { ADD } from '@/components/app/context-switcher';
 import { useScreenTitle } from '@/components/app/screen-title';
-import {
-  Avatar,
-  Button,
-  Icon,
-  IconCircle,
-  ListGroup,
-  ListRow,
-  ThemeToggle,
-} from '@/components/ui';
+import { Avatar, Button, Icon, IconCircle, ListGroup, ListRow, ThemeToggle } from '@/components/ui';
 import type { IconName } from '@athleit/ui-core';
 import { useApp } from '@/lib/app-provider';
 import { useAuth } from '@/lib/auth';
@@ -85,6 +77,12 @@ export default function MoreScreen() {
             ))}
           </View>
         ) : null}
+        <Button
+          title="Join or start something"
+          variant="ghost"
+          icon="plus"
+          onPress={() => router.push('/onboarding' as never)}
+        />
         <ThemeToggle />
         <Button title="Sign out" variant="ghost" icon="sign-out" onPress={() => void signOut()} />
       </View>
