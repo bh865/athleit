@@ -8,6 +8,7 @@ import {
   linkProblemCopy,
   pathFor,
   pendingView,
+  problemFromReason,
   readCodeInput,
   resendLabel,
   resendRemaining,
@@ -81,8 +82,11 @@ describe('link arrival copy', () => {
     expect(claimBanner(null).title).toBe('You’re linking your player login');
   });
   it('invalid, expired and limited links use their own copy', () => {
-    expect(linkProblemCopy('invalid').title).toBe('This link isn’t valid');
-    expect(linkProblemCopy('expired').body).toBe('This link has expired. Ask for a new one.');
+    expect(linkProblemCopy('invalid').title).toBe('This invite isn’t valid');
+    expect(linkProblemCopy('expired').title).toBe('This invite has expired');
+    expect(problemFromReason('invite_revoked')).toBe('expired');
+    expect(problemFromReason('invite_invalid')).toBe('invalid');
+    expect(problemFromReason(null)).toBe('invalid');
     expect(linkProblemCopy('rate_limited').title).toBe('Try again in a moment');
   });
 });

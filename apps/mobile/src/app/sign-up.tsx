@@ -12,6 +12,7 @@ import {
   PasswordField,
   SocialButtons,
 } from '@/components/auth/auth-ui';
+import { PendingLinkBanner } from '@/components/auth/link-banner';
 import { Button, Logo, Screen, Text, TextField, type TextFieldInput } from '@/components/ui';
 import { providerOrder } from '@/lib/auth-config';
 import { useAuth } from '@/lib/auth';
@@ -64,6 +65,7 @@ export default function SignUpScreen() {
     <Screen avoidKeyboard contentStyle={{ justifyContent: 'center' }}>
       <Logo variant="lockup" size={componentTokens.avatar.lg} />
       <View style={{ gap: space[6] }}>
+        <PendingLinkBanner />
         <AuthHeading title="Create your account" />
         {hasSocial ? (
           <>

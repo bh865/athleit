@@ -98,7 +98,10 @@ export function linkProblemCopy(outcome: Exclude<PublicPreviewOutcome, 'ok'>): {
   body: string;
 } {
   if (outcome === 'expired') {
-    return { title: 'This link has expired', body: 'This link has expired. Ask for a new one.' };
+    return {
+      title: 'This invite has expired',
+      body: 'Invites last for a limited time. Ask the person who invited you to send a new one.',
+    };
   }
   if (outcome === 'rate_limited') {
     return {
@@ -107,9 +110,16 @@ export function linkProblemCopy(outcome: Exclude<PublicPreviewOutcome, 'ok'>): {
     };
   }
   return {
-    title: 'This link isn’t valid',
-    body: 'This invite link is not valid. Check it with the person who sent it.',
+    title: 'This invite isn’t valid',
+    body: 'The link may have been mistyped or already used. Ask the person who invited you for a new one.',
   };
+}
+
+/** Maps the signed-in preview's `reason` (invite_expired, …) to the shared outcome. */
+export function problemFromReason(reason: string | null | undefined): 'invalid' | 'expired' {
+  return reason === 'invite_expired' || reason === 'invite_revoked' || reason === 'invite_exhausted'
+    ? 'expired'
+    : 'invalid';
 }
 
 /** Continue-as: the link's account differs from the one signed in. Never act silently. */
