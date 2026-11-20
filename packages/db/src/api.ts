@@ -484,6 +484,36 @@ export async function getPhotoUrl(client: Client, path: string): Promise<Result<
 export const getThreadList = (client: Client, teamId: string) =>
   run(client.rpc('get_thread_list', { p_team_id: teamId }), []);
 
+/** One inbox across every team the caller is in (pinned first, then newest). Keyset cursor. */
+export const getInbox = (
+  client: Client,
+  opts: { limit?: number; before?: { at: string; id: string } } = {},
+) =>
+  run(
+    client.rpc('get_inbox', {
+      p_limit: opts.limit ?? 50,
+      p_before_at: opts.before?.at as string,
+      p_before_id: opts.before?.id as string,
+    }),
+    [],
+  );
+
+export const searchMessages = (client: Client, query: string, limit = 30) =>
+  run(client.rpc('search_messages', { p_query: query, p_limit: limit }), []);
+
+export const getThreadMedia = (client: Client, threadId: string) =>
+  run(client.rpc('get_thread_media', { p_thread_id: threadId }), []);
+
+export const getComposePeople = (client: Client, teamId: string) =>
+  run(client.rpc('get_compose_people', { p_team_id: teamId }), []);
+
+export const setThreadPinned = (client: Client, threadId: string, pinned: boolean) =>
+  runVoid(client.rpc('set_thread_pinned', { p_thread_id: threadId, p_pinned: pinned }));
+
+/** Per person: archived until the next message. Thread-wide archive is setThreadArchived. */
+export const setThreadArchivedForMe = (client: Client, threadId: string, archived: boolean) =>
+  runVoid(client.rpc('set_thread_archived_for_me', { p_thread_id: threadId, p_archived: archived }));
+
 export const getUnreadTotal = (client: Client) => run(client.rpc('get_unread_total'), 0);
 
 export const createThread = (
