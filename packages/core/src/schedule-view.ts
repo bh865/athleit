@@ -684,3 +684,9 @@ export function rowTimeLabel(
   const t = describeEventTime(item.starts_at, item.ends_at, item.timezone, viewerZone);
   return { range: t.rangeLabel, yourTime: t.viewerLocalLabel, zone: t.zoneLabel };
 }
+
+/** "Arrive 9:30 AM, 30 minutes early": the time to be there, in the event's zone. */
+export function arriveEarlyLabel(startsAt: string, minutes: number, zone: string): string {
+  const at = new Date(Date.parse(startsAt) - minutes * 60_000);
+  return `Arrive ${clockOf(at, zone)}, ${minutes} minutes early`;
+}

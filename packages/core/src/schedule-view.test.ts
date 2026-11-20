@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NO_FILTERS,
   agendaWindow,
+  arriveEarlyLabel,
   applyFilters,
   countsBar,
   dayHeading,
@@ -398,5 +399,13 @@ describe('rowTimeLabel', () => {
     const e = item();
     expect(rowTimeLabel(e, NY)).toMatchObject({ range: '10:00 AM – 11:30 AM', yourTime: null, zone: 'EST' });
     expect(rowTimeLabel(e, 'America/Los_Angeles').yourTime).toBe('7:00 AM PST');
+  });
+});
+
+describe('arriveEarlyLabel', () => {
+  it('subtracts in real time, so it is right across a DST change', () => {
+    expect(arriveEarlyLabel('2026-11-21T15:00:00Z', 30, NY)).toBe('Arrive 9:30 AM, 30 minutes early');
+    // 2026-11-01 06:30Z is 1:30 AM EST (after fall back); 60 minutes earlier is 1:30 AM EDT.
+    expect(arriveEarlyLabel('2026-11-01T06:30:00Z', 60, NY)).toBe('Arrive 1:30 AM, 60 minutes early');
   });
 });
