@@ -45,7 +45,7 @@ delete from public.teams where id = 'a3000000-0000-0000-0000-00000000000c';
 -- Seeded settings and the first price version ---------------------------------------------------------------------
 select is(private.setting_int('team_subscription.price_cents'), 1000, 'seed price');
 select is(private.setting_int('team_subscription.trial_days'), 14, 'seed trial days');
-select is(private.setting_int('team_subscription.grace_days'), 7, 'seed grace days');
+select is(private.setting_int('team_subscription.grace_days'), 21, 'seed grace days');
 select is(private.setting_int_array('team_subscription.trial_reminder_days'), array[3, 1], 'seed reminder days');
 select is((select count(*)::int from public.billing_price_versions where amount_cents = 1000), 1, 'the seeded price has a version');
 

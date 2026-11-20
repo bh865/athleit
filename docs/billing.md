@@ -52,7 +52,7 @@ gets the function's normal authorization error, never a hint about the team's bi
 
 Everything commercial lives in `platform_settings`, described by `platform_setting_definitions` (label, description, type, bounds, unit,
 default, write role) so a generic admin form can be rendered from the data. Keys: `team_subscription.enabled` (false), `.price_cents`
-(1000), `.trial_days` (14), `.grace_days` (7), `.trial_reminder_days` ([3, 1]), `.automatic_tax` (false). These seeds are the **only**
+(1000), `.trial_days` (14), `.grace_days` (21, matching Stripe's roughly three-week retry window), `.trial_reminder_days` ([3, 1]), `.automatic_tax` (false). These seeds are the **only**
 place those numbers appear; the UI renders from `get_billing_terms()` and `get_team_billing()`.
 
 - **Price versions.** Stripe Prices are immutable, so a list price is a `billing_price_versions` row (immutable amount; the Stripe price id
