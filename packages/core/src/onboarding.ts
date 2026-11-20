@@ -148,7 +148,13 @@ export function readCodeInput(raw: string): CodeInput {
   const text = raw.trim();
   if (!text) return { kind: 'incomplete' };
   const invite = /\/invite\/([^/?#\s]+)/i.exec(text);
-  if (invite?.[1]) return { kind: 'invite', token: decodeURIComponent(invite[1]) };
+  if (invite?.[1]) {
+    try {
+      return { kind: 'invite', token: decodeURIComponent(invite[1]) };
+    } catch {
+      return { kind: 'invalid' };
+    }
+  }
   const claim = /\/claim\/([^/?#\s]+)/i.exec(text);
   if (claim?.[1]) {
     const id = UUID.exec(claim[1])?.[0];

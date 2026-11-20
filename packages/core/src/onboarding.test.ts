@@ -109,6 +109,7 @@ describe('readCodeInput', () => {
       playerId: '91000000-0000-0000-0000-000000000001',
     });
     expect(readCodeInput('https://athleit.app/claim/nope')).toEqual({ kind: 'invalid' });
+    expect(readCodeInput('https://athleit.app/invite/%E0%A4%A')).toEqual({ kind: 'invalid' });
   });
 });
 

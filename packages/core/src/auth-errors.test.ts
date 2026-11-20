@@ -26,6 +26,7 @@ describe('classifyAuthError', () => {
     [{ message: 'Email link is invalid or has expired' }, 'link_expired'],
     [{ code: 'email_not_confirmed' }, 'email_not_confirmed'],
     [{ code: 'user_cancelled' }, 'social_cancelled'],
+    [{ status: 422, code: 'validation_failed' }, 'invalid_input'],
     [{ status: 500, message: 'boom' }, 'server'],
     [undefined, 'server'],
   ])('%j is %s', (err, kind) => {

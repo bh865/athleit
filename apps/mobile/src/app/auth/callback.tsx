@@ -22,6 +22,8 @@ export default function AuthCallbackScreen() {
 
   useEffect(() => {
     const code = params.code;
+    // An OAuth return already exchanged its code in lib/auth: a second exchange would fail.
+    if (auth.session) return router.replace('/');
     if (!code || done.current === code) return;
     done.current = code;
     void auth.exchangeCode(code).then((res) => {

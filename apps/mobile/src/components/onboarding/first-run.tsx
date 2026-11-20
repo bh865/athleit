@@ -9,7 +9,7 @@ import { IntentHub } from '@/components/onboarding/intent-hub';
 import { RequestCards } from '@/components/onboarding/request-cards';
 import { useMyRequests } from '@/components/onboarding/use-my-requests';
 import { Button, EmptyState, Text } from '@/components/ui';
-import { HUB_DONE_KEY, HUB_SKIPPED_KEY, kv } from '@/lib/kv';
+import { HUB_DONE_KEY, HUB_SKIPPED_KEY, kv, POST_AUTH_INTENT_KEY } from '@/lib/kv';
 
 /** Home for someone with no place: their requests if any, otherwise the intent hub. */
 export function FirstRun({ displayName }: { displayName: string | null }) {
@@ -18,10 +18,17 @@ export function FirstRun({ displayName }: { displayName: string | null }) {
   const [flags, setFlags] = useState<{ done: boolean; skipped: boolean } | null>(null);
 
   useEffect(() => {
-    Promise.all([kv.get(HUB_DONE_KEY), kv.get(HUB_SKIPPED_KEY)]).then(([d, s]) =>
-      setFlags({ done: d === '1', skipped: s === '1' }),
+    Promise.all([kv.get(HUB_DONE_KEY), kv.get(HUB_SKIPPED_KEY), kv.get(POST_AUTH_INTENT_KEY)]).then(
+      ([d, s, intent]) => {
+        setFlags({ done: d === '1', skipped: s === '1' });
+        // "I have an invite or a code" on Welcome: open the code path once, then forget it.
+        if (intent === 'code') {
+          void kv.remove(POST_AUTH_INTENT_KEY);
+          router.push('/onboarding/code' as never);
+        }
+      },
     );
-  }, []);
+  }, [router]);
 
   const state = firstRunState({
     hasPlace: false,

@@ -173,7 +173,8 @@ export type AuthErrorKind =
   | 'server'
   | 'link_expired'
   | 'social_cancelled'
-  | 'email_not_confirmed';
+  | 'email_not_confirmed'
+  | 'invalid_input';
 
 export interface AuthErrorOptions {
   /**
@@ -232,6 +233,8 @@ export function classifyAuthError(
   if (code === 'otp_expired' || /expired|invalid.*(token|link)|link.*invalid/i.test(text)) {
     return 'link_expired';
   }
+  // Any other client error (bad email format, sign-ups closed, ...) is not the server's fault.
+  if (e.status !== undefined && e.status >= 400 && e.status < 500) return 'invalid_input';
   return 'server';
 }
 
@@ -270,6 +273,8 @@ export function authCopy(
       return 'Sign-in was cancelled. Try again, or use your email.';
     case 'email_not_confirmed':
       return 'Confirm your email first. Check your inbox, or ask for a new link.';
+    case 'invalid_input':
+      return 'We couldn’t use that. Check what you entered and try again.';
   }
 }
 

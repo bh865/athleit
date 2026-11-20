@@ -5,7 +5,6 @@ import { AuthForm } from '@/components/auth/auth-form';
 import { LinkBanner } from '@/components/auth/link-banner';
 import styles from '@/components/auth/auth-page.module.css';
 import { Heading } from '@/components/ui';
-import { linkBannerFor } from '@/lib/link-preview';
 import { safeNext } from '@/lib/safe-next';
 
 /** Only sentences this app wrote may appear from `?error=`, never arbitrary text from a link. */
@@ -25,7 +24,6 @@ export default async function SignInPage({
 }) {
   const { error, next } = await searchParams;
   const target = safeNext(next) === '/' ? undefined : safeNext(next);
-  const banner = await linkBannerFor(target);
   const shown =
     error === 'expired'
       ? authCopy('link_expired')
@@ -34,7 +32,7 @@ export default async function SignInPage({
         : null;
   return (
     <>
-      {banner ? <LinkBanner data={banner} /> : null}
+      <LinkBanner next={target} />
       <Heading as="h2" className={styles.heading}>
         Sign in
       </Heading>

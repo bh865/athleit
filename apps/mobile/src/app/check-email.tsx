@@ -32,6 +32,9 @@ export default function CheckEmailScreen() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const left = useRef(false);
 
+  // Never keep the sign-up password once this screen is gone.
+  useEffect(() => () => auth.clearPendingSignUp(), [auth]);
+
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
   }, []);

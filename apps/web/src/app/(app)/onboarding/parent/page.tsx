@@ -2,6 +2,7 @@
 
 import {
   addChildSchema,
+  ageOn,
   fieldErrors,
   friendlyError,
   joinCodeSchema,
@@ -32,14 +33,6 @@ interface Kid {
   age: number;
 }
 
-const ageFrom = (iso: string) => {
-  const d = new Date(iso);
-  const t = new Date();
-  let a = t.getFullYear() - d.getFullYear();
-  if (t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate()))
-    a--;
-  return a;
-};
 const STEP_NUMBER: Record<Step, number> = { add: 1, team: 2, code: 2, sent: 3 };
 const TITLE: Record<Step, string> = {
   add: 'Add your child',
@@ -97,7 +90,7 @@ export default function ParentPathPage() {
         id: res.data as string,
         first: parsed.data.firstName,
         last: parsed.data.lastName,
-        age: ageFrom(parsed.data.dateOfBirth),
+        age: ageOn(parsed.data.dateOfBirth),
       },
     ]);
     setFirst('');
