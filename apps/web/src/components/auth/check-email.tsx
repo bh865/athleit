@@ -55,7 +55,8 @@ export function CheckEmail({ email, next }: { email: string; next: string }) {
   return (
     <div className={styles.stack}>
       <p>
-        We sent a confirmation link to <strong>{email}</strong>
+        Check your email to confirm your account. We sent a confirmation link to{' '}
+        <strong>{email}</strong>
       </p>
       <p className={styles.sub} role="status">
         Waiting for you to open the link
