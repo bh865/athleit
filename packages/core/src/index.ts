@@ -40,3 +40,5 @@ export * from './family';
 export * from './roster';
 export * from './team-billing';
 export * from './admin';
+export * from './help';
+export * from './docs-check';

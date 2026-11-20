@@ -1,0 +1,61 @@
+name: Docs staleness
+
+# Weekly: which help articles cover code that changed after the article was last verified?
+# Reports to the admin Articles page (when DOCS_STATUS_URL and DOCS_STATUS_SECRET exist) and keeps one GitHub issue up to date.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-key
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compute stale articles
+        run: pnpm --silent docs:check --stale --json > "$RUNNER_TEMP/stale.json"
+
+      - name: Report to the admin Articles page
+        env:
+          DOCS_STATUS_URL: ${{ secrets.DOCS_STATUS_URL }}
+          DOCS_STATUS_SECRET: ${{ secrets.DOCS_STATUS_SECRET }}
+        run: node scripts/docs-report.mjs "$RUNNER_TEMP/stale.json"
+
+      - name: Open or update the stale articles issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const stale = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/stale.json`, 'utf8')).filter((s) => s.stale);
+            const title = 'Help articles that may be out of date';
+            const marker = '<!-- docs-stale -->';
+            const { owner, repo } = context.repo;
+            const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+            const existing = open.find((i) => i.body && i.body.includes(marker));
+            if (!stale.length) {
+              if (existing) await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed' });
+              return;
+            }
+            const body = [marker, 'Code these articles cover has changed since they were last verified. Check each one, update it if needed, then run `pnpm docs:verify <slug>`.', '',
+              ...stale.map((s) => `- \`${s.slug}\`: ${s.stale_paths.slice(0, 3).join(', ')}${s.stale_paths.length > 3 ? ', ...' : ''}`)].join('\n');
+            if (existing) await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body });
+            else await github.rest.issues.create({ owner, repo, title, body });

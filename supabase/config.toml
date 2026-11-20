@@ -499,3 +499,27 @@ verify_jwt = true
 # caller through userFunction). reconcile-billing is called by pg_cron through pg_net with the shared secret header.
 [functions.reconcile-billing]
 verify_jwt = false
+
+[functions.submit-support-request]
+verify_jwt = false
+
+[functions.finalize-support-attachments]
+verify_jwt = false
+
+[functions.get-support-request-by-token]
+verify_jwt = false
+
+[functions.reply-by-token]
+verify_jwt = false
+
+[functions.record-article-feedback]
+verify_jwt = false
+
+[functions.send-support-emails]
+verify_jwt = false
+
+[functions.sign-support-attachment]
+verify_jwt = false
+
+[functions.report-docs-status]
+verify_jwt = false

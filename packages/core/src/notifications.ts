@@ -15,6 +15,8 @@ export interface InAppPayload {
   club_id?: string | null;
   audience?: string;
   registration_event_id?: string;
+  /** Support request reference, for example SUP-001284. */
+  ref?: string;
 }
 
 const CHANGE_LABEL: Record<string, string> = {
@@ -58,13 +60,28 @@ export function notificationSummary(
             : '/pay',
     };
   }
+  if (category === 'support') {
+    return {
+      title: p.title || 'Athleit Support',
+      detail: p.body || 'Support update',
+      icon: 'chat-circle',
+      href:
+        typeof p.ref === 'string' && /^SUP-[0-9]{6,}$/.test(p.ref)
+          ? `/help/requests/${p.ref}`
+          : '/help/requests',
+    };
+  }
   if (category === 'billing') {
     // Admins open the team's billing page; coaches and managers (the restricted notice only) open the team.
     return {
       title: p.title || 'Team billing',
       detail: p.body || 'Team billing update',
       icon: 'credit-card',
-      href: p.team_id ? (p.audience === 'staff' ? `/teams/${p.team_id}` : `/teams/${p.team_id}/billing`) : '/',
+      href: p.team_id
+        ? p.audience === 'staff'
+          ? `/teams/${p.team_id}`
+          : `/teams/${p.team_id}/billing`
+        : '/',
     };
   }
   if (category === 'registration') {

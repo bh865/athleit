@@ -23,6 +23,7 @@ const ROUTE: Record<string, (id: string) => string> = {
   connect: () => '/admin/connect',
   webhook_event: () => '/admin/jobs',
   household: () => '/admin/people',
+  support_request: (id) => `/admin/support/tickets/${id}`,
 };
 
 /** ⌘K: jump to a module (from the registry) or look up an id or code. Money-related ids come back restricted for support. */
@@ -108,7 +109,7 @@ export function CommandPalette({ role }: { role: PlatformRole }) {
             autoFocus
             value={q}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Team, person, pi_, in_, acct_, cus_, sub_, evt_, RCP-, code"
+            placeholder="Team, person, pi_, in_, acct_, cus_, sub_, evt_, RCP-, SUP-, code"
             aria-label="Search"
           />
           <ul className={styles.list} aria-live="polite">

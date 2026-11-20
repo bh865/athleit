@@ -93,6 +93,9 @@ export function AuthForm({
             <Link href="/forgot-password">Forgot password?</Link>
           </p>
         )}
+        <p className={styles.forgot}>
+          <Link href="/help/a/join-a-team-with-a-code-or-link">Need help signing in?</Link>
+        </p>
         {isSignUp && <ConsentLine />}
         {state.error && (
           <p role="alert" className={styles.error}>

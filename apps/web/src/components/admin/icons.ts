@@ -16,4 +16,7 @@ export const ADMIN_ICONS: Record<string, IconName> = {
   'sliders-horizontal': 'sliders-horizontal',
   'clipboard-text': 'clipboard-text',
   'shield-check': 'shield-check',
+  tray: 'tray',
+  'chat-circle': 'chat-circle',
+  question: 'question',
 };

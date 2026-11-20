@@ -1,0 +1,37 @@
+---
+title: Delete your account
+slug: delete-your-account
+category: account-and-notifications
+audience: [parent, player, coach, team-admin]
+summary: What deleting your account removes, what stays, and what to sort out first.
+order: 20
+covers:
+  - 'apps/web/src/components/account/more-sections.tsx'
+  - 'supabase/functions/delete-account/**'
+  - 'supabase/functions/_shared/account/**'
+verified_commit: d170414
+verified_at: '2026-11-20'
+related: []
+---
+
+Deleting your account cannot be undone.
+
+## Before you delete
+
+You cannot delete your account while you are the **only admin** of a team or club, the **only guardian** of children in a family, or while you have a **payment plan with installments still to pay**. The page lists what to transfer first. Make someone else an admin or guardian, or remove the team, club or children, then come back.
+
+## Delete
+
+<Steps>
+
+1. Open **Account** and choose **Delete account**.
+2. Read what is deleted and what is kept.
+3. Type **DELETE** to confirm and choose **Permanently delete account**.
+
+</Steps>
+
+## What is deleted and what is kept
+
+- **Deleted:** your profile and photo, notification settings and devices, sign-in methods and memberships.
+- **Kept:** payment records clubs must keep, signed waivers, and messages you sent, shown as “Former member”.
+- **Support requests** you sent to Athleit are anonymized and their attachments are deleted.

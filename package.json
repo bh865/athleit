@@ -23,12 +23,16 @@
     "db:types:remote": "bash scripts/db-types.sh --remote",
     "db:push": "supabase db push --remote",
     "db:push:dry": "supabase db push --remote --dry-run",
-    "e2e": "pnpm --filter @athleit/web e2e"
+    "e2e": "pnpm --filter @athleit/web e2e",
+    "docs:index": "tsx scripts/docs-index.ts",
+    "docs:check": "tsx scripts/docs-check.ts",
+    "docs:verify": "tsx scripts/docs-verify.ts"
   },
   "devDependencies": {
     "@athleit/config": "workspace:*",
     "prettier": "^3.10.1",
     "supabase": "^3.2.0",
+    "tsx": "^4.23.0",
     "turbo": "^2.11.11"
   },
   "pnpm": {

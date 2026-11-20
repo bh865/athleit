@@ -15,6 +15,8 @@ export interface DeleteAccountDeps {
   removeAvatars: (userId: string) => Promise<void>;
   /** auth.admin.deleteUser (service role). Cascades the user's own rows; kept records null the reference. */
   deleteUser: (userId: string) => Promise<void>;
+  /** Anonymizes the user's support requests and deletes their attachments (private.support_anonymize_profile). */
+  anonymizeSupport?: (userId: string) => Promise<void>;
 }
 
 export type DeleteResult =
@@ -41,6 +43,7 @@ export async function deleteAccount(
   // Photos first: if this fails nothing is deleted yet and the user can retry. After the user is
   // gone the folder could no longer be cleaned by anyone but the service role.
   await deps.removeAvatars(userId);
+  await deps.anonymizeSupport?.(userId);
   await deps.deleteUser(userId);
   return { ok: true };
 }

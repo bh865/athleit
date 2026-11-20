@@ -1,0 +1,35 @@
+---
+title: Set up payments for your team
+slug: set-up-payments-for-your-team
+category: payments-and-receipts
+audience: [team-admin]
+summary: Connect your team’s bank account so families can pay you.
+order: 20
+covers:
+  - 'apps/web/src/components/payments/connect-card.tsx'
+  - 'supabase/functions/connect-onboarding/**'
+  - 'docs/payments.md'
+  - 'docs/payments-architecture.md'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [why-was-i-charged-a-service-fee]
+---
+
+Before you can collect payments, a team admin connects a payout account. Money from payments goes to your bank account. Setup is a one-time step.
+
+<WhoCanDo capability="payments.setup" label="Set up payouts" />
+
+<Steps>
+
+1. Open your team's **Payments** page and find **Payouts · Not set up**.
+2. Choose **Set up payouts to start collecting**.
+3. Follow the secure steps and enter your details. If something is missing, the page says **Add the missing details to turn payouts on**.
+4. When setup is done the page says **Payouts are on**.
+
+</Steps>
+
+## Who pays the card fee
+
+Under **Who pays the card fee by default**, choose whether the team absorbs it or **Families pay a service fee**. See [Why was I charged a service fee?](/help/a/why-was-i-charged-a-service-fee).
+
+Coaches and managers can send requests once payouts are on, but only a team admin can set them up.

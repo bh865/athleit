@@ -92,6 +92,7 @@ export const NOTIFICATION_CATEGORIES = [
   'payments',
   'registration',
   'billing',
+  'support',
 ] as const;
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 export const PUSH_PLATFORMS = ['ios', 'android', 'web'] as const;

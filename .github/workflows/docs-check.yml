@@ -1,0 +1,139 @@
+name: Docs check
+
+# The main CI only runs on pushes to dev, so docs need their own pull_request workflow.
+# Warn mode first: set the repository variable DOCS_CHECK_MODE to "block" to make a missing docs update fail the check.
+on:
+  pull_request:
+
+concurrency:
+  group: docs-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-key
+
+jobs:
+  check:
+    name: Help articles match the code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      flagged: ${{ steps.run.outputs.flagged }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history: the check diffs against the merge base
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run docs:check
+        id: run
+        env:
+          DOCS_CHECK_MODE: ${{ vars.DOCS_CHECK_MODE || 'warn' }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          DRAFTING_AVAILABLE: ${{ secrets.ANTHROPIC_API_KEY != '' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          set +e
+          pnpm docs:check --base "origin/${{ github.base_ref }}" --summary-file "$RUNNER_TEMP/docs-summary.md"
+          code=$?
+          if grep -q "may be out of date" "$RUNNER_TEMP/docs-summary.md"; then echo "flagged=true" >> "$GITHUB_OUTPUT"; else echo "flagged=false" >> "$GITHUB_OUTPUT"; fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/docs-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Post or update the summary comment
+        # Pull requests from forks get a read-only token, so this step is allowed to fail without failing the check.
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(`${process.env.RUNNER_TEMP}/docs-summary.md`, 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const mine = comments.find((c) => c.body && c.body.includes('<!-- docs-check -->'));
+            if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+      - name: Fail in block mode
+        if: steps.run.outputs.code != '0'
+        run: exit 1
+
+  draft:
+    name: Draft article updates with Claude
+    needs: check
+    # Only when articles are flagged, the PR is from this repository (never a fork), and the ANTHROPIC_API_KEY secret exists.
+    if: needs.check.outputs.flagged == 'true' && github.event.pull_request.head.repo.full_name == github.repository && vars.DOCS_DRAFTING != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Skip quietly without a key
+        if: env.HAS_KEY != 'true'
+        run: echo "No ANTHROPIC_API_KEY secret: skipping draft updates (the check comment says so)."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_KEY == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+        if: env.HAS_KEY == 'true'
+      - uses: actions/setup-node@v7
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: env.HAS_KEY == 'true'
+
+      - name: List the flagged articles
+        if: env.HAS_KEY == 'true'
+        run: |
+          pnpm docs:check --base "origin/${{ github.base_ref }}" --summary-file flagged.md || true
+
+      - name: Claude drafts the updates (read, search and edit only)
+        if: env.HAS_KEY == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # No Bash and no web: Claude can only read the repo and edit files. A later step commits only help and docs paths.
+          claude_args: --allowedTools "Read,Glob,Grep,Edit,Write"
+          prompt: |
+            Read flagged.md. It lists help articles under apps/web/content/help whose covered code changed in this pull request.
+            For each flagged article only: read the diff of the covered files (git history is available through the files you can read),
+            then update the article so it matches the new behaviour. Keep its voice, structure and components. Plain, short sentences.
+            Never type a price, trial length or fee: use the <Live> component. Never type a role table: use <WhoCanDo>.
+            Do not change frontmatter fields other than summary if it became wrong. Do not touch code, tests or any other file.
+            If you are not sure what changed, leave the article alone and say so in your final message.
+
+      - name: Commit the drafted updates to the PR branch
+        if: env.HAS_KEY == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/content/help docs
+          if git diff --cached --quiet; then echo "No drafted changes."; exit 0; fi
+          git commit -m "Docs: update help articles (drafted by Claude)"
+          git push

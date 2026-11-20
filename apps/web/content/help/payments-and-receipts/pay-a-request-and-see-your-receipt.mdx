@@ -1,0 +1,42 @@
+---
+title: Pay a request and see your receipt
+slug: pay-a-request-and-see-your-receipt
+category: payments-and-receipts
+audience: [parent]
+summary: Pay what your team asks for by card, then find your receipt afterwards.
+order: 10
+covers:
+  - 'apps/web/src/app/(app)/pay/**'
+  - 'apps/web/src/components/payments/**'
+  - 'docs/payments.md'
+verified_commit: d170414
+verified_at: '2026-11-20'
+related: [pay-in-installments, why-was-i-charged-a-service-fee, what-happens-if-a-payment-fails]
+---
+
+Your team can send payment requests for fees, uniforms and more. They appear under **Pay** and on your Home screen.
+
+## Pay
+
+<Steps>
+
+1. Open **Pay** and choose the request, or select several to pay together.
+2. Check the total. It shows the amount, and any fee as its own line.
+3. Choose **Continue to payment** and enter your card details.
+4. Wait for **Confirming your payment** to finish and do not close the window.
+
+</Steps>
+
+If it takes longer than usual, you can close the window. You will not be charged twice, and your receipt is sent once the payment is confirmed.
+
+## Find your receipt
+
+Receipts are listed under **Pay**. Each has a receipt ID you can copy. If a payment is refunded, the receipt shows **Refunded** or **Partially refunded**.
+
+<Callout kind="note">
+  Athleit does not store your card number. Payments are processed by Stripe.
+</Callout>
+
+<WhoCanDo capability="payments.pay" label="Pay a request" />
+
+If your card is declined, see [What happens if a payment fails](/help/a/what-happens-if-a-payment-fails).

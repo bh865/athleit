@@ -1,0 +1,44 @@
+---
+title: RSVP and see the schedule
+slug: rsvp-and-see-the-schedule
+category: schedule-and-rsvps
+audience: [parent, player]
+summary: Tell the coach whether your child is coming, and add the schedule to your calendar.
+order: 10
+covers:
+  - 'apps/web/src/components/schedule/**'
+  - 'docs/scheduling.md'
+  - 'packages/core/src/capabilities.ts'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [change-your-notification-settings]
+---
+
+The **Schedule** shows practices, games and other events for your team. Each event has an RSVP for each of your children.
+
+## RSVP
+
+<Steps>
+
+1. Open the event from **Schedule** or from your Home screen.
+2. Under your child's name, choose **Going** or **Can’t go**. **Maybe** is also available.
+3. You can change your answer later. The coach sees the new answer straight away.
+
+</Steps>
+
+## Get the schedule in your calendar
+
+The schedule can be added to your phone calendar as a calendar feed.
+
+<Callout kind="note">
+  Calendars refresh on their own schedule, so changes can take a few hours to appear in your
+  calendar app. The Athleit schedule is always up to date.
+</Callout>
+
+## Who can do what
+
+<WhoCanDo capability="schedule.rsvpOwn" label="RSVP" />
+
+<WhoCanDo capability="schedule.manage" label="Create and edit events" />
+
+Turn on **Schedule changes** in [your notification settings](/help/a/change-your-notification-settings) to hear when an event is added, moved or cancelled.

@@ -16,7 +16,14 @@ export const isPlatformRole = (v: unknown): v is PlatformRole =>
 
 // Module registry -----------------------------------------------------------------------------------------------
 export type AdminNavGroup =
-  'Overview' | 'Customers' | 'Money' | 'Trust and safety' | 'Platform' | 'Audit' | 'Admins';
+  | 'Overview'
+  | 'Customers'
+  | 'Money'
+  | 'Trust and safety'
+  | 'Support'
+  | 'Platform'
+  | 'Audit'
+  | 'Admins';
 export type AdminPageType =
   | 'Report'
   | 'List + detail'
@@ -134,6 +141,46 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     phone: true,
   },
   {
+    key: 'support-tickets',
+    label: 'Tickets',
+    icon: 'tray',
+    route: '/admin/support/tickets',
+    minRole: 'support',
+    group: 'Support',
+    pageType: 'Queue',
+    phone: false,
+  },
+  {
+    key: 'support-feedback',
+    label: 'Feedback',
+    icon: 'chat-circle',
+    route: '/admin/support/feedback',
+    minRole: 'support',
+    group: 'Support',
+    pageType: 'List',
+    phone: false,
+  },
+  {
+    key: 'support-articles',
+    label: 'Articles',
+    icon: 'question',
+    route: '/admin/support/articles',
+    minRole: 'support',
+    group: 'Support',
+    pageType: 'Report + list',
+    phone: false,
+  },
+  {
+    key: 'support-reports',
+    label: 'Support reports',
+    icon: 'clipboard-text',
+    route: '/admin/support/reports',
+    minRole: 'support',
+    group: 'Support',
+    pageType: 'Report',
+    phone: false,
+  },
+  {
     key: 'notifications',
     label: 'Notifications',
     icon: 'bell-ringing',
@@ -212,6 +259,7 @@ export const NAV_GROUP_ORDER: readonly AdminNavGroup[] = [
   'Customers',
   'Money',
   'Trust and safety',
+  'Support',
   'Platform',
   'Audit',
   'Admins',
@@ -239,7 +287,15 @@ export type AdminAction =
   | 'review_report'
   | 'reveal_message'
   | 'edit_sport_config'
-  | 'add_note';
+  | 'add_note'
+  | 'support_reply'
+  | 'support_merge'
+  | 'support_spam'
+  | 'support_redact'
+  | 'support_delete_attachment'
+  | 'support_export'
+  | 'support_manage_canned'
+  | 'support_feedback_status';
 
 const ACTION_MIN: Record<AdminAction, PlatformRole> = {
   extend_trial: 'admin',
@@ -254,6 +310,14 @@ const ACTION_MIN: Record<AdminAction, PlatformRole> = {
   reveal_message: 'admin',
   edit_sport_config: 'admin',
   add_note: 'support',
+  support_reply: 'support',
+  support_merge: 'admin',
+  support_spam: 'admin',
+  support_redact: 'admin',
+  support_delete_attachment: 'admin',
+  support_export: 'admin',
+  support_manage_canned: 'admin',
+  support_feedback_status: 'admin',
 };
 export const canDo = (role: PlatformRole | null | undefined, action: AdminAction): boolean =>
   roleAtLeast(role, ACTION_MIN[action]);

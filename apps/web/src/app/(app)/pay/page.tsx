@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 
+import { HelpLink } from '@/components/help/help-link';
 import { PayView } from '@/components/payments/pay-view';
 import { LoadingSkeleton, PageHeader } from '@/components/ui';
 
@@ -11,6 +12,7 @@ function PayPage() {
     <>
       <PageHeader title="Pay" subtitle="Requests, payments and receipts" />
       <PayView />
+      <HelpLink article="pay-a-request-and-see-your-receipt" />
     </>
   );
 }

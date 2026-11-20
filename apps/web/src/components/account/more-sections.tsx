@@ -22,13 +22,9 @@ import { getClient } from '@/lib/supabase/browser';
 import styles from './account.module.css';
 
 const LINKS = [
-  { label: 'Help center', href: process.env.NEXT_PUBLIC_HELP_URL },
-  {
-    label: 'Contact support',
-    href: process.env.NEXT_PUBLIC_SUPPORT_EMAIL
-      ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`
-      : undefined,
-  },
+  { label: 'Help center', href: '/help' },
+  { label: 'Contact support', href: '/help/contact' },
+  { label: 'Your requests', href: '/help/requests' },
   { label: 'Terms of service', href: process.env.NEXT_PUBLIC_TERMS_URL },
   { label: 'Privacy policy', href: process.env.NEXT_PUBLIC_PRIVACY_URL },
 ].filter((l): l is { label: string; href: string } => !!l.href);

@@ -1,0 +1,45 @@
+---
+title: Start your team’s free trial
+slug: start-your-teams-free-trial
+category: team-subscription
+audience: [team-admin]
+summary: Every team starts with a free trial. Subscribe when you are ready.
+order: 10
+covers:
+  - 'apps/web/src/components/billing/**'
+  - 'apps/web/src/app/(app)/teams/[id]/billing/**'
+  - 'docs/billing.md'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [update-your-card-or-cancel, what-happens-if-a-payment-fails]
+---
+
+A team subscription is paid by a team admin. The team starts with a free trial of <Live value="trial_days" />, then the price is <Live value="price" />.
+
+## Subscribe
+
+<Steps>
+
+1. Open your team and go to **Billing**.
+2. Choose **Subscribe** and follow the secure checkout.
+3. If your trial still has more than two days left, you are not charged until the trial would have ended.
+
+</Steps>
+
+No card is needed until you subscribe.
+
+<WhoCanDo capability="billing.manage" label="Subscribe, change the card or cancel" />
+
+Coaches and managers can see the status (for example when the trial ends) but not invoices or card details. Families and club admins do not see billing.
+
+<Callout kind="note">
+  If your trial has less than two days left, the first charge happens a little after the original
+  trial end date. The screen tells you the new date.
+</Callout>
+
+<FAQ>
+  <Q q="What stops if the trial ends and nobody subscribes?">
+    Access becomes restricted: new payment requests, registrations, invites and join approvals
+    pause. Messages, the schedule, RSVPs and existing payments keep working, and nothing is deleted.
+  </Q>
+</FAQ>
