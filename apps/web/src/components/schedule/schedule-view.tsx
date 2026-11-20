@@ -3,6 +3,8 @@
 import {
   addDays,
   applyFilters,
+  dayHeading,
+  shortDate,
   filtersFromParams,
   filtersToParams,
   groupByLocalDay,
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
+import { useMinWidth } from '@/components/roster/use-media-query';
 
 import { Agenda, type AgendaWhen } from './agenda';
 import { CalendarFeed } from './calendar-feed';
@@ -40,6 +43,7 @@ import { EventDetail } from './event-detail';
 import { EventForm } from './event-form';
 import { EventRow } from './event-row';
 import { MonthGrid } from './month-grid';
+import { WeekGrid } from './week-grid';
 import { MoreMenu } from './more-menu';
 import { ScheduleFilterBar } from './schedule-filters';
 import { fromHouseholdRows, fromTeamRows, type ScheduleItem } from './items';
@@ -52,16 +56,6 @@ export type ScheduleScope =
   { kind: 'team'; teamId: string; sport: Sport; canManage: boolean } | { kind: 'household' };
 
 type ViewMode = 'agenda' | 'week' | 'month';
-
-const dayHeading = (key: string) => {
-  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-US', {
-    timeZone: 'UTC',
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-};
 
 /** The Schedule screen: Week/Month, rows with a date block, and the right-hand event drawer. */
 export function ScheduleView({
@@ -112,6 +106,9 @@ export function ScheduleView({
     () => (mode === 'month' ? monthGrid(y, m).flat() : weekDays(anchor)),
     [mode, anchor, y, m],
   );
+  // Tablet and below: three days at a time (the anchor day and the next two), stepped with the arrows.
+  const wide = useMinWidth(1100);
+  const gridDays = useMemo(() => (wide ? days : [anchor, addDays(anchor, 1), addDays(anchor, 2)]), [wide, days, anchor]);
   const first = days[0]!;
   const last = days[days.length - 1]!;
 
@@ -132,7 +129,6 @@ export function ScheduleView({
     [res.data, filters, now],
   );
   const grouped = useMemo(() => groupByLocalDay(filteredItems), [filteredItems]);
-  const visible = new Set(days);
   const dayItems = (k: string): ScheduleItem[] => grouped.get(k) ?? [];
 
   const select = useCallback(
@@ -164,18 +160,21 @@ export function ScheduleView({
   };
 
   const step = (dir: -1 | 1) => {
-    if (mode === 'week') setAnchor(addDays(anchor, dir * 7));
+    if (mode === 'week') setAnchor(addDays(anchor, dir * (wide ? 7 : 3)));
     else {
       const s = shiftMonth(y, m, dir);
       setAnchor(`${s.year}-${String(s.month).padStart(2, '0')}-01`);
     }
     setPickedDay(null);
   };
-  const rangeLabel = mode === 'week' ? weekTitle(days) : monthTitle(y, m);
+  const rangeLabel =
+    mode === 'week'
+      ? wide
+        ? weekTitle(days)
+        : `${shortDate(gridDays[0]!)} – ${shortDate(gridDays[2]!)}`
+      : monthTitle(y, m);
   const hasFilters = filters.types.length > 0 || filters.childId != null || filters.teamId != null || filters.needsReply;
-  const weekKeys = days.filter((k) => dayItems(k).length > 0);
-  const listDays = mode === 'week' ? weekKeys : pickedDay ? [pickedDay] : [];
-  const emptyWeek = mode === 'week' && weekKeys.length === 0 && !hasFilters;
+  const emptyWeek = mode === 'week' && gridDays.every((k) => dayItems(k).length === 0) && !hasFilters;
 
   const headerControls = (
     <div className={styles.controls}>
@@ -268,56 +267,71 @@ export function ScheduleView({
       {mode !== 'agenda' ? (
       <LoadState loading={res.loading && !res.data} error={res.error} onRetry={res.reload}>
         {mode === 'month' ? (
-          <MonthGrid
-            year={y}
-            month={m}
-            label={rangeLabel}
-            today={today}
-            pickedDay={pickedDay}
-            itemsByDay={grouped}
-            onPickDay={setPickedDay}
-            onSelect={select}
-          />
+          <div className={styles.monthLayout}>
+            <MonthGrid
+              year={y}
+              month={m}
+              label={rangeLabel}
+              today={today}
+              pickedDay={pickedDay}
+              itemsByDay={grouped}
+              onPickDay={setPickedDay}
+            />
+            <section className={styles.dayPanel} aria-label="Selected day" data-testid="day-panel">
+              {pickedDay ? (
+                <>
+                  <h2 className={styles.dayHeading}>{dayHeading(pickedDay, today)}</h2>
+                  {dayItems(pickedDay).length === 0 ? (
+                    <p className={styles.meta}>Nothing scheduled this day.</p>
+                  ) : (
+                    <ul className={styles.list}>
+                      {dayItems(pickedDay).map((it) => (
+                        <EventRow
+                          key={it.id}
+                          item={it}
+                          now={now}
+                          selected={it.id === selectedId}
+                          onSelect={select}
+                          showCounts={canManage}
+                          showTeam={scope.kind === 'household'}
+                          onChanged={reloadAll}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <p className={styles.meta}>Pick a day to see its events.</p>
+              )}
+            </section>
+          </div>
         ) : null}
 
-        {emptyWeek ? (
-          <EmptyState
-            icon="calendar-blank"
-            title="Nothing scheduled this week"
-            body={
-              canManage
-                ? 'Add a practice or game and families will see it right away.'
-                : 'New events will show up here.'
-            }
-            action={
-              canManage ? <Button onClick={() => setCreating(true)}>New event</Button> : undefined
-            }
-          />
-        ) : (
-          <ul className={styles.list} aria-label="Events">
-            {listDays
-              .filter((k) => visible.has(k))
-              .map((k) => (
-                <li key={k}>
-                  <h2 className={styles.dayHeading}>{dayHeading(k)}</h2>
-                  <ul className={styles.list}>
-                    {dayItems(k).map((it) => (
-                      <EventRow
-                        key={it.id}
-                        item={it}
-                        now={now}
-                        selected={it.id === selectedId}
-                        onSelect={select}
-                        showCounts={canManage}
-                        showTeam={false}
-                        onChanged={reloadAll}
-                      />
-                    ))}
-                  </ul>
-                </li>
-              ))}
-          </ul>
-        )}
+        {mode === 'week' ? (
+          emptyWeek ? (
+            <EmptyState
+              icon="calendar-blank"
+              title="Nothing scheduled this week"
+              body={
+                canManage
+                  ? 'Add a practice or game and families will see it right away.'
+                  : 'New events will show up here.'
+              }
+              action={canManage ? <Button onClick={() => setCreating(true)}>New event</Button> : undefined}
+            />
+          ) : (
+            <WeekGrid
+              days={gridDays}
+              items={filteredItems}
+              now={now}
+              today={today}
+              zone={viewerZone}
+              showCounts={canManage}
+              selectedId={selectedId}
+              onSelect={select}
+            />
+          )
+        ) : null}
       </LoadState>
       ) : null}
 

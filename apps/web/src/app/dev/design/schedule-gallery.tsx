@@ -107,7 +107,6 @@ export function MonthDemo() {
       pickedDay="2026-11-24"
       itemsByDay={byDay}
       onPickDay={noop}
-      onSelect={noop}
     />
   );
 }

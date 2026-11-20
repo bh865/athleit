@@ -19,8 +19,9 @@ const isoWeekdayToday = () => (new Date().getDay() === 0 ? 7 : new Date().getDay
 async function openRow(page: Page, text: string, nth = 0) {
   const row = page.getByTestId('event-row').filter({ hasText: text }).nth(nth);
   const id = await row.getAttribute('data-event-id');
-  // The row is a card; its first button opens the event (replies sit below it).
-  await row.getByRole('button').first().click();
+  // Agenda rows are cards whose first button opens the event (replies sit below); Week blocks are the button.
+  const isButton = (await row.evaluate((el) => el.tagName)) === 'BUTTON';
+  await (isButton ? row : row.getByRole('button').first()).click();
   await page.waitForURL((u) => u.search.includes(`event=${id}`));
   await expect(page.getByTestId('event-title')).toBeVisible();
 }
