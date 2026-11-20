@@ -3670,6 +3670,48 @@ export type Database = {
         }[]
       }
       account_deletion_blockers: { Args: never; Returns: Json }
+      admin_billing_metrics: { Args: never; Returns: Json }
+      admin_clear_comp: {
+        Args: { p_reason: string; p_team_id: string }
+        Returns: undefined
+      }
+      admin_comp_team: {
+        Args: { p_reason: string; p_team_id: string; p_until: string }
+        Returns: undefined
+      }
+      admin_extend_trial: {
+        Args: { p_new_trial_ends_at: string; p_reason: string; p_team_id: string }
+        Returns: undefined
+      }
+      admin_get_team_billing: { Args: { p_team_id: string }; Returns: Json }
+      admin_list_settings: { Args: never; Returns: Json }
+      admin_list_team_billing: {
+        Args: { p_cursor?: Json; p_limit?: number; p_search?: string; p_state?: string }
+        Returns: Json
+      }
+      admin_set_setting: {
+        Args: { p_key: string; p_reason: string; p_value: Json }
+        Returns: undefined
+      }
+      get_billing_terms: { Args: never; Returns: Json }
+      get_team_billing: { Args: { p_team_id: string }; Returns: Json }
+      get_team_billing_invoices: {
+        Args: { p_team_id: string }
+        Returns: {
+          amount_due_cents: number
+          amount_paid_cents: number
+          amount_refunded_cents: number
+          currency: string
+          hosted_invoice_url: string
+          invoice_number: string
+          invoice_pdf_url: string
+          paid_at: string
+          period_end: string
+          period_start: string
+          status: string
+        }[]
+      }
+      platform_admin_role: { Args: never; Returns: string }
       add_child: {
         Args: {
           p_date_of_birth: string
