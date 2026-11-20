@@ -38,6 +38,10 @@ messages insert ──trigger──▶ private.notify_new_message ──▶ priv
 Schedule changes use the same pipeline (category `schedule`); the rules and batching are in [scheduling.md](scheduling.md#notifications-part-c).
 The push body comes from `payload.body` ("12 practices added"); rows without one fall back to the change label.
 
+## Billing notifications
+
+Category `billing` (default on for push and email; the preference row is shown to team admins only). Recipients are **all current admins of the team**; coaches and managers receive **only** the "some team actions are paused" notice, worded "ask a team admin" with no amounts. Every notice is keyed in `team_billing_notices` (once per team and key) and in the outbox dedupe key, so webhook retries and sweep re-runs never repeat one. Admin deep link `/teams/<id>/billing`; staff link `/teams/<id>`. The full list and when each is sent is in [billing.md](billing.md#notices).
+
 ## Deep links
 
 Notification data carries a path (`/messages/<thread>` or `/events/<event>`). Web: the service worker focuses or opens
