@@ -9,6 +9,7 @@ import { Button, Glass, Icon, Text } from '@/components/ui';
 
 import styles from './admin-shell.module.css';
 import { useAdmin } from './admin-provider';
+import { CommandPalette } from './command-palette';
 import { ADMIN_ICONS } from './icons';
 
 // Mirrors the 833px breakpoint in admin-shell.module.css (phone: Overview, search and queues only).
@@ -73,11 +74,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </Glass>
       <div className={styles.main}>
         <header className={styles.top}>
-          <Link href="/admin/people" className={styles.search} aria-label="Search teams, people, ids">
-            <Icon name="magnifying-glass" size="sm" />
-            <span>Search teams, people, PR-, RCP-, cus_…</span>
-            <kbd>⌘K</kbd>
-          </Link>
+          <CommandPalette role={role} />
           <div className={styles.status}>
             <EnvBadge mode={stripeMode} />
             <RoleChip role={role} />
