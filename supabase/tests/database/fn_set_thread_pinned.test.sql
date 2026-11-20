@@ -60,9 +60,9 @@ insert into public.thread_participants (thread_id, profile_id, role, joined_at, 
 
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000001","role":"authenticated"}', true); set local role authenticated;
 select lives_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000b', true) $$, 'a participant can pin a group');
-select ok((select pinned_at is not null from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000001'), 'pin stored on own row');
+select ok((select pinned_at is not null from public.thread_user_state where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000001'), 'pin stored on own row');
 select lives_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000a', true) $$, 'a member can pin an announcement');
-select is((select role from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='bb000000-0000-0000-0000-000000000001'), 'read_only', 'announcement row is read_only');
+select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='bb000000-0000-0000-0000-000000000001'), 0, 'pinning an announcement creates no participant row');
 select is(private.can_post_thread('71000000-0000-0000-0000-00000000000a'), false, 'the pin row grants no posting');
 select lives_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000b', false) $$, 'unpin');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
@@ -70,10 +70,10 @@ select throws_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-000
 select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000002'), 0, 'and no row was created');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000004","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000b', true) $$, '42501', null, 'a removed member cannot pin');
-select is((select pinned_at from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000004'), null, 'and the removed row stays unpinned');
+select is((select count(*)::int from public.thread_user_state where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000004'), 0, 'and the removed row stays unpinned');
 reset role; select set_config('request.jwt.claims', '{"sub":"dd000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 select throws_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000a', true) $$, '42501', null, 'another team cannot pin an announcement');
-select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='dd000000-0000-0000-0000-000000000002'), 0, 'and no stranger row is created');
+select is((select count(*)::int from public.thread_user_state where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='dd000000-0000-0000-0000-000000000002'), 0, 'and no stranger row is created');
 reset role; select set_config('request.jwt.claims', '{"sub":"cc000000-0000-0000-0000-000000000001","role":"authenticated"}', true); set local role authenticated;
 select lives_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000a', true) $$, 'a player 13-17 can pin the team announcement thread');
 reset role;
@@ -86,6 +86,19 @@ reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-
 select lives_ok($$ select public.set_thread_pinned(('72000000-0000-0000-0000-00000000000'||g)::uuid, true) from generate_series(1,4) g $$, 'pins 2-5 fit (the group was pinned first)');
 select throws_ok($$ select public.set_thread_pinned('72000000-0000-0000-0000-000000000005', true) $$, 'P0001', 'pin_limit_reached', 'the sixth pin returns a friendly error');
 
+
+-- Other members cannot read someone else's pin state.
+reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000003","role":"authenticated"}', true); set local role authenticated;
+select is((select count(*)::int from public.thread_user_state where profile_id='bb000000-0000-0000-0000-000000000001'), 0, 'a fellow member cannot read another member''s pin state');
+select is((select count(*)::int from public.thread_user_state where profile_id='bb000000-0000-0000-0000-000000000003'), 0, 'and has none of their own yet');
+-- Pins on threads the caller can no longer read do not use a slot.
+reset role;
+insert into public.threads (id, team_id, type, title, created_by)
+  select ('73000000-0000-0000-0000-00000000000'||g)::uuid, 'e2000000-0000-0000-0000-000000000002', 'announcement', 'Gone'||g, 'dd000000-0000-0000-0000-000000000001' from generate_series(1,5) g;
+insert into public.thread_user_state (thread_id, profile_id, pinned_at)
+  select ('73000000-0000-0000-0000-00000000000'||g)::uuid, 'bb000000-0000-0000-0000-000000000003', now() from generate_series(1,5) g;
+reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000003","role":"authenticated"}', true); set local role authenticated;
+select lives_ok($$ select public.set_thread_pinned('71000000-0000-0000-0000-00000000000b', true) $$, 'stale pins on unreadable threads do not count toward the cap');
 reset role;
 select * from finish();
 rollback;

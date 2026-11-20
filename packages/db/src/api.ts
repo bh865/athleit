@@ -498,6 +498,34 @@ export const getInbox = (
     [],
   );
 
+type InboxRowRaw = NonNullable<Awaited<ReturnType<typeof getInbox>>['data']>[number];
+
+/**
+ * Every inbox row, following the keyset cursor until a page comes back empty (capped at 10 pages
+ * of `pageSize`, so a very large inbox cannot loop). The first page also carries the pinned rows.
+ */
+export async function getInboxAll(client: Client, pageSize = 100): Promise<Result<InboxRowRaw[]>> {
+  const seen = new Map<string, InboxRowRaw>();
+  let before: { at: string; id: string } | undefined;
+  for (let page = 0; page < 10; page++) {
+    const res = await getInbox(client, before ? { limit: pageSize, before } : { limit: pageSize });
+    if (res.error) return fail(res.error);
+    const rows = res.data ?? [];
+    let added = 0;
+    for (const r of rows) {
+      if (!seen.has(r.thread_id)) {
+        seen.set(r.thread_id, r);
+        added += 1;
+      }
+    }
+    const unpinned = rows.filter((r) => r.pinned_at === null);
+    const last = unpinned[unpinned.length - 1];
+    if (added === 0 || !last) break;
+    before = { at: last.last_message_at, id: last.thread_id };
+  }
+  return ok([...seen.values()]);
+}
+
 export const searchMessages = (client: Client, query: string, limit = 30) =>
   run(client.rpc('search_messages', { p_query: query, p_limit: limit }), []);
 
@@ -568,16 +596,48 @@ export const getMessagesPage = (
   return run(q, []);
 };
 
-/** The caller's own participation row (join time); a non-participant gets null. */
-export const getMyParticipation = (client: Client, threadId: string, profileId: string) =>
-  run(
+/**
+ * The caller's own per-thread state: join time, role and mute from their participant row, plus
+ * pin and archive from thread_user_state. Both tables are own-row readable for this purpose; a
+ * non-participant (announcement audience) has no participant row.
+ */
+export async function getMyParticipation(
+  client: Client,
+  threadId: string,
+  profileId: string,
+): Promise<
+  Result<{
+    joined_at: string | null;
+    role: string | null;
+    muted_until: string | null;
+    pinned_at: string | null;
+    archived_at: string | null;
+  }>
+> {
+  const [p, u] = await Promise.all([
     client
       .from('thread_participants')
-      .select('joined_at, role, muted_until, pinned_at, archived_at')
+      .select('joined_at, role, muted_until')
       .eq('thread_id', threadId)
       .eq('profile_id', profileId)
       .maybeSingle(),
-  );
+    client
+      .from('thread_user_state')
+      .select('pinned_at, archived_at')
+      .eq('thread_id', threadId)
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+  ]);
+  if (p.error) return fail(p.error);
+  if (u.error) return fail(u.error);
+  return ok({
+    joined_at: p.data?.joined_at ?? null,
+    role: p.data?.role ?? null,
+    muted_until: p.data?.muted_until ?? null,
+    pinned_at: u.data?.pinned_at ?? null,
+    archived_at: u.data?.archived_at ?? null,
+  });
+}
 
 export const getMessage = (client: Client, messageId: string) =>
   run(client.from('messages').select(MESSAGE_COLUMNS).eq('id', messageId).single());

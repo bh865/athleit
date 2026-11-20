@@ -25,7 +25,7 @@ import {
   type InboxRow,
 } from '@athleit/core';
 import {
-  getInbox,
+  getInboxAll,
   markThreadRead,
   searchMessages,
   setThreadArchivedForMe,
@@ -73,7 +73,7 @@ export function ThreadList({ onCompose }: { onCompose?: () => void }) {
     () =>
       teams.length === 0
         ? Promise.resolve({ data: [], error: null })
-        : getInbox(getClient(), { limit: 100 }),
+        : getInboxAll(getClient()),
     [teams.length],
   );
   const { reload } = list;

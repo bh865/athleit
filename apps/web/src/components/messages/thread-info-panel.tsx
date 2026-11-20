@@ -48,6 +48,7 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
   const [tab, setTab] = useState<'media' | 'files'>('media');
   const [q, setQ] = useState('');
   const [adding, setAdding] = useState(false);
+  const [choosing, setChoosing] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   // Esc closes; focus moves in on open (the opener restores it when the panel unmounts).
@@ -65,7 +66,9 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
   const roles = contexts.find((c) => c.kind === 'team' && c.id === t?.team_id)?.roles ?? [];
   const canManage = isStaff && (isAnnouncement || roles.includes('admin') || t?.created_by === me);
   const muted = isMuted(mine.data?.muted_until ?? null);
-  const archivedForMe = Boolean(t && mine.data?.archived_at && mine.data.archived_at >= t.last_message_at);
+  const archivedForMe = Boolean(
+    t && mine.data?.archived_at && mine.data.archived_at >= t.last_message_at,
+  );
 
   const run = async (fn: () => PromiseLike<{ error: unknown }>, done?: string) => {
     const r = await fn();
@@ -76,8 +79,12 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
     members.reload();
   };
 
-  const list = (members.data ?? []).filter((m) => (m.display_name ?? '').toLowerCase().includes(q.trim().toLowerCase()));
-  const files = (media.data ?? []).filter((m) => (tab === 'media' ? m.mime_type.startsWith('image/') : m.mime_type === 'application/pdf'));
+  const list = (members.data ?? []).filter((m) =>
+    (m.display_name ?? '').toLowerCase().includes(q.trim().toLowerCase()),
+  );
+  const files = (media.data ?? []).filter((m) =>
+    tab === 'media' ? m.mime_type.startsWith('image/') : m.mime_type === 'application/pdf',
+  );
 
   return (
     <aside className={styles.panel} aria-label="Conversation info">
@@ -85,7 +92,13 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
         <Text variant="heading" as="h2">
           Info
         </Text>
-        <button ref={closeRef} type="button" className={styles.iconBtn} aria-label="Close info" onClick={onClose}>
+        <button
+          ref={closeRef}
+          type="button"
+          className={styles.iconBtn}
+          aria-label="Close info"
+          onClick={onClose}
+        >
           <Icon name="x" />
         </button>
       </div>
@@ -106,33 +119,58 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
               <input
                 type="checkbox"
                 role="switch"
-                checked={muted}
+                checked={muted || choosing}
                 aria-label="Mute notifications"
                 onChange={(e) => {
-                  if (!e.target.checked) void run(() => setThreadMute(client, threadId, null), 'Unmuted');
+                  // Turning it on asks for a duration; turning it off unmutes at once.
+                  if (e.target.checked) setChoosing(true);
+                  else {
+                    setChoosing(false);
+                    if (muted) void run(() => setThreadMute(client, threadId, null), 'Unmuted');
+                  }
                 }}
               />
             </label>
-            <div className={styles.durations} role="group" aria-label="Mute for">
-              {MUTE_DURATIONS.map((d) => (
-                <button key={d} type="button" onClick={() => void run(() => setThreadMute(client, threadId, muteUntil(d)))}>
-                  {muteDurationLabel(d)}
-                </button>
-              ))}
-            </div>
+            {choosing ? (
+              <div className={styles.durations} role="group" aria-label="Mute for">
+                {MUTE_DURATIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setChoosing(false);
+                      void run(() => setThreadMute(client, threadId, muteUntil(d)));
+                    }}
+                  >
+                    {muteDurationLabel(d)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <Text variant="caption" muted as="p">
               Notifications never include message text for conversations with a player under 18.
             </Text>
           </section>
 
           <section className={styles.block}>
-            <button type="button" className={styles.action} onClick={() => void run(() => setThreadPinned(client, threadId, !mine.data?.pinned_at))}>
+            <button
+              type="button"
+              className={styles.action}
+              onClick={() =>
+                void run(() => setThreadPinned(client, threadId, !mine.data?.pinned_at))
+              }
+            >
               <Icon name="push-pin" /> {mine.data?.pinned_at ? 'Unpin' : 'Pin to top'}
             </button>
             <button
               type="button"
               className={styles.action}
-              onClick={() => void run(() => setThreadArchivedForMe(client, threadId, !archivedForMe), 'Done. A new message brings it back.')}
+              onClick={() =>
+                void run(
+                  () => setThreadArchivedForMe(client, threadId, !archivedForMe),
+                  'Done. A new message brings it back.',
+                )
+              }
             >
               <Icon name="archive-box" /> {archivedForMe ? 'Move back to inbox' : 'Archive for me'}
             </button>
@@ -143,14 +181,25 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
 
           <section className={styles.block} aria-label="Members">
             <Text variant="label" muted as="h3">
-              {isAnnouncement ? 'Audience' : `Members · ${memberCountLabel(members.data?.length ?? 0)}`}
+              {isAnnouncement
+                ? 'Audience'
+                : `Members · ${memberCountLabel(members.data?.length ?? 0)}`}
             </Text>
             {isAnnouncement ? (
-              <Text muted as="p">Everyone on the team sees this thread. Only coaches and managers can post.</Text>
+              <Text muted as="p">
+                Everyone on the team sees this thread. Only coaches and managers can post.
+              </Text>
             ) : (
               <>
                 {isGroup && (members.data?.length ?? 0) > 6 ? (
-                  <input className={styles.search} type="search" placeholder="Search members" aria-label="Search members" value={q} onChange={(e) => setQ(e.target.value)} />
+                  <input
+                    className={styles.search}
+                    type="search"
+                    placeholder="Search members"
+                    aria-label="Search members"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
                 ) : null}
                 <ul className={styles.people}>
                   {list.map((m) => (
@@ -161,7 +210,17 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
                         {m.role === 'owner' ? <span className={styles.muted}> · Owner</span> : null}
                       </span>
                       {isGroup && canManage && m.profile_id !== me ? (
-                        <button type="button" className={styles.iconBtn} aria-label={`Remove ${m.display_name ?? 'member'}`} onClick={() => void run(() => removeParticipant(client, threadId, m.profile_id), 'Removed')}>
+                        <button
+                          type="button"
+                          className={styles.iconBtn}
+                          aria-label={`Remove ${m.display_name ?? 'member'}`}
+                          onClick={() =>
+                            void run(
+                              () => removeParticipant(client, threadId, m.profile_id),
+                              'Removed',
+                            )
+                          }
+                        >
                           <Icon name="user-minus" />
                         </button>
                       ) : null}
@@ -170,7 +229,11 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
                 </ul>
                 {isGroup && canManage ? (
                   <>
-                    <button type="button" className={styles.action} onClick={() => setAdding((v) => !v)}>
+                    <button
+                      type="button"
+                      className={styles.action}
+                      onClick={() => setAdding((v) => !v)}
+                    >
                       <Icon name="user-plus" /> Add people
                     </button>
                     {adding ? (
@@ -200,7 +263,9 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
               onChange={setTab}
             />
             {files.length === 0 ? (
-              <Text muted as="p">{tab === 'media' ? 'No photos shared yet.' : 'No files shared yet.'}</Text>
+              <Text muted as="p">
+                {tab === 'media' ? 'No photos shared yet.' : 'No files shared yet.'}
+              </Text>
             ) : (
               <ul className={styles.grid}>
                 {files.map((m) => (
@@ -214,12 +279,26 @@ export function ThreadInfoPanel({ threadId, onClose }: { threadId: string; onClo
 
           {canManage ? (
             <section className={styles.block} aria-label="Staff">
-              <Text variant="label" muted as="h3">Staff</Text>
-              <button type="button" className={styles.action} onClick={() => void run(() => setThreadArchived(client, threadId, !t.archived_at), t.archived_at ? 'Unarchived' : 'Archived for everyone')}>
-                <Icon name="archive-box" /> {t.archived_at ? 'Unarchive for everyone' : 'Archive for everyone'}
+              <Text variant="label" muted as="h3">
+                Staff
+              </Text>
+              <button
+                type="button"
+                className={styles.action}
+                onClick={() =>
+                  void run(
+                    () => setThreadArchived(client, threadId, !t.archived_at),
+                    t.archived_at ? 'Unarchived' : 'Archived for everyone',
+                  )
+                }
+              >
+                <Icon name="archive-box" />{' '}
+                {t.archived_at ? 'Unarchive for everyone' : 'Archive for everyone'}
               </button>
               <Text variant="caption" muted as="p">
-                {t.archived_at ? 'People can reply again.' : 'Closes the conversation so no one can reply.'}
+                {t.archived_at
+                  ? 'People can reply again.'
+                  : 'Closes the conversation so no one can reply.'}
               </Text>
             </section>
           ) : null}
@@ -240,7 +319,13 @@ function MediaTile({ path, name, mime }: { path: string; name: string; mime: str
   }, [path]);
   const pdf = getAttachmentKind(mime) === 'pdf';
   return (
-    <a className={styles.tile} href={url ?? undefined} target="_blank" rel="noreferrer" aria-label={pdf ? `Open ${name}` : `Photo ${name}`}>
+    <a
+      className={styles.tile}
+      href={url ?? undefined}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={pdf ? `Open ${name}` : `Photo ${name}`}
+    >
       {pdf || !url ? (
         <span>
           <Icon name={pdf ? 'file-pdf' : 'image'} />
@@ -254,13 +339,27 @@ function MediaTile({ path, name, mime }: { path: string; name: string; mime: str
   );
 }
 
-function AddPeople({ teamId, existing, onAdd }: { teamId: string; existing: string[]; onAdd: (id: string) => void }) {
+function AddPeople({
+  teamId,
+  existing,
+  onAdd,
+}: {
+  teamId: string;
+  existing: string[];
+  onAdd: (id: string) => void;
+}) {
   const people = useLoad(() => getComposePeople(getClient(), teamId), [teamId]);
   const options = (people.data ?? []).filter((p) => !existing.includes(p.profile_id));
   return (
     <div className={styles.add}>
-      <Text variant="caption" muted as="p">{MINOR_GROUP_RULE_TEXT}</Text>
-      {options.length === 0 ? <Text muted as="p">Everyone you can add is already here.</Text> : null}
+      <Text variant="caption" muted as="p">
+        {MINOR_GROUP_RULE_TEXT}
+      </Text>
+      {options.length === 0 ? (
+        <Text muted as="p">
+          Everyone you can add is already here.
+        </Text>
+      ) : null}
       <ul className={styles.people}>
         {options.map((p) => (
           <li key={p.profile_id}>

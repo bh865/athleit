@@ -16,11 +16,11 @@ export async function saveDraft(threadId: string, text: string): Promise<void> {
   else await kv.remove(key(threadId));
 }
 
-/** Threads whose offline outbox holds a send that has already failed once (shows "Failed to send"). */
+/** Threads whose offline outbox still holds an unsent message (shows "Failed to send" in the inbox). */
 async function hasFailedSend(threadId: string): Promise<boolean> {
   try {
-    const q = JSON.parse((await kv.get(`outbox.${threadId}`)) ?? '[]') as Array<{ attempts?: number }>;
-    return q.some((e) => (e.attempts ?? 0) >= 1);
+    const q = JSON.parse((await kv.get(`outbox.${threadId}`)) ?? '[]') as unknown[];
+    return Array.isArray(q) && q.length > 0;
   } catch {
     return false;
   }

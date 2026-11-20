@@ -20,7 +20,7 @@ import {
   type InboxRow,
 } from '@athleit/core';
 import {
-  getInbox,
+  getInboxAll,
   markThreadRead,
   searchMessages,
   setThreadArchivedForMe,
@@ -30,7 +30,7 @@ import {
 } from '@athleit/db/api';
 import { componentTokens, radius, space, textStyles } from '@athleit/tokens';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { H1 } from '@/components/app/kit';
@@ -66,7 +66,7 @@ export function ThreadList() {
   const staff = isStaffAnywhere(contexts);
 
   const list = useLoad(
-    () => (teams.length === 0 ? Promise.resolve({ data: [], error: null }) : getInbox(supabase, { limit: 100 })),
+    () => (teams.length === 0 ? Promise.resolve({ data: [], error: null }) : getInboxAll(supabase)),
     [teams.length],
   );
   const { reload } = list;
@@ -82,10 +82,13 @@ export function ThreadList() {
 
   const rows = useMemo(() => sortInbox((list.data ?? []).map(inboxRowFromDb)), [list.data]);
   const { drafts, failed, refresh } = useDrafts(rows.map((r) => r.threadId));
+  // Returning to the inbox re-reads drafts; the first focus is the initial load, so skip the reload.
+  const firstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
       void refresh();
-      reload();
+      if (firstFocus.current) firstFocus.current = false;
+      else reload();
     }, [refresh, reload]),
   );
 

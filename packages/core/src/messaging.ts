@@ -4,7 +4,12 @@
  */
 
 import type { AppContext } from './context';
-import { ATTACHMENT_MIME_TYPES, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE } from './constants';
+import {
+  ATTACHMENT_MIME_TYPES,
+  MAX_ATTACHMENT_BYTES,
+  MAX_ATTACHMENTS_PER_MESSAGE,
+  MAX_MESSAGE_LENGTH,
+} from './constants';
 
 export type SendState = 'sent' | 'sending' | 'failed';
 
@@ -525,11 +530,10 @@ export function newMessagesDividerIndex(
 }
 
 export const MESSAGE_COUNTER_THRESHOLD = 3800;
-export const MESSAGE_MAX_LENGTH = 4000;
 
 /** Characters left, shown from 3,800; null below the threshold. Negative means over the limit. */
 export const characterCounter = (length: number): number | null =>
-  length >= MESSAGE_COUNTER_THRESHOLD ? MESSAGE_MAX_LENGTH - length : null;
+  length >= MESSAGE_COUNTER_THRESHOLD ? MAX_MESSAGE_LENGTH - length : null;
 
 /**
  * Non-staff only see messages from when they joined. The notice shows when they joined after the

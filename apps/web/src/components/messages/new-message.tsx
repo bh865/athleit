@@ -12,7 +12,7 @@ import {
   MINOR_GROUP_RULE_TEXT,
   type ComposePerson,
 } from '@athleit/core';
-import { createThread, getComposePeople, getInbox, sendMessage } from '@athleit/db/api';
+import { createThread, getComposePeople, getInboxAll, sendMessage } from '@athleit/db/api';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -39,7 +39,7 @@ export function NewMessage() {
 
   const load = useLoad(async () => {
     const [inbox, ...per] = await Promise.all([
-      getInbox(getClient(), { limit: 100 }),
+      getInboxAll(getClient()),
       ...teams.map((t) => getComposePeople(getClient(), t.id)),
     ]);
     const failed = [inbox, ...per].find((r) => r.error);

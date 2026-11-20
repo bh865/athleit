@@ -3263,31 +3263,25 @@ export type Database = {
       }
       thread_participants: {
         Row: {
-          archived_at: string | null
           joined_at: string
           left_at: string | null
           muted_until: string | null
-          pinned_at: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Insert: {
-          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
-          pinned_at?: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Update: {
-          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
-          pinned_at?: string | null
           profile_id?: string
           role?: string
           thread_id?: string
@@ -3302,6 +3296,42 @@ export type Database = {
           },
           {
             foreignKeyName: "thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_user_state: {
+        Row: {
+          archived_at: string | null
+          pinned_at: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_user_state_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_user_state_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "threads"

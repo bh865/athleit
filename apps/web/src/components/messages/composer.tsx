@@ -54,7 +54,8 @@ export function Composer({
   const counter = characterCounter(text.length);
   const input = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
-  const canSend = (text.trim().length > 0 || files.length > 0) && !uploading;
+  const over = text.length > MAX_MESSAGE_LENGTH;
+  const canSend = (text.trim().length > 0 || files.length > 0) && !uploading && !over;
 
   const submit = async () => {
     if (!canSend) return;
@@ -176,7 +177,6 @@ export function Composer({
           aria-label="Message"
           placeholder="Message"
           rows={1}
-          maxLength={MAX_MESSAGE_LENGTH}
           value={text}
           onChange={(e) => {
             setText(e.target.value);

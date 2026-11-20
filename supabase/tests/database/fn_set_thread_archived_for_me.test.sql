@@ -68,7 +68,7 @@ reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-
 
 select is((select archived_for_me from public.get_inbox() where thread_id='71000000-0000-0000-0000-00000000000b'), false, 'a new message returns it to the inbox');
 select lives_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000-0000-00000000000a', true) $$, 'a member archives the announcement thread for themself');
-select is((select role from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='bb000000-0000-0000-0000-000000000001'), 'read_only', 'the announcement row carries only the archive state');
+select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='bb000000-0000-0000-0000-000000000001'), 0, 'archiving an announcement creates no participant row');
 select is(private.can_post_thread('71000000-0000-0000-0000-00000000000a'), false, 'and grants no posting');
 select lives_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000-0000-00000000000b', false) $$, 'and it can be undone');
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
@@ -77,11 +77,11 @@ select throws_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000
 reset role; select set_config('request.jwt.claims', '{"sub":"bb000000-0000-0000-0000-000000000004","role":"authenticated"}', true); set local role authenticated;
 
 select throws_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000-0000-00000000000b', true) $$, '42501', null, 'a removed member cannot archive');
-select is((select archived_at from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000004'), null, 'and the removed row is untouched');
+select is((select count(*)::int from public.thread_user_state where thread_id='71000000-0000-0000-0000-00000000000b' and profile_id='bb000000-0000-0000-0000-000000000004'), 0, 'and no state row is written');
 reset role; select set_config('request.jwt.claims', '{"sub":"dd000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 
 select throws_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000-0000-00000000000a', true) $$, '42501', null, 'another team cannot archive');
-select is((select count(*)::int from public.thread_participants where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='dd000000-0000-0000-0000-000000000002'), 0, 'no stranger row is created');
+select is((select count(*)::int from public.thread_user_state where thread_id='71000000-0000-0000-0000-00000000000a' and profile_id='dd000000-0000-0000-0000-000000000002'), 0, 'no stranger row is created');
 reset role; select set_config('request.jwt.claims', '{"sub":"aa000000-0000-0000-0000-000000000002","role":"authenticated"}', true); set local role authenticated;
 
 select lives_ok($$ select public.set_thread_archived_for_me('71000000-0000-0000-0000-00000000000b', true) $$, 'staff can archive for themself');

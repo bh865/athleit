@@ -59,7 +59,8 @@ export function Composer({
     return () => clearTimeout(id);
   }, [text, threadId]);
   const counter = characterCounter(text.length);
-  const canSend = (text.trim().length > 0 || files.length > 0) && !uploading;
+  const over = text.length > MAX_MESSAGE_LENGTH;
+  const canSend = (text.trim().length > 0 || files.length > 0) && !uploading && !over;
   const body = textStyles.body;
 
   const submit = async () => {
@@ -234,7 +235,6 @@ export function Composer({
             onTyping();
           }}
           multiline
-          maxLength={MAX_MESSAGE_LENGTH}
           style={{
             flex: 1,
             maxHeight: componentTokens.chat.composerHeightMobile * 3,
