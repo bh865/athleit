@@ -131,6 +131,15 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/slug_locked/, 'The web address cannot change after registrations arrive.'],
   [/terms_locked/, 'Price and payment terms cannot change after registrations arrive.'],
   [/event_archived/, 'This registration is archived.'],
+  // Team subscription (billing). The database names the rule; the UI says what to do about it.
+  [
+    /billing_restricted/,
+    'This is paused because the team’s free trial or subscription has ended. A team admin can subscribe to turn it back on.',
+  ],
+  [/billing_disabled|billing_off/, 'Team billing is not turned on yet.'],
+  [/already_subscribed/, 'This team is already subscribed.'],
+  [/not_subscribed|no_subscription/, 'This team does not have a subscription to change.'],
+  [/billing_unavailable/, 'Billing is unavailable right now. Please try again shortly.'],
   [/forbidden/, 'You do not have permission to do that.'],
 ];
 

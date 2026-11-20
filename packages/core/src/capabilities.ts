@@ -43,7 +43,9 @@ export type Capability =
   | 'registration.sensitive'
   | 'registration.register'
   | 'documents.view'
-  | 'documents.manage';
+  | 'documents.manage'
+  | 'billing.view'
+  | 'billing.manage';
 
 const STAFF: Capability[] = [
   'team.view',
@@ -61,6 +63,8 @@ const STAFF: Capability[] = [
   'schedule.rsvpNames',
   'payments.view',
   'payments.manage',
+  // Status only (trial end, subscribed, payment problem): never invoices or card details.
+  'billing.view',
 ];
 
 /**
@@ -90,6 +94,8 @@ const BY_ROLE: Record<string, Capability[]> = {
     'invites.view',
     'payments.refund',
     'payments.setup',
+    // Subscribe, update the card, cancel and resume the team's Athleit subscription.
+    'billing.manage',
     ...REGISTRATION_MANAGER,
     'registration.sensitive',
   ],
