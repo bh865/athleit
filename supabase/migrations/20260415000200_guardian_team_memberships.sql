@@ -12,7 +12,7 @@ returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if tg_table_name = 'team_players' then
     insert into public.team_memberships (team_id, profile_id, role)
-    select new.team_id, hm.profile_id, 'parent'
+    select new.team_id, hm.profile_id, 'parent'::public.team_role
     from public.players p
     join public.household_members hm on hm.household_id = p.household_id
     where p.id = new.player_id and hm.relationship = 'guardian'
@@ -20,7 +20,7 @@ begin
   else -- household_members: a new guardian joins a household whose children are already rostered
     if new.relationship = 'guardian' then
       insert into public.team_memberships (team_id, profile_id, role)
-      select distinct tp.team_id, new.profile_id, 'parent'
+      select distinct tp.team_id, new.profile_id, 'parent'::public.team_role
       from public.players p
       join public.team_players tp on tp.player_id = p.id
       where p.household_id = new.household_id
@@ -39,7 +39,7 @@ create trigger household_members_guardian_memberships after insert on public.hou
 
 -- Backfill: guardians of children already on a roster.
 insert into public.team_memberships (team_id, profile_id, role)
-select distinct tp.team_id, hm.profile_id, 'parent'
+select distinct tp.team_id, hm.profile_id, 'parent'::public.team_role
 from public.team_players tp
 join public.players p on p.id = tp.player_id
 join public.household_members hm on hm.household_id = p.household_id
