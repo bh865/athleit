@@ -27,3 +27,5 @@ export const kv = {
 
 export const CONTEXT_KEY = 'athleit.context';
 export const PENDING_INVITE_KEY = 'athleit.pendingInvite';
+/** Set from Welcome ("I have an invite or a code") so the hub opens the code path after sign-in. */
+export const POST_AUTH_INTENT_KEY = 'athleit.postAuthIntent';
