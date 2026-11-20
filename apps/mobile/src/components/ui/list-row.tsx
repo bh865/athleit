@@ -20,6 +20,8 @@ export interface ListRowProps {
   selected?: boolean;
   last?: boolean;
   testID?: string;
+  /** Spoken label when the visible title, leading and trailing parts read poorly together. */
+  accessibilityLabel?: string;
 }
 
 /** 64px row with a 1px separator, 44px leading slot and a caret when navigable. */
@@ -32,6 +34,7 @@ export function ListRow({
   selected,
   last,
   testID,
+  accessibilityLabel,
 }: ListRowProps) {
   const { theme } = useTheme();
   const grouped = use(GroupContext);
@@ -64,7 +67,13 @@ export function ListRow({
     backgroundColor: selected ? c.surfaceAlt : 'transparent',
   };
   return onPress ? (
-    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={style}>
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      {...(accessibilityLabel ? { accessibilityLabel } : null)}
+      onPress={onPress}
+      style={style}
+    >
       {body}
     </Pressable>
   ) : (

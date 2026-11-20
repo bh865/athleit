@@ -24,6 +24,7 @@ const ROOT_PATHS = new Set([
   '/family',
   '/notifications',
   '/more',
+  '/roster',
 ]);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
