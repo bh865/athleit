@@ -19,14 +19,14 @@ export interface OutboxRow {
   id: string;
   profile_id: string;
   category:
-    'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'payments_reserved';
+    'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'billing' | 'payments_reserved';
   channel: 'push' | 'email';
   payload: NotificationPayload;
   attempts: number;
 }
 
 export interface NotificationPayload {
-  kind: 'message' | 'schedule' | 'payment' | 'registration' | 'registration_email';
+  kind: 'message' | 'schedule' | 'payment' | 'registration' | 'registration_email' | 'billing';
   title?: string;
   sender_name?: string | null;
   preview?: string;
@@ -35,7 +35,7 @@ export interface NotificationPayload {
   message_id?: string;
   event_id?: string;
   team_id?: string;
-  audience?: 'staff' | 'family';
+  audience?: 'staff' | 'family' | 'admin';
   registration_event_id?: string;
   change?: string;
   /** Ready-to-show body for schedule notifications ("12 practices added"); never contains a child's name. */
@@ -109,6 +109,9 @@ export function linkFor(p: NotificationPayload): string {
   if (p.thread_id) return `/messages/${p.thread_id}`;
   if (p.event_id) return `/events/${p.event_id}`;
   if (p.registration_event_id) return `/manage/registration/${p.registration_event_id}`;
+  // Billing: admins land on the team's billing page, coaches and managers on the team (they only see status there).
+  if (p.kind === 'billing' && p.team_id)
+    return p.audience === 'staff' ? `/teams/${p.team_id}` : `/teams/${p.team_id}/billing`;
   if (p.kind === 'registration' && p.team_id)
     return p.audience === 'staff' ? `/teams/${p.team_id}/waivers` : '/registrations';
   return '/';
@@ -136,6 +139,9 @@ export function buildContent(row: OutboxRow): { title: string; body: string; url
   }
   if (row.category === 'registration') {
     return { title: p.title || 'Registration', body: p.body || 'Registration update', url };
+  }
+  if (row.category === 'billing') {
+    return { title: p.title || 'Team billing', body: p.body || 'Team billing update', url };
   }
   const title = p.title || p.sender_name || 'New message';
   const generic = row.category === 'announcements' ? 'New announcement' : 'New message';

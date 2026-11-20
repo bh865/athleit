@@ -13,6 +13,7 @@ import {
   type CheckoutContext,
 } from '../../../supabase/functions/_shared/payments/billing';
 import { checkoutTrial as edgeTrial } from '../../../supabase/functions/_shared/payments/billing-math';
+import { buildContent, linkFor } from '../../../supabase/functions/_shared/deliver';
 import { processWebhook } from '../../../supabase/functions/_shared/payments/webhook';
 import { signPayload } from '../../../supabase/functions/_shared/payments/stripe';
 import { billingTeamInput, updateSubscriptionInput } from '../../../supabase/functions/_shared/payments/schemas';
@@ -386,5 +387,19 @@ describe('input schemas and parity', () => {
     for (const state of ['trialing', 'trial_expired', 'lapsed', 'active'] as const)
       for (const end of ['2025-12-31T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', '2026-01-03T00:10:00Z', '2026-01-10T00:00:00Z'])
         expect(edgeTrial(end, state, now)).toEqual(coreTrial(end, state, now));
+  });
+});
+
+describe('billing notification content', () => {
+  const row = (payload: any) => ({ id: 'n', profile_id: USER, category: 'billing', channel: 'push', attempts: 0, payload }) as any;
+  it('deep links admins to the billing page and coaches and managers to the team', () => {
+    expect(linkFor({ kind: 'billing', team_id: TEAM, audience: 'admin' })).toBe(`/teams/${TEAM}/billing`);
+    expect(linkFor({ kind: 'billing', team_id: TEAM, audience: 'staff' })).toBe(`/teams/${TEAM}`);
+  });
+  it('shows the notice title and body as written (billing notices are never message previews)', () => {
+    expect(buildContent(row({ kind: 'billing', team_id: TEAM, title: 'Payment failed', body: 'Update your payment method by Jan 8.' }))).toMatchObject({
+      title: 'Payment failed',
+      body: 'Update your payment method by Jan 8.',
+    });
   });
 });
