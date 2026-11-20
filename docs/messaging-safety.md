@@ -74,3 +74,29 @@ household the minor's player row belongs to.
 17. Notifications for a thread that includes a minor never carry message text. Elsewhere a preview is
     included only if the recipient turned previews on (off by default); the in-app feed never stores one.
 18. Email is the fallback only when the recipient has no active push device.
+
+
+## One inbox, per-person state (messages redesign)
+
+Messages is one inbox across every team the person is in; the active place no longer scopes it.
+Nothing about who may read or post changed. The new reads sit on the same visibility helpers:
+
+- `get_inbox` and `get_thread_list` both read `private.inbox_rows`, which uses `can_read_thread`
+  and `can_read_message` (join-time rule, unread excludes your own messages). A pgTAP parity test
+  asserts `get_inbox` equals the union of `get_thread_list` over the caller's teams, per role.
+  Only staff of a thread's team get `last_read_count` and `last_read_total`, and only when the
+  newest message is their own.
+- `search_messages` and `get_thread_media` go through `can_read_message`: a parent never matches
+  a message from before they joined, a hidden or deleted message, another family's direct thread
+  or a team they left. Attachment file names are not searched.
+- `get_compose_people` returns the same people as `get_messageable_people` plus `can_direct` and
+  a reason code. `can_direct` comes from `private.can_direct_message`, the same rule
+  `create_thread` enforces (a minor is only in a direct thread with their own guardian).
+- Pin and archive are **per person**, on the caller's own `thread_participants` row, through
+  `set_thread_pinned` (at most 5) and `set_thread_archived_for_me`. "Archived for me" means
+  `archived_at >= last_message_at`, so the next message returns the thread to the inbox, and it
+  never blocks posting. Announcements have no participant list, so these write a `read_only` row
+  that only carries personal state and grants nothing. The thread-wide `set_thread_archived`
+  stays manager-only and closes the conversation for posting.
+- Drafts are local to the device. Mute durations (1 hour, 8 hours, 1 week, until turned off) use
+  the existing `set_thread_mute`.

@@ -510,6 +510,10 @@ export const getComposePeople = (client: Client, teamId: string) =>
 export const setThreadPinned = (client: Client, threadId: string, pinned: boolean) =>
   runVoid(client.rpc('set_thread_pinned', { p_thread_id: threadId, p_pinned: pinned }));
 
+/** Thread-wide archive (owner, team admin, or staff for announcements): closes the conversation for posting. */
+export const setThreadArchived = (client: Client, threadId: string, archived: boolean) =>
+  runVoid(client.rpc('set_thread_archived', { p_thread_id: threadId, p_archived: archived }));
+
 /** Per person: archived until the next message. Thread-wide archive is setThreadArchived. */
 export const setThreadArchivedForMe = (client: Client, threadId: string, archived: boolean) =>
   runVoid(client.rpc('set_thread_archived_for_me', { p_thread_id: threadId, p_archived: archived }));

@@ -579,3 +579,7 @@ export const isPlayerOnly = (contexts: readonly AppContext[]) => {
 /** Staff of at least one team (can start groups and announcements). */
 export const isStaffAnywhere = (contexts: readonly AppContext[]) =>
   messagingTeams(contexts).some((t) => t.roles.some((r) => r === 'admin' || r === 'coach' || r === 'manager'));
+
+/** 'image' or 'pdf' for an attachment mime type (anything else is treated as a file). */
+export const getAttachmentKind = (mime: string): 'image' | 'pdf' | 'file' =>
+  mime.startsWith('image/') ? 'image' : mime === 'application/pdf' ? 'pdf' : 'file';
