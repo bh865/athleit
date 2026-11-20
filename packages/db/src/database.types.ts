@@ -357,6 +357,78 @@ export type Database = {
           },
         ]
       }
+      event_nudges: {
+        Row: {
+          event_id: string
+          nudged_at: string
+          nudged_by: string | null
+          recipients: number
+        }
+        Insert: {
+          event_id: string
+          nudged_at?: string
+          nudged_by?: string | null
+          recipients?: number
+        }
+        Update: {
+          event_id?: string
+          nudged_at?: string
+          nudged_by?: string | null
+          recipients?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_nudges_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_nudges_nudged_by_fkey"
+            columns: ["nudged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_seen: {
+        Row: {
+          event_id: string
+          revision: number
+          seen_at: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          revision: number
+          seen_at?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          revision?: number
+          seen_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_seen_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_seen_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_series: {
         Row: {
           created_at: string
@@ -3912,6 +3984,7 @@ export type Database = {
           home_away: string
           id: string
           is_staff: boolean
+          last_change: Json
           location_address: string
           location_id: string
           location_lat: number
@@ -3927,6 +4000,7 @@ export type Database = {
           period_scores: Json
           result_notes: string
           revision: number
+          seen_revision: number
           series_id: string
           sport: Database["public"]["Enums"]["sport"]
           starts_at: string
@@ -3938,17 +4012,7 @@ export type Database = {
           title: string
           type: string
           virtual_url: string
-          seen_revision: number
-          last_change: Json
         }[]
-      }
-      mark_event_seen: {
-        Args: { p_event_id: string }
-        Returns: number
-      }
-      nudge_rsvp_non_responders: {
-        Args: { p_event_id: string }
-        Returns: number
       }
       get_guardian_contacts: {
         Args: { p_player_id: string }
@@ -4192,6 +4256,7 @@ export type Database = {
           revision: number
           rsvp_note: string
           rsvp_status: string
+          seen_revision: number
           starts_at: string
           status: string
           team_id: string
@@ -4200,7 +4265,6 @@ export type Database = {
           timezone: string
           title: string
           type: string
-          seen_revision: number
         }[]
       }
       household_schedule_range: {
@@ -4225,6 +4289,7 @@ export type Database = {
           revision: number
           rsvp_note: string
           rsvp_status: string
+          seen_revision: number
           starts_at: string
           status: string
           team_id: string
@@ -4233,7 +4298,6 @@ export type Database = {
           timezone: string
           title: string
           type: string
-          seen_revision: number
         }[]
       }
       link_registration_player: {
@@ -4322,6 +4386,7 @@ export type Database = {
           waivers_signed: number
         }[]
       }
+      mark_event_seen: { Args: { p_event_id: string }; Returns: number }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: number }
       mark_thread_read: {
         Args: { p_message_id: string; p_thread_id: string }
@@ -4355,6 +4420,10 @@ export type Database = {
           title: string
           type: string
         }[]
+      }
+      nudge_rsvp_non_responders: {
+        Args: { p_event_id: string }
+        Returns: number
       }
       payer_checkout_quote: { Args: { p_request_ids: string[] }; Returns: Json }
       payer_installment_quote: {
@@ -4994,6 +5063,7 @@ export type Database = {
           our_score: number
           outcome: string
           revision: number
+          seen_revision: number
           series_id: string
           starts_at: string
           status: string
@@ -5002,7 +5072,6 @@ export type Database = {
           timezone: string
           title: string
           type: string
-          seen_revision: number
         }[]
       }
       team_schedule_range: {
@@ -5031,6 +5100,7 @@ export type Database = {
           our_score: number
           outcome: string
           revision: number
+          seen_revision: number
           series_id: string
           starts_at: string
           status: string
@@ -5039,7 +5109,6 @@ export type Database = {
           timezone: string
           title: string
           type: string
-          seen_revision: number
         }[]
       }
       toggle_reaction: {
