@@ -1,0 +1,41 @@
+---
+title: Why was I charged a service fee?
+slug: why-was-i-charged-a-service-fee
+category: payments-and-receipts
+audience: [parent]
+summary: Some teams pass the card processing fee on to families. Here is how to read it.
+order: 30
+covers:
+  - 'packages/core/src/fees.ts'
+  - 'docs/payments.md'
+  - 'apps/web/src/components/payments/connect-card.tsx'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [pay-a-request-and-see-your-receipt, pay-in-installments]
+---
+
+At checkout the total can have up to three lines: the **amount** the team asked for, an **Athleit charge** when one applies, and a **service fee**.
+
+## What the service fee is
+
+A service fee covers the card processing fee. Each team chooses who pays it by default. Under **Families pay a service fee**, the fee is shown to you as its own line. Otherwise the team absorbs it and you pay only the amount requested.
+
+## Example
+
+An example of the Athleit charge: <Live value="fee_example" />.
+
+<Callout kind="note">
+  The processing fee is an estimate. The actual fee depends on the card, and any difference is the
+  team's, not yours.
+</Callout>
+
+## Refunds
+
+When a payment is refunded, what is returned depends on the team's refund choices for the charge and for the service fee. Your receipt shows what was refunded.
+
+<FAQ>
+  <Q q="Can I avoid the fee?">
+    The fee is part of the card payment. Ask your team admin whether they can take payment another
+    way, for example offline, and record it for you.
+  </Q>
+</FAQ>

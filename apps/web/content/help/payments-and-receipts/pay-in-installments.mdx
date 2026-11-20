@@ -1,0 +1,41 @@
+---
+title: Pay in installments
+slug: pay-in-installments
+category: payments-and-receipts
+audience: [parent]
+summary: Some requests can be split into smaller payments over time.
+order: 20
+covers:
+  - 'apps/web/src/components/payments/plan-sheet.tsx'
+  - 'apps/web/src/components/payments/checkout.tsx'
+  - 'docs/split-payments.md'
+  - 'packages/core/src/payment-plans.ts'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [pay-a-request-and-see-your-receipt, why-was-i-charged-a-service-fee]
+---
+
+When your team allows it, you can split a request into 2 to 6 payments. If a plan does not fit the due date, only paying in full is offered, so nobody is locked out.
+
+## Choose a plan
+
+<Steps>
+
+1. Open the request from **Pay**.
+2. Under **How would you like to pay?**, choose a plan.
+3. The first payment is taken now. The screen shows **Pay now** and when each later payment is due.
+
+</Steps>
+
+The total split evenly. Any leftover cents are added to the first payment.
+
+## Automatic or manual later payments
+
+You choose whether later payments are charged automatically to the card you use today, or whether you pay each one yourself and get a reminder before it is due.
+
+<Callout kind="warning">
+  Each installment is a separate card payment, so a fixed per-payment fee can apply to each one.
+  Paying in full can cost slightly less. The checkout shows the total before you pay.
+</Callout>
+
+If a later payment fails, the plan stays open and the card is tried again. Your team can also remind you, waive an installment or move the due dates.

@@ -1,0 +1,40 @@
+---
+title: What happens if a payment fails
+slug: what-happens-if-a-payment-fails
+category: team-subscription
+audience: [team-admin, parent]
+summary: What to do when a team subscription payment or a family payment does not go through.
+order: 30
+covers:
+  - 'apps/web/src/components/billing/billing-banner.tsx'
+  - 'apps/web/src/components/payments/checkout.tsx'
+  - 'docs/billing.md'
+verified_commit: 9cfcc51
+verified_at: 2026-11-20
+related: [update-your-card-or-cancel, pay-a-request-and-see-your-receipt]
+---
+
+## A team subscription payment fails
+
+All team admins are told. The team keeps full access for a grace period of <Live value="grace_days" />, with a banner that asks an admin to update the card.
+
+<Steps>
+
+1. Open the team's **Billing** page.
+2. Choose **Update payment method** and fix the card.
+3. When a payment succeeds, the team returns to normal straight away.
+
+</Steps>
+
+If the grace period ends without a payment, access becomes restricted. Messages, the schedule and existing payments keep working, and nothing is deleted.
+
+Coaches and managers see that there is a problem and are asked to tell a team admin.
+
+## A family payment fails
+
+If your card is declined, the screen says **Your card was declined** and you were not charged. Try another card. If the connection drops, you are only charged if a receipt appears.
+
+<Callout kind="note">
+  If you see **We couldn’t verify your card with your bank**, you were not charged. Try again or use
+  another card.
+</Callout>

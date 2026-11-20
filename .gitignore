@@ -28,3 +28,4 @@ supabase/.env
 # Playwright
 apps/web/test-results
 apps/web/playwright-report
+apps/web/src/generated/
