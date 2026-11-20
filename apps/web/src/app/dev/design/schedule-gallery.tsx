@@ -40,6 +40,14 @@ const ROWS: ScheduleItem[] = [
     type: 'game',
     starts_at: '2026-11-21T15:00:00Z',
     ends_at: '2026-11-21T17:00:00Z',
+    opponent: 'Hawks',
+    home_away: 'home',
+    revision: 2,
+    seen_revision: null,
+    children: [
+      { player_id: 'p1', first_name: 'Maya', status: null },
+      { player_id: 'p2', first_name: 'Eli', status: 'going' },
+    ],
   }),
   item({
     id: 'r2',
@@ -48,6 +56,8 @@ const ROWS: ScheduleItem[] = [
     starts_at: '2026-11-24T22:30:00Z',
     ends_at: '2026-11-25T00:00:00Z',
     location: 'Gym B',
+    series_id: 's1',
+    counts: { going: 8, not_going: 1, maybe: 2, no_reply: 3 },
   }),
   item({
     id: 'r3',
@@ -68,12 +78,14 @@ const ROWS: ScheduleItem[] = [
   }),
 ];
 const noop = () => undefined;
+/** Fixed clock so the rows never change with the day. */
+const NOW = new Date('2026-11-20T12:00:00Z');
 
 export function ScheduleRowsDemo() {
   return (
     <ul className={`${styles.list} ${styles.demoRows}`}>
       {ROWS.map((r, i) => (
-        <EventRow key={r.id} item={r} selected={i === 1} onSelect={noop} />
+        <EventRow key={r.id} item={r} now={NOW} selected={i === 1} showCounts={i === 1} onSelect={noop} />
       ))}
     </ul>
   );

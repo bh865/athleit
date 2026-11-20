@@ -19,7 +19,8 @@ const isoWeekdayToday = () => (new Date().getDay() === 0 ? 7 : new Date().getDay
 async function openRow(page: Page, text: string, nth = 0) {
   const row = page.getByTestId('event-row').filter({ hasText: text }).nth(nth);
   const id = await row.getAttribute('data-event-id');
-  await row.click();
+  // The row is a card; its first button opens the event (replies sit below it).
+  await row.getByRole('button').first().click();
   await page.waitForURL((u) => u.search.includes(`event=${id}`));
   await expect(page.getByTestId('event-title')).toBeVisible();
 }
@@ -225,7 +226,8 @@ test.describe.serial('scheduling', () => {
 
   test('the calendar feed serves a parseable ICS, and rotate / turn off revoke the old link', async () => {
     await parentA.goto('/schedule');
-    await parentA.getByRole('button', { name: 'Calendar link' }).click();
+    await parentA.getByTestId('schedule-more').click();
+    await parentA.getByRole('button', { name: /Calendar link/ }).click();
     await parentA.getByTestId('create-feed').click();
     const url = (await parentA.getByTestId('feed-url').textContent())?.trim() ?? '';
     expect(url).toMatch(/\/functions\/v1\/calendar-feed\/[0-9a-f]{64}\.ics$/);
