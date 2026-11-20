@@ -263,5 +263,5 @@ After screenshots are in [`docs/design-audit/after/`](design-audit/after/).
 - **Glass saturation on mobile:** `expo-blur` has no saturation control, so the 180% saturation is web-only; mobile uses blur intensity plus the token tint.
 - **Glass inner highlight and shadow on mobile** are approximated (hairline highlight view, iOS shadow props; Android shows no shadow).
 - **Phosphor on web** is a client module (`'use client'` on `icon.tsx`) because the package calls `createContext` at import time.
-- **Mobile UX not changed:** the team sections remain a chip row; the roster player panel expands in place (the system shows a side panel). Noted, not restructured.
-- **Roster, members and requests** keep their existing behaviour; they gained avatars and separators only.
+- **Mobile UX not changed:** the team sections remain a chip row; the roster is now a list with a bottom-sheet player panel (see design-system-additions.md). The other team sections remain a chip row.
+- **Members and requests** keep their existing behaviour; they gained avatars and separators only. The Roster page and screen were rebuilt to the Roster design (summary strip, Ready to add, side panel or sheet, squad view).

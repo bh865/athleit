@@ -269,6 +269,15 @@ export const getPlayer = (client: Client, playerId: string) =>
       .single(),
   );
 
+/**
+ * Date of birth and photo path for many roster players in one read (no request per row). RLS
+ * (`can_see_player`) lets roster staff and club admins read these rows; parents and players never call it.
+ */
+export const getPlayersFacts = (client: Client, playerIds: string[]) =>
+  playerIds.length === 0
+    ? Promise.resolve(ok([] as { id: string; date_of_birth: string; photo_path: string | null }[]))
+    : run(client.from('players').select('id, date_of_birth, photo_path').in('id', playerIds), []);
+
 export const getGuardianContacts = (client: Client, playerId: string) =>
   run(client.rpc('get_guardian_contacts', { p_player_id: playerId }), []);
 
