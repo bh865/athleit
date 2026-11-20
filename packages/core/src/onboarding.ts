@@ -357,3 +357,42 @@ export function shouldAskForNotifications(input: {
 }): boolean {
   return input.hasPlace && !input.alreadyAsked;
 }
+
+// Universal links -------------------------------------------------------------------------------------
+/** Paths the iOS app opens from https links. Keep in step with the Android intent filters in app.json. */
+export const UNIVERSAL_LINK_PATHS = ['/invite/*', '/claim/*', '/r/*'] as const;
+
+/**
+ * The apple-app-site-association document. `/auth/*` is deliberately not claimed: web sign-in and
+ * reset links finish in the browser that started them (the PKCE verifier lives there), and the app's
+ * own reset link uses the athleit:// scheme.
+ */
+export function appleAppSiteAssociation(teamId: string, bundleId: string) {
+  return {
+    applinks: {
+      details: [
+        {
+          appIDs: [`${teamId}.${bundleId}`],
+          components: UNIVERSAL_LINK_PATHS.map((path) => ({ '/': path })),
+        },
+      ],
+    },
+  };
+}
+
+/** A signing-certificate SHA-256 fingerprint as Android prints it: 32 colon-separated hex pairs. */
+export const ANDROID_FINGERPRINT = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
+
+/** The Digital Asset Links document that lets Android verify the app's `autoVerify` intent filters. */
+export function androidAssetLinks(packageName: string, fingerprints: readonly string[]) {
+  return [
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: packageName,
+        sha256_cert_fingerprints: fingerprints,
+      },
+    },
+  ];
+}
