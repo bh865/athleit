@@ -123,6 +123,7 @@ export function PlayerPanel({
     setBusy(false);
     setConfirming(false);
     if (res.error) return setError(friendlyError(res.error));
+    setStatus('inactive');
     toast(`${row.first_name} is now inactive.`);
     onChanged();
   }

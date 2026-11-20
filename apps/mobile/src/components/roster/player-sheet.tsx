@@ -57,7 +57,7 @@ export function PlayerSheet(props: {
     <Sheet open={row !== null} onClose={onClose} title="Player details">
       {row && (
         <PlayerBody
-          key={`${row.team_player_id}:${row.status}:${row.jersey_number}:${row.position}`}
+          key={row.team_player_id}
           {...props}
           row={row}
         />
@@ -137,6 +137,7 @@ function PlayerBody({
     setBusy(false);
     setConfirming(false);
     if (res.error) return setError(friendlyError(res.error));
+    setStatus('inactive');
     toast(`${row.first_name} is now inactive.`);
     onChanged();
   }

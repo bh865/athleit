@@ -195,7 +195,7 @@ export function RosterView() {
   const empty = rows.length === 0;
   const panel = selected && (
     <PlayerPanel
-      key={`${selected.team_player_id}:${selected.status}:${selected.jersey_number}:${selected.position}`}
+      key={selected.team_player_id}
       row={selected}
       rows={rows}
       facts={selected.player_id ? facts.get(selected.player_id) : undefined}

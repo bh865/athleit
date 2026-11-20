@@ -97,7 +97,10 @@ export interface RosterCounts {
 export function rosterCounts(rows: readonly RosterRowLike[], readyCount = 0): RosterCounts {
   let active = 0;
   let inactive = 0;
-  for (const r of rows) r.status === 'active' ? (active += 1) : (inactive += 1);
+  for (const r of rows) {
+    if (r.status === 'active') active += 1;
+    else inactive += 1;
+  }
   return { active, inactive, ready: readyCount };
 }
 
