@@ -5,7 +5,6 @@ import {
   payViewsFor,
   teamForScreen,
 } from '@athleit/core';
-import { space } from '@athleit/tokens';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
@@ -23,24 +22,10 @@ import {
   SetupTile,
 } from '@/components/home/more-tiles';
 import { useHomeData } from '@/components/home/use-home-data';
+import { FirstRun, PendingStrip } from '@/components/onboarding/first-run';
 import { NextUpCard } from '@/components/schedule/next-up-card';
-import { Button, Card, Text } from '@/components/ui';
-import { View } from 'react-native';
 import { useApp } from '@/lib/app-provider';
 import { kv, PENDING_INVITE_KEY } from '@/lib/kv';
-
-const HREF = {
-  'add-family': '/family/children/new',
-  'create-team': '/teams/new',
-  'create-club': '/clubs/new',
-  'join-team': '/join',
-} as const;
-const LABEL = {
-  'add-family': 'Add my child',
-  'create-team': 'Create a team',
-  'create-club': 'Create a club',
-  'join-team': 'Join a team with a code',
-} as const;
 
 /** "Good evening" style greeting from the local hour. */
 const greeting = () => {
@@ -54,7 +39,7 @@ const greeting = () => {
  * switcher in the header still jumps straight to them.
  */
 export default function HomeScreen() {
-  const { contexts, active, displayName, addActions, status } = useApp();
+  const { contexts, active, displayName, status } = useApp();
   const { attention, loading, error, reload, refresh, tick, now } = useHomeData(contexts, active);
   const tiles = new Set(homeTileIds(contexts, active));
   const team = teamForScreen(contexts, active);
@@ -95,6 +80,7 @@ export default function HomeScreen() {
     <AppScreen>
       {contexts.length > 0 ? (
         <>
+          <PendingStrip />
           <H1>
             {greeting()}
             {displayName ? `,\n${displayName.split(' ')[0]}` : ''}
@@ -158,20 +144,7 @@ export default function HomeScreen() {
           {tiles.has('documents') && team ? <DocumentsTile teamId={team.id} /> : null}
         </>
       ) : (
-        <Card style={{ gap: space[4] }}>
-          <H1>Welcome{displayName ? `, ${displayName}` : ''}</H1>
-          <Text muted>How will you use Athleit? You can add more roles any time.</Text>
-          <View style={{ gap: space[3] }}>
-            {addActions.map((a, i) => (
-              <Button
-                key={a}
-                title={LABEL[a]}
-                variant={i === 0 ? 'primary' : 'secondary'}
-                onPress={() => router.push(HREF[a] as never)}
-              />
-            ))}
-          </View>
-        </Card>
+        <FirstRun displayName={displayName} />
       )}
     </AppScreen>
   );

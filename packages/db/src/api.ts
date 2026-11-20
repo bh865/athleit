@@ -200,6 +200,23 @@ const childrenQuery = (client: Client) =>
 export const getChild = (client: Client, id: string) =>
   run(client.from('players').select(CHILD_SELECT).eq('id', id).single());
 
+/** The household the signed-in guardian already has (so a second child joins it instead of a new one). */
+export async function getMyHouseholdId(client: Client) {
+  const { data: session } = await client.auth.getSession();
+  const uid = session.session?.user.id;
+  if (!uid) return ok(null as string | null);
+  const res = await run(
+    client
+      .from('household_members')
+      .select('household_id')
+      .eq('profile_id', uid)
+      .eq('relationship', 'guardian')
+      .limit(1),
+    [],
+  );
+  return res.error ? fail<string | null>(res.error) : ok(res.data[0]?.household_id ?? null);
+}
+
 export const addChild = (
   client: Client,
   input: {
