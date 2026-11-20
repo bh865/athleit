@@ -3263,25 +3263,31 @@ export type Database = {
       }
       thread_participants: {
         Row: {
+          archived_at: string | null
           joined_at: string
           left_at: string | null
           muted_until: string | null
+          pinned_at: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Insert: {
+          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
+          pinned_at?: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Update: {
+          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
+          pinned_at?: string | null
           profile_id?: string
           role?: string
           thread_id?: string
@@ -3691,6 +3697,10 @@ export type Database = {
         Args: { p_event_id: string; p_reason: string; p_scope: string }
         Returns: number
       }
+      cancel_join_request: {
+        Args: { p_id: string; p_kind: string }
+        Returns: undefined
+      }
       cancel_open_payment: {
         Args: { p_payment_id: string }
         Returns: undefined
@@ -3974,6 +3984,17 @@ export type Database = {
           slug: string
         }[]
       }
+      get_compose_people: {
+        Args: { p_team_id: string }
+        Returns: {
+          can_direct: boolean
+          display_name: string
+          is_minor: boolean
+          profile_id: string
+          reason: string
+          role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
       get_event: {
         Args: { p_event_id: string }
         Returns: {
@@ -4052,6 +4073,35 @@ export type Database = {
           requester_name: string
         }[]
       }
+      get_inbox: {
+        Args: { p_before_at?: string; p_before_id?: string; p_limit?: number }
+        Returns: {
+          archived_at: string
+          archived_for_me: boolean
+          last_body: string
+          last_created_at: string
+          last_deleted: boolean
+          last_hidden: boolean
+          last_message_at: string
+          last_message_id: string
+          last_read_count: number
+          last_read_total: number
+          last_sender_id: string
+          last_sender_name: string
+          member_count: number
+          muted_until: string
+          other_name: string
+          other_profile_id: string
+          pinned_at: string
+          sport: string
+          team_id: string
+          team_name: string
+          thread_id: string
+          title: string
+          type: string
+          unread_count: number
+        }[]
+      }
       get_join_requests: {
         Args: { p_team_id: string }
         Returns: {
@@ -4088,6 +4138,18 @@ export type Database = {
           is_minor: boolean
           profile_id: string
           role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
+      get_my_join_requests: {
+        Args: never
+        Returns: {
+          child_first_name: string
+          created_at: string
+          decided_at: string
+          kind: string
+          place_name: string
+          request_id: string
+          status: string
         }[]
       }
       get_notification_failures: {
@@ -4165,6 +4227,18 @@ export type Database = {
           title: string
           type: string
           unread_count: number
+        }[]
+      }
+      get_thread_media: {
+        Args: { p_thread_id: string }
+        Returns: {
+          created_at: string
+          message_id: string
+          mime_type: string
+          original_name: string
+          sender_name: string
+          size_bytes: number
+          storage_path: string
         }[]
       }
       get_thread_members: {
@@ -4502,6 +4576,13 @@ export type Database = {
         Args: { p_base_cents?: number; p_reason?: string; p_request_id: string }
         Returns: Json
       }
+      preview_claim_public: {
+        Args: { p_player_id: string }
+        Returns: {
+          outcome: string
+          player_first_name: string
+        }[]
+      }
       preview_invite: {
         Args: { p_token: string }
         Returns: {
@@ -4510,6 +4591,16 @@ export type Database = {
           role: string
           target_name: string
           valid: boolean
+        }[]
+      }
+      preview_invite_public: {
+        Args: { p_token: string }
+        Returns: {
+          inviter_first_name: string
+          kind: string
+          outcome: string
+          role: string
+          target_name: string
         }[]
       }
       promote_from_waitlist: { Args: { p_event_id: string }; Returns: string }
@@ -4675,6 +4766,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_messages: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          created_at: string
+          message_id: string
+          other_name: string
+          sender_name: string
+          snippet: string
+          team_id: string
+          team_name: string
+          thread_id: string
+          thread_title: string
+          thread_type: string
+        }[]
+      }
       send_installment_reminder: {
         Args: { p_installment_id: string }
         Returns: boolean
@@ -4731,8 +4837,16 @@ export type Database = {
         Args: { p_archived: boolean; p_thread_id: string }
         Returns: undefined
       }
+      set_thread_archived_for_me: {
+        Args: { p_archived: boolean; p_thread_id: string }
+        Returns: undefined
+      }
       set_thread_mute: {
         Args: { p_thread_id: string; p_until: string }
+        Returns: undefined
+      }
+      set_thread_pinned: {
+        Args: { p_pinned: boolean; p_thread_id: string }
         Returns: undefined
       }
       staff_set_rsvp: {
@@ -5184,7 +5298,7 @@ export type Database = {
       club_role: "admin" | "manager"
       household_relationship: "guardian"
       membership_status: "active" | "inactive"
-      request_status: "pending" | "approved" | "declined"
+      request_status: "pending" | "approved" | "declined" | "cancelled"
       roster_status: "active" | "inactive"
       sport:
         | "soccer"
@@ -5328,7 +5442,7 @@ export const Constants = {
       club_role: ["admin", "manager"],
       household_relationship: ["guardian"],
       membership_status: ["active", "inactive"],
-      request_status: ["pending", "approved", "declined"],
+      request_status: ["pending", "approved", "declined", "cancelled"],
       roster_status: ["active", "inactive"],
       sport: [
         "soccer",

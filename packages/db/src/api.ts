@@ -389,6 +389,22 @@ export const requestToJoin = (
     }),
   );
 
+/** The caller's own join requests (both kinds). A team or family name is present only once approved. */
+export const getMyJoinRequests = (client: Client) =>
+  run(client.rpc('get_my_join_requests'), []);
+
+/** Cancels the caller's own pending request. `kind` is 'team' or 'household'. */
+export const cancelJoinRequest = (client: Client, kind: 'team' | 'household', id: string) =>
+  runVoid(client.rpc('cancel_join_request', { p_kind: kind, p_id: id }));
+
+/** Signed-out safe. One row: outcome is 'ok', 'invalid', 'expired' or 'rate_limited'. */
+export const previewInvitePublic = (client: Client, token: string) =>
+  run(client.rpc('preview_invite_public', { p_token: token }), []);
+
+/** Signed-out safe. First name only, and only for a player who could claim a login. */
+export const previewClaimPublic = (client: Client, playerId: string) =>
+  run(client.rpc('preview_claim_public', { p_player_id: playerId }), []);
+
 export const getJoinRequests = (client: Client, teamId: string) =>
   run(client.rpc('get_join_requests', { p_team_id: teamId }), []);
 
