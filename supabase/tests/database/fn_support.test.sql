@@ -130,5 +130,26 @@ select pg_temp.login('d5000000-0000-0000-0000-000000000003');
 select is((public.admin_lookup((select j ->> 'ref' from made)) ->> 'kind'), 'support_request', 'admin_lookup recognises a SUP reference');
 reset role;
 
+-- Service functions: signed-out submission, token view, expiry, email queue, attachments ---------------------------------------------------------
+reset role;
+create temp table pub as select public.svc_create_public_support_request('question', 'Join code', 'It fails', 'Guest@Example.test', 'Guest', null, '/join', '{"platform":"web"}', false, null) j;
+select is((select count(*)::int from public.support_email_queue where kind = 'received' and request_id = (select (j ->> 'id')::uuid from pub)), 1, 'a confirmation email is queued for a signed-out requester');
+select public.svc_support_mint_token((select (j ->> 'id')::uuid from pub), sha256('rawtoken'::bytea));
+select public.admin_reply_support_request((select (j ->> 'id')::uuid from pub), 'Public answer', false, null);
+select public.admin_reply_support_request((select (j ->> 'id')::uuid from pub), 'Hidden note', true, null);
+select is((select jsonb_array_length(public.svc_support_view_by_token(sha256('rawtoken'::bytea)) -> 'messages')), 2, 'token view returns the requester message and the public reply, not the note');
+select is(public.svc_support_view_by_token(sha256('nope'::bytea)), null, 'unknown token returns null');
+update public.support_access_tokens set expires_at = now() - interval '1 day';
+select is(public.svc_support_view_by_token(sha256('rawtoken'::bytea)), null, 'expired token returns null');
+update public.support_access_tokens set expires_at = now() + interval '1 day';
+select is((select (public.svc_support_reply_by_token(sha256('rawtoken'::bytea), 'Thanks') ->> 'ok')::boolean), true, 'token reply works');
+select is((select count(*)::int from public.support_email_queue where kind = 'reply' and sent_at is null), 1, 'a staff reply to a signed-out requester is queued as email');
+select is(jsonb_array_length(public.svc_support_claim_emails(10)), 2, 'claim returns the pending emails');
+select throws_ok($$ select public.svc_support_record_attachment('d6000000-0000-0000-0000-000000000009', 'other/a/b.png', 'b.png', 'image/png', 10, 3) $$, '22023', 'invalid_path', 'attachment path must start with the request id');
+select throws_ok($$ select public.svc_support_record_attachment('d6000000-0000-0000-0000-000000000009', 'd6000000-0000-0000-0000-000000000009/a/b.zip', 'b.zip', 'application/zip', 10, 3) $$, '23514', null, 'zip mime rejected by constraint');
+select pg_temp.login('d5000000-0000-0000-0000-000000000001');
+select throws_ok($$ select public.svc_support_view_by_token(sha256('x'::bytea)) $$, '42501', null, 'signed-in users cannot call service functions');
+reset role;
+
 select * from finish();
 rollback;

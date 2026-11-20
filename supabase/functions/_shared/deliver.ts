@@ -25,6 +25,7 @@ export interface OutboxRow {
     | 'payments'
     | 'registration'
     | 'billing'
+    | 'support'
     | 'payments_reserved';
   channel: 'push' | 'email';
   payload: NotificationPayload;
@@ -32,7 +33,7 @@ export interface OutboxRow {
 }
 
 export interface NotificationPayload {
-  kind: 'message' | 'schedule' | 'payment' | 'registration' | 'registration_email' | 'billing';
+  kind: 'message' | 'schedule' | 'payment' | 'registration' | 'registration_email' | 'billing' | 'support';
   title?: string;
   sender_name?: string | null;
   preview?: string;
@@ -48,6 +49,8 @@ export interface NotificationPayload {
   body?: string;
   count?: number;
   thread_type?: string;
+  /** Support request reference, for example SUP-001284. */
+  ref?: string;
 }
 
 export interface Device {
@@ -112,6 +115,7 @@ export interface Transports {
 
 /** Deep link path, identical on web and in the mobile app (expo-router). */
 export function linkFor(p: NotificationPayload): string {
+  if (p.kind === 'support' && p.ref && /^SUP-[0-9]{6,}$/.test(p.ref)) return `/help/requests/${p.ref}`;
   if (p.thread_id) return `/messages/${p.thread_id}`;
   if (p.event_id) return `/events/${p.event_id}`;
   if (p.registration_event_id) return `/manage/registration/${p.registration_event_id}`;
@@ -145,6 +149,9 @@ export function buildContent(row: OutboxRow): { title: string; body: string; url
   }
   if (row.category === 'registration') {
     return { title: p.title || 'Registration', body: p.body || 'Registration update', url };
+  }
+  if (row.category === 'support') {
+    return { title: p.title || 'Athleit Support', body: p.body || 'Support update', url };
   }
   if (row.category === 'billing') {
     return { title: p.title || 'Team billing', body: p.body || 'Team billing update', url };

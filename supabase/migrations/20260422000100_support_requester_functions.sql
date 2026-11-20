@@ -6,21 +6,29 @@ create function private.support_event(p_request uuid, p_actor uuid, p_kind text,
 returns void language sql security definer set search_path = ''
 as $$ insert into public.support_events (request_id, actor_id, kind, before, after) values (p_request, p_actor, p_kind, p_before, p_after); $$;
 
--- Enqueue the in-app row, the push and the email for a signed-in requester (retry and preferences live in deliver-notifications;
--- support email is transactional and is never silenced by a preference, push is).
+-- Enqueue the in-app row, the push and the email for a signed-in requester (retry lives in deliver-notifications).
+-- Support email is transactional and is never silenced by a preference; push follows the person's `support` push setting.
 create function private.support_notify_requester(p_request uuid, p_message uuid, p_title text, p_body text)
 returns void language plpgsql security definer set search_path = ''
 as $$
-declare r public.support_requests;
+declare r public.support_requests; v_payload jsonb; v_push boolean;
 begin
   select * into r from public.support_requests where id = p_request;
   if r.requester_profile_id is null then return; end if;
+  v_payload := jsonb_build_object('kind', 'support', 'title', p_title, 'body', left(p_body, 200), 'ref', r.ref);
+  insert into public.notification_outbox (profile_id, category, channel, payload, status, sent_at, dedupe_key)
+    values (r.requester_profile_id, 'support', 'in_app', v_payload, 'sent', now(), 'support:' || p_message::text || ':in_app')
+    on conflict (dedupe_key) do nothing;
+  select coalesce((select enabled from public.notification_preferences
+    where profile_id = r.requester_profile_id and channel = 'push' and category = 'support'), true) into v_push;
+  if v_push and exists (select 1 from public.push_devices d where d.profile_id = r.requester_profile_id and d.revoked_at is null) then
+    insert into public.notification_outbox (profile_id, category, channel, payload, dedupe_key)
+      values (r.requester_profile_id, 'support', 'push', v_payload, 'support:' || p_message::text || ':push')
+      on conflict (dedupe_key) do nothing;
+  end if;
   insert into public.notification_outbox (profile_id, category, channel, payload, dedupe_key)
-  select r.requester_profile_id, 'support', ch,
-         jsonb_build_object('kind', 'support', 'title', p_title, 'body', left(p_body, 200), 'ref', r.ref),
-         'support:' || p_message::text || ':' || ch
-  from unnest(array['in_app', 'push', 'email']) ch
-  on conflict (dedupe_key) do nothing;
+    values (r.requester_profile_id, 'support', 'email', v_payload, 'support:' || p_message::text || ':email')
+    on conflict (dedupe_key) do nothing;
 end;
 $$;
 
@@ -77,6 +85,10 @@ begin
   insert into public.support_messages (request_id, author_kind, author_profile_id, body)
     values (v_id, 'requester', v_uid, btrim(p_body)) returning id into v_msg;
   perform private.support_event(v_id, v_uid, 'created', null, jsonb_build_object('type', p_type));
+  insert into public.notification_outbox (profile_id, category, channel, payload, dedupe_key)
+    values (v_uid, 'support', 'email', jsonb_build_object('kind', 'support', 'title', 'We got your request ' || v_ref,
+      'body', 'Thanks for writing to us. We will reply here and by email.', 'ref', v_ref), 'support:' || v_msg::text || ':email')
+    on conflict (dedupe_key) do nothing;
   return jsonb_build_object('id', v_id, 'ref', v_ref, 'message_id', v_msg);
 end;
 $$;

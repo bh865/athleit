@@ -29,6 +29,10 @@ userFunction(
           if (e2) throw new Error('avatar_remove_failed');
         }
       },
+      anonymizeSupport: async (id) => {
+        const { error } = await admin.rpc('svc_support_anonymize_profile', { p_profile: id });
+        if (error) throw new Error('support_anonymize_failed');
+      },
       deleteUser: async (id) => {
         const { error } = await admin.auth.admin.deleteUser(id);
         if (error) throw new Error('delete_user_failed');
