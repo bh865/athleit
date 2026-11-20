@@ -7,22 +7,22 @@ Base check: every listed feature is merged on buildout (Phase 4 payments, Phase 
 
 | # | Path (user goal) | Personas | W | M | Existing spec |
 |---|---|---|---|---|---|
-| 1 | Sign up (email/password) | new user | not run | not run | account, onboarding |
-| 2 | Sign in, wrong password, sign out | any | not run | not run | onboarding |
-| 3 | Forgot / reset password, check-email, expired link | any | not run | not run | onboarding |
+| 1 | Sign up (email/password) | new user | pass | not run | account, onboarding |
+| 2 | Sign in, wrong password, sign out | any | pass | not run | onboarding |
+| 3 | Forgot / reset password, check-email, expired link | any | pass (expired-link page and forgot answer; real email link not exercised) | not run | onboarding |
 | 4 | OAuth buttons | any | not testable (needs real provider) | not testable | - |
-| 5 | Invite by link/code, expired/invalid invite | new, invitee | not run | not run | onboarding, phase1 |
-| 6 | Join requests: create, pending, cancel, approve, decline | parent, coach | not run | not run | phase1 |
-| 7 | Onboarding: parent/player/coach/club/code | new | not run | not run | onboarding |
+| 5 | Invite by link/code, expired/invalid invite | new, invitee | pass (phase1, onboarding) | not run | onboarding, phase1 |
+| 6 | Join requests: create, pending, cancel, approve, decline | parent, coach | pass create/approve; cancel card: needs decision D-011 | not run | phase1 |
+| 7 | Onboarding: parent/player/coach/club/code | new | pass (coach, parent); player/club not run | not run | onboarding |
 | 8 | Returning hub, context switcher, add-a-role | any | not run | not run | home |
-| 9 | Household: add/edit child, child login, guardians, birthdays | parent | not run | not run | family |
+| 9 | Household: add/edit child, child login, guardians, birthdays | parent | pass add child; rest not run | not run | family |
 | 10 | Player claim (`/claim/[id]`) | player | not run | not run | clubs-and-logins |
-| 11 | Create team, settings, sport, season | coach | not run | not run | team-details |
+| 11 | Create team, settings, sport, season | coach | pass | not run | team-details |
 | 12 | Create club, affiliation, link requests | club admin | not run | not run | clubs-and-logins |
 | 13 | Staff management and roles | admin | not run | - | phase1 |
-| 14 | Roster: staff vs parent/player view, add/edit/remove | staff, parent | not run | not run | team-details |
-| 15 | Schedule: event, game, practice, series, edit one/all, cancel, results, iCal | staff | not run | not run | scheduling |
-| 16 | RSVP yes/no/maybe | parent, player | not run | not run | scheduling |
+| 14 | Roster: staff vs parent/player view, add/edit/remove | staff, parent | pass add/edit/limited view; remove open D-012 | not run | team-details |
+| 15 | Schedule: event, game, practice, series, edit one/all, cancel, results, iCal | staff | pass create game/practice; rest blocked by spec hang D-010 | not run | scheduling |
+| 16 | RSVP yes/no/maybe | parent, player | pass (RSVP, live count, counts-not-names) | not run | scheduling |
 | 17 | Messaging: thread, reply, announcements, realtime, unread, mute/leave, youth-safety | staff, parent | not run | not run | messaging |
 | 18 | Notifications list, preferences, quiet hours | any | not run | not run | account |
 | 19 | Push delivery | any | not testable (real APNs) | not testable | - |
@@ -33,12 +33,12 @@ Base check: every listed feature is merged on buildout (Phase 4 payments, Phase 
 | 24 | Registration: builder, public page signed out, captcha, capacity/waitlist | staff, visitor | not run | not run | registration, registration-public |
 | 25 | Forms, waivers (sign), documents upload/access | staff, parent | not run | not run | builders, waivers-documents |
 | 26 | Billing: trial, subscribe via test Checkout, portal, past-due | team admin | not run | - | billing |
-| 27 | Admin portal: role matrix, MFA, actions, audit; non-admin gets not-found | platform admin | not run | - | admin |
-| 28 | Support center: Help, contact, requests, tokens; admin Support module | any, admin | not run | not run | help, support |
+| 27 | Admin portal: role matrix, MFA, actions, audit; non-admin gets not-found | platform admin | non-admin not-found: pass; admin side not testable (owner row wiped, needs your sign-up + docs/admin.md) | - | admin |
+| 28 | Support center: Help, contact, requests, tokens; admin Support module | any, admin | open defect D-009 (Edge Functions not deployed); help pages + axe pass | not run | help, support |
 | 29 | Account: profile, password, avatar, delete account, sign out everywhere | any | not run | not run | account |
-| 30 | Authorization negatives (cross-team/household/thread/payment/doc URLs and RPC) | A vs B | not run | - | - (new) |
+| 30 | Authorization negatives (cross-team/household/thread/payment/doc URLs and RPC) | A vs B | pass: team pages, admin routes, 12 team tables + 8 global tables via API (persona-crawl.spec.ts); threads/payments/docs by id not run | - | - (new) |
 | 31 | Cross-platform: action on web visible on mobile and back | any | not run | not run | - (new) |
-| 32 | Appearance: light/dark, 360/768/1280, dynamic type, reduce motion, keyboard-only, axe | any | not run | not run | visual-app, page-headers |
+| 32 | Appearance: light/dark, 360/768/1280, dynamic type, reduce motion, keyboard-only, axe | any | axe crawl done (D-015); other appearance not run | not run | visual-app, page-headers |
 | 33 | Production build starts and serves | - | fixed (D-001) | - | all |
 
 ## Personas (seed script `scripts/e2e/seed-personas.mjs`, planned)
