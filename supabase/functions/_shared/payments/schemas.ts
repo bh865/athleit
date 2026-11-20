@@ -54,3 +54,9 @@ export const refundInput = z.union([
 ]);
 
 export const exportInput = z.object({ eventId: uuid }).strict();
+
+/** Billing: a team id (checkout, portal) or a team id and an action. Never a price, amount or redirect target. */
+export const billingTeamInput = z.object({ teamId: uuid }).strict();
+export const updateSubscriptionInput = z
+  .object({ teamId: uuid, action: z.enum(['cancel', 'resume']) })
+  .strict();

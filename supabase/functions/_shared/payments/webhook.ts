@@ -1,5 +1,6 @@
 // stripe-webhook core: verify the signature on the RAW body, write the event to the ledger first (the unique
 // event id makes a replay a no-op), then handle it. Never logs bodies, headers or secrets.
+import { handleBillingEvent, isBillingEvent, type BillingDeps } from './billing.ts';
 import { handleStripeEvent, type HandlerDeps } from './handlers.ts';
 import type { Logger } from './log.ts';
 import { verifyStripeSignature } from './stripe.ts';
@@ -7,6 +8,8 @@ import { verifyStripeSignature } from './stripe.ts';
 export interface WebhookDeps extends HandlerDeps {
   secrets: string[];
   log: Logger;
+  /** Athleit's own subscription billing (platform endpoint, event.account null). Absent in older wiring. */
+  billing?: BillingDeps;
   now?: () => number;
   /** An unknown payment older than this is given up on (it will never appear). */
   giveUpAfterMs?: number;
@@ -49,7 +52,11 @@ export async function processWebhook(
     return { status: 200, body: { received: true, duplicate: true } };
   }
   try {
-    const outcome = await handleStripeEvent(event, d);
+    // Platform-account subscription events never touch the Connect payment handlers (and vice versa).
+    const outcome: string =
+      d.billing && isBillingEvent(event)
+        ? await handleBillingEvent(event, d.billing)
+        : await handleStripeEvent(event, d);
     if (outcome === 'unknown_payment') {
       const age = now - Number(event.created ?? 0) * 1000;
       // Only objects carrying OUR payment id can be a payment we have not recorded yet; anything else is not ours.

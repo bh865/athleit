@@ -488,3 +488,8 @@ verify_jwt = false
 # Address search: signed-in users only (the platform checks the JWT; the function re-checks and rate limits). Secret: GOOGLE_PLACES_API_KEY.
 [functions.places]
 verify_jwt = true
+
+# Team subscriptions (Athleit's own billing): the three user-facing functions keep the default JWT check (and re-check the
+# caller through userFunction). reconcile-billing is called by pg_cron through pg_net with the shared secret header.
+[functions.reconcile-billing]
+verify_jwt = false

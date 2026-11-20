@@ -49,6 +49,10 @@ const DB_ERRORS: Record<string, [number, string]> = {
   plan_not_offered: [409, 'plan_not_offered'],
   plan_locked: [409, 'plan_locked'],
   plan_request_use_installments: [409, 'plan_request_use_installments'],
+  billing_disabled: [409, 'billing_disabled'],
+  already_subscribed: [409, 'already_subscribed'],
+  not_subscribed: [409, 'not_subscribed'],
+  billing_unavailable: [503, 'billing_unavailable'],
 };
 
 export function mapError(err: unknown): { status: number; code: string } {
