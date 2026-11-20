@@ -1,20 +1,11 @@
-import type { EventType, RsvpStatus } from '@athleit/core';
+import type { EventType, RsvpStatus, ScheduleItemLike } from '@athleit/core';
 import type { HouseholdScheduleRow, TeamScheduleRow } from '@athleit/db/scheduling';
 
 /** One event as the schedule lists show it, from a team or a household query. */
-export interface ScheduleItem {
-  id: string;
-  team_id: string;
-  team_name?: string | undefined;
-  type: EventType;
-  title: string;
-  starts_at: string;
-  ends_at: string;
-  timezone: string;
+export interface ScheduleItem extends ScheduleItemLike {
   location: string | null;
-  status: 'scheduled' | 'cancelled';
-  cancelled_reason: string | null;
-  result?: { our: number; their: number; outcome: string } | undefined;
+  opponent?: string | null | undefined;
+  home_away?: string | null | undefined;
   children?: { player_id: string; first_name: string; status: RsvpStatus | null }[] | undefined;
 }
 
@@ -30,6 +21,12 @@ export function fromTeamRows(rows: readonly TeamScheduleRow[]): ScheduleItem[] {
     location: r.location_name ?? r.location_text ?? null,
     status: r.status as ScheduleItem['status'],
     cancelled_reason: r.cancelled_reason,
+    series_id: r.series_id,
+    revision: r.revision,
+    seen_revision: r.seen_revision,
+    opponent: r.opponent_name,
+    home_away: r.home_away,
+    counts: { going: r.going, not_going: r.not_going, maybe: r.maybe, no_reply: r.no_reply },
     result:
       r.outcome != null
         ? { our: r.our_score, their: r.their_score, outcome: r.outcome }
@@ -54,6 +51,10 @@ export function fromHouseholdRows(rows: readonly HouseholdScheduleRow[]): Schedu
         location: r.location_name ?? r.location_text ?? null,
         status: r.status as ScheduleItem['status'],
         cancelled_reason: r.cancelled_reason,
+        revision: r.revision,
+        seen_revision: r.seen_revision,
+        opponent: r.opponent_name,
+        home_away: r.home_away,
         children: [],
         result:
           r.outcome != null
@@ -68,5 +69,5 @@ export function fromHouseholdRows(rows: readonly HouseholdScheduleRow[]): Schedu
       status: (r.rsvp_status as RsvpStatus | null) ?? null,
     });
   }
-  return [...byEvent.values()];
+  return [...byEvent.values()].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 }

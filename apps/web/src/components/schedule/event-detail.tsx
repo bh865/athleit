@@ -2,17 +2,26 @@
 
 import {
   EVENT_TYPE_LABELS,
+  arriveEarlyLabel,
   describeEventTime,
+  eventStateView,
+  friendlyError,
   queryRangeForDays,
   localDateKey,
   mapEmbedUrl,
+  mapsUrl,
+  revisionNotice,
+  shouldShowRevisionNotice,
+  type LastChange,
   type RsvpStatus,
 } from '@athleit/core';
 import {
+  deleteEvent,
   getEvent,
   getHouseholdScheduleRange,
   getRsvpDetail,
   getRsvpSummary,
+  markEventSeen,
   type EventDetail as EventDetailRow,
   type RsvpDetailRow,
   type RsvpSummary,
@@ -21,19 +30,24 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   Button,
+  ConfirmSheet,
   EmptyState,
   ErrorState,
   Icon,
   IconButton,
   LoadingSkeleton,
+  Mono,
+  Text,
   useToast,
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
 
 import { CancelSheet } from './cancel-sheet';
+import { CountsBar } from './counts-bar';
 import { EventForm } from './event-form';
 import { RsvpControls, type ChildRsvp } from './rsvp-controls';
 import { ResultSheet } from './result-sheet';
+import { StaffRsvpPanel } from './staff-rsvp-panel';
 import styles from './schedule.module.css';
 import { useViewerZone } from './use-viewer-zone';
 
@@ -77,12 +91,6 @@ async function loadAll(eventId: string): Promise<Loaded | 'missing' | 'error'> {
   return { event, summary: summary.data ?? null, detail: detail?.data ?? null, children };
 }
 
-const STATUS_ICON = {
-  going: { name: 'check-circle', cls: styles.ok, label: 'Going' },
-  not_going: { name: 'x-circle', cls: styles.bad, label: 'Can’t go' },
-  maybe: { name: 'question', cls: styles.muted, label: 'Maybe' },
-} as const;
-
 /**
  * One event: kicker, title, date line, RSVP counts, and either the per-player list (staff) or
  * the RSVP buttons for the viewer's own children. Live: counts follow Realtime changes.
@@ -100,8 +108,14 @@ export function EventDetail({
 }) {
   const [state, setState] = useState<Loaded | 'loading' | 'missing' | 'error'>('loading');
   const [updated, setUpdated] = useState(false);
+  // The seen revision this view opened with: the revision notice holds while the event stays open.
+  const [seenAtOpen, setSeenAtOpen] = useState<number | null | undefined>(undefined);
   const [sheet, setSheet] = useState<'edit' | 'cancel' | 'result' | null>(null);
   const revision = useRef<number | null>(null);
+  const changedRef = useRef(onChanged);
+  useEffect(() => {
+    changedRef.current = onChanged;
+  });
   const toast = useToast();
 
   const reload = useCallback(
@@ -122,7 +136,12 @@ export function EventDetail({
     let live = true;
     void loadAll(eventId).then((next) => {
       if (!live) return;
-      if (typeof next !== 'string') revision.current = next.event.revision;
+      if (typeof next !== 'string') {
+        revision.current = next.event.revision;
+        setSeenAtOpen(next.event.seen_revision);
+        // Opening the event marks this revision as seen (clears the Updated chip on the lists).
+        void markEventSeen(getClient(), eventId).then(() => changedRef.current?.());
+      }
       setState(next);
     });
     return () => {
@@ -178,9 +197,18 @@ export function EventDetail({
         kids={children}
         variant={variant}
         updated={updated}
+        seenAtOpen={seenAtOpen ?? null}
         onClose={onClose}
         onChanged={changed}
         actions={{
+          onDelete: async () => {
+            const res = await deleteEvent(getClient(), event.id);
+            if (res.error) return friendlyError(res.error);
+            toast('Event deleted');
+            onChanged?.();
+            onClose?.();
+            return null;
+          },
           onEdit: () => setSheet('edit'),
           onCancel: () => setSheet('cancel'),
           onResult: () => setSheet('result'),
@@ -227,6 +255,8 @@ export function EventDetailView({
   kids,
   variant,
   updated,
+  seenAtOpen,
+  now: nowProp,
   onClose,
   onChanged,
   actions,
@@ -236,30 +266,69 @@ export function EventDetailView({
   detail: RsvpDetailRow[] | null;
   kids: ChildRsvp[];
   variant: 'drawer' | 'page';
+  /** The event changed while this view was open (Realtime). */
   updated?: boolean;
+  /** The revision this viewer had seen when the view opened (null: never). */
+  seenAtOpen?: number | null;
+  now?: Date;
   onClose?: (() => void) | undefined;
   onChanged?: (() => void) | undefined;
-  actions?: { onEdit: () => void; onCancel: () => void; onResult: () => void } | undefined;
+  actions?:
+    | {
+        onEdit: () => void;
+        onCancel: () => void;
+        onResult: () => void;
+        /** Resolves to an error message, or null when deleted. */
+        onDelete?: () => Promise<string | null>;
+      }
+    | undefined;
 }) {
   const viewerZone = useViewerZone();
+  const [clock, setClock] = useState(() => nowProp ?? new Date());
+  useEffect(() => {
+    if (nowProp) return;
+    const t = setInterval(() => setClock(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, [nowProp]);
+  const now = nowProp ?? clock;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const t = describeEventTime(event.starts_at, event.ends_at, event.timezone, viewerZone);
   const cancelled = event.status === 'cancelled';
   const isGame = event.type === 'game';
+  const place = event.location_name ?? event.location_text;
   const embedSrc = mapEmbedUrl({
     lat: event.location_lat,
     lng: event.location_lng,
     address: event.location_address,
-    name: event.location_name ?? event.location_text,
+    name: place,
   });
-  const ended = new Date(event.ends_at) < new Date();
-  const started = new Date(event.starts_at) <= new Date();
-  const counts = summary
-    ? [
-        { v: summary.going, l: 'Going' },
-        { v: summary.not_going, l: 'Can’t go' },
-        { v: summary.no_reply, l: 'No reply' },
-      ]
-    : [];
+  const openInMaps = mapsUrl({
+    lat: event.location_lat,
+    lng: event.location_lng,
+    address: event.location_address,
+    name: place,
+    placeId: event.location_place_id,
+  });
+  const ended = new Date(event.ends_at) < now;
+  const started = new Date(event.starts_at) <= now;
+  const state = eventStateView(event, now, viewerZone ?? event.timezone);
+  const notice =
+    !cancelled &&
+    (updated ||
+      shouldShowRevisionNotice(
+        { revision: event.revision, seen_revision: seenAtOpen ?? null, starts_at: event.starts_at },
+        now,
+      ))
+      ? revisionNotice(event.last_change as LastChange | null, {
+          revision: event.revision,
+          starts_at: event.starts_at,
+          timezone: event.timezone,
+          place: place ?? null,
+        })
+      : null;
+  const hasReplies = summary ? summary.going + summary.not_going + summary.maybe > 0 : false;
+  const deleteBlocked = hasReplies || event.outcome != null;
 
   return (
     <>
@@ -269,46 +338,72 @@ export function EventDetailView({
           <IconButton icon="x" label="Close event" onClick={onClose} />
         ) : null}
       </div>
-      <div>
-        <h2 className={styles.detailTitle} data-testid="event-title">
+      <div className={styles.titleBlock}>
+        <h2 className={`${styles.detailTitle} ${cancelled ? styles.struck : ''}`} data-testid="event-title">
           {event.title}
         </h2>
+        <p className={styles.stateLine} role="status" aria-label={state.spoken} data-testid="event-state">
+          {state.tone === 'now' ? (
+            <span className={styles.livePill}>
+              <span className={styles.liveDot} aria-hidden /> {state.label}
+            </span>
+          ) : (
+            <Mono>{state.label}</Mono>
+          )}
+          {event.series_id ? (
+            <span className={styles.detailMeta}>
+              <Icon name="repeat" size="sm" /> Part of a series
+            </span>
+          ) : null}
+        </p>
       </div>
-      {embedSrc ? (
-        <iframe
-          className={styles.map}
-          title={`Map: ${event.location_name ?? event.location_text ?? 'event location'}`}
-          loading="lazy"
-          src={embedSrc}
-          data-testid="event-map"
-        />
-      ) : null}
 
       {cancelled ? (
         <p className={styles.banner} role="status" data-testid="cancelled-banner">
-          Cancelled{event.cancelled_reason ? `: ${event.cancelled_reason}` : ''}
+          <Icon name="x-circle" size="sm" /> Cancelled{event.cancelled_reason ? `: ${event.cancelled_reason}` : ''}
         </p>
       ) : null}
-      {updated && !cancelled ? (
+      {notice ? (
         <p className={styles.updated} role="status" data-testid="updated-banner">
-          Updated: the time or place changed. Check the details below.
+          Updated: {notice}.
         </p>
+      ) : null}
+
+      {embedSrc ? (
+        <div className={styles.mapWrap}>
+          <iframe
+            className={styles.map}
+            title={`Map: ${place ?? 'event location'}`}
+            loading="lazy"
+            src={embedSrc}
+            data-testid="event-map"
+          />
+          {openInMaps ? (
+            <a className={styles.mapLink} href={openInMaps} target="_blank" rel="noreferrer noopener">
+              <Icon name="arrow-square-out" size="sm" /> Open in Maps
+            </a>
+          ) : null}
+        </div>
+      ) : openInMaps ? (
+        <a className={styles.mapLink} href={openInMaps} target="_blank" rel="noreferrer noopener">
+          <Icon name="magnifying-glass" size="sm" /> Search in Maps
+        </a>
       ) : null}
 
       <ul className={styles.facts}>
         <li className={styles.fact}>
           <Icon name="calendar-blank" />
           <span>
-            {t.dateLabel} · {t.rangeLabel} {t.zoneLabel}
+            {t.dateLabel} · <span className={styles.monoText}>{t.rangeLabel}</span> {t.zoneLabel}
             {t.viewerLocalLabel ? (
               <span className={styles.detailMeta}> (your time: {t.viewerLocalLabel})</span>
             ) : null}
           </span>
         </li>
-        {event.location_name || event.location_text ? (
+        {place ? (
           <li className={styles.fact}>
             <Icon name="map-pin" />
-            <span>{event.location_name ?? event.location_text}</span>
+            <span>{place}</span>
           </li>
         ) : null}
         {event.virtual_url ? (
@@ -330,7 +425,7 @@ export function EventDetailView({
         ) : null}
         {event.arrive_early_minutes ? (
           <li className={styles.fact}>
-            <Icon name="clock" /> Arrive {event.arrive_early_minutes} min early
+            <Icon name="clock" /> {arriveEarlyLabel(event.starts_at, event.arrive_early_minutes, event.timezone)}
           </li>
         ) : null}
       </ul>
@@ -341,52 +436,35 @@ export function EventDetailView({
       ) : null}
 
       {isGame && event.outcome ? (
-        <p className={styles.detailTitle} data-testid="result-line">
-          {event.outcome === 'win' ? 'Won' : event.outcome === 'loss' ? 'Lost' : 'Tied'}{' '}
-          {event.our_score}–{event.their_score}
-        </p>
-      ) : null}
-
-      {!cancelled && counts.length > 0 ? (
-        <div
-          className={styles.counts}
-          role="group"
-          aria-label="RSVP counts"
-          data-testid="rsvp-counts"
-        >
-          {counts.map((c) => (
-            <div key={c.l} className={styles.count}>
-              <span className={styles.countValue} aria-label={`${c.v} ${c.l}`}>
-                {c.v}
-              </span>
-              <span className={styles.countLabel}>{c.l}</span>
-            </div>
-          ))}
+        <div data-testid="result-line">
+          <p className={styles.detailTitle}>
+            {event.outcome === 'win' ? 'Won' : event.outcome === 'loss' ? 'Lost' : 'Tied'}{' '}
+            <Mono>
+              {event.our_score}–{event.their_score}
+            </Mono>
+          </p>
+          {Array.isArray(event.period_scores) && event.period_scores.length > 0 ? (
+            <p className={styles.detailMeta}>
+              <Mono>
+                {(event.period_scores as { us: number; them: number }[])
+                  .map((p) => `${p.us}–${p.them}`)
+                  .join('  ')}
+              </Mono>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
-      {event.is_staff && detail && !cancelled ? (
-        <ul className={styles.rsvpList} aria-label="Player RSVPs" data-testid="rsvp-list">
-          {detail.map((p) => {
-            const s = p.status ? STATUS_ICON[p.status as keyof typeof STATUS_ICON] : null;
-            return (
-              <li key={p.player_id} className={styles.rsvpRow} data-testid="rsvp-row">
-                <span className={styles.rsvpName}>
-                  {p.first_name} {p.last_name}
-                  {p.note ? <span className={styles.rsvpNote}>{p.note}</span> : null}
-                </span>
-                <span className={s ? s.cls : styles.muted} aria-label={s ? s.label : 'No reply'}>
-                  <Icon name={s ? s.name : 'clock'} weight="fill" size="lg" />
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+      {!cancelled && summary ? <CountsBar counts={summary} /> : null}
 
-      <div className={styles.actions}>
-        {!event.is_staff && !cancelled && !ended
-          ? kids.map((c) => (
+      {!event.is_staff && kids.length > 0 ? (
+        cancelled || ended ? (
+          <p className={styles.meta} data-testid="replies-closed">
+            {cancelled ? 'This event was cancelled, so replies are closed.' : 'This event is over, so replies are closed.'}
+          </p>
+        ) : (
+          <div className={styles.actions}>
+            {kids.map((c) => (
               <RsvpControls
                 key={c.player_id}
                 eventId={event.id}
@@ -394,36 +472,92 @@ export function EventDetailView({
                 showName={kids.length > 1}
                 onChanged={onChanged}
               />
-            ))
-          : null}
-        {event.is_staff && !cancelled ? (
-          <>
-            <div className={styles.actionRow}>
-              {isGame && started ? (
-                <Button fullWidth onClick={() => actions?.onResult()} data-testid="enter-result">
-                  {event.outcome ? 'Edit result' : 'Enter result'}
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {event.is_staff && detail && !cancelled ? (
+        <StaffRsvpPanel
+          event={event}
+          summary={summary}
+          detail={detail}
+          onChanged={() => onChanged?.()}
+        />
+      ) : null}
+
+      {event.is_staff ? (
+        <div className={styles.actions}>
+          {!cancelled ? (
+            <>
+              <div className={styles.actionRow}>
+                {isGame && started ? (
+                  <Button fullWidth onClick={() => actions?.onResult()} data-testid="enter-result">
+                    {event.outcome ? 'Edit result' : 'Enter result'}
+                  </Button>
+                ) : null}
+                <Button
+                  fullWidth
+                  variant="secondary"
+                  onClick={() => actions?.onEdit()}
+                  data-testid="edit-event"
+                >
+                  <Icon name="pencil" size="sm" /> Edit
                 </Button>
-              ) : null}
+              </div>
+              <Button fullWidth variant="ghost" onClick={() => actions?.onCancel()} data-testid="cancel-event">
+                Cancel event
+              </Button>
+            </>
+          ) : null}
+          {actions?.onDelete ? (
+            <>
               <Button
                 fullWidth
-                variant="secondary"
-                onClick={() => actions?.onEdit()}
-                data-testid="edit-event"
+                variant="ghost"
+                disabled={deleteBlocked}
+                onClick={() => {
+                  setDeleteError(null);
+                  setConfirmDelete(true);
+                }}
+                data-testid="delete-event"
               >
-                <Icon name="pencil" size="sm" /> Edit
+                <Icon name="trash" size="sm" /> Delete event
               </Button>
-            </div>
-            <Button
-              fullWidth
-              variant="ghost"
-              onClick={() => actions?.onCancel()}
-              data-testid="cancel-event"
-            >
-              Cancel event
-            </Button>
-          </>
-        ) : null}
-      </div>
+              {deleteBlocked ? (
+                <p className={styles.meta} data-testid="delete-blocked">
+                  {event.outcome != null ? 'A result is recorded' : 'Families have replied'}, so this can’t be deleted.
+                  {cancelled ? '' : ' Cancel instead.'}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {actions?.onDelete ? (
+        <ConfirmSheet
+          open={confirmDelete}
+          onClose={() => setConfirmDelete(false)}
+          title="Delete this event?"
+          confirmLabel="Delete event"
+          alert
+          onConfirm={async () => {
+            const err = await actions.onDelete!();
+            if (err) setDeleteError(err);
+            else setConfirmDelete(false);
+          }}
+        >
+          <Text muted as="p">
+            It is removed from the schedule and nobody is notified. This can’t be undone.
+          </Text>
+          {deleteError ? (
+            <p className={styles.banner} role="alert">
+              {deleteError}
+            </p>
+          ) : null}
+        </ConfirmSheet>
+      ) : null}
     </>
   );
 }

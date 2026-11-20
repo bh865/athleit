@@ -51,6 +51,7 @@ import {
   FamilyDetailDemo,
   FlowPartsDemo,
   MonthDemo,
+  WeekDemo,
   ScheduleRowsDemo,
   StaffDetailDemo,
 } from './schedule-gallery';
@@ -319,6 +320,7 @@ function ThemePanel({ name }: { name: string }) {
 
       <Section title="Schedule · rows and month">
         <ScheduleRowsDemo />
+        <WeekDemo />
         <MonthDemo />
       </Section>
       <Section title="Schedule · event detail">

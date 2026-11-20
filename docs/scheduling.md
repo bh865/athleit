@@ -142,12 +142,51 @@ returns null for unknown, malformed or revoked tokens.
 
 ## Screens (web and mobile)
 
-Schedule (week and month on web; Upcoming and Past on mobile), event drawer / page / screen (also the deep-link target
-`/events/<id>`), RSVP per child, new / edit / cancel / result flows (edit is web only for now), saved places and opponents
-(web), calendar link settings. Realtime: the event view subscribes to `rsvps` and `events` for that event, so staff counts follow
-RSVPs live and everyone sees "Updated" when `revision` changes. Date formatting and DST are unit-tested in
-`packages/core/src/schedule-time.test.ts`; end-to-end in `apps/web/e2e/scheduling.spec.ts`.
-Range helpers added for the calendar views: `team_schedule_range`, `household_schedule_range` (at most 100 days) and `get_event`.
+**Web** (`apps/web/src/components/schedule/`): the Schedule is `Agenda | Week | Month` with a quiet **More** menu
+(Places, Opponents, Calendar link). Agenda is the default for families and players, Week for staff. The event opens in
+the 400px drawer (`?event=<id>`) or the full page `/events/<id>` (the notification deep link); both render
+`EventDetailView`. **Mobile** (`apps/mobile/src/app/(app)/schedule.tsx`, `events/[id].tsx`): `Agenda | Month`, a week
+strip, Upcoming | Past, a filter sheet and a More sheet; Edit, Places and Opponents are available on mobile too.
+Realtime: the event view subscribes to `rsvps` and `events` for that event, so counts follow RSVPs live.
+Date formatting, DST and every view rule are unit-tested in `packages/core/src/schedule-time.test.ts` and
+`schedule-view.test.ts`; end-to-end in `apps/web/e2e/scheduling.spec.ts`.
+Range helpers: `team_schedule_range`, `household_schedule_range` (at most 100 days) and `get_event`.
+
+### Schedule redesign
+
+- **Shared logic** is `packages/core/src/schedule-view.ts` (web and mobile never disagree): day grouping and
+  headings (Today, Tomorrow), range paging (`agendaWindow`, 60 day pages), filters and their URL form, `needsReply`,
+  `rowState` (priority **Live now, Cancelled, Needs reply, Updated**; Series and Final are flags), `countsBar`
+  (Going, Can't go, Maybe, No reply), week grid layout (`layoutDayBlocks`, overlap columns), `eventStateView`
+  (countdown, Live now, Final, Ended; reuses `next-up-state.ts`), `previewRepeat` (the same expansion `create_event`
+  runs, with the 52 occurrence and 366 day caps, shown before saving), `revisionNotice`, `nudgeState`.
+- **Rows:** families get one "Maya: Going" chip per child with Going and Can't go quick actions while the event is
+  open (the same `set_rsvp`); staff and club admins get the counts bar. Names are staff-only and appear only in the
+  event's reply panel.
+- **Updated per viewer (`event_seen`):** `mark_event_seen(event_id)` records the revision the caller last opened; the
+  schedule reads and `get_event` return `seen_revision`. A row shows **Updated** when
+  `revision > 1 and revision > coalesce(seen_revision, 0)`. Opening an event calls `mark_event_seen` once. Each person
+  reads only their own rows.
+- **Previous time or place (`events.last_change`):** `update_event` records `{kind, prev_starts_at, prev_ends_at,
+  prev_place, revision, changed_at}` when time or place changes (every affected occurrence for a series scope);
+  title and notes edits leave it alone. `get_event` returns it. The notice reads "Time moved from 9:00 AM to 10:00
+  AM" or "Place changed from Field 3 to Field 5", with "The time or place changed" when nothing is recorded or it
+  belongs to an earlier revision. **Rule:** it shows only while the event has not started and the viewer has not
+  opened the current revision; the view keeps the seen revision it opened with, so the notice does not vanish while
+  you read it. It holds no names and is not part of the calendar feed.
+- **Nudge (`nudge_rsvp_non_responders(event_id)`):** staff of the event's team only, event not cancelled and not over.
+  It sends the existing RSVP reminder (same `schedule` category, `reminder` change and copy, through
+  `enqueue_notification`, so each person's notification preferences and quiet hours apply) to guardians, and 13+
+  players with their own login, of active players with no reply. Returns how many people were notified. One nudge
+  per event per 6 hours, enforced by `event_nudges` (one row per event, claimed atomically); a second attempt raises
+  `nudged_recently`. The text never contains a child's name or anyone's reply.
+- **Delete** is offered to staff and is disabled with "Cancel instead" when replies or a result exist (the database
+  refuses it too). Deleting a place or opponent that events use is refused by the foreign key; the UI says so.
+- **Differences from the boards:** the web Week grid shows three days below 1100px; the web calendar link has no QR
+  code; saved places are a select, not chips; mobile uses a "Show later events" button instead of infinite scroll and
+  non-sticky day headings (the shared screen frame owns the scroll view); a mobile week-strip day narrows the agenda
+  to that day. Household rows carry no series flag and team rows carry no per-child data, so the series icon and a 13+
+  player's own chip appear only where the read provides them.
 
 ## Notifications (Part C)
 

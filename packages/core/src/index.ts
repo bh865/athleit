@@ -10,6 +10,7 @@ export * from './messaging';
 export * from './notifications';
 export * from './scheduling';
 export * from './schedule-time';
+export * from './schedule-view';
 export * from './schemas/scheduling';
 export * from './money';
 export * from './fees';
