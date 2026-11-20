@@ -66,8 +66,9 @@ export function CalendarFeed({ open, onClose }: { open: boolean; onClose: () => 
           Calendar link
         </Text>
         <Text muted as="p">
-          Subscribe in Apple Calendar or Google Calendar to see every team’s schedule there. Anyone
-          with the link can see it, so keep it private.
+          A private link that puts your schedule in Apple Calendar or Google Calendar, kept up to date.
+          It shows event times and places only: no replies and no player names. Anyone with the link can
+          see it, so keep it private.
         </Text>
         <LoadState loading={status.loading && !url} error={status.error} onRetry={status.reload}>
           {url ? (
@@ -85,6 +86,15 @@ export function CalendarFeed({ open, onClose }: { open: boolean; onClose: () => 
               <Text muted as="p">
                 This is the only time the link is shown. Copy it now.
               </Text>
+              <ol className={styles.steps} data-testid="feed-steps">
+                <li>
+                  <strong>Apple Calendar:</strong> File, then New Calendar Subscription, and paste the link.
+                </li>
+                <li>
+                  <strong>Google Calendar:</strong> Other calendars, then From URL, and paste the link.
+                </li>
+                <li>Calendars refresh on their own schedule, so changes can take a few hours to appear.</li>
+              </ol>
             </>
           ) : active ? (
             <Text as="p">

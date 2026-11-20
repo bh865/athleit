@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { friendlyError } from './errors';
+
 import {
   NO_FILTERS,
   agendaWindow,
@@ -407,5 +409,17 @@ describe('arriveEarlyLabel', () => {
     expect(arriveEarlyLabel('2026-11-21T15:00:00Z', 30, NY)).toBe('Arrive 9:30 AM, 30 minutes early');
     // 2026-11-01 06:30Z is 1:30 AM EST (after fall back); 60 minutes earlier is 1:30 AM EDT.
     expect(arriveEarlyLabel('2026-11-01T06:30:00Z', 60, NY)).toBe('Arrive 1:30 AM, 60 minutes early');
+  });
+});
+
+describe('friendlyError for schedule deletes', () => {
+  it('explains a place or opponent that is still in use', () => {
+    const fk = (c: string) => ({
+      code: '23503',
+      message: `update or delete on table "x" violates foreign key constraint "${c}" on table "events"`,
+    });
+    expect(friendlyError(fk('events_location_id_fkey'))).toMatch(/used by events/);
+    expect(friendlyError(fk('events_opponent_id_fkey'))).toMatch(/used by games/);
+    expect(friendlyError({ message: 'nudged_recently' })).toBe('Already reminded recently. Try again later.');
   });
 });

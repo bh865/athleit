@@ -6,8 +6,10 @@ import {
   MAX_SERIES_OCCURRENCES,
   createEventSchema,
   friendlyError,
+  describeEventTime,
   localDateKey,
   localTimeKey,
+  previewRepeat,
   locationFromSelection,
   placeText,
   type PlaceSelection,
@@ -163,9 +165,42 @@ function EventFormBody({
   // Only a general "Event" can be virtual; games and practices are in person.
   const isVirtual = f.type === 'event' && f.virtual;
   const zones = useMemo(() => allZones(zone0), [zone0]);
+  const preview = useMemo(
+    () =>
+      repeat && !editing
+        ? previewRepeat({
+            startDate: f.date,
+            weekdays: days,
+            ...(endMode === 'count' ? { count: Number(count) || 0 } : { until }),
+            type: f.type,
+          })
+        : null,
+    [repeat, editing, f.date, f.type, days, endMode, count, until],
+  );
+  const yourTime = useMemo(() => {
+    if (f.timezone === viewerZone) return null;
+    return describeEventTime(
+      zonedTimeToInstant(f.date, f.start, f.timezone).toISOString(),
+      zonedTimeToInstant(f.date, f.end, f.timezone).toISOString(),
+      f.timezone,
+      viewerZone,
+    ).viewerLocalLabel;
+  }, [f.date, f.start, f.end, f.timezone, viewerZone]);
+  // Time, place and arrive-early edits notify families; title and notes edits are silent (the database decides).
+  const notifies =
+    Boolean(editing) &&
+    (f.date !== initial.date ||
+      f.start !== initial.start ||
+      f.end !== initial.end ||
+      f.timezone !== initial.timezone ||
+      f.loc !== initial.loc ||
+      f.locText !== initial.locText ||
+      f.arrive !== initial.arrive ||
+      f.url !== initial.url);
 
   async function submit() {
     setError(null);
+    if (preview?.error) return setError(preview.error);
     const client = getClient();
     const startsAt = zonedTimeToInstant(f.date, f.start, f.timezone).toISOString();
     const endsAt = zonedTimeToInstant(f.date, f.end, f.timezone).toISOString();
@@ -302,6 +337,8 @@ function EventFormBody({
           {editing ? 'Edit event' : 'New event'}
         </Text>
         {isSeries ? <ScopePicker value={scope} onChange={setScope} /> : null}
+        <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>Basics</legend>
         {!editing ? (
           <SegmentedControl
             label="Type"
@@ -320,6 +357,9 @@ function EventFormBody({
             maxLength={120}
           />
         ) : null}
+        </fieldset>
+        <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>When</legend>
         {!multi ? (
           <DatePicker
             label="Date"
@@ -342,9 +382,17 @@ function EventFormBody({
             options={zones.map((z) => ({ value: z, label: z.replaceAll('_', ' ') }))}
           />
         ) : null}
+        {yourTime ? (
+          <p className={styles.meta} data-testid="your-time">
+            Your time: {yourTime}
+          </p>
+        ) : null}
+        </fieldset>
+        <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>Where</legend>
         {f.type === 'event' ? (
           <SegmentedControl
-            label="Where"
+            label="In person or virtual"
             value={isVirtual ? 'virtual' : 'in_person'}
             onChange={(v) => set('virtual', v === 'virtual')}
             options={[
@@ -403,8 +451,10 @@ function EventFormBody({
             ) : null}
           </>
         )}
+        </fieldset>
         {isGame ? (
-          <>
+          <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>Game details</legend>
             <Select
               label="Opponent"
               value={f.opp}
@@ -433,8 +483,10 @@ function EventFormBody({
                 { value: 'away', label: 'Away' },
               ]}
             />
-          </>
+          </fieldset>
         ) : null}
+        <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>Arrive early and notes</legend>
         <TextField
           label="Arrive early (minutes)"
           type="number"
@@ -450,9 +502,11 @@ function EventFormBody({
           onChange={(e) => set('notes', e.target.value)}
           maxLength={2000}
         />
+        </fieldset>
 
         {!editing ? (
-          <>
+          <fieldset className={styles.section}>
+          <legend className={styles.sectionTitle}>Repeat</legend>
             <SegmentedControl
               label="Repeat"
               value={repeat ? 'weekly' : 'once'}
@@ -509,13 +563,28 @@ function EventFormBody({
                     yearSpan={{ before: 0, after: 3 }}
                   />
                 )}
+                <p
+                  className={preview?.error ? styles.repeatError : styles.repeatLine}
+                  role="status"
+                  aria-live="polite"
+                  data-testid="repeat-preview"
+                >
+                  {preview?.error ?? preview?.line}
+                </p>
               </>
             ) : null}
-          </>
+          </fieldset>
         ) : null}
 
+        {notifies ? (
+          <p className={styles.updated} data-testid="notify-note">
+            Families will be notified of this change.
+          </p>
+        ) : editing ? (
+          <p className={styles.meta}>Title and notes changes are saved quietly. Nobody is notified.</p>
+        ) : null}
         <FormMessage error={error} />
-        <Button type="submit" size="lg" loading={busy} data-testid="save-event">
+        <Button type="submit" size="lg" loading={busy} disabled={Boolean(preview?.error)} data-testid="save-event">
           {editing ? 'Save changes' : 'Add to schedule'}
         </Button>
       </form>
