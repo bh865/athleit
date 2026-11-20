@@ -140,7 +140,13 @@ Reset and email-confirmation links return through `/auth/callback` on web and `a
 - **Site URL**: the production web origin.
 - **Redirect URLs**: `https://<web origin>/**` (web), `athleit://**` (mobile), `exp://**` (Expo dev) and `https://athleit.app/**` (universal links).
 
-The reset email's link is single use and expires after an hour; an expired or reused link lands on "This link has expired". Android opens `https://athleit.app/auth/*` in the app through the intent filter in `app.json`. iOS universal links need an `apple-app-site-association` file served from the web origin, which this repo does not ship yet, so on iOS the reset link uses the `athleit://` scheme. Resend of a confirmation email has a 60 second cooldown in the apps; `[auth.email] max_frequency` is the server's own limit.
+The reset email's link is single use and expires after an hour; an expired or reused link lands on "This link has expired". The app's reset link uses the `athleit://` scheme on both platforms, and web reset and sign-in links finish in the browser that started them (the PKCE verifier lives there), so `/auth/*` is deliberately **not** a universal link. 
+
+### Universal links (invite, claim and registration links open the app)
+
+The web app serves `/.well-known/apple-app-site-association` for iOS (`apps/web/src/app/.well-known/apple-app-site-association/route.ts`), claiming `/invite/*`, `/claim/*` and `/r/*` for `<APPLE_TEAM_ID>.com.athleit.app`; Android claims the same paths with the intent filters in `app.json`. Set `APPLE_TEAM_ID` (your 10 character Apple Developer Team ID) and `ANDROID_CERT_SHA256` (the signing certificate fingerprint, comma separated for several; Play Console > App signing) where the web app runs, both server only. `/.well-known/assetlinks.json` is served the same way for Android's `autoVerify` filters. With either unset its file answers 404 instead of serving a placeholder (an earlier static copy of both files with `TEAMID` and `REPLACE_WITH_...` placeholders was removed: it answered 200 with ids that can never verify). Check with `curl -i https://athleit.app/.well-known/apple-app-site-association` (status 200, `application/json`, no redirect).
+
+Password changes need the current password, enforced by the server (`require_current_password = true` in `supabase/config.toml`; reset-link sessions are exempt). A hosted project must turn on the same setting (Auth → Sign In / Providers → Email → "Require current password when updating"), otherwise any open session could change the password through the API. Resend of a confirmation email has a 60 second cooldown in the apps; `[auth.email] max_frequency` is the server's own limit.
 
 Local config has `enable_confirmations = false`, so the "Check your email" screen never appears against the local stack. Test it against a hosted project, or by mocking a `signUp` response with no session.
 

@@ -242,7 +242,10 @@ function PasswordSheet({
         return setErrors({ current: 'That isn’t your current password.' });
       }
     }
-    const { error } = await client.auth.updateUser({ password: next });
+    const { error } = await client.auth.updateUser({
+      password: next,
+      ...(hasPassword ? { current_password: current } : {}),
+    });
     setBusy(false);
     if (error) return setErrors({ next: authError(error) });
     setCurrent('');

@@ -32,11 +32,6 @@
               "scheme": "https",
               "host": "athleit.app",
               "pathPrefix": "/r"
-            },
-            {
-              "scheme": "https",
-              "host": "athleit.app",
-              "pathPrefix": "/auth"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

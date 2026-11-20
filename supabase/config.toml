@@ -243,7 +243,9 @@ enable_confirmations = false
 secure_password_change = false
 # If enabled, users will need to provide their current password to change their password, unless
 # they signed in with a one-time password, magic link, or recovery link.
-# require_current_password = true
+# Enforced by the server, so an open session cannot change the password through the API without it.
+# Reset-link (recovery) sessions are exempt, which is what /auth/reset and auth/reset on mobile use.
+require_current_password = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.

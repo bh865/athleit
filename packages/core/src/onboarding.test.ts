@@ -5,7 +5,11 @@ import {
   consentLine,
   firstRunState,
   inviteBanner,
+  ANDROID_FINGERPRINT,
+  androidAssetLinks,
+  appleAppSiteAssociation,
   linkProblemCopy,
+  UNIVERSAL_LINK_PATHS,
   pathFor,
   pendingView,
   problemFromReason,
@@ -214,5 +218,37 @@ describe('notifications soft-ask', () => {
     expect(shouldAskForNotifications({ hasPlace: false, alreadyAsked: false })).toBe(false);
     expect(shouldAskForNotifications({ hasPlace: true, alreadyAsked: false })).toBe(true);
     expect(shouldAskForNotifications({ hasPlace: true, alreadyAsked: true })).toBe(false);
+  });
+});
+
+describe('appleAppSiteAssociation', () => {
+  it('claims invite, claim and registration links for the app id', () => {
+    const doc = appleAppSiteAssociation('ABCDE12345', 'com.athleit.app');
+    expect(doc.applinks.details[0]?.appIDs).toEqual(['ABCDE12345.com.athleit.app']);
+    expect(doc.applinks.details[0]?.components).toEqual([
+      { '/': '/invite/*' },
+      { '/': '/claim/*' },
+      { '/': '/r/*' },
+    ]);
+  });
+  it('never claims the auth paths, which finish in the browser that started them', () => {
+    expect(UNIVERSAL_LINK_PATHS.some((p) => p.startsWith('/auth'))).toBe(false);
+  });
+});
+
+describe('androidAssetLinks', () => {
+  const fp = Array.from({ length: 32 }, (_, i) =>
+    i.toString(16).padStart(2, '0').toUpperCase(),
+  ).join(':');
+  it('lists the package and fingerprints', () => {
+    expect(androidAssetLinks('com.athleit.app', [fp])[0]?.target).toEqual({
+      namespace: 'android_app',
+      package_name: 'com.athleit.app',
+      sha256_cert_fingerprints: [fp],
+    });
+  });
+  it('only accepts real fingerprints, never a placeholder', () => {
+    expect(ANDROID_FINGERPRINT.test(fp)).toBe(true);
+    expect(ANDROID_FINGERPRINT.test('REPLACE_WITH_RELEASE_SIGNING_CERT_SHA256')).toBe(false);
   });
 });
