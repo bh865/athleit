@@ -49,7 +49,7 @@ test.describe.serial('waivers and documents', () => {
   test('publishing asks first, freezes v1, and a later draft can be compared with it', async () => {
     await page.getByRole('button', { name: 'Publish v1' }).click();
     await expect(page.getByRole('dialog')).toContainText('freezes this text');
-    await page.getByRole('dialog').getByRole('button', { name: 'Publish v1' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Publish v1', exact: true }).click();
     await expect(page.getByText(/v1 is live/)).toBeVisible();
 
     await page

@@ -115,7 +115,10 @@ test.describe.serial('people, teams and rosters', () => {
     await expect(panel).toContainText('Guardian contacts');
     await expect(panel).toContainText('e2e-');
     await expect(panel.getByRole('link', { name: 'Email' })).toBeVisible();
-    await expect(panel).toContainText('9 years old');
+    const born = new Date('2016-04-02T12:00:00');
+    const now = new Date();
+    const age = now.getFullYear() - born.getFullYear() - (now < new Date(now.getFullYear(), 3, 2) ? 1 : 0);
+    await expect(panel).toContainText(`${age} years old`);
     const axe = await new AxeBuilder({ page: coach }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(axe.violations).toEqual([]);
   });
