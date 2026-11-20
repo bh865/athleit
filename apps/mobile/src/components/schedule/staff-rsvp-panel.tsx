@@ -6,7 +6,7 @@ import {
   type RsvpDetailRow,
   type RsvpSummary,
 } from '@athleit/db/scheduling';
-import { componentTokens, space } from '@athleit/tokens';
+import { componentTokens, radius, space } from '@athleit/tokens';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
@@ -97,7 +97,7 @@ export function StaffRsvpPanel({
       </View>
       <TextField label="Search players" value={query} onChangeText={setQuery} />
       {error ? <Notice tone="error">{error}</Notice> : null}
-      <View style={{ borderRadius: 16, backgroundColor: c.surface, paddingHorizontal: space[4] }} testID="rsvp-list">
+      <View style={{ borderRadius: radius.lg, backgroundColor: c.surface, paddingHorizontal: space[4] }} testID="rsvp-list">
         {rows.length === 0 ? (
           <Text muted style={{ paddingVertical: space[3] }}>
             No players match.

@@ -25,14 +25,14 @@ export function CountsBar({ counts, legend = true }: { counts: RsvpCounts; legen
         style={{
           flexDirection: 'row',
           height: space[2],
-          gap: 2,
+          gap: space[1] / 2,
           overflow: 'hidden',
           borderRadius: radius.pill,
           backgroundColor: c.surfaceAlt,
         }}
       >
         {bar.segments.map((s) => (
-          <View key={s.key} style={{ flexGrow: s.value, backgroundColor: fill[s.key], minWidth: 2 }} />
+          <View key={s.key} style={{ flexGrow: s.value, backgroundColor: fill[s.key], minWidth: space[1] / 2 }} />
         ))}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[4] }}>
