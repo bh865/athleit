@@ -16,6 +16,8 @@ insert into public.teams (id, name, sport, season_label, join_code) values
 insert into public.team_memberships (team_id, profile_id, role) values
   ('a1000000-0000-0000-0000-00000000000a', 'a1111111-1111-1111-1111-111111111111', 'admin'),
   ('a2000000-0000-0000-0000-00000000000b', 'a3333333-3333-3333-3333-333333333333', 'admin');
+insert into public.team_memberships (team_id, profile_id, role) values
+  ('a2000000-0000-0000-0000-00000000000b', 'a2222222-2222-2222-2222-222222222222', 'parent');
 insert into public.households (id, name) values
   ('11000000-0000-0000-0000-000000000001', 'Park family'),
   ('22000000-0000-0000-0000-000000000002', 'Other family');
@@ -27,21 +29,27 @@ insert into public.players (id, household_id, first_name, last_name, date_of_bir
 insert into public.join_requests (id, team_id, requester_id, player_id, status) values
   ('b1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-00000000000a', 'a2222222-2222-2222-2222-222222222222', '91000000-0000-0000-0000-000000000001', 'pending'),
   ('b2000000-0000-0000-0000-000000000002', 'a2000000-0000-0000-0000-00000000000b', 'a2222222-2222-2222-2222-222222222222', '91000000-0000-0000-0000-000000000001', 'approved'),
-  ('b3000000-0000-0000-0000-000000000003', 'a3000000-0000-0000-0000-00000000000c', 'a2222222-2222-2222-2222-222222222222', null, 'declined');
+  ('b3000000-0000-0000-0000-000000000003', 'a3000000-0000-0000-0000-00000000000c', 'a2222222-2222-2222-2222-222222222222', null, 'declined'),
+  ('b4000000-0000-0000-0000-000000000004', 'a1000000-0000-0000-0000-00000000000a', 'a2222222-2222-2222-2222-222222222222', null, 'approved');
 insert into public.household_join_requests (id, household_id, requester_id, status) values
-  ('c1000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000002', 'a2222222-2222-2222-2222-222222222222', 'pending');
+  ('c1000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000002', 'a2222222-2222-2222-2222-222222222222', 'pending'),
+  ('c2000000-0000-0000-0000-000000000002', '11000000-0000-0000-0000-000000000001', 'a2222222-2222-2222-2222-222222222222', 'approved'),
+  ('c3000000-0000-0000-0000-000000000003', '22000000-0000-0000-0000-000000000002', 'a2222222-2222-2222-2222-222222222222', 'approved');
 
 set local role anon; select set_config('request.jwt.claims', '{"role":"anon"}', true);
 select throws_ok($$ select * from public.get_my_join_requests() $$, '42501', null, 'anonymous users cannot read own requests');
 select throws_ok($$ select public.cancel_join_request('team', 'b1000000-0000-0000-0000-000000000001') $$, '42501', null, 'anonymous users cannot cancel');
 
 reset role; select set_config('request.jwt.claims', '{"sub":"a2222222-2222-2222-2222-222222222222","role":"authenticated"}', true); set local role authenticated;
-select is((select count(*)::int from public.get_my_join_requests()), 4, 'the requester sees all of their own requests, both kinds');
+select is((select count(*)::int from public.get_my_join_requests()), 7, 'the requester sees all of their own requests, both kinds');
 select is((select place_name from public.get_my_join_requests() where request_id = 'b1000000-0000-0000-0000-000000000001'), null, 'a pending team request carries no team name');
 select is((select place_name from public.get_my_join_requests() where request_id = 'b3000000-0000-0000-0000-000000000003'), null, 'a declined team request carries no team name');
 select is((select place_name from public.get_my_join_requests() where request_id = 'c1000000-0000-0000-0000-000000000001'), null, 'a pending family request carries no family name');
 select is((select place_name from public.get_my_join_requests() where request_id = 'b2000000-0000-0000-0000-000000000002'), 'Owls', 'an approved request shows the team name');
 select is((select child_first_name from public.get_my_join_requests() where request_id = 'b1000000-0000-0000-0000-000000000001'), 'Maya', 'the child the requester named is shown');
+select is((select place_name from public.get_my_join_requests() where request_id = 'c2000000-0000-0000-0000-000000000002'), 'Park family', 'an approved family request names the family while the caller is a guardian');
+select is((select place_name from public.get_my_join_requests() where request_id = 'b4000000-0000-0000-0000-000000000004'), null, 'an approved team request no longer names the team once membership has ended');
+select is((select place_name from public.get_my_join_requests() where request_id = 'c3000000-0000-0000-0000-000000000003'), null, 'an approved family request no longer names the family once the caller is not a guardian');
 select is((select count(*)::int from public.get_my_join_requests() where place_name = 'Hawks'), 0, 'the pending team name never appears anywhere in the result');
 
 reset role; select set_config('request.jwt.claims', '{"sub":"a4444444-4444-4444-4444-444444444444","role":"authenticated"}', true); set local role authenticated;
@@ -67,7 +75,7 @@ select is((select status from public.get_my_join_requests() where request_id = '
 select throws_ok($$ select public.cancel_join_request('team', 'b1000000-0000-0000-0000-000000000001') $$, 'P0001', 'request_not_pending', 'cancelling twice is refused');
 
 reset role; select set_config('request.jwt.claims', '{"sub":"a1111111-1111-1111-1111-111111111111","role":"authenticated"}', true); set local role authenticated;
-select is_empty($$ select * from public.get_join_requests('a1000000-0000-0000-0000-00000000000a') $$, 'a cancelled request disappears from the approver list');
+select is_empty($$ select * from public.get_join_requests('a1000000-0000-0000-0000-00000000000a') where status in ('pending', 'cancelled') $$, 'a cancelled request disappears from the approver list');
 select throws_ok($$ select public.decide_join_request('b1000000-0000-0000-0000-000000000001', true) $$, 'P0001', 'request_not_pending', 'staff cannot approve a cancelled request');
 select is((select count(*)::int from public.team_memberships where profile_id = 'a2222222-2222-2222-2222-222222222222'), 0, 'a cancelled request grants nothing');
 
