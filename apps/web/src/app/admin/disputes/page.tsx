@@ -11,7 +11,7 @@ const RANGES: AdminRange[] = ['30d', '90d', '12m'];
 /** Counts from the payment ledger and the Stripe event ledger. There is no per-dispute table yet. */
 export default async function DisputesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  await getAdminContext();
+  await getAdminContext('admin');
   const range = parseRange(sp, RANGES, '90d');
   const res = await getPaymentMetrics(await createClient(), range, 'month');
   return (

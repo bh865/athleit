@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { isPlatformRole, type PlatformRole } from '@athleit/core';
+import { isPlatformRole, roleAtLeast, type PlatformRole } from '@athleit/core';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 
@@ -30,7 +30,7 @@ export interface AdminContext {
  * Not signed in: sign in (proxy.ts already redirects, this re-checks). Signed in but not an admin: the app's
  * ordinary not-found, never "access denied", so the route's existence is not revealed.
  */
-export const getAdminContext = cache(async (): Promise<AdminContext> => {
+const loadContext = cache(async (): Promise<AdminContext> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -61,3 +61,13 @@ export const getAdminContext = cache(async (): Promise<AdminContext> => {
     asOf: new Date().toISOString(),
   };
 });
+
+/**
+ * The admin context, optionally requiring a minimum role. A role that is too low gets the ordinary not-found, the same as a
+ * non-admin: pages above your role do not reveal themselves. (The database still enforces every read and write itself.)
+ */
+export async function getAdminContext(minRole: PlatformRole = 'support'): Promise<AdminContext> {
+  const ctx = await loadContext();
+  if (!roleAtLeast(ctx.role, minRole)) notFound();
+  return ctx;
+}

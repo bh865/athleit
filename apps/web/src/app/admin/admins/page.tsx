@@ -7,7 +7,7 @@ import { getAdminContext } from '@/lib/admin/context';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('owner');
   const res = await listAdmins(await createClient());
   if (res.error) return <><PageTitle title="Admins" /><ErrorState message="Couldn’t load admins. Nothing was changed." /></>;
   type R = (typeof res.data.items)[number];

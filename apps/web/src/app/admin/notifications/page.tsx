@@ -11,7 +11,7 @@ const STATUS = ['sent', 'pending', 'sending', 'failed', 'skipped'];
 
 export default async function NotificationsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('admin');
   const range = parseRange(sp, RANGES, '7d');
   const res = await getNotificationMetrics(await createClient(), range);
   const cells = res.data?.by_status_channel ?? [];

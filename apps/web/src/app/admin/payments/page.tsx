@@ -11,7 +11,7 @@ const RANGES: AdminRange[] = ['7d', '30d', '90d', '12m'];
 
 export default async function PaymentsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('admin');
   const range = parseRange(sp, RANGES, '30d');
   const bucket = bucketFor(range);
   const res = await getPaymentMetrics(await createClient(), range, bucket);

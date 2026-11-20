@@ -11,7 +11,7 @@ const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US'
 
 export default async function JobsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('admin');
   const supabase = await createClient();
   const outcome = ['failed', 'processed', 'pending'].find((o) => o === one(sp.outcome)) ?? null;
   const [jobs, events, wm, rl] = await Promise.all([

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 
 /** Generated from admin_list_settings(): a new setting is a database row, not UI code. */
 export default async function SettingsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('admin');
   const supabase = await createClient();
   const [settings, metrics, sports, fee] = await Promise.all([
     listSettings(supabase), getBillingMetrics(supabase), listSportConfigs(supabase),

@@ -10,7 +10,7 @@ const ORDER = ['not_started', 'in_review', 'needs_info', 'ready', 'disconnected'
 
 export default async function ConnectPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const ctx = await getAdminContext();
+  const ctx = await getAdminContext('admin');
   const res = await getConnectFunnel(await createClient());
   const by = res.data?.by_status ?? {};
   return (
