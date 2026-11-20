@@ -97,7 +97,10 @@ export default function SignInScreen() {
             onSubmitEditing={submit}
           />
           <LinkButton title="Forgot password?" onPress={() => router.push('/forgot-password')} />
-          <LinkButton title="Need help signing in?" onPress={() => void WebBrowser.openBrowserAsync(webContactUrl())} />
+          <LinkButton
+            title="Need help signing in?"
+            onPress={() => void WebBrowser.openBrowserAsync(webContactUrl())}
+          />
           <FormMessage error={error} />
           <Button title="Sign in" size="lg" loading={busy} onPress={submit} />
         </View>
