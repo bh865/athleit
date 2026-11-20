@@ -164,13 +164,14 @@ select is((select count(*)::int from public.platform_setting_history where key =
 select is((select count(*)::int from public.platform_audit_log where action = 'setting.change' and target_id = 'team_subscription.grace_days'), 1, 'platform audit row written');
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal2');
 select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '11'::jsonb, '') $$, '22023', 'reason_required', 'a reason is required');
-select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '99'::jsonb, 'too long') $$, '22023', 'setting_out_of_range', 'bounds are enforced');
-select throws_ok($$ select public.admin_set_setting('team_subscription.price_cents', '50'::jsonb, 'too cheap') $$, '22023', 'setting_out_of_range', 'price lower bound');
-select throws_ok($$ select public.admin_set_setting('team_subscription.price_cents', '"ten"'::jsonb, 'wrong type') $$, '22023', 'invalid_setting_value', 'type is enforced');
-select throws_ok($$ select public.admin_set_setting('no.such.key', '1'::jsonb, 'nope') $$, '22023', 'unknown_setting', 'only defined keys');
-select throws_ok($$ select public.admin_set_setting('team_subscription.enabled', 'false'::jsonb, 'owner only') $$, '42501', 'not_authorized', 'an owner-only key needs an owner');
-select throws_ok($$ select public.admin_set_setting('team_subscription.trial_reminder_days', '[3, 200]'::jsonb, 'bad array') $$, '22023', 'setting_out_of_range', 'array bounds');
-select lives_ok($$ select public.admin_set_setting('team_subscription.trial_reminder_days', '[1, 3, 3, 7]'::jsonb, 'reminders') $$, 'array setting');
+select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '11'::jsonb, 'too short') $$, '22023', 'reason_required', 'a 9 character reason is refused');
+select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '99'::jsonb, 'too long for the bound') $$, '22023', 'setting_out_of_range', 'bounds are enforced');
+select throws_ok($$ select public.admin_set_setting('team_subscription.price_cents', '50'::jsonb, 'too cheap a price') $$, '22023', 'setting_out_of_range', 'price lower bound');
+select throws_ok($$ select public.admin_set_setting('team_subscription.price_cents', '"ten"'::jsonb, 'wrong type given') $$, '22023', 'invalid_setting_value', 'type is enforced');
+select throws_ok($$ select public.admin_set_setting('no.such.key', '1'::jsonb, 'no such setting') $$, '22023', 'unknown_setting', 'only defined keys');
+select throws_ok($$ select public.admin_set_setting('team_subscription.enabled', 'false'::jsonb, 'owner only change') $$, '42501', 'not_authorized', 'an owner-only key needs an owner');
+select throws_ok($$ select public.admin_set_setting('team_subscription.trial_reminder_days', '[3, 200]'::jsonb, 'bad array value') $$, '22023', 'setting_out_of_range', 'array bounds');
+select lives_ok($$ select public.admin_set_setting('team_subscription.trial_reminder_days', '[1, 3, 3, 7]'::jsonb, 'reminders change') $$, 'array setting');
 reset role;
 select is(private.setting_int_array('team_subscription.trial_reminder_days'), array[7, 3, 1], 'array is de-duplicated and ordered');
 -- Price change: a new immutable version; the locked version of a paying team is untouched.
@@ -179,7 +180,7 @@ update public.team_billing set price_version_id = (select id from public.billing
   stripe_subscription_id = 'sub_p1', stripe_customer_id = 'cus_p1', stripe_status = 'active', current_period_end = now() + interval '20 days'
   where team_id = 'a2000000-0000-0000-0000-00000000000b';
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal2');
-select lives_ok($$ select public.admin_set_setting('team_subscription.price_cents', '1500'::jsonb, 'new price') $$, 'price change');
+select lives_ok($$ select public.admin_set_setting('team_subscription.price_cents', '1500'::jsonb, 'new price change') $$, 'price change');
 reset role;
 select is((select count(*)::int from public.billing_price_versions where amount_cents = 1500), 1, 'the price change created a version');
 select is((select v.amount_cents from public.team_billing b join public.billing_price_versions v on v.id = b.price_version_id where b.team_id = 'a2000000-0000-0000-0000-00000000000b'), 1000, 'a paying team keeps its locked price');
@@ -189,12 +190,12 @@ select throws_ok($$ delete from public.billing_price_versions where amount_cents
 select private.set_platform_setting('team_subscription.price_cents', '1000'::jsonb, null, 'back');
 select is((select count(*)::int from public.billing_price_versions where amount_cents = 1000), 1, 'an old price reuses its version');
 select pg_temp.login('b3333333-3333-3333-3333-333333333333', 'aal2');
-select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '5'::jsonb, 'support cannot') $$, '42501', 'not_authorized', 'support cannot write settings');
+select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '5'::jsonb, 'support cannot write') $$, '42501', 'not_authorized', 'support cannot write settings');
 select is(public.platform_admin_role(), 'support', 'support sees its own role');
 reset role;
 select pg_temp.login('a8888888-8888-8888-8888-888888888888', 'aal2');
 select is(public.platform_admin_role(), null::text, 'a team admin is not a platform admin');
-select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '5'::jsonb, 'no way') $$, '42501', 'not_authorized', 'a team admin cannot write settings');
+select throws_ok($$ select public.admin_set_setting('team_subscription.grace_days', '5'::jsonb, 'no way at all') $$, '42501', 'not_authorized', 'a team admin cannot write settings');
 select throws_ok($$ select public.admin_list_settings() $$, '42501', 'not_authorized', 'a team admin cannot list settings');
 select throws_ok($$ select public.admin_billing_metrics() $$, '42501', 'not_authorized', 'a team admin cannot read metrics');
 reset role;
@@ -204,24 +205,24 @@ reset role;
 
 -- Admin functions ---------------------------------------------------------------------------------------------------------
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal1');
-select throws_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill') $$, '42501', 'mfa_required', 'extend trial needs MFA');
-select throws_ok($$ select public.admin_comp_team('a1000000-0000-0000-0000-00000000000a', null, 'goodwill') $$, '42501', 'mfa_required', 'comp needs MFA');
+select throws_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill gesture') $$, '42501', 'mfa_required', 'extend trial needs MFA');
+select throws_ok($$ select public.admin_comp_team('a1000000-0000-0000-0000-00000000000a', null, 'goodwill gesture') $$, '42501', 'mfa_required', 'comp needs MFA');
 reset role;
 select pg_temp.login('b3333333-3333-3333-3333-333333333333', 'aal2');
-select throws_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill') $$, '42501', 'not_authorized', 'support cannot extend a trial');
+select throws_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill gesture') $$, '42501', 'not_authorized', 'support cannot extend a trial');
 select lives_ok($$ select public.admin_billing_metrics() $$, 'support can read metrics');
 reset role;
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal2');
-select lives_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill') $$, 'admin extends a trial');
+select lives_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', 'goodwill gesture') $$, 'admin extends a trial');
 select throws_ok($$ select public.admin_extend_trial('a1000000-0000-0000-0000-00000000000a', now() + interval '10 days', null) $$, '22023', 'reason_required', 'a reason is required to extend');
 reset role;
 select is(private.team_billing_state('a1000000-0000-0000-0000-00000000000a'), 'trialing', 'extended trial is trialing');
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal2');
-select lives_ok($$ select public.admin_comp_team('a1000000-0000-0000-0000-00000000000a', now() + interval '60 days', 'partner') $$, 'comp');
+select lives_ok($$ select public.admin_comp_team('a1000000-0000-0000-0000-00000000000a', now() + interval '60 days', 'partner team comp') $$, 'comp');
 reset role;
 select is(private.team_billing_state('a1000000-0000-0000-0000-00000000000a'), 'comped', 'comped state');
 select pg_temp.login('b2222222-2222-2222-2222-222222222222', 'aal2');
-select lives_ok($$ select public.admin_clear_comp('a1000000-0000-0000-0000-00000000000a', 'ended') $$, 'clear comp');
+select lives_ok($$ select public.admin_clear_comp('a1000000-0000-0000-0000-00000000000a', 'comp period ended') $$, 'clear comp');
 reset role;
 select is((select count(*)::int from public.platform_audit_log where action in ('billing.extend_trial', 'billing.comp', 'billing.clear_comp')), 3, 'each admin write is in the platform audit');
 select is((select count(*)::int from public.audit_log where action like 'billing.%' and team_id = 'a1000000-0000-0000-0000-00000000000a' and actor_id = 'b2222222-2222-2222-2222-222222222222'), 0, 'admin actions never reach the team-readable audit log');
