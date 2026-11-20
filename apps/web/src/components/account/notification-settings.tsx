@@ -3,6 +3,7 @@
 import {
   friendlyError,
   NOTIFICATION_CATEGORIES,
+  visibleNotificationCategories,
   NOTIFICATION_CHANNELS,
   summarizePreferences,
 } from '@athleit/core';
@@ -36,6 +37,7 @@ const LABEL = {
   schedule: 'Schedule changes',
   payments: 'Payments',
   registration: 'Registrations and waivers',
+  billing: 'Team billing (admins)',
 } as const;
 const zones = (): string[] => {
   try {
@@ -49,7 +51,7 @@ const zones = (): string[] => {
 
 /** Notification preferences, quiet hours, lock-screen preview and push devices. Used by /account. */
 export function NotificationSettings() {
-  const { userId } = useApp();
+  const { userId, contexts } = useApp();
   const toast = useToast();
   const client = getClient();
   const prefs = useLoad(
@@ -140,7 +142,7 @@ export function NotificationSettings() {
               </tr>
             </thead>
             <tbody>
-              {NOTIFICATION_CATEGORIES.map((cat) => (
+              {visibleNotificationCategories(NOTIFICATION_CATEGORIES, contexts).map((cat) => (
                 <tr key={cat}>
                   <th scope="row">{LABEL[cat]}</th>
                   {NOTIFICATION_CHANNELS.map((ch) => (

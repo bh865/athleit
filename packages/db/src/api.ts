@@ -828,7 +828,7 @@ export const saveNotificationPreference = (
   client: Client,
   userId: string,
   channel: 'push' | 'email',
-  category: 'messages' | 'announcements' | 'schedule' | 'payments' | 'registration',
+  category: 'messages' | 'announcements' | 'schedule' | 'payments' | 'registration' | 'billing',
   patch: {
     enabled?: boolean;
     quiet_hours_start?: string | null;

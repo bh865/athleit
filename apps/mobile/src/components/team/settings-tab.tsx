@@ -23,6 +23,7 @@ import { Badge, Button, Card, Icon, Text, TextField, useToast } from '@/componen
 import { supabase } from '@/lib/supabase';
 import { useLoad } from '@/lib/use-load';
 
+import { BillingStatus } from './billing-status';
 import { ConfirmSheet, ListState } from './parts';
 import { useTeam } from './team-context';
 
@@ -91,6 +92,7 @@ export function SettingsTab() {
           </>
         )}
       </Card>
+      {caps.has('billing.view') ? <BillingStatus teamId={team.id} /> : null}
       <ClubAffiliation />
     </View>
   );

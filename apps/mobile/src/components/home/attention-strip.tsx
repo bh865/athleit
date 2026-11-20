@@ -28,6 +28,7 @@ const ICON: Record<AttentionKind, IconName> = {
   linkRequests: 'link',
   registrationsToDecide: 'clipboard-text',
   payouts: 'bank',
+  billing: 'credit-card',
   setup: 'list-checks',
 };
 

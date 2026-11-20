@@ -1,6 +1,7 @@
 import {
   friendlyError,
   NOTIFICATION_CATEGORIES,
+  visibleNotificationCategories,
   NOTIFICATION_CHANNELS,
   summarizePreferences,
 } from '@athleit/core';
@@ -27,6 +28,7 @@ const LABEL = {
   schedule: 'Schedule changes',
   payments: 'Payments',
   registration: 'Registrations and waivers',
+  billing: 'Team billing (admins)',
 } as const;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const deviceZone = () => {
@@ -39,7 +41,7 @@ const deviceZone = () => {
 
 /** Notification preferences, quiet hours, lock-screen preview and push devices. Used by /account/notifications. */
 export function NotificationSettings() {
-  const { userId } = useApp();
+  const { userId, contexts } = useApp();
   const { theme } = useTheme();
   const toast = useToast();
   const prefs = useLoad(
@@ -81,7 +83,7 @@ export function NotificationSettings() {
     <View style={{ gap: space[4] }}>
       <Card style={{ gap: space[3] }}>
         <H2>What to send</H2>
-        {NOTIFICATION_CATEGORIES.map((cat) => (
+        {visibleNotificationCategories(NOTIFICATION_CATEGORIES, contexts).map((cat) => (
           <View key={cat} style={{ gap: space[1] }}>
             <Text variant="bodyBold">{LABEL[cat]}</Text>
             {NOTIFICATION_CHANNELS.map((ch) => (

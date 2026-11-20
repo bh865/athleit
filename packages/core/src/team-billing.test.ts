@@ -237,3 +237,23 @@ describe('capabilities and errors', () => {
     expect(friendlyError({ message: 'already_subscribed' })).toBe('This team is already subscribed.');
   });
 });
+
+describe('Home attention and alerts', () => {
+  it('turns a billing banner into an urgent or calm attention item for admins', async () => {
+    const { buildAttentionItems } = await import('./home-data');
+    const { attentionRank, attentionActionLabel } = await import('./home-attention');
+    const { notificationSummary } = await import('./notifications');
+    const items = buildAttentionItems({
+      now: new Date('2026-01-13T00:00:00Z'),
+      billing: { title: 'Payment problem', detail: 'Update the card.', href: '/teams/t/billing', urgent: true },
+    });
+    expect(items).toHaveLength(1);
+    expect(attentionRank(items[0]!, new Date('2026-01-13T00:00:00Z'))).toBe(1);
+    expect(attentionActionLabel(items[0]!)).toBe('Open billing');
+    const calm = buildAttentionItems({ now: new Date(), billing: { title: 'Trial ending', detail: 'x', href: '/h', urgent: false } });
+    expect(attentionRank(calm[0]!, new Date())).toBe(3);
+    expect(buildAttentionItems({ now: new Date(), billing: null })).toEqual([]);
+    expect(notificationSummary('billing', { team_id: 't', audience: 'admin', title: 'Payment failed' }).href).toBe('/teams/t/billing');
+    expect(notificationSummary('billing', { team_id: 't', audience: 'staff' }).href).toBe('/teams/t');
+  });
+});
