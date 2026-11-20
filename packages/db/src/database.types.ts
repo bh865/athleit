@@ -3263,25 +3263,31 @@ export type Database = {
       }
       thread_participants: {
         Row: {
+          archived_at: string | null
           joined_at: string
           left_at: string | null
           muted_until: string | null
+          pinned_at: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Insert: {
+          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
+          pinned_at?: string | null
           profile_id: string
           role: string
           thread_id: string
         }
         Update: {
+          archived_at?: string | null
           joined_at?: string
           left_at?: string | null
           muted_until?: string | null
+          pinned_at?: string | null
           profile_id?: string
           role?: string
           thread_id?: string
@@ -3769,6 +3775,10 @@ export type Database = {
         Args: { p_event_id: string; p_reason: string; p_scope: string }
         Returns: number
       }
+      cancel_join_request: {
+        Args: { p_id: string; p_kind: string }
+        Returns: undefined
+      }
       cancel_open_payment: {
         Args: { p_payment_id: string }
         Returns: undefined
@@ -4208,6 +4218,18 @@ export type Database = {
           role: Database["public"]["Enums"]["team_role"]
         }[]
       }
+      get_my_join_requests: {
+        Args: never
+        Returns: {
+          child_first_name: string
+          created_at: string
+          decided_at: string
+          kind: string
+          place_name: string
+          request_id: string
+          status: string
+        }[]
+      }
       get_notification_failures: {
         Args: { p_team_id: string }
         Returns: {
@@ -4632,6 +4654,13 @@ export type Database = {
         Args: { p_base_cents?: number; p_reason?: string; p_request_id: string }
         Returns: Json
       }
+      preview_claim_public: {
+        Args: { p_player_id: string }
+        Returns: {
+          outcome: string
+          player_first_name: string
+        }[]
+      }
       preview_invite: {
         Args: { p_token: string }
         Returns: {
@@ -4640,6 +4669,16 @@ export type Database = {
           role: string
           target_name: string
           valid: boolean
+        }[]
+      }
+      preview_invite_public: {
+        Args: { p_token: string }
+        Returns: {
+          inviter_first_name: string
+          kind: string
+          outcome: string
+          role: string
+          target_name: string
         }[]
       }
       promote_from_waitlist: { Args: { p_event_id: string }; Returns: string }
@@ -5337,7 +5376,7 @@ export type Database = {
       club_role: "admin" | "manager"
       household_relationship: "guardian"
       membership_status: "active" | "inactive"
-      request_status: "pending" | "approved" | "declined"
+      request_status: "pending" | "approved" | "declined" | "cancelled"
       roster_status: "active" | "inactive"
       sport:
         | "soccer"
@@ -5481,7 +5520,7 @@ export const Constants = {
       club_role: ["admin", "manager"],
       household_relationship: ["guardian"],
       membership_status: ["active", "inactive"],
-      request_status: ["pending", "approved", "declined"],
+      request_status: ["pending", "approved", "declined", "cancelled"],
       roster_status: ["active", "inactive"],
       sport: [
         "soccer",

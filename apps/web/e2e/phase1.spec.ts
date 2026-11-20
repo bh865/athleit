@@ -29,7 +29,7 @@ test.describe.serial('people, teams and rosters', () => {
   test('a parent signs up and adds a child without joining a team', async () => {
     await signUp(parent, 'parent', 'Pat Parent');
     await expect(parent.getByTestId('display-name')).toContainText('Pat Parent');
-    await parent.getByRole('button', { name: 'Add my child' }).click();
+    await parent.goto('/family/children/new');
     await expect(parent.getByText('never have their own login')).toBeVisible();
     await parent.getByLabel('First name').fill('Ava');
     await parent.getByLabel('Last name').fill('Adams');
@@ -41,7 +41,7 @@ test.describe.serial('people, teams and rosters', () => {
 
   test('a coach creates a team', async () => {
     await signUp(coach, 'coach', 'Casey Coach');
-    await coach.getByRole('button', { name: 'Create a team' }).click();
+    await coach.goto('/teams/new');
     await coach.getByLabel('Team name').fill('E2E Hawks');
     await coach.getByLabel('Sport').selectOption('soccer');
     await coach.getByLabel('Season').fill('Fall 2026');

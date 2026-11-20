@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 
 import { signIn, signInWithProvider, signUp, type AuthFormState } from '@/app/(auth)/actions';
 import { Button, Icon, TextField } from '@/components/ui';
+import { authProviders } from '@/lib/auth-config';
 
+import { ConsentLine, PasswordField } from './auth-parts';
 import styles from './auth-form.module.css';
 
 const initial: AuthFormState = {};
@@ -20,11 +22,54 @@ export function AuthForm({
   const suffix = next ? `?next=${encodeURIComponent(next)}` : '';
   const isSignUp = mode === 'sign-up';
   const [state, action, pending] = useActionState(isSignUp ? signUp : signIn, initial);
+  const formRef = useRef<HTMLFormElement>(null);
+  const messages = Object.values(state.fieldErrors ?? {}).filter(Boolean) as string[];
+  const hasSocial = authProviders.google || authProviders.apple;
+
+  // After a failed submit, move focus to the first invalid field (or the error summary).
+  useEffect(() => {
+    if (!state.fieldErrors) return;
+    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
 
   return (
     <div className={styles.wrap}>
-      <form action={action} className={styles.form} noValidate>
+      {hasSocial ? (
+        <>
+          <div className={styles.providers}>
+            {authProviders.google ? (
+              <form action={signInWithProvider.bind(null, 'google', next)}>
+                <Button type="submit" variant="secondary" fullWidth>
+                  <Icon name="google-logo" /> Continue with Google
+                </Button>
+              </form>
+            ) : null}
+            {authProviders.apple ? (
+              <form action={signInWithProvider.bind(null, 'apple', next)}>
+                <Button type="submit" variant="secondary" fullWidth>
+                  <Icon name="apple-logo" weight="fill" /> Continue with Apple
+                </Button>
+              </form>
+            ) : null}
+          </div>
+          <div className={styles.divider} role="separator">
+            <span>or</span>
+          </div>
+        </>
+      ) : null}
+
+      <form ref={formRef} action={action} className={styles.form} noValidate>
         {next && <input type="hidden" name="next" value={next} />}
+        {messages.length > 0 ? (
+          <div role="alert" className={styles.error}>
+            <strong>Check these and try again:</strong>
+            <ul className={styles.summary}>
+              {messages.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {isSignUp && (
           <TextField
             name="displayName"
@@ -38,18 +83,17 @@ export function AuthForm({
           name="email"
           type="email"
           label="Email"
-          autoComplete="email"
+          autoComplete={isSignUp ? 'email' : 'username'}
           defaultValue={state.values?.email}
           error={state.fieldErrors?.email}
         />
-        <TextField
-          name="password"
-          type="password"
-          label="Password"
-          autoComplete={isSignUp ? 'new-password' : 'current-password'}
-          hint={isSignUp ? 'At least 8 characters' : undefined}
-          error={state.fieldErrors?.password}
-        />
+        <PasswordField isNew={isSignUp} error={state.fieldErrors?.password} />
+        {!isSignUp && (
+          <p className={styles.forgot}>
+            <Link href="/forgot-password">Forgot password?</Link>
+          </p>
+        )}
+        {isSignUp && <ConsentLine />}
         {state.error && (
           <p role="alert" className={styles.error}>
             {state.error}
@@ -60,28 +104,10 @@ export function AuthForm({
             {state.message}
           </p>
         )}
-        <Button type="submit" fullWidth loading={pending}>
+        <Button type="submit" fullWidth size="lg" loading={pending}>
           {isSignUp ? 'Create account' : 'Sign in'}
         </Button>
       </form>
-
-      <div className={styles.divider} role="separator">
-        <span>or</span>
-      </div>
-
-      {/* Google/Apple need real credentials in supabase/config.toml (see README). */}
-      <div className={styles.providers}>
-        <form action={signInWithProvider.bind(null, 'google')}>
-          <Button type="submit" variant="secondary" fullWidth>
-            <Icon name="google-logo" /> Continue with Google
-          </Button>
-        </form>
-        <form action={signInWithProvider.bind(null, 'apple')}>
-          <Button type="submit" variant="secondary" fullWidth>
-            <Icon name="apple-logo" weight="fill" /> Continue with Apple
-          </Button>
-        </form>
-      </div>
 
       <p className={styles.switch}>
         {isSignUp ? (

@@ -200,9 +200,20 @@ Messaging: `create_thread`, `add_participant`, `remove_participant`, `set_thread
 Scheduling: `create_event`, `update_event`, `cancel_event`, `delete_event`, `set_rsvp`, `staff_set_rsvp`, `event_rsvp_summary`, `event_rsvp_detail`, `record_game_result`, `clear_game_result`, `team_record`, `team_schedule`, `household_schedule`, `next_up`, `create_calendar_feed_token`, `rotate_calendar_feed_token`, `revoke_calendar_feed_token` (`resolve_calendar_feed_token` is service-role only).
 Team billing: `get_billing_terms`, `get_team_billing`, `get_team_billing_invoices` (clients); the four gated staff actions (`publish_payment_event`, `publish_registration_event`, `create_invite`, `decide_join_request` when approving) now run `private.assert_team_billing_allows` first. Platform admin (`platform_admins` allowlist, MFA `aal2` for writes): `platform_admin_role`, `admin_list_settings`, `admin_set_setting`, `admin_list_team_billing`, `admin_get_team_billing`, `admin_billing_metrics`, `admin_extend_trial`, `admin_comp_team`, `admin_clear_comp`. Service role only: `private.set_platform_setting`, `private.enable_team_billing`, `private.disable_team_billing`, `private.billing_sweep` and the `svc_*billing*` functions. See [billing.md](billing.md).
 UI read helpers (no new tables): `get_join_requests`, `get_link_requests`, `get_player_login_claims`, `preview_invite`.
+Sign-in and onboarding: `get_my_join_requests`, `cancel_join_request` (`authenticated`); `preview_invite_public`, `preview_claim_public` (`anon` and `authenticated`).
 Policy helpers live in the unexposed `private` schema: `is_team_member`, `has_team_role`,
 `is_team_staff`, `can_view_team_roster`, `is_club_admin`, `is_club_member`,
 `is_household_guardian`, `is_guardian_of`, `is_player_self`, `can_see_player`, `can_read_thread`, `can_read_message`, `can_post_thread`, `can_see_participants`, `can_see_reads`, `can_use_thread_channel`, `can_view_team_schedule`.
+
+## Own join requests and signed-out previews
+
+- **A code never gives access.** A team code creates a pending `join_requests` row; staff approve it (`decide_join_request`). A family code creates a pending `household_join_requests` row; a guardian approves it. The onboarding screens call only these functions.
+- **`get_my_join_requests()`** returns the caller's own requests (both kinds, newest first, at most 20) with the kind, status, dates and the child's first name. `place_name` is set **only when the status is `approved`**: a pending, declined or cancelled requester learns nothing about the team or family. There is no decider and no decline reason.
+- **`cancel_join_request(kind, id)`** works only on the caller's own pending request (`request_not_found` for anyone else's or a missing one, `request_not_pending` for one already decided), writes an audit entry, and sets `cancelled` (a new `request_status` value; the household table's check already allowed it). `get_join_requests` hides cancelled requests from staff, `get_household_join_requests` lists pending only, and a cancelled request can be sent again.
+- **`preview_invite_public(token)`** (signed out allowed) returns an outcome (`ok`, `invalid`, `expired`, `rate_limited`) and, for `ok` only, the kind (team, club, family), the display name, the role and the inviter's **first name**. A used, revoked and expired invite are indistinguishable (`expired`). **`preview_claim_public(player_id)`** returns the player's first name only for a player 13 or older with no login yet. Both share the family code's attempt limiter: 30 calls per 15 minutes per caller (the user, else the first `x-forwarded-for` address). They return an outcome instead of raising so refused attempts still count.
+- Under-13 children never have a login, and a date of birth is asked only when adding a child, never at sign-up.
+
+Not built: `identify_code` (one code field that reports only the kind of a code). A team code and a family code look identical to the client, so the apps keep two tabs and the database decides, behind its limiter.
 
 ## How the apps use this
 

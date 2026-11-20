@@ -28,7 +28,7 @@ test.describe.serial('messaging', () => {
 
   test('a coach creates a team and invites a parent', async () => {
     await signUp(coach, 'mcoach', 'Casey Coach');
-    await coach.getByRole('button', { name: 'Create a team' }).click();
+    await coach.goto('/teams/new');
     await coach.getByLabel('Team name').fill('Msg Hawks');
     await coach.getByLabel('Sport').selectOption('soccer');
     await coach.getByLabel('Season').fill('Fall 2026');

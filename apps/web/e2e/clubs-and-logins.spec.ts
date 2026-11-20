@@ -26,7 +26,7 @@ test.describe.serial('club links and player logins', () => {
 
   test('a team asks to join a club and the club admin approves; the club can read but not edit', async () => {
     await signUp(clubAdmin, 'clubadmin', 'Cleo Club');
-    await clubAdmin.getByRole('button', { name: 'Create a club' }).click();
+    await clubAdmin.goto('/clubs/new');
     await clubAdmin.getByLabel('Club name').fill('E2E Club');
     await clubAdmin.getByLabel('Web address').fill(slug);
     await clubAdmin.getByRole('button', { name: 'Create club' }).click();
@@ -34,7 +34,7 @@ test.describe.serial('club links and player logins', () => {
     clubUrl = new URL(clubAdmin.url()).pathname;
 
     await signUp(teamAdmin, 'teamadmin', 'Tess Team');
-    await teamAdmin.getByRole('button', { name: 'Create a team' }).click();
+    await teamAdmin.goto('/teams/new');
     await teamAdmin.getByLabel('Team name').fill('E2E Owls');
     await teamAdmin.getByLabel('Season').fill('Winter');
     await teamAdmin.getByRole('button', { name: 'Create team' }).click();
@@ -65,7 +65,7 @@ test.describe.serial('club links and player logins', () => {
 
   test('a 13+ player links their own login when the email matches; otherwise a guardian approves', async () => {
     await signUp(guardian, 'guardian', 'Gail Guardian');
-    await guardian.getByRole('button', { name: 'Add my child' }).click();
+    await guardian.goto('/family/children/new');
     await guardian.getByLabel('First name').fill('Teddy');
     await guardian.getByLabel('Last name').fill('Teen');
     await pickDate(guardian, 'Date of birth', '2011-01-01');

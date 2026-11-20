@@ -27,3 +27,11 @@ export const kv = {
 
 export const CONTEXT_KEY = 'athleit.context';
 export const PENDING_INVITE_KEY = 'athleit.pendingInvite';
+/** Set from Welcome ("I have an invite or a code") so the hub opens the code path after sign-in. */
+export const POST_AUTH_INTENT_KEY = 'athleit.postAuthIntent';
+/** Set when an onboarding path completes, so the hub shows its quieter "returning" version. */
+export const HUB_DONE_KEY = 'athleit.hubDone';
+/** Set when the person chose "Skip for now" on the hub. */
+export const HUB_SKIPPED_KEY = 'athleit.hubSkipped';
+/** Set once the notifications soft-ask was answered ("Turn on" or "Not now"). */
+export const NOTIF_ASKED_KEY = 'athleit.notifAsked';

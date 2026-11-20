@@ -97,7 +97,7 @@ pnpm db:types:remote     # regenerate packages/db/src/database.types.ts
 pnpm db:test:remote      # pgTAP via scripts/db-test-remote.sh (always rolls back)
 ```
 
-In the dashboard: turn off Auth → Email → "Confirm email" (otherwise sign-up returns no session), and add `http://localhost:3000/**`, `athleit://**` and `exp://**` under Auth → URL Configuration. Use the project URL (`https://<ref>.supabase.co`) and publishable key in both `.env.local` files. Only point this at a disposable dev project; CI still tests against a throwaway local stack.
+In the dashboard: turn off Auth → Email → "Confirm email" (otherwise sign-up returns no session), and add `http://localhost:3000/**`, `athleit://**` and `exp://**` under Auth → URL Configuration (see "Password reset and confirmation links" below for the production origins). Use the project URL (`https://<ref>.supabase.co`) and publishable key in both `.env.local` files. Only point this at a disposable dev project; CI still tests against a throwaway local stack.
 
 ## Environment variables
 
@@ -110,6 +110,15 @@ Env vars are validated with Zod at startup (`apps/web/src/env.ts`, `apps/mobile/
 | mobile | `EXPO_PUBLIC_SUPABASE_URL`      | same API URL; on a physical phone use your computer's LAN IP, on the Android emulator `http://10.0.2.2:54321` |
 | mobile | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | same Publishable key                                                                                          |
 
+Optional sign-in variables (all public; unset means off):
+
+| App    | Variable                                 | Effect                                                                                                         |
+| ------ | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| web    | `NEXT_PUBLIC_AUTH_GOOGLE` / `_APPLE`     | `true` shows that provider's button. Leave unset until the provider is enabled in the Supabase project.        |
+| mobile | `EXPO_PUBLIC_AUTH_GOOGLE` / `_APPLE`     | Same. Apple is listed first on iOS and Google first on Android; with neither set, email is the primary button. |
+| web    | `NEXT_PUBLIC_TERMS_URL` / `_PRIVACY_URL` | "Terms" and "Privacy Policy" in the consent line (and the account page) link here. Unset renders plain text.   |
+| mobile | `EXPO_PUBLIC_TERMS_URL` / `_PRIVACY_URL` | Same for the mobile consent line.                                                                              |
+
 The legacy `anon` JWT from `supabase status` also works in these variables. Both are _public_ values (shipped to browsers/apps; Row Level Security is what protects data). The `service_role`/secret key must never go in an app env file. Restart the dev server after changing env files (Expo inlines `EXPO_PUBLIC_*` at bundle time).
 
 ## Google and Apple sign-in
@@ -120,7 +129,20 @@ The code and UI are wired in both apps, and `supabase/config.toml` has **disable
 2. Fill in each `client_id` in `config.toml` and set `enabled = true`.
 3. `pnpm db:stop && pnpm db:start`.
 
-Until then the buttons show Supabase's "provider is not enabled" error. Email/password is the verified path.
+4. Set `NEXT_PUBLIC_AUTH_GOOGLE=true` / `EXPO_PUBLIC_AUTH_GOOGLE=true` (and `_APPLE`) for the builds that should show the button. **A provider's button never appears without its flag**, so a build can't offer a sign-in the project can't complete.
+
+Email/password is the verified path. Google and Apple sign-in have not been exercised end to end.
+
+## Password reset and confirmation links
+
+Reset and email-confirmation links return through `/auth/callback` on web and `athleit://auth/reset` / `athleit://auth/callback` on mobile. For each hosted project, add these under Auth → URL Configuration (they are already in `supabase/config.toml` for the local stack):
+
+- **Site URL**: the production web origin.
+- **Redirect URLs**: `https://<web origin>/**` (web), `athleit://**` (mobile), `exp://**` (Expo dev) and `https://athleit.app/**` (universal links).
+
+The reset email's link is single use and expires after an hour; an expired or reused link lands on "This link has expired". Android opens `https://athleit.app/auth/*` in the app through the intent filter in `app.json`. iOS universal links need an `apple-app-site-association` file served from the web origin, which this repo does not ship yet, so on iOS the reset link uses the `athleit://` scheme. Resend of a confirmation email has a 60 second cooldown in the apps; `[auth.email] max_frequency` is the server's own limit.
+
+Local config has `enable_confirmations = false`, so the "Check your email" screen never appears against the local stack. Test it against a hosted project, or by mocking a `signUp` response with no session.
 
 ## Testing
 

@@ -54,3 +54,18 @@
   resize: vertical;
   line-height: var(--text-body-leading);
 }
+.control {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.withTrailing {
+  padding-inline-end: calc(var(--space-4) + var(--size-icon-button-size));
+}
+.trailing {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--space-1);
+  display: flex;
+  align-items: center;
+}

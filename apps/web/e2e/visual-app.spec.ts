@@ -33,7 +33,7 @@ test.describe.serial('signed-in screens', () => {
   for (const theme of ['light', 'dark'] as const) {
     test(`home onboarding (${theme})`, async () => {
       await page.goto('/');
-      await expect(page.getByRole('button', { name: 'Add my child' })).toBeVisible();
+      await expect(page.getByTestId('hub-parent')).toBeVisible();
       await shoot('home', theme);
     });
 
