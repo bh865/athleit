@@ -4,17 +4,19 @@ import {
   deliveryStatus,
   friendlyError,
   groupMessages,
+  joinedLateNotice,
   memberCountLabel,
+  newMessagesDividerIndex,
   type ChatMessage,
   isTeamStaff,
 } from '@athleit/core';
 import {
   deleteMessage,
+  getMyParticipation,
   hideMessage,
   reportMessage,
   toggleReaction,
   setActiveThread,
-  setThreadMute,
 } from '@athleit/db/api';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -33,11 +35,13 @@ import {
   useToast,
 } from '@/components/ui';
 import { getClient } from '@/lib/supabase/browser';
+import { useLoad } from '@/lib/use-load';
 import { currentEndpoint } from '@/lib/web-push';
 
 import { Bubble } from './bubble';
 import { Composer } from './composer';
 import styles from './conversation.module.css';
+import { ThreadInfoPanel } from './thread-info-panel';
 import { useThread } from './use-thread';
 
 const NEAR_BOTTOM = 80;
@@ -54,13 +58,33 @@ export function Conversation({ threadId }: { threadId: string }) {
   const [reporting, setReporting] = useState<ChatMessage | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [scrolledUp, setScrolledUp] = useState(false);
+  const infoOpener = useRef<HTMLButtonElement>(null);
 
   const isStaff = t.thread ? isTeamStaff(contexts, t.thread.team_id) : false;
   const isAnnouncement = t.thread?.type === 'announcement';
   const archived = Boolean(t.thread?.archived_at);
   const canPost = isAnnouncement ? isStaff : true;
+  const teamRoles = contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
+  const canManage = isStaff && (isAnnouncement || teamRoles.includes('admin') || t.thread?.created_by === me);
+  const mine0 = useLoad(() => getMyParticipation(getClient(), threadId, me), [threadId, me]);
+  const joinedLate =
+    !isAnnouncement && joinedLateNotice(isStaff, mine0.data?.joined_at ?? null, t.thread?.created_at ?? null);
+  const teamCount = contexts.filter((c) => c.kind === 'team').length;
+  const teamTitle = teamCount > 1 ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '') : '';
+  // The last-read marker as it was when the conversation opened (it moves as we read).
+  const [openedReadAt, setOpenedReadAt] = useState<string | null | undefined>(undefined);
+  if (openedReadAt === undefined && t.state === 'ready') {
+    setOpenedReadAt(t.reads.find((r) => r.profile_id === me)?.last_read_at ?? null);
+  }
 
   const items = useMemo(() => groupMessages(t.messages, me), [t.messages, me]);
+  const dividerKey = useMemo(() => {
+    if (openedReadAt === undefined) return null;
+    const i = newMessagesDividerIndex(t.messages, openedReadAt, me);
+    return i < 0 ? null : t.messages[i]!.id;
+  }, [t.messages, openedReadAt, me]);
   const byId = useMemo(() => new Map(t.messages.map((m) => [m.id, m])), [t.messages]);
   const othersRead = useMemo(
     () => t.reads.filter((r) => r.profile_id !== me).map((r) => r.last_read_at),
@@ -110,6 +134,7 @@ export function Conversation({ threadId }: { threadId: string }) {
     const el = scroller.current;
     if (!el) return;
     atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM;
+    setScrolledUp(el.scrollHeight - el.scrollTop - el.clientHeight > NEAR_BOTTOM * 6);
     if (atBottom.current && showPill) {
       setShowPill(false);
       void t.markRead();
@@ -156,35 +181,34 @@ export function Conversation({ threadId }: { threadId: string }) {
         <Link href="/messages" className={styles.back} aria-label="Back to messages">
           <Icon name="caret-left" />
         </Link>
-        <div className={styles.titleBlock}>
+        <button
+          ref={infoOpener}
+          type="button"
+          className={styles.titleBlock}
+          aria-label={`${title}. ${infoOpen ? 'Close' : 'Open'} conversation info`}
+          aria-expanded={infoOpen}
+          onClick={() => setInfoOpen((v) => !v)}
+        >
           <Text variant="bodyBold" className={styles.title}>
             {title}
           </Text>
           <Text variant="caption" muted>
-            {isAnnouncement ? 'Announcements' : memberCountLabel(t.memberCount)}
+            {t.typing.length > 0
+              ? 'typing…'
+              : isAnnouncement
+                ? 'Announcements'
+                : `${teamTitle ? `${teamTitle} · ` : ''}${memberCountLabel(t.memberCount)}`}
           </Text>
-        </div>
+        </button>
         <button
           type="button"
           className={styles.iconBtn}
-          aria-label="Mute notifications for 8 hours"
-          onClick={() =>
-            void act(
-              () =>
-                setThreadMute(
-                  getClient(),
-                  threadId,
-                  new Date(Date.now() + 8 * 3600_000).toISOString(),
-                ),
-              'Muted for 8 hours',
-            )
-          }
+          aria-label="Conversation info"
+          aria-expanded={infoOpen}
+          onClick={() => setInfoOpen((v) => !v)}
         >
-          <Icon name="bell-slash" />
-        </button>
-        <span className={styles.iconBtn} aria-hidden>
           <Icon name="info" />
-        </span>
+        </button>
       </Glass>
 
       <div
@@ -206,7 +230,12 @@ export function Conversation({ threadId }: { threadId: string }) {
           />
         ) : (
           <ol className={styles.list} aria-label="Messages">
-            {items.map((it) =>
+            {items.map((it) => [
+              it.kind === 'message' && it.message.id === dividerKey ? (
+                <li key="new-divider" className={styles.divider} aria-label="New messages">
+                  <Text variant="caption">New messages</Text>
+                </li>
+              ) : null,
               it.kind === 'day' ? (
                 <li key={it.key} className={styles.day}>
                   <Text variant="caption" muted>
@@ -249,7 +278,7 @@ export function Conversation({ threadId }: { threadId: string }) {
                   onDiscard={() => t.discard(it.message.clientId ?? it.message.id)}
                 />
               ),
-            )}
+            ])}
           </ol>
         )}
         {t.typing.length > 0 ? (
@@ -265,7 +294,7 @@ export function Conversation({ threadId }: { threadId: string }) {
         ) : null}
       </div>
 
-      {showPill ? (
+      {showPill || scrolledUp ? (
         <Glass
           as="button"
           type="button"
@@ -277,16 +306,24 @@ export function Conversation({ threadId }: { threadId: string }) {
             void t.markRead();
           }}
         >
-          <Icon name="arrow-down" size="sm" /> New messages
+          <Icon name="arrow-down" size="sm" /> {showPill ? 'New messages' : 'Jump to latest'}
         </Glass>
       ) : null}
 
+      {joinedLate ? (
+        <Text variant="caption" muted className={styles.notice}>
+          You joined this conversation after it started, so you see messages from when you joined.
+        </Text>
+      ) : null}
       {archived ? (
         <Text variant="caption" muted className={styles.notice}>
-          This conversation is archived.
+          {canManage
+            ? 'This conversation is archived. Unarchive it from the info panel to reply.'
+            : 'This conversation is archived.'}
         </Text>
       ) : canPost ? (
         <Composer
+          threadId={threadId}
           replyTo={replyTo}
           onClearReply={() => setReplyTo(null)}
           onTyping={t.notifyTyping}
@@ -303,6 +340,16 @@ export function Conversation({ threadId }: { threadId: string }) {
           Only coaches and managers can post here.
         </Text>
       )}
+
+      {infoOpen ? (
+        <ThreadInfoPanel
+          threadId={threadId}
+          onClose={() => {
+            setInfoOpen(false);
+            infoOpener.current?.focus();
+          }}
+        />
+      ) : null}
 
       <Sheet open={reporting !== null} onClose={() => setReporting(null)} title="Report message">
         <Text variant="heading" as="h2">

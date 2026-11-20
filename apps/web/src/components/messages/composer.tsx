@@ -1,27 +1,32 @@
 'use client';
 
 import {
+  ATTACHMENT_LIMITS_TEXT,
   ATTACHMENT_MIME_TYPES,
-  MAX_ATTACHMENT_BYTES,
-  MAX_ATTACHMENTS_PER_MESSAGE,
+  attachmentProblemText,
+  characterCounter,
   MAX_MESSAGE_LENGTH,
+  validateAttachment,
   type ChatMessage,
 } from '@athleit/core';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Glass, Icon, Text } from '@/components/ui';
+import { readDraft, writeDraft } from '@/lib/message-drafts';
 
 import styles from './composer.module.css';
 import type { PendingFile } from './use-thread';
 
 /** Glass sheet pill: paperclip, text, lime send button. Enter sends, Shift+Enter adds a line. */
 export function Composer({
+  threadId,
   replyTo,
   onClearReply,
   onTyping,
   onUpload,
   onSend,
 }: {
+  threadId: string;
   replyTo: ChatMessage | null;
   onClearReply: () => void;
   onTyping: () => void;
@@ -32,6 +37,21 @@ export function Composer({
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  // Local draft per conversation (this browser only); it also feeds the inbox "Draft:" prefix.
+  const loaded = useRef(false);
+  useEffect(() => {
+    const d = readDraft(threadId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage on open
+    if (d) setText((cur) => cur || d);
+    loaded.current = true;
+  }, [threadId]);
+  useEffect(() => {
+    if (!loaded.current) return;
+    const id = setTimeout(() => writeDraft(threadId, text), 400);
+    return () => clearTimeout(id);
+  }, [text, threadId]);
+  const counter = characterCounter(text.length);
   const input = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const canSend = (text.trim().length > 0 || files.length > 0) && !uploading;
@@ -41,6 +61,7 @@ export function Composer({
     const body = text.trim();
     const attach = files;
     setText('');
+    writeDraft(threadId, '');
     setFiles([]);
     setError(null);
     input.current?.focus();
@@ -48,30 +69,51 @@ export function Composer({
     if (err) setError(err);
   };
 
-  const pick = async (list: FileList | null) => {
+  const pick = async (list: FileList | File[] | null) => {
     if (!list) return;
     setError(null);
+    let count = files.length;
     for (const f of Array.from(list)) {
-      if (files.length >= MAX_ATTACHMENTS_PER_MESSAGE) break;
-      if (!(ATTACHMENT_MIME_TYPES as readonly string[]).includes(f.type)) {
-        setError('Attach an image or a PDF.');
-        continue;
-      }
-      if (f.size > MAX_ATTACHMENT_BYTES) {
-        setError('That file is over 10 MB.');
+      const problem = validateAttachment({ type: f.type, size: f.size }, count);
+      if (problem) {
+        setError(attachmentProblemText(problem));
         continue;
       }
       setUploading(true);
       const res = await onUpload(f);
       setUploading(false);
       if ('error' in res) setError(res.error);
-      else setFiles((cur) => [...cur, res]);
+      else {
+        count += 1;
+        setFiles((cur) => [...cur, res]);
+      }
     }
     if (picker.current) picker.current.value = '';
   };
 
   return (
-    <div className={styles.wrap}>
+    <div
+      className={`${styles.wrap} ${dragging ? styles.dragging : ''}`}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('Files')) {
+          e.preventDefault();
+          setDragging(true);
+        }
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        void pick(e.dataTransfer.files);
+      }}
+    >
+      {dragging ? (
+        <div className={styles.drop} role="status">
+          Drop to attach. {ATTACHMENT_LIMITS_TEXT}
+        </div>
+      ) : null}
       {replyTo ? (
         <div className={styles.reply}>
           <Text variant="caption" muted>
@@ -140,6 +182,13 @@ export function Composer({
             setText(e.target.value);
             onTyping();
           }}
+          onPaste={(e) => {
+            const pasted = Array.from(e.clipboardData.files);
+            if (pasted.length > 0) {
+              e.preventDefault();
+              void pick(pasted);
+            }
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
@@ -157,6 +206,14 @@ export function Composer({
           <Icon name="arrow-up" weight="fill" />
         </button>
       </Glass>
+      <Text variant="caption" muted className={styles.hint}>
+        {counter !== null ? (
+          <span role="status" aria-live="polite">
+            {counter < 0 ? `${-counter} over the limit` : `${counter} left`} ·{' '}
+          </span>
+        ) : null}
+        Enter to send, Shift+Enter for a new line
+      </Text>
     </div>
   );
 }

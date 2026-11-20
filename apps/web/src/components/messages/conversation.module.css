@@ -22,6 +22,12 @@
   color: var(--color-ink);
 }
 .titleBlock {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -129,4 +135,19 @@
     width: var(--size-min-target);
     height: var(--size-min-target);
   }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  color: var(--color-ink);
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: var(--size-card-border);
+  background: var(--color-line);
 }
