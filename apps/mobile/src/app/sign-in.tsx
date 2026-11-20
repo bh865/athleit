@@ -1,5 +1,6 @@
 import { fieldErrors, signInSchema, type FieldErrors, type OAuthProvider } from '@athleit/core';
 import { componentTokens, space } from '@athleit/tokens';
+import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -16,6 +17,7 @@ import { PendingLinkBanner } from '@/components/auth/link-banner';
 import { Button, Logo, Screen, Text, TextField, type TextFieldInput } from '@/components/ui';
 import { providerOrder } from '@/lib/auth-config';
 import { useAuth } from '@/lib/auth';
+import { webContactUrl } from '@/lib/help';
 
 type Field = 'email' | 'password';
 
@@ -95,6 +97,7 @@ export default function SignInScreen() {
             onSubmitEditing={submit}
           />
           <LinkButton title="Forgot password?" onPress={() => router.push('/forgot-password')} />
+          <LinkButton title="Need help signing in?" onPress={() => void WebBrowser.openBrowserAsync(webContactUrl())} />
           <FormMessage error={error} />
           <Button title="Sign in" size="lg" loading={busy} onPress={submit} />
         </View>

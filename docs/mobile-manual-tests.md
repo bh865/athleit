@@ -196,3 +196,15 @@ Chips and tiles come from `homeTileIds` and the attention builder in `packages/c
 7. **Parent not yet on a roster.** No schedule or team tiles; amount due and family remain.
 8. **Failure.** Turn on airplane mode and pull to refocus: a tile that fails shows "Couldn't load this" with Try again while the rest of Home stays up.
 9. **Freshness.** Answer an RSVP elsewhere, return to Home: the chip is gone (refetch on focus).
+
+## Help and support
+
+Needs: a signed-in account, the web app reachable at `EXPO_PUBLIC_WEB_ORIGIN`, `support-center` migrations applied.
+
+1. **Hub.** Account, then **Help and support**. The hub shows a search field, "Who are you?", Popular, **Contact support** and **Your requests**. Type two letters: matching articles appear; nonsense shows "We couldn’t find that" with a Contact support button.
+2. **Article in the browser sheet.** Tap an article. It opens in the in-app browser on the web article with no site header or footer (`?embed=1`). Close it to return to the hub.
+3. **Offline.** Turn on airplane mode and reopen the hub. With a saved copy you see "Showing the last articles saved on this phone"; on a fresh install you see "You’re offline" and Contact support still works. Sending a request offline shows the retry message and keeps your text.
+4. **Contact.** Send each of the four types. **Wrong** shows the emergency banner. Add up to three images (a fourth is refused). Turn diagnostics off and confirm the request detail shows none. Confirm the reference (`SUP-…`) appears.
+5. **Requests.** The list shows an unread dot for a new reply, pull to refresh works, and the status shows a symbol and a word. Open one: reply, **Mark as solved**, then **Reopen** and the **Was this resolved?** Yes or No.
+6. **Push.** Have staff reply in the admin portal. A push arrives (if enabled for Support replies in Notifications); tapping it opens that request.
+7. **Sign-in.** On the sign-in screen, **Need help signing in?** opens the web contact form in the in-app browser (signed-out people use the web form; there is no native captcha).

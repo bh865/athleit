@@ -33,12 +33,8 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
+// Help and support is native (see /help). `extra.supportEmail` stays only as the offline fallback inside that hub.
 const LINKS = [
-  { label: 'Help center', href: extra.helpUrl },
-  {
-    label: 'Contact support',
-    href: extra.supportEmail ? `mailto:${extra.supportEmail}` : undefined,
-  },
   { label: 'Terms of service', href: extra.termsUrl },
   { label: 'Privacy policy', href: extra.privacyUrl },
 ].filter((l): l is { label: string; href: string } => !!l.href);
@@ -118,6 +114,12 @@ export default function AccountScreen() {
         </View>
 
         <ListGroup>
+          <ListRow
+            title="Help and support"
+            subtitle="Articles, contact us, your requests"
+            onPress={() => router.push('/help' as never)}
+            testID="row-help"
+          />
           <ListRow
             title="Profile"
             subtitle="Name, photo, email"

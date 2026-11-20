@@ -1,7 +1,7 @@
 import { componentTokens, space } from '@athleit/tokens';
 import { usePathname } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useState, type ReactElement, type ReactNode } from 'react';
+import { ScrollView, View, type RefreshControlProps } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Backdrop, Text } from '@/components/ui';
@@ -28,7 +28,14 @@ const ROOT_PATHS = new Set([
 ]);
 
 /** Signed-in screen frame: brand header on top (top-level screens), content, floating glass tab bar. */
-export function AppScreen({ children }: { children: ReactNode }) {
+export function AppScreen({
+  children,
+  refreshControl,
+}: {
+  children: ReactNode;
+  /** Pull to refresh (pass a RefreshControl). */
+  refreshControl?: ReactElement<RefreshControlProps>;
+}) {
   const { status } = useApp();
   const pathname = usePathname();
   const [screenTitle, setScreenTitle] = useState<ScreenTitle | null>(null);
@@ -74,6 +81,7 @@ export function AppScreen({ children }: { children: ReactNode }) {
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={refreshControl}
           contentContainerStyle={{
             padding: space[4],
             gap: space[6],

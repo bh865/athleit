@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 
+import { Chrome } from '@/components/help/chrome';
 import styles from '@/components/help/help.module.css';
 import { SearchBox } from '@/components/help/search-box';
 import { Logo } from '@/components/ui';
@@ -22,34 +23,42 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
       <a href="#help-main" className={styles.skip}>
         Skip to content
       </a>
-      <header className={styles.header}>
-        <Link href="/help" aria-label="Athleit Help home">
-          <Logo variant="lockup" size="sm" />
-        </Link>
-        <SearchBox docs={searchDocs()} signedIn={signedIn} />
-        <nav aria-label="Help" className={styles.headerLinks}>
-          <Link className={styles.link} href="/help/contact">
-            Contact support
-          </Link>
-          {signedIn ? (
-            <Link className={styles.link} href="/">
-              Back to Athleit
+      <Suspense>
+        <Chrome>
+          <header className={styles.header}>
+            <Link href="/help" aria-label="Athleit Help home">
+              <Logo variant="lockup" size="sm" />
             </Link>
-          ) : (
-            <Link className={styles.link} href="/sign-in?next=/help">
-              Sign in
-            </Link>
-          )}
-        </nav>
-      </header>
+            <SearchBox docs={searchDocs()} signedIn={signedIn} />
+            <nav aria-label="Help" className={styles.headerLinks}>
+              <Link className={styles.link} href="/help/contact">
+                Contact support
+              </Link>
+              {signedIn ? (
+                <Link className={styles.link} href="/">
+                  Back to Athleit
+                </Link>
+              ) : (
+                <Link className={styles.link} href="/sign-in?next=/help">
+                  Sign in
+                </Link>
+              )}
+            </nav>
+          </header>
+        </Chrome>
+      </Suspense>
       <main id="help-main" className={styles.main}>
         {children}
       </main>
-      <footer className={styles.footer}>
-        <Link className={styles.link} href="/help/whats-new">
-          What’s new
-        </Link>
-      </footer>
+      <Suspense>
+        <Chrome>
+          <footer className={styles.footer}>
+            <Link className={styles.link} href="/help/whats-new">
+              What’s new
+            </Link>
+          </footer>
+        </Chrome>
+      </Suspense>
     </div>
   );
 }
