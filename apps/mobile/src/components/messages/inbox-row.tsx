@@ -57,13 +57,16 @@ export function InboxListRow({
   const pan = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-        onPanResponderMove: (_e, g) => x.setValue(Math.max(-ACTION_W * 2, Math.min(ACTION_W, g.dx))),
+        onMoveShouldSetPanResponder: (_e, g) =>
+          Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        onPanResponderMove: (_e, g) =>
+          x.setValue(Math.max(-ACTION_W * 2, Math.min(ACTION_W, g.dx))),
         onPanResponderRelease: (_e, g) => {
           const to = g.dx > ACTION_W / 2 ? ACTION_W : g.dx < -ACTION_W ? -ACTION_W * 2 : 0;
           Animated.spring(x, { toValue: to, useNativeDriver: true }).start();
         },
-        onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
+        onPanResponderTerminate: () =>
+          Animated.spring(x, { toValue: 0, useNativeDriver: true }).start(),
       }),
     [x],
   );
@@ -125,8 +128,18 @@ export function InboxListRow({
 
   return (
     <View style={{ overflow: 'hidden', borderRadius: radius.md }}>
-      {row.unreadCount > 0 ? sideButton('left', 'Mark read', 'check', actions.onMarkRead, c.surfaceAlt, c.ink, 0) : null}
-      {sideButton('right', muted ? 'Unmute' : 'Mute', 'bell-slash', actions.onMute, c.surfaceAlt, c.ink, ACTION_W)}
+      {row.unreadCount > 0
+        ? sideButton('left', 'Mark read', 'check', actions.onMarkRead, c.surfaceAlt, c.ink, 0)
+        : null}
+      {sideButton(
+        'right',
+        muted ? 'Unmute' : 'Mute',
+        'bell-slash',
+        actions.onMute,
+        c.surfaceAlt,
+        c.ink,
+        ACTION_W,
+      )}
       {sideButton('right', 'Archive', 'archive-box', actions.onArchive, c.ink, c.background, 0)}
       <Animated.View
         {...pan.panHandlers}
@@ -165,7 +178,11 @@ export function InboxListRow({
           <ThreadAvatar row={row} title={title} />
           <View style={{ flex: 1, gap: space[1] }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
-              <Text variant={unread ? 'bodyBold' : 'body'} numberOfLines={1} style={{ flexShrink: 1 }}>
+              <Text
+                variant={unread ? 'bodyBold' : 'body'}
+                numberOfLines={1}
+                style={{ flexShrink: 1 }}
+              >
                 {title}
               </Text>
               {showTeam ? (
@@ -193,7 +210,9 @@ export function InboxListRow({
             </View>
           </View>
           <View style={{ alignItems: 'flex-end', gap: space[2] }}>
-            {row.lastCreatedAt ? <Mono style={{ color: c.muted }}>{listTimeLabel(row.lastCreatedAt)}</Mono> : null}
+            {row.lastCreatedAt ? (
+              <Mono style={{ color: c.muted }}>{listTimeLabel(row.lastCreatedAt)}</Mono>
+            ) : null}
             {row.unreadCount > 0 ? (
               <View
                 accessibilityLabel={`${row.unreadCount} unread`}

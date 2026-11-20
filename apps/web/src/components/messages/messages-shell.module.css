@@ -38,3 +38,10 @@
     width: 100%;
   }
 }
+
+/* Inbox 340 to 400 wide so the three panes fit at 1440. */
+@media (min-width: 1440px) {
+  .list {
+    width: clamp(var(--size-chat-thread-list-width), 26vw, 25rem);
+  }
+}

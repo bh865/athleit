@@ -19,9 +19,16 @@ import {
 } from '@athleit/db/api';
 import { componentTokens, radius, space } from '@athleit/tokens';
 import * as Clipboard from 'expo-clipboard';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -45,6 +52,7 @@ import { supabase } from '@/lib/supabase';
 
 import { Bubble, REACTION_ICON, REACTION_LABEL } from './bubble';
 import { Composer } from './composer';
+import { MediaViewer } from './media-viewer';
 import { useThread } from './use-thread';
 
 const NEAR_BOTTOM = 80;
@@ -67,13 +75,17 @@ export function Conversation({ threadId }: { threadId: string }) {
   const [busy, setBusy] = useState(false);
   const [readBy, setReadBy] = useState<ChatMessage | null>(null);
   const [scrolledUp, setScrolledUp] = useState(false);
+  const [viewerPath, setViewerPath] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const { message: jumpTo } = useLocalSearchParams<{ message?: string }>();
 
   const isStaff = t.thread ? isTeamStaff(contexts, t.thread.team_id) : false;
   const isAnnouncement = t.thread?.type === 'announcement';
   const archived = Boolean(t.thread?.archived_at);
   const canPost = isAnnouncement ? isStaff : true;
   // Who can unarchive: staff of an announcement, a group's owner or a team admin (matches the database).
-  const teamRoles = contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
+  const teamRoles =
+    contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
   const canManage =
     isStaff && (isAnnouncement || teamRoles.includes('admin') || t.thread?.created_by === me);
   const mine0 = useLoad(() => getMyParticipation(supabase, threadId, me), [threadId, me]);
@@ -90,13 +102,24 @@ export function Conversation({ threadId }: { threadId: string }) {
   const dividerAt = useMemo(() => {
     if (openedReadAt === undefined) return -1;
     const i = newMessagesDividerIndex(t.messages, openedReadAt, me);
-    return i < 0 ? -1 : items.findIndex((it) => it.kind === 'message' && it.message.id === t.messages[i]!.id);
+    return i < 0
+      ? -1
+      : items.findIndex((it) => it.kind === 'message' && it.message.id === t.messages[i]!.id);
   }, [t.messages, items, me, openedReadAt]);
   const inverted = useMemo(() => {
     const out: Array<ChatItem | { kind: 'divider'; key: string }> = [...items];
     if (dividerAt >= 0) out.splice(dividerAt, 0, { kind: 'divider', key: 'new-divider' });
     return out.reverse();
   }, [items, dividerAt]);
+  const viewerImages = useMemo(
+    () =>
+      t.messages.flatMap((m) =>
+        (t.attachments[m.id] ?? [])
+          .filter((a) => a.mime.startsWith('image/'))
+          .map((a) => ({ path: a.path, name: a.path.split('/').pop() ?? 'photo' })),
+      ),
+    [t.messages, t.attachments],
+  );
   const byId = useMemo(() => new Map(t.messages.map((m) => [m.id, m])), [t.messages]);
   const othersRead = useMemo(
     () => t.reads.filter((r) => r.profile_id !== me).map((r) => r.last_read_at),
@@ -105,7 +128,10 @@ export function Conversation({ threadId }: { threadId: string }) {
   const title =
     t.thread?.title ?? [...t.names.entries()].find(([id]) => id !== me)?.[1] ?? 'Message';
   const count = t.messages.length;
-  const teamTitle = contexts.filter((c) => c.kind === 'team').length > 1 ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '') : '';
+  const teamTitle =
+    contexts.filter((c) => c.kind === 'team').length > 1
+      ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '')
+      : '';
 
   // While this conversation is open: no foreground banner for it, and the worker skips push for this device.
   useEffect(() => {
@@ -126,6 +152,28 @@ export function Conversation({ threadId }: { threadId: string }) {
     else if (t.incoming > 0) setShowPill(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run on arrival only
   }, [count, t.state]);
+
+  // Open a search result in place: load back to it, scroll to it, and flash it briefly.
+  const jumped = useRef<string | null>(null);
+  useEffect(() => {
+    if (t.state !== 'ready' || !jumpTo || jumped.current === jumpTo) return;
+    jumped.current = jumpTo;
+    atBottom.current = false;
+    void t.loadUntil(jumpTo).then((found) => {
+      if (!found) {
+        toast('That message is from before you joined, so it isn’t shown.');
+        return;
+      }
+      setHighlightId(jumpTo);
+      setTimeout(() => setHighlightId(null), 2500);
+    });
+  }, [t, jumpTo, toast]);
+  useEffect(() => {
+    if (!highlightId) return;
+    const i = inverted.findIndex((it) => it.kind === 'message' && it.message.id === highlightId);
+    if (i >= 0) list.current?.scrollToIndex({ index: i, animated: true, viewPosition: 0.5 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scroll once per highlight
+  }, [highlightId]);
 
   const act = useCallback(
     async (
@@ -193,7 +241,12 @@ export function Conversation({ threadId }: { threadId: string }) {
             accessibilityRole="button"
             accessibilityLabel={`${title}. Open conversation info`}
             onPress={() => router.push(`/messages/info/${threadId}` as never)}
-            style={{ flex: 1, alignItems: 'center', minHeight: componentTokens.minTarget, justifyContent: 'center' }}
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              minHeight: componentTokens.minTarget,
+              justifyContent: 'center',
+            }}
           >
             <Text variant="bodyBold" numberOfLines={1}>
               {title}
@@ -253,6 +306,21 @@ export function Conversation({ threadId }: { threadId: string }) {
               }
             }}
             scrollEventThrottle={64}
+            onScrollToIndexFailed={(info) => {
+              list.current?.scrollToOffset({
+                offset: info.averageItemLength * info.index,
+                animated: true,
+              });
+              setTimeout(
+                () =>
+                  list.current?.scrollToIndex({
+                    index: info.index,
+                    animated: true,
+                    viewPosition: 0.5,
+                  }),
+                300,
+              );
+            }}
             ListHeaderComponent={
               t.typing.length > 0 ? (
                 <View
@@ -294,13 +362,30 @@ export function Conversation({ threadId }: { threadId: string }) {
                 <View
                   accessibilityRole="text"
                   accessibilityLabel="New messages"
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], paddingVertical: space[2] }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: space[2],
+                    paddingVertical: space[2],
+                  }}
                 >
-                  <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: theme.color.line }} />
+                  <View
+                    style={{
+                      flex: 1,
+                      height: StyleSheet.hairlineWidth,
+                      backgroundColor: theme.color.line,
+                    }}
+                  />
                   <Text variant="caption" style={{ color: theme.color.ink }}>
                     New messages
                   </Text>
-                  <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: theme.color.line }} />
+                  <View
+                    style={{
+                      flex: 1,
+                      height: StyleSheet.hairlineWidth,
+                      backgroundColor: theme.color.line,
+                    }}
+                  />
                 </View>
               ) : item.kind === 'day' ? (
                 <Text
@@ -311,28 +396,37 @@ export function Conversation({ threadId }: { threadId: string }) {
                   {item.label}
                 </Text>
               ) : (
-                <Bubble
-                  message={item.message}
-                  own={item.own}
-                  firstInRun={item.firstInRun}
-                  lastInRun={item.lastInRun}
-                  status={
-                    item.own && item.lastInRun ? deliveryStatus(item.message, othersRead) : null
+                <View
+                  style={
+                    highlightId === item.message.id
+                      ? { backgroundColor: theme.color.surfaceAlt, borderRadius: radius.md }
+                      : undefined
                   }
-                  reactions={t.reactions[item.message.id] ?? []}
-                  attachments={t.attachments[item.message.id] ?? []}
-                  quoted={
-                    item.message.replyToId ? (byId.get(item.message.replyToId) ?? null) : null
-                  }
-                  myId={me}
-                  announcement={Boolean(isAnnouncement)}
-                  readCount={t.reads.length}
-                  showReads={isStaff}
-                  onLongPress={() => setActions(item.message)}
-                  onReact={(e) => void act(() => toggleReaction(supabase, item.message.id, e))}
-                  onRetry={() => void t.retry(item.message.clientId ?? item.message.id)}
-                  onDiscard={() => t.discard(item.message.clientId ?? item.message.id)}
-                />
+                >
+                  <Bubble
+                    onOpenImage={setViewerPath}
+                    message={item.message}
+                    own={item.own}
+                    firstInRun={item.firstInRun}
+                    lastInRun={item.lastInRun}
+                    status={
+                      item.own && item.lastInRun ? deliveryStatus(item.message, othersRead) : null
+                    }
+                    reactions={t.reactions[item.message.id] ?? []}
+                    attachments={t.attachments[item.message.id] ?? []}
+                    quoted={
+                      item.message.replyToId ? (byId.get(item.message.replyToId) ?? null) : null
+                    }
+                    myId={me}
+                    announcement={Boolean(isAnnouncement)}
+                    readCount={t.reads.length}
+                    showReads={isStaff}
+                    onLongPress={() => setActions(item.message)}
+                    onReact={(e) => void act(() => toggleReaction(supabase, item.message.id, e))}
+                    onRetry={() => void t.retry(item.message.clientId ?? item.message.id)}
+                    onDiscard={() => t.discard(item.message.clientId ?? item.message.id)}
+                  />
+                </View>
               )
             }
           />
@@ -374,8 +468,35 @@ export function Conversation({ threadId }: { threadId: string }) {
           </View>
         ) : null}
 
+        {t.offline ? (
+          <Text
+            variant="caption"
+            accessibilityRole="alert"
+            style={{ textAlign: 'center', paddingHorizontal: space[4], paddingVertical: space[1] }}
+          >
+            You’re offline. Your messages are queued and will send when you’re back.
+          </Text>
+        ) : null}
+        {t.rateLimited ? (
+          <Text
+            variant="caption"
+            accessibilityRole="alert"
+            style={{
+              textAlign: 'center',
+              paddingHorizontal: space[4],
+              paddingVertical: space[1],
+              color: theme.color.bad,
+            }}
+          >
+            You’re sending messages too quickly. Wait a moment, then tap Retry.
+          </Text>
+        ) : null}
         {joinedLate ? (
-          <Text variant="caption" muted style={{ textAlign: 'center', paddingHorizontal: space[4] }}>
+          <Text
+            variant="caption"
+            muted
+            style={{ textAlign: 'center', paddingHorizontal: space[4] }}
+          >
             You joined this conversation after it started, so you see messages from when you joined.
           </Text>
         ) : null}
@@ -404,6 +525,12 @@ export function Conversation({ threadId }: { threadId: string }) {
           </Text>
         )}
       </KeyboardAvoidingView>
+
+      <MediaViewer
+        images={viewerImages}
+        startPath={viewerPath}
+        onClose={() => setViewerPath(null)}
+      />
 
       <Sheet open={actions !== null} onClose={() => setActions(null)} title="Message actions">
         <Text variant="heading">Message</Text>
@@ -513,9 +640,7 @@ export function Conversation({ threadId }: { threadId: string }) {
           return seen.length === 0 ? (
             <Text muted>No one has seen this yet.</Text>
           ) : (
-            seen.map((r) => (
-              <Text key={r.profile_id}>{t.names.get(r.profile_id) ?? 'Member'}</Text>
-            ))
+            seen.map((r) => <Text key={r.profile_id}>{t.names.get(r.profile_id) ?? 'Member'}</Text>)
           );
         })()}
       </Sheet>

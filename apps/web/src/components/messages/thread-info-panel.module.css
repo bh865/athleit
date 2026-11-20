@@ -131,3 +131,16 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+
+/* At 1440 and wider the info panel is the third pane beside the conversation; below that it
+   opens over the conversation. */
+@media (min-width: 1440px) {
+  .panel {
+    position: static;
+    flex: none;
+    width: 22rem;
+    height: calc(100dvh - var(--space-8));
+    border: var(--size-card-border) solid var(--color-line);
+    border-radius: var(--size-card-radius);
+  }
+}

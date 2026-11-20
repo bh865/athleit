@@ -17,7 +17,18 @@ import { useMemo, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
 import { H1, Notice } from '@/components/app/kit';
-import { Avatar, Button, Chip, EmptyState, ErrorState, Icon, LoadingSkeleton, Text, TextField, useTheme } from '@/components/ui';
+import {
+  Avatar,
+  Button,
+  Chip,
+  EmptyState,
+  ErrorState,
+  Icon,
+  LoadingSkeleton,
+  Text,
+  TextField,
+  useTheme,
+} from '@/components/ui';
 import { useApp } from '@/lib/app-provider';
 import { fontFace } from '@/lib/fonts';
 import { supabase } from '@/lib/supabase';
@@ -82,13 +93,19 @@ export function NewMessage() {
   async function startDirect(team: string, profileId: string) {
     setError(null);
     setBusy(true);
-    const res = await createThread(supabase, { teamId: team, type: 'direct', participantIds: [profileId] });
+    const res = await createThread(supabase, {
+      teamId: team,
+      type: 'direct',
+      participantIds: [profileId],
+    });
     setBusy(false);
     if (res.error) setError(friendlyError(res.error));
     else router.replace(`/messages/${res.data}` as never);
   }
 
-  const teamPeople = (load.data?.people.find((t) => t.teamId === teamId)?.people ?? []).filter(Boolean);
+  const teamPeople = (load.data?.people.find((t) => t.teamId === teamId)?.people ?? []).filter(
+    Boolean,
+  );
   const selected = teamPeople.filter((p) => picked.includes(p.profileId));
   const minor = minorGroupCheck(selected);
 
@@ -115,7 +132,10 @@ export function NewMessage() {
       return setError(friendlyError(res.error));
     }
     if (step === 'announcement') {
-      const sent = await sendMessage(supabase, { threadId: res.data as string, body: first.trim() });
+      const sent = await sendMessage(supabase, {
+        threadId: res.data as string,
+        body: first.trim(),
+      });
       if (sent.error) setError(friendlyError(sent.error));
     }
     setBusy(false);
@@ -123,13 +143,27 @@ export function NewMessage() {
   }
 
   const back = (
-    <Pressable accessibilityRole="button" accessibilityLabel="Back to people" onPress={() => { setStep('pick'); setError(null); }} style={{ minHeight: componentTokens.minTarget, justifyContent: 'center' }}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Back to people"
+      onPress={() => {
+        setStep('pick');
+        setError(null);
+      }}
+      style={{ minHeight: componentTokens.minTarget, justifyContent: 'center' }}
+    >
       <Text variant="bodyBold">‹ Back</Text>
     </Pressable>
   );
 
   if (teams.length === 0)
-    return <EmptyState icon="chat-circle" title="Messages live inside each team" body="Join a team to start a conversation." />;
+    return (
+      <EmptyState
+        icon="chat-circle"
+        title="Messages live inside each team"
+        body="Join a team to start a conversation."
+      />
+    );
 
   if (step !== 'pick') {
     const label = step === 'group' ? 'New group' : 'New announcement';
@@ -138,24 +172,54 @@ export function NewMessage() {
         {back}
         <H1>{label}</H1>
         {staffTeams.length > 1 ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }} accessibilityRole="radiogroup">
+          <View
+            style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}
+            accessibilityRole="radiogroup"
+          >
             {staffTeams.map((t) => (
-              <Chip key={t.id} label={t.title} accessibilityRole="radio" selected={teamId === t.id} onPress={() => { setTeamId(t.id); setPicked([]); }} />
+              <Chip
+                key={t.id}
+                label={t.title}
+                accessibilityRole="radio"
+                selected={teamId === t.id}
+                onPress={() => {
+                  setTeamId(t.id);
+                  setPicked([]);
+                }}
+              />
             ))}
           </View>
         ) : null}
-        <TextField label={step === 'group' ? 'Group name' : 'Announcement title'} value={title} onChangeText={setTitle} maxLength={100} />
+        <TextField
+          label={step === 'group' ? 'Group name' : 'Announcement title'}
+          value={title}
+          onChangeText={setTitle}
+          maxLength={100}
+        />
         {step === 'announcement' ? (
           <>
-            <TextField label="First message" value={first} onChangeText={setFirst} multiline maxLength={4000} />
-            <Text muted>Everyone on the team will see this. Only coaches and managers can post in it.</Text>
+            <TextField
+              label="First message"
+              value={first}
+              onChangeText={setFirst}
+              multiline
+              maxLength={4000}
+            />
+            <Text muted>
+              Everyone on the team will see this. Only coaches and managers can post in it.
+            </Text>
           </>
         ) : (
           <>
             {selected.length ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
                 {selected.map((p) => (
-                  <Chip key={p.profileId} label={`${p.displayName} ✕`} selected onPress={() => setPicked((cur) => cur.filter((x) => x !== p.profileId))} />
+                  <Chip
+                    key={p.profileId}
+                    label={`${p.displayName} ✕`}
+                    selected
+                    onPress={() => setPicked((cur) => cur.filter((x) => x !== p.profileId))}
+                  />
                 ))}
               </View>
             ) : null}
@@ -166,24 +230,42 @@ export function NewMessage() {
                   key={p.profileId}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: on }}
-                  onPress={() => setPicked((cur) => (on ? cur.filter((x) => x !== p.profileId) : [...cur, p.profileId]))}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: componentTokens.minTarget }}
+                  onPress={() =>
+                    setPicked((cur) =>
+                      on ? cur.filter((x) => x !== p.profileId) : [...cur, p.profileId],
+                    )
+                  }
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: space[3],
+                    minHeight: componentTokens.minTarget,
+                  }}
                 >
                   <Avatar name={p.displayName} />
                   <Text style={{ flex: 1 }}>{p.displayName}</Text>
-                  <Text variant="caption" muted>{p.role}</Text>
-                  <Icon name={on ? 'check-circle' : 'circle-dashed'} weight={on ? 'fill' : 'regular'} />
+                  <Text variant="caption" muted>
+                    {p.role}
+                  </Text>
+                  <Icon
+                    name={on ? 'check-circle' : 'circle-dashed'}
+                    weight={on ? 'fill' : 'regular'}
+                  />
                 </Pressable>
               );
             })}
-            {minor.hasMinor ? <Notice tone={minor.ok ? 'neutral' : 'error'}>{MINOR_GROUP_RULE_TEXT}</Notice> : null}
+            {minor.hasMinor ? (
+              <Notice tone={minor.ok ? 'neutral' : 'error'}>{MINOR_GROUP_RULE_TEXT}</Notice>
+            ) : null}
           </>
         )}
         {error ? <Notice tone="error">{error}</Notice> : null}
         <Button
           title={step === 'group' ? 'Create group' : 'Post announcement'}
           loading={busy}
-          disabled={!teamId || !title.trim() || (step === 'group' && (picked.length === 0 || !minor.ok))}
+          disabled={
+            !teamId || !title.trim() || (step === 'group' && (picked.length === 0 || !minor.ok))
+          }
           onPress={() => void submit()}
         />
       </View>
@@ -193,7 +275,17 @@ export function NewMessage() {
   return (
     <View style={{ gap: space[4] }}>
       <H1>New message</H1>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: componentTokens.minTarget, paddingHorizontal: space[4], borderRadius: radius.pill, backgroundColor: c.surfaceAlt }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: space[2],
+          minHeight: componentTokens.minTarget,
+          paddingHorizontal: space[4],
+          borderRadius: radius.pill,
+          backgroundColor: c.surfaceAlt,
+        }}
+      >
         <Icon name="magnifying-glass" color={c.muted} />
         <TextInput
           accessibilityLabel="Search people"
@@ -202,7 +294,13 @@ export function NewMessage() {
           value={query}
           onChangeText={setQuery}
           autoCorrect={false}
-          style={{ flex: 1, minHeight: componentTokens.minTarget, color: c.ink, fontFamily: fontFace.sans.semibold, fontSize: textStyles.body.size }}
+          style={{
+            flex: 1,
+            minHeight: componentTokens.minTarget,
+            color: c.ink,
+            fontFamily: fontFace.sans.semibold,
+            fontSize: textStyles.body.size,
+          }}
         />
       </View>
       {staffTeams.length > 0 ? (
@@ -211,7 +309,17 @@ export function NewMessage() {
             { label: 'New group', icon: 'users-three' as const, to: 'group' as const },
             { label: 'New announcement', icon: 'megaphone' as const, to: 'announcement' as const },
           ].map((a) => (
-            <Pressable key={a.to} accessibilityRole="button" onPress={() => setStep(a.to)} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: componentTokens.minTarget }}>
+            <Pressable
+              key={a.to}
+              accessibilityRole="button"
+              onPress={() => setStep(a.to)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: space[3],
+                minHeight: componentTokens.minTarget,
+              }}
+            >
               <Icon name={a.icon} />
               <Text variant="bodyBold">{a.label}</Text>
             </Pressable>
@@ -229,7 +337,9 @@ export function NewMessage() {
         groups.map((g) => (
           <View key={g.teamId} style={{ gap: space[1] }}>
             {teams.length > 1 ? (
-              <Text variant="label" muted accessibilityRole="header">{g.teamName}</Text>
+              <Text variant="label" muted accessibilityRole="header">
+                {g.teamName}
+              </Text>
             ) : null}
             {g.people.map((p) => (
               <Pressable
@@ -238,15 +348,31 @@ export function NewMessage() {
                 accessibilityState={{ disabled: !p.canDirect || busy }}
                 accessibilityLabel={`${p.displayName}, ${p.role}${p.canDirect ? (p.existingThreadId ? ', open conversation' : '') : `, unavailable. ${composeReasonText(p.reason) ?? ''}`}`}
                 disabled={!p.canDirect || busy}
-                onPress={() => (p.existingThreadId ? router.replace(`/messages/${p.existingThreadId}` as never) : void startDirect(g.teamId, p.profileId))}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: componentTokens.minTarget + space[2], opacity: p.canDirect ? 1 : 0.6 }}
+                onPress={() =>
+                  p.existingThreadId
+                    ? router.replace(`/messages/${p.existingThreadId}` as never)
+                    : void startDirect(g.teamId, p.profileId)
+                }
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: space[3],
+                  minHeight: componentTokens.minTarget + space[2],
+                  opacity: p.canDirect ? 1 : 0.6,
+                }}
               >
                 <Avatar name={p.displayName} />
                 <View style={{ flex: 1 }}>
                   <Text variant="bodyBold">{p.displayName}</Text>
-                  <Text variant="caption" muted>{p.canDirect ? p.role : composeReasonText(p.reason)}</Text>
+                  <Text variant="caption" muted>
+                    {p.canDirect ? p.role : composeReasonText(p.reason)}
+                  </Text>
                 </View>
-                {p.existingThreadId && p.canDirect ? <Text variant="caption" muted>Open</Text> : null}
+                {p.existingThreadId && p.canDirect ? (
+                  <Text variant="caption" muted>
+                    Open
+                  </Text>
+                ) : null}
               </Pressable>
             ))}
           </View>

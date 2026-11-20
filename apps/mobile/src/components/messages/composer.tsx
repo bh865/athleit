@@ -40,7 +40,9 @@ export function Composer({
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
-  const [failedPick, setFailedPick] = useState<{ uri: string; name: string; mime: string } | null>(null);
+  const [failedPick, setFailedPick] = useState<{ uri: string; name: string; mime: string } | null>(
+    null,
+  );
   // Local draft per conversation (device only); it also feeds the inbox "Draft:" prefix.
   const loaded = useRef(false);
   useEffect(() => {
@@ -282,7 +284,12 @@ export function Composer({
               key={o.label}
               accessibilityRole="button"
               onPress={o.run}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: componentTokens.minTarget }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: space[3],
+                minHeight: componentTokens.minTarget,
+              }}
             >
               <Icon name={o.icon} />
               <Text variant="bodyBold">{o.label}</Text>

@@ -19,6 +19,7 @@ import {
   setActiveThread,
 } from '@athleit/db/api';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useApp } from '@/components/app/app-provider';
@@ -66,13 +67,19 @@ export function Conversation({ threadId }: { threadId: string }) {
   const isAnnouncement = t.thread?.type === 'announcement';
   const archived = Boolean(t.thread?.archived_at);
   const canPost = isAnnouncement ? isStaff : true;
-  const teamRoles = contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
-  const canManage = isStaff && (isAnnouncement || teamRoles.includes('admin') || t.thread?.created_by === me);
+  const teamRoles =
+    contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.roles ?? [];
+  const canManage =
+    isStaff && (isAnnouncement || teamRoles.includes('admin') || t.thread?.created_by === me);
   const mine0 = useLoad(() => getMyParticipation(getClient(), threadId, me), [threadId, me]);
   const joinedLate =
-    !isAnnouncement && joinedLateNotice(isStaff, mine0.data?.joined_at ?? null, t.thread?.created_at ?? null);
+    !isAnnouncement &&
+    joinedLateNotice(isStaff, mine0.data?.joined_at ?? null, t.thread?.created_at ?? null);
   const teamCount = contexts.filter((c) => c.kind === 'team').length;
-  const teamTitle = teamCount > 1 ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '') : '';
+  const teamTitle =
+    teamCount > 1
+      ? (contexts.find((c) => c.kind === 'team' && c.id === t.thread?.team_id)?.title ?? '')
+      : '';
   // The last-read marker as it was when the conversation opened (it moves as we read).
   const [openedReadAt, setOpenedReadAt] = useState<string | null | undefined>(undefined);
   if (openedReadAt === undefined && t.state === 'ready') {
@@ -150,6 +157,33 @@ export function Conversation({ threadId }: { threadId: string }) {
     }
   };
 
+  // Open a search result in place: load back to it, scroll to it and flash it briefly.
+  const jumpTo = useSearchParams().get('message');
+  const jumped = useRef<string | null>(null);
+  useEffect(() => {
+    if (t.state !== 'ready' || !jumpTo || jumped.current === jumpTo) return;
+    jumped.current = jumpTo;
+    atBottom.current = false;
+    void t.loadUntil(jumpTo).then((found) => {
+      if (!found) {
+        toast('That message is from before you joined, so it isn’t shown.');
+        return;
+      }
+      // Wait a frame for the older page to render, then centre it and flash its background.
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`msg-${jumpTo}`);
+        if (!el) return;
+        el.scrollIntoView({ block: 'center' });
+        el.animate(
+          [{ backgroundColor: 'var(--color-surface-alt)' }, { backgroundColor: 'transparent' }],
+          {
+            duration: 2000,
+          },
+        );
+      });
+    });
+  }, [t, jumpTo, toast]);
+
   const act = async (
     fn: () => PromiseLike<{ error: { message: string; code?: string | undefined } | null }>,
     ok?: string,
@@ -176,171 +210,208 @@ export function Conversation({ threadId }: { threadId: string }) {
   }
 
   return (
-    <section className={styles.conversation} aria-label={`Conversation: ${title}`}>
-      <Glass as="header" level="bar" className={styles.header}>
-        <Link href="/messages" className={styles.back} aria-label="Back to messages">
-          <Icon name="caret-left" />
-        </Link>
-        <button
-          ref={infoOpener}
-          type="button"
-          className={styles.titleBlock}
-          aria-label={`${title}. ${infoOpen ? 'Close' : 'Open'} conversation info`}
-          aria-expanded={infoOpen}
-          onClick={() => setInfoOpen((v) => !v)}
-        >
-          <Text variant="bodyBold" className={styles.title}>
-            {title}
-          </Text>
-          <Text variant="caption" muted>
-            {t.typing.length > 0
-              ? 'typing…'
-              : isAnnouncement
-                ? 'Announcements'
-                : `${teamTitle ? `${teamTitle} · ` : ''}${memberCountLabel(t.memberCount)}`}
-          </Text>
-        </button>
-        <button
-          type="button"
-          className={styles.iconBtn}
-          aria-label="Conversation info"
-          aria-expanded={infoOpen}
-          onClick={() => setInfoOpen((v) => !v)}
-        >
-          <Icon name="info" />
-        </button>
-      </Glass>
+    <div className={styles.withInfo}>
+      <section className={styles.conversation} aria-label={`Conversation: ${title}`}>
+        <Glass as="header" level="bar" className={styles.header}>
+          <Link href="/messages" className={styles.back} aria-label="Back to messages">
+            <Icon name="caret-left" />
+          </Link>
+          <button
+            ref={infoOpener}
+            type="button"
+            className={styles.titleBlock}
+            aria-label={`${title}. ${infoOpen ? 'Close' : 'Open'} conversation info`}
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen((v) => !v)}
+          >
+            <Text variant="bodyBold" className={styles.title}>
+              {title}
+            </Text>
+            <Text variant="caption" muted>
+              {t.typing.length > 0
+                ? 'typing…'
+                : isAnnouncement
+                  ? 'Announcements'
+                  : `${teamTitle ? `${teamTitle} · ` : ''}${memberCountLabel(t.memberCount)}`}
+            </Text>
+          </button>
+          <button
+            type="button"
+            className={styles.iconBtn}
+            aria-label="Conversation info"
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen((v) => !v)}
+          >
+            <Icon name="info" />
+          </button>
+        </Glass>
 
-      <div
-        ref={scroller}
-        className={styles.scroller}
-        onScroll={onScroll}
-        data-testid="message-scroller"
-      >
-        {t.loadingOlder ? (
-          <Text variant="caption" muted className={styles.older}>
-            Loading earlier messages…
+        <div
+          ref={scroller}
+          className={styles.scroller}
+          onScroll={onScroll}
+          data-testid="message-scroller"
+        >
+          {t.loadingOlder ? (
+            <Text variant="caption" muted className={styles.older}>
+              Loading earlier messages…
+            </Text>
+          ) : null}
+          {items.length === 0 ? (
+            <EmptyState
+              icon="chat-circle"
+              title="No messages yet"
+              body={
+                canPost ? 'Say hello to get things started.' : 'Announcements will show up here.'
+              }
+            />
+          ) : (
+            <ol className={styles.list} aria-label="Messages">
+              {items.map((it) => [
+                it.kind === 'message' && it.message.id === dividerKey ? (
+                  <li key="new-divider" className={styles.divider} aria-label="New messages">
+                    <Text variant="caption">New messages</Text>
+                  </li>
+                ) : null,
+                it.kind === 'day' ? (
+                  <li key={it.key} className={styles.day}>
+                    <Text variant="caption" muted>
+                      {it.label}
+                    </Text>
+                  </li>
+                ) : isAnnouncement ? (
+                  <AnnouncementPost
+                    key={it.key}
+                    message={it.message}
+                    readCount={t.reads.length}
+                    showReads={isStaff}
+                  />
+                ) : (
+                  <Bubble
+                    key={it.key}
+                    message={it.message}
+                    own={it.own}
+                    firstInRun={it.firstInRun}
+                    lastInRun={it.lastInRun}
+                    status={it.own && it.lastInRun ? deliveryStatus(it.message, othersRead) : null}
+                    reactions={t.reactions[it.message.id] ?? []}
+                    attachments={t.attachments[it.message.id] ?? []}
+                    quoted={it.message.replyToId ? (byId.get(it.message.replyToId) ?? null) : null}
+                    myId={me}
+                    canModerate={isStaff}
+                    onReact={(e) => void act(() => toggleReaction(getClient(), it.message.id, e))}
+                    onReply={() => setReplyTo(it.message)}
+                    onReport={() => setReporting(it.message)}
+                    onHide={() =>
+                      void act(
+                        () => hideMessage(getClient(), it.message.id, 'Removed by staff'),
+                        'Message removed',
+                      )
+                    }
+                    onDelete={() =>
+                      void act(() => deleteMessage(getClient(), it.message.id), 'Message deleted')
+                    }
+                    onRetry={() => void t.retry(it.message.clientId ?? it.message.id)}
+                    onDiscard={() => t.discard(it.message.clientId ?? it.message.id)}
+                  />
+                ),
+              ])}
+            </ol>
+          )}
+          {t.typing.length > 0 ? (
+            <div
+              className={styles.typing}
+              role="status"
+              aria-label={`${t.names.get(t.typing[0]!) ?? 'Someone'} is typing`}
+            >
+              <span />
+              <span />
+              <span />
+            </div>
+          ) : null}
+        </div>
+
+        {showPill || scrolledUp ? (
+          <Glass
+            as="button"
+            type="button"
+            level="sheet"
+            className={styles.pill}
+            onClick={() => {
+              scrollToBottom(true);
+              setShowPill(false);
+              void t.markRead();
+            }}
+          >
+            <Icon name="arrow-down" size="sm" /> {showPill ? 'New messages' : 'Jump to latest'}
+          </Glass>
+        ) : null}
+
+        {joinedLate ? (
+          <Text variant="caption" muted className={styles.notice}>
+            You joined this conversation after it started, so you see messages from when you joined.
           </Text>
         ) : null}
-        {items.length === 0 ? (
-          <EmptyState
-            icon="chat-circle"
-            title="No messages yet"
-            body={canPost ? 'Say hello to get things started.' : 'Announcements will show up here.'}
+        {archived ? (
+          <Text variant="caption" muted className={styles.notice}>
+            {canManage
+              ? 'This conversation is archived. Unarchive it from the info panel to reply.'
+              : 'This conversation is archived.'}
+          </Text>
+        ) : canPost ? (
+          <Composer
+            threadId={threadId}
+            replyTo={replyTo}
+            onClearReply={() => setReplyTo(null)}
+            onTyping={t.notifyTyping}
+            onUpload={t.upload}
+            onSend={async (body, files) => {
+              const err = await t.send(body, replyTo?.id ?? null, files);
+              setReplyTo(null);
+              requestAnimationFrame(() => scrollToBottom());
+              return err;
+            }}
           />
         ) : (
-          <ol className={styles.list} aria-label="Messages">
-            {items.map((it) => [
-              it.kind === 'message' && it.message.id === dividerKey ? (
-                <li key="new-divider" className={styles.divider} aria-label="New messages">
-                  <Text variant="caption">New messages</Text>
-                </li>
-              ) : null,
-              it.kind === 'day' ? (
-                <li key={it.key} className={styles.day}>
-                  <Text variant="caption" muted>
-                    {it.label}
-                  </Text>
-                </li>
-              ) : isAnnouncement ? (
-                <AnnouncementPost
-                  key={it.key}
-                  message={it.message}
-                  readCount={t.reads.length}
-                  showReads={isStaff}
-                />
-              ) : (
-                <Bubble
-                  key={it.key}
-                  message={it.message}
-                  own={it.own}
-                  firstInRun={it.firstInRun}
-                  lastInRun={it.lastInRun}
-                  status={it.own && it.lastInRun ? deliveryStatus(it.message, othersRead) : null}
-                  reactions={t.reactions[it.message.id] ?? []}
-                  attachments={t.attachments[it.message.id] ?? []}
-                  quoted={it.message.replyToId ? (byId.get(it.message.replyToId) ?? null) : null}
-                  myId={me}
-                  canModerate={isStaff}
-                  onReact={(e) => void act(() => toggleReaction(getClient(), it.message.id, e))}
-                  onReply={() => setReplyTo(it.message)}
-                  onReport={() => setReporting(it.message)}
-                  onHide={() =>
-                    void act(
-                      () => hideMessage(getClient(), it.message.id, 'Removed by staff'),
-                      'Message removed',
-                    )
-                  }
-                  onDelete={() =>
-                    void act(() => deleteMessage(getClient(), it.message.id), 'Message deleted')
-                  }
-                  onRetry={() => void t.retry(it.message.clientId ?? it.message.id)}
-                  onDiscard={() => t.discard(it.message.clientId ?? it.message.id)}
-                />
-              ),
-            ])}
-          </ol>
+          <Text variant="caption" muted className={styles.notice}>
+            Only coaches and managers can post here.
+          </Text>
         )}
-        {t.typing.length > 0 ? (
-          <div
-            className={styles.typing}
-            role="status"
-            aria-label={`${t.names.get(t.typing[0]!) ?? 'Someone'} is typing`}
+
+        <Sheet open={reporting !== null} onClose={() => setReporting(null)} title="Report message">
+          <Text variant="heading" as="h2">
+            Report this message
+          </Text>
+          <Text muted as="p">
+            Staff will review it. The sender isn’t told who reported it.
+          </Text>
+          <TextField
+            label="What’s wrong?"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={500}
+          />
+          <Button
+            loading={busy}
+            disabled={reason.trim().length === 0}
+            onClick={async () => {
+              if (!reporting) return;
+              setBusy(true);
+              const r = await reportMessage(getClient(), reporting.id, reason);
+              setBusy(false);
+              if (r.error) {
+                toast(friendlyError(r.error), 'danger');
+              } else {
+                toast('Report sent');
+                setReporting(null);
+                setReason('');
+              }
+            }}
           >
-            <span />
-            <span />
-            <span />
-          </div>
-        ) : null}
-      </div>
-
-      {showPill || scrolledUp ? (
-        <Glass
-          as="button"
-          type="button"
-          level="sheet"
-          className={styles.pill}
-          onClick={() => {
-            scrollToBottom(true);
-            setShowPill(false);
-            void t.markRead();
-          }}
-        >
-          <Icon name="arrow-down" size="sm" /> {showPill ? 'New messages' : 'Jump to latest'}
-        </Glass>
-      ) : null}
-
-      {joinedLate ? (
-        <Text variant="caption" muted className={styles.notice}>
-          You joined this conversation after it started, so you see messages from when you joined.
-        </Text>
-      ) : null}
-      {archived ? (
-        <Text variant="caption" muted className={styles.notice}>
-          {canManage
-            ? 'This conversation is archived. Unarchive it from the info panel to reply.'
-            : 'This conversation is archived.'}
-        </Text>
-      ) : canPost ? (
-        <Composer
-          threadId={threadId}
-          replyTo={replyTo}
-          onClearReply={() => setReplyTo(null)}
-          onTyping={t.notifyTyping}
-          onUpload={t.upload}
-          onSend={async (body, files) => {
-            const err = await t.send(body, replyTo?.id ?? null, files);
-            setReplyTo(null);
-            requestAnimationFrame(() => scrollToBottom());
-            return err;
-          }}
-        />
-      ) : (
-        <Text variant="caption" muted className={styles.notice}>
-          Only coaches and managers can post here.
-        </Text>
-      )}
-
+            Send report
+          </Button>
+        </Sheet>
+      </section>
       {infoOpen ? (
         <ThreadInfoPanel
           threadId={threadId}
@@ -350,41 +421,7 @@ export function Conversation({ threadId }: { threadId: string }) {
           }}
         />
       ) : null}
-
-      <Sheet open={reporting !== null} onClose={() => setReporting(null)} title="Report message">
-        <Text variant="heading" as="h2">
-          Report this message
-        </Text>
-        <Text muted as="p">
-          Staff will review it. The sender isn’t told who reported it.
-        </Text>
-        <TextField
-          label="What’s wrong?"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          maxLength={500}
-        />
-        <Button
-          loading={busy}
-          disabled={reason.trim().length === 0}
-          onClick={async () => {
-            if (!reporting) return;
-            setBusy(true);
-            const r = await reportMessage(getClient(), reporting.id, reason);
-            setBusy(false);
-            if (r.error) {
-              toast(friendlyError(r.error), 'danger');
-            } else {
-              toast('Report sent');
-              setReporting(null);
-              setReason('');
-            }
-          }}
-        >
-          Send report
-        </Button>
-      </Sheet>
-    </section>
+    </div>
   );
 }
 
@@ -400,7 +437,7 @@ function AnnouncementPost({
 }) {
   const removed = message.hidden || message.deleted;
   return (
-    <li className={styles.post} data-testid="message">
+    <li id={`msg-${message.id}`} className={styles.post} data-testid="message">
       <Text variant="label" muted>
         ANNOUNCEMENT
       </Text>

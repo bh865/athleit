@@ -98,7 +98,13 @@ export function ThreadList() {
   const [muteFor, setMuteFor] = useState<InboxRow | null>(null);
 
   // Message search below the local matches, after 3 characters (debounced and cancelable).
-  type Hit = { thread_id: string; message_id: string; snippet: string; team_name: string; sender_name: string | null };
+  type Hit = {
+    thread_id: string;
+    message_id: string;
+    snippet: string;
+    team_name: string;
+    sender_name: string | null;
+  };
   const [settled, setSettled] = useState<{ query: string; hits: Hit[] }>({ query: '', hits: [] });
   const trimmed = query.trim();
   const serverSearch = shouldSearchServer(query);
@@ -125,11 +131,17 @@ export function ThreadList() {
     reload();
   };
   const markRead = (r: InboxRow) =>
-    r.lastMessageId ? act(() => markThreadRead(supabase, r.threadId, r.lastMessageId as string)) : undefined;
+    r.lastMessageId
+      ? act(() => markThreadRead(supabase, r.threadId, r.lastMessageId as string))
+      : undefined;
   const archive = (r: InboxRow) =>
-    act(() => setThreadArchivedForMe(supabase, r.threadId, !r.archivedForMe), r.archivedForMe ? 'Moved back to your inbox' : 'Archived until the next message');
+    act(
+      () => setThreadArchivedForMe(supabase, r.threadId, !r.archivedForMe),
+      r.archivedForMe ? 'Moved back to your inbox' : 'Archived until the next message',
+    );
   const pin = (r: InboxRow) => act(() => setThreadPinned(supabase, r.threadId, !r.pinnedAt));
-  const mute = (r: InboxRow, until: string | null) => act(() => setThreadMute(supabase, r.threadId, until));
+  const mute = (r: InboxRow, until: string | null) =>
+    act(() => setThreadMute(supabase, r.threadId, until));
 
   const visible = useMemo(() => {
     const filtered = filterInbox(rows, filter);
@@ -203,30 +215,76 @@ export function ThreadList() {
           onChangeText={setQuery}
           autoCorrect={false}
           returnKeyType="search"
-          style={{ flex: 1, minHeight: componentTokens.minTarget, color: c.ink, fontFamily: fontFace.sans.semibold, fontSize: textStyles.body.size }}
+          style={{
+            flex: 1,
+            minHeight: componentTokens.minTarget,
+            color: c.ink,
+            fontFamily: fontFace.sans.semibold,
+            fontSize: textStyles.body.size,
+          }}
         />
         {query ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} hitSlop={12}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            onPress={() => setQuery('')}
+            hitSlop={12}
+          >
             <Icon name="x-circle" weight="fill" color={c.muted} />
           </Pressable>
         ) : null}
       </View>
       {showChips ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[2] }} accessibilityRole="tablist">
-          <Chip label="All" selected={filter.kind === 'all'} onPress={() => setFilter({ kind: 'all' })} />
-          <Chip label="Unread" selected={filter.kind === 'unread'} onPress={() => setFilter(filter.kind === 'unread' ? { kind: 'all' } : { kind: 'unread' })} />
-          <Chip label="Announcements" selected={filter.kind === 'announcements'} onPress={() => setFilter(filter.kind === 'announcements' ? { kind: 'all' } : { kind: 'announcements' })} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: space[2] }}
+          accessibilityRole="tablist"
+        >
+          <Chip
+            label="All"
+            selected={filter.kind === 'all'}
+            onPress={() => setFilter({ kind: 'all' })}
+          />
+          <Chip
+            label="Unread"
+            selected={filter.kind === 'unread'}
+            onPress={() =>
+              setFilter(filter.kind === 'unread' ? { kind: 'all' } : { kind: 'unread' })
+            }
+          />
+          <Chip
+            label="Announcements"
+            selected={filter.kind === 'announcements'}
+            onPress={() =>
+              setFilter(
+                filter.kind === 'announcements' ? { kind: 'all' } : { kind: 'announcements' },
+              )
+            }
+          />
           {teams.length >= 2
             ? teams.map((t) => (
                 <Chip
                   key={t.id}
                   label={t.title}
                   selected={filter.kind === 'team' && filter.teamId === t.id}
-                  onPress={() => setFilter(filter.kind === 'team' && filter.teamId === t.id ? { kind: 'all' } : { kind: 'team', teamId: t.id })}
+                  onPress={() =>
+                    setFilter(
+                      filter.kind === 'team' && filter.teamId === t.id
+                        ? { kind: 'all' }
+                        : { kind: 'team', teamId: t.id },
+                    )
+                  }
                 />
               ))
             : null}
-          <Chip label="Archived" selected={filter.kind === 'archived'} onPress={() => setFilter(filter.kind === 'archived' ? { kind: 'all' } : { kind: 'archived' })} />
+          <Chip
+            label="Archived"
+            selected={filter.kind === 'archived'}
+            onPress={() =>
+              setFilter(filter.kind === 'archived' ? { kind: 'all' } : { kind: 'archived' })
+            }
+          />
         </ScrollView>
       ) : null}
     </View>
@@ -235,19 +293,41 @@ export function ThreadList() {
   let body;
   if (teams.length === 0) {
     // Club admin only: messages live inside each team.
-    body = <EmptyState icon="chat-circle" title="Messages live inside each team" body="Join or switch to a team to see its conversations." />;
+    body = (
+      <EmptyState
+        icon="chat-circle"
+        title="Messages live inside each team"
+        body="Join or switch to a team to see its conversations."
+      />
+    );
   } else if (list.loading && !list.data) {
     body = <LoadingSkeleton rows={5} />;
   } else if (list.error && !list.data) {
     body = <ErrorState message="Can’t load messages" onRetry={reload} />;
   } else if (rows.length === 0) {
     body = staff ? (
-      <EmptyState icon="chat-circle" title="No conversations yet" body="Message a parent, start a group or post an announcement." action={<Button title="New message" onPress={compose} />} />
+      <EmptyState
+        icon="chat-circle"
+        title="No conversations yet"
+        body="Message a parent, start a group or post an announcement."
+        action={<Button title="New message" onPress={compose} />}
+      />
     ) : (
-      <EmptyState icon="chat-circle" title="No messages yet" body="When your coach or team writes, it shows up here." action={<Button title="New message" onPress={compose} />} />
+      <EmptyState
+        icon="chat-circle"
+        title="No messages yet"
+        body="When your coach or team writes, it shows up here."
+        action={<Button title="New message" onPress={compose} />}
+      />
     );
   } else if (visible.length === 0 && hits.length === 0 && !searching) {
-    body = <EmptyState icon="magnifying-glass" title="No results" body={query ? `Nothing matches “${query}”.` : 'Nothing here.'} />;
+    body = (
+      <EmptyState
+        icon="magnifying-glass"
+        title="No results"
+        body={query ? `Nothing matches “${query}”.` : 'Nothing here.'}
+      />
+    );
   } else {
     body = (
       <View style={{ gap: space[2] }}>
@@ -256,7 +336,14 @@ export function ThreadList() {
             accessibilityRole="button"
             accessibilityLabel={`Announcement, ${threadTitle(featured)}, ${featured.unreadCount} unread`}
             onPress={() => open(featured)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], padding: space[3], borderRadius: radius.lg, backgroundColor: c.surface }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space[3],
+              padding: space[3],
+              borderRadius: radius.lg,
+              backgroundColor: c.surface,
+            }}
           >
             <ThreadAvatar row={featured} title={threadTitle(featured)} />
             <View style={{ flex: 1 }}>
@@ -297,8 +384,14 @@ export function ThreadList() {
                 key={h.message_id}
                 accessibilityRole="button"
                 accessibilityLabel={`${h.sender_name ?? 'Someone'} in ${h.team_name}: ${h.snippet}`}
-                onPress={() => router.push(`/messages/${h.thread_id}?message=${h.message_id}` as never)}
-                style={{ minHeight: componentTokens.minTarget, justifyContent: 'center', gap: space[1] }}
+                onPress={() =>
+                  router.push(`/messages/${h.thread_id}?message=${h.message_id}` as never)
+                }
+                style={{
+                  minHeight: componentTokens.minTarget,
+                  justifyContent: 'center',
+                  gap: space[1],
+                }}
               >
                 <Text variant="caption" muted>
                   {h.sender_name ?? 'Someone'} · {h.team_name}
@@ -315,16 +408,39 @@ export function ThreadList() {
   return (
     <View style={{ gap: space[4] }}>
       {header}
-      {list.error && list.data ? <Text variant="caption" muted>Showing saved messages. You may be offline.</Text> : null}
+      {list.error && list.data ? (
+        <Text variant="caption" muted>
+          Showing saved messages. You may be offline.
+        </Text>
+      ) : null}
       {body}
-      <Sheet open={menuFor !== null} onClose={() => setMenuFor(null)} title={menuFor ? threadTitle(menuFor) : 'Conversation'}>
+      <Sheet
+        open={menuFor !== null}
+        onClose={() => setMenuFor(null)}
+        title={menuFor ? threadTitle(menuFor) : 'Conversation'}
+      >
         {menuFor ? (
           <View style={{ gap: space[2] }}>
             {[
-              { label: menuFor.pinnedAt ? 'Unpin' : 'Pin', icon: 'push-pin' as const, run: () => pin(menuFor) },
-              ...(menuFor.unreadCount > 0 ? [{ label: 'Mark read', icon: 'check' as const, run: () => markRead(menuFor) }] : []),
-              { label: isMuted(menuFor.mutedUntil) ? 'Unmute' : 'Mute…', icon: 'bell-slash' as const, run: () => (isMuted(menuFor.mutedUntil) ? mute(menuFor, null) : setMuteFor(menuFor)) },
-              { label: menuFor.archivedForMe ? 'Move to inbox' : 'Archive', icon: 'archive-box' as const, run: () => archive(menuFor) },
+              {
+                label: menuFor.pinnedAt ? 'Unpin' : 'Pin',
+                icon: 'push-pin' as const,
+                run: () => pin(menuFor),
+              },
+              ...(menuFor.unreadCount > 0
+                ? [{ label: 'Mark read', icon: 'check' as const, run: () => markRead(menuFor) }]
+                : []),
+              {
+                label: isMuted(menuFor.mutedUntil) ? 'Unmute' : 'Mute…',
+                icon: 'bell-slash' as const,
+                run: () =>
+                  isMuted(menuFor.mutedUntil) ? mute(menuFor, null) : setMuteFor(menuFor),
+              },
+              {
+                label: menuFor.archivedForMe ? 'Move to inbox' : 'Archive',
+                icon: 'archive-box' as const,
+                run: () => archive(menuFor),
+              },
             ].map((a) => (
               <Pressable
                 key={a.label}
@@ -333,7 +449,12 @@ export function ThreadList() {
                   setMenuFor(null);
                   void a.run();
                 }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: componentTokens.minTarget }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: space[3],
+                  minHeight: componentTokens.minTarget,
+                }}
               >
                 <Icon name={a.icon} />
                 <Text variant="bodyBold">{a.label}</Text>

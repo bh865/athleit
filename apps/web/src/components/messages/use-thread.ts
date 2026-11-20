@@ -232,6 +232,30 @@ export function useThread(threadId: string, myId: string) {
     [client, threadId, absorb],
   );
 
+  /**
+   * Page back until the given message is loaded (used to open a search result in place). Gives up
+   * after 10 pages, or when the thread has no earlier messages (a message from before the reader
+   * joined is never returned, so it can never be found).
+   */
+  const loadUntil = useCallback(
+    async (messageId: string): Promise<boolean> => {
+      if (messagesRef.current.some((m) => m.id === messageId)) return true;
+      const cursor = messagesRef.current.find((m) => !m.sendState);
+      let before = cursor ? { createdAt: cursor.createdAt, id: cursor.id } : null;
+      for (let i = 0; i < 10 && before; i++) {
+        const r = await getMessagesPage(client, threadId, { before, limit: PAGE });
+        if (!r.data) return false;
+        absorb(r.data);
+        setHasMore(r.data.length === PAGE);
+        if (r.data.some((m) => m.id === messageId)) return true;
+        const oldest = r.data[r.data.length - 1];
+        before = r.data.length === PAGE && oldest ? { createdAt: oldest.created_at, id: oldest.id } : null;
+      }
+      return false;
+    },
+    [threadId, absorb],
+  );
+
   /** Optimistic send; the bubble appears at once as "Sending" and becomes "Failed" with retry. */
   const send = useCallback(
     async (body: string, replyTo: string | null, files: PendingFile[]) => {
@@ -316,6 +340,7 @@ export function useThread(threadId: string, myId: string) {
     incoming,
     load,
     loadOlder,
+    loadUntil,
     send,
     retry,
     discard,
