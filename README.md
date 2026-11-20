@@ -199,3 +199,18 @@ Choices made in Phase 0 where a version, compatibility or tooling decision was n
 ## Dev-project clean slate (E2E)
 
 `scripts/e2e/wipe-dev.sh` wipes all user and test data from the hosted **Athleit Dev** Supabase project in one transaction. It is for the dev project only and must never be pointed at staging or production: it refuses unless the project ref `qzvwoqnykpmvzdnetkmy` is passed, the CLI is linked to it, and `--confirm` is given (`--dry-run` runs everything and rolls back). See `docs/e2e/wipe-report.md`.
+
+## First-pass E2E (hosted Dev project)
+
+Everything below runs against the hosted **Athleit Dev** project from `apps/web/.env.local`. Results and defects live in `docs/e2e/` (`first-pass-report.md`, `defects.md`, `path-inventory.md`, `progress.md`, `wipe-report.md`).
+
+```bash
+./scripts/e2e-doctor.sh                                  # tooling and env check (names only, no values)
+cd apps/web && pnpm build && pnpm start --port 3100      # production build, the same one Playwright reuses
+cd apps/web && npx playwright test --project=chromium    # all web specs (serial specs stop at their first failure)
+cd apps/web && npx playwright test e2e/persona-crawl.spec.ts --project=chromium   # personas, axe, authorization negatives
+bash scripts/e2e-cleanup.sh                              # remove leftover e2e-*@example.test users (no service key needed)
+bash scripts/db-test-remote.sh                           # pgTAP against Dev, always rolled back
+```
+
+Mobile dev build (iOS simulator): `LANG=en_US.UTF-8 npx expo prebuild --platform ios`, then build the `Athleit` workspace with `xcodebuild -destination 'id=<simulator UDID>'` (the generated `ios/` folder is not committed), start Metro with `npx expo start --dev-client --port 8083` and open the app. CI builds the web app on every run; the Playwright job in `ci.yml` is optional and skipped unless `SUPABASE_TEST_URL` and `SUPABASE_TEST_ANON_KEY` are set, so these specs do not gate merges today.
