@@ -289,3 +289,81 @@ describe('drainEmails', () => {
     expect(done).toHaveBeenCalledWith('q2', 'no_email');
   });
 });
+
+import {
+  hmacHex,
+  verifyDocsSignature,
+} from '../../../supabase/functions/_shared/support/docs-status';
+
+describe('verifyDocsSignature', () => {
+  const eq = (a: string, b: string) => a === b;
+  const now = 1_800_000_000_000;
+  const ts = String(now / 1000);
+  const body = '{"items":[]}';
+  it('accepts a correct, fresh signature', async () => {
+    const signature = await hmacHex('s3cret', `${ts}.${body}`);
+    expect(
+      await verifyDocsSignature({
+        secret: 's3cret',
+        body,
+        timestamp: ts,
+        signature,
+        now,
+        equal: eq,
+      }),
+    ).toBe(true);
+  });
+  it('rejects a wrong secret, a changed body, a stale timestamp and a missing secret (fail closed)', async () => {
+    const signature = await hmacHex('s3cret', `${ts}.${body}`);
+    expect(
+      await verifyDocsSignature({
+        secret: 'other',
+        body,
+        timestamp: ts,
+        signature,
+        now,
+        equal: eq,
+      }),
+    ).toBe(false);
+    expect(
+      await verifyDocsSignature({
+        secret: 's3cret',
+        body: '{"items":[1]}',
+        timestamp: ts,
+        signature,
+        now,
+        equal: eq,
+      }),
+    ).toBe(false);
+    expect(
+      await verifyDocsSignature({
+        secret: 's3cret',
+        body,
+        timestamp: ts,
+        signature,
+        now: now + 11 * 60_000,
+        equal: eq,
+      }),
+    ).toBe(false);
+    expect(
+      await verifyDocsSignature({
+        secret: undefined,
+        body,
+        timestamp: ts,
+        signature,
+        now,
+        equal: eq,
+      }),
+    ).toBe(false);
+    expect(
+      await verifyDocsSignature({
+        secret: 's3cret',
+        body,
+        timestamp: null,
+        signature,
+        now,
+        equal: eq,
+      }),
+    ).toBe(false);
+  });
+});

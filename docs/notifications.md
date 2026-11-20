@@ -42,6 +42,10 @@ The push body comes from `payload.body` ("12 practices added"); rows without one
 
 Category `billing` (default on for push and email; the preference row is shown to team admins only). Recipients are **all current admins of the team**; coaches and managers receive **only** the "some team actions are paused" notice, worded "ask a team admin" with no amounts. Every notice is keyed in `team_billing_notices` (once per team and key) and in the outbox dedupe key, so webhook retries and sweep re-runs never repeat one. Admin deep link `/teams/<id>/billing`; staff link `/teams/<id>`. The full list and when each is sent is in [billing.md](billing.md#notices).
 
+## Support notifications
+
+Category `support`: a reply from Athleit Support, and the "We got your request" confirmation. The in-app row and the push follow the person's `support` push preference (the row is always written); the email is transactional and is never silenced by a preference. Signed-out requesters have no profile, so their emails go through `support_email_queue` and `send-support-emails` instead of the outbox. Deep link: `/help/requests/SUP-######`. See [support.md](support.md).
+
 ## Deep links
 
 Notification data carries a path (`/messages/<thread>` or `/events/<event>`). Web: the service worker focuses or opens

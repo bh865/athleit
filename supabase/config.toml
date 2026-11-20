@@ -520,3 +520,6 @@ verify_jwt = false
 
 [functions.sign-support-attachment]
 verify_jwt = false
+
+[functions.report-docs-status]
+verify_jwt = false

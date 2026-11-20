@@ -151,5 +151,15 @@ select pg_temp.login('d5000000-0000-0000-0000-000000000001');
 select throws_ok($$ select public.svc_support_view_by_token(sha256('x'::bytea)) $$, '42501', null, 'signed-in users cannot call service functions');
 reset role;
 
+-- Docs status reporting (service role only) ---------------------------------------------------------------------------------------------
+reset role;
+select is(public.svc_report_article_status('[{"slug":"pay-in-installments","stale":true,"stale_paths":["a.ts"]},{"slug":"bad slug","stale":true}]'::jsonb), 1, 'valid slugs are stored, invalid ones skipped');
+select is((select stale from public.help_article_status where slug = 'pay-in-installments'), true, 'stale flag stored');
+select public.svc_report_article_status('[{"slug":"sign-a-waiver","stale":false}]'::jsonb);
+select is((select count(*)::int from public.help_article_status where slug = 'pay-in-installments'), 0, 'articles missing from the next report are dropped');
+select pg_temp.login('d5000000-0000-0000-0000-000000000004');
+select throws_ok($$ select public.svc_report_article_status('[]'::jsonb) $$, '42501', null, 'not callable by signed-in users, admins included');
+reset role;
+
 select * from finish();
 rollback;
