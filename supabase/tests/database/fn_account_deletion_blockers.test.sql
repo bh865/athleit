@@ -41,7 +41,7 @@ select is((select public.account_deletion_blockers() #>> '{households,0,name}'),
 select is((select jsonb_array_length(public.account_deletion_blockers() -> 'households')), 1, 'shared and player-less households are not blockers');
 
 reset role; select set_config('request.jwt.claims', '{"sub":"cccccccc-cccc-cccc-cccc-cccccccccccc","role":"authenticated"}', true); set local role authenticated;
-select is(public.account_deletion_blockers(), '{"teams": [], "clubs": [], "households": [], "plans": []}'::jsonb, 'a user with nothing to hand over has no blockers, and sees only their own situation');
+select is(public.account_deletion_blockers(), '{"teams": [], "clubs": [], "households": [], "plans": [], "subscriptions": []}'::jsonb, 'a user with nothing to hand over has no blockers, and sees only their own situation');
 
 reset role;
 select * from finish();

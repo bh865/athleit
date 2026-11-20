@@ -11,7 +11,8 @@
     "./scheduling": "./src/scheduling-api.ts",
     "./payments": "./src/payments-api.ts",
     "./registration": "./src/registration-api.ts",
-    "./places": "./src/places-api.ts"
+    "./places": "./src/places-api.ts",
+    "./billing": "./src/billing-api.ts"
   },
   "scripts": {
     "lint": "eslint .",

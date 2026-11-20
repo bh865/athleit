@@ -37,6 +37,7 @@ import {
   TextField,
   useToast,
 } from '@/components/ui';
+import { BillingGateNote, useBillingGate } from '@/components/billing/use-billing-gate';
 import { getClient } from '@/lib/supabase/browser';
 
 import { Amount } from './money';
@@ -62,6 +63,7 @@ export function NewRequestForm({
   onClose: () => void;
 }) {
   const toast = useToast();
+  const gate = useBillingGate(owner.teamId);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [due, setDue] = useState('');
@@ -356,7 +358,14 @@ export function NewRequestForm({
             {error}
           </p>
         ) : null}
-        <Button type="submit" size="lg" fullWidth loading={busy} disabled={!canSend}>
+        <BillingGateNote gate={gate} what="Sending payment requests" />
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          loading={busy}
+          disabled={!canSend || gate.restricted}
+        >
           Send request
         </Button>
         {!canSend ? (

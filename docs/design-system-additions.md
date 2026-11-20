@@ -230,6 +230,17 @@ View-model rules (guardian order with You first, card badge and team chips, code
 | More menu / More sheet        | `Popover` (web), `Sheet` (mobile) with icon, title and one line each                                             | Holds Places, Opponents (staff) and Calendar link.                                                                                                                            |
 | Week strip and mobile month   | Pressable days with a dot; compact grid with type icons                                                          | Mobile only.                                                                                                                                                                  |
 
+## Team billing
+
+| Piece                           | Composed from                                                          | Notes                                                                                                                                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Billing banner                  | Soft-tone panel (`surface2`, `warnSoft`, `badSoft`), `Icon`, `ButtonLink` | **New variant** (`components/billing/billing-banner.tsx`). Tone is always paired with an icon and words. Staff get the same banner without an action ("Ask a team admin").                            |
+| Subscription card and states    | `Card`, `Badge`, mono facts grid, `ConfirmSheet` for cancel            | **New variant** (`billing-panel.tsx`): one card per state (trial, subscribed, ends soon, payment problem, paused, complimentary). Amounts and dates are mono.                                         |
+| Invoice list                    | List rows, `Badge`, text links                                         | Hosted and PDF links open Stripe's own pages.                                                                                                                                                         |
+| Blocked-action note             | Caption text with a link                                               | `BillingGateNote` replaces nothing visually: the control is disabled and the caption says why, with Subscribe for admins and "Ask a team admin" for everyone else.                                     |
+| Mobile read-only status         | `Card`, `Badge`, caption                                               | **New variant** (`components/team/billing-status.tsx`). No purchase control and no link out.                                                                                                          |
+
+
 ## Sign in, create account and onboarding
 
 Composed from existing tokens and components; nothing was added to `packages/tokens`.

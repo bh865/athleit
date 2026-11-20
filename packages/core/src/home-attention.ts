@@ -25,6 +25,7 @@ export type AttentionKind =
   | 'linkRequests'
   | 'registrationsToDecide'
   | 'payouts'
+  | 'billing'
   | 'setup';
 
 /** What the trailing control of a row does. Absent: a link action labelled by `attentionActionLabel`. */
@@ -71,6 +72,7 @@ const DEFAULT_MODE: Record<AttentionKind, 'event' | 'due'> = {
   linkRequests: 'due',
   registrationsToDecide: 'due',
   payouts: 'due',
+  billing: 'due',
   setup: 'due',
 };
 
@@ -93,6 +95,9 @@ export function attentionRank(i: AttentionItem, now: Date): AttentionTier {
     case 'waiver':
     case 'payouts':
       return 1;
+    // A payment problem or paused team actions block the team; a trial ending is a decision others wait on.
+    case 'billing':
+      return i.overdue ? 1 : 3;
     case 'payment':
       if (i.overdue || (diff !== null && diff < 0)) return 1;
       return diff !== null && diff <= PAYMENT_SOON_MS ? 2 : 4;
@@ -220,6 +225,7 @@ const ACTION_LABEL: Record<AttentionKind, string> = {
   linkRequests: 'Review',
   registrationsToDecide: 'Review',
   payouts: 'Set up',
+  billing: 'Open billing',
   setup: 'Continue',
 };
 

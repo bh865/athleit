@@ -39,6 +39,8 @@ export interface AttentionInput {
   linkRequests?: { count: number; href: string };
   /** A payout account that has an account but cannot yet take charges or pay out. */
   payoutsNeedAction?: boolean;
+  /** Team admins only: the billing banner's words (see billingAttention) and where to go. `urgent` = a payment problem or paused actions. */
+  billing?: { title: string; detail: string; href: string; urgent: boolean } | null;
   /** Place tags, set only when one list merges several places ("Household", a team name). */
   tags?: { family?: string; team?: string };
   gamesWithoutResult?: readonly { event_id: string; title: string; starts_at: string }[];
@@ -171,6 +173,17 @@ export function buildAttentionItems(i: AttentionInput): AttentionItem[] {
       label: 'Payouts need action',
       detail: 'Finish payout setup to collect payments',
       href: '/pay',
+      ...team,
+    });
+  }
+  if (i.billing) {
+    out.push({
+      kind: 'billing',
+      key: 'billing',
+      label: i.billing.title,
+      detail: i.billing.detail,
+      href: i.billing.href,
+      overdue: i.billing.urgent,
       ...team,
     });
   }

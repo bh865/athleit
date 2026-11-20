@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  billingAttention,
   buildAttentionItems,
   normalizeWaiverStatus,
   capabilitiesForPlace,
@@ -16,6 +17,7 @@ import {
   getPlayerLoginClaims,
   type Result,
 } from '@athleit/db/api';
+import { getBillingTerms, getTeamBilling } from '@athleit/db/billing';
 import { getConnectedAccountStatus, getHouseholdPayments } from '@athleit/db/payments';
 import { listMyRegistrations, getWaiverCompliance } from '@athleit/db/registration';
 import { getNextUp, getTeamSchedule } from '@athleit/db/scheduling';
@@ -121,7 +123,36 @@ export function useHomeData(
     [payoutsAdmin, owner?.teamId, owner?.clubId, k],
   );
 
-  const sources = [nextUp, pay, regs, claims, joins, links, waivers, past, payout];
+  // Team admins only: the team's own subscription (trial ending, payment problem, paused actions). Null while billing is off.
+  const billingAdmin = Boolean(caps?.has('billing.manage'));
+  const billingView = useLoad(
+    () =>
+      billingAdmin
+        ? getTeamBilling(getClient(), teamId)
+        : (Promise.resolve({ data: null, error: null }) as never),
+    [billingAdmin, teamId, k],
+  );
+  const billingTerms = useLoad(
+    () =>
+      billingAdmin
+        ? getBillingTerms(getClient())
+        : (Promise.resolve({ data: null, error: null }) as never),
+    [billingAdmin],
+  );
+
+  const sources = [
+    nextUp,
+    pay,
+    regs,
+    claims,
+    joins,
+    links,
+    waivers,
+    past,
+    payout,
+    billingView,
+    billingTerms,
+  ];
   const loading = sources.some((r) => r.loading);
   const error = sources.find((r) => r.error)?.error ?? null;
   const reload = () => sources.forEach((r) => r.error && r.reload());
@@ -159,6 +190,22 @@ export function useHomeData(
           count: (links.data ?? []).filter((r) => r.status === 'pending').length,
           href: `/clubs/${clubId}`,
         },
+        billing: (() => {
+          const b = billingAttention(
+            billingView.data as never,
+            now,
+            (billingTerms.data as { trial_reminder_days?: number[] } | null)?.trial_reminder_days ??
+              [],
+          );
+          return b
+            ? {
+                title: b.title,
+                detail: b.detail,
+                href: `/teams/${teamId}/billing`,
+                urgent: b.tone === 'critical',
+              }
+            : null;
+        })(),
         payoutsNeedAction: Boolean(
           payoutStatus?.exists_account &&
           !(payoutStatus.charges_enabled && payoutStatus.payouts_enabled),
@@ -187,6 +234,9 @@ export function useHomeData(
     waivers.data,
     past.data,
     payout.data,
+    billingView.data,
+    billingTerms.data,
+    teamId,
     dual,
     clubId,
     team?.title,

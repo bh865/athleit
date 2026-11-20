@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { useApp } from '@/components/app/app-provider';
 import { InvitePanel, type RoleOption } from '@/components/app/invite-panel';
 import { FormMessage } from '@/components/app/states';
+import { BillingGateNote, useBillingGate } from '@/components/billing/use-billing-gate';
 import { useTeam } from '@/components/app/team-context';
 import {
   Avatar,
@@ -121,6 +122,7 @@ export function PeopleTab() {
 
 function RequestsView() {
   const { team } = useTeam();
+  const gate = useBillingGate(team.id);
   const hub = useTeamHub();
   const copy = useCopy();
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +141,7 @@ function RequestsView() {
   return (
     <div className={styles.stack}>
       <FormMessage error={error} />
+      <BillingGateNote gate={gate} what="Approving join requests" />
       <ListState
         name="join requests"
         loading={hub.loading}
@@ -170,7 +173,11 @@ function RequestsView() {
                 {r.message ? <p className={styles.quote}>“{r.message}”</p> : null}
               </div>
               <div className={styles.requestActions}>
-                <Button loading={busy === r.id} onClick={() => void decide(r.id, true)}>
+                <Button
+                  loading={busy === r.id}
+                  disabled={gate.restricted}
+                  onClick={() => void decide(r.id, true)}
+                >
                   <Icon name="check" size="sm" /> Approve
                 </Button>
                 <Button

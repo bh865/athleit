@@ -58,6 +58,15 @@ export function notificationSummary(
             : '/pay',
     };
   }
+  if (category === 'billing') {
+    // Admins open the team's billing page; coaches and managers (the restricted notice only) open the team.
+    return {
+      title: p.title || 'Team billing',
+      detail: p.body || 'Team billing update',
+      icon: 'credit-card',
+      href: p.team_id ? (p.audience === 'staff' ? `/teams/${p.team_id}` : `/teams/${p.team_id}/billing`) : '/',
+    };
+  }
   if (category === 'registration') {
     // Staff digests open the event's management screen; waiver notices open the tracker (staff) or the family's list.
     return {
@@ -152,4 +161,18 @@ export function summarizePreferences(rows: readonly PreferenceRow[]) {
     preview:
       rows.find((r) => r.channel === 'push' && r.category === 'messages')?.include_preview ?? false,
   };
+}
+
+/**
+ * Preference rows a person sees. Billing notices go to team admins only, so the row is hidden for everyone else
+ * (a preference row still exists for every profile; hiding it just keeps the screen honest).
+ */
+export function visibleNotificationCategories<C extends string>(
+  categories: readonly C[],
+  contexts: readonly { kind: string; role: string; roles?: readonly string[] }[],
+): C[] {
+  const teamAdmin = contexts.some(
+    (c) => c.kind === 'team' && (c.role === 'admin' || (c.roles ?? []).includes('admin')),
+  );
+  return categories.filter((c) => c !== 'billing' || teamAdmin);
 }

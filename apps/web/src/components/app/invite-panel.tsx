@@ -21,6 +21,7 @@ import {
   Select,
   TextField,
 } from '@/components/ui';
+import { BillingGateNote, useBillingGate } from '@/components/billing/use-billing-gate';
 import { getClient } from '@/lib/supabase/browser';
 import { useLoad } from '@/lib/use-load';
 
@@ -123,6 +124,7 @@ function LinkInvitePanel({
   roles: readonly RoleOption[];
 }) {
   const client = getClient();
+  const gate = useBillingGate('teamId' in target ? target.teamId : undefined);
   const key = JSON.stringify(target);
   const list = useLoad(() => listInvites(client, target), [key]);
   const [role, setRole] = useState(roles[0]?.value ?? '');
@@ -211,8 +213,9 @@ function LinkInvitePanel({
           />
         </div>
         <FormMessage error={error} />
+        <BillingGateNote gate={gate} what="Creating invites" />
         <div>
-          <Button type="submit" loading={busy} icon-label="create">
+          <Button type="submit" loading={busy} disabled={gate.restricted} icon-label="create">
             <Icon name="qr-code" /> Create invite link
           </Button>
         </div>
