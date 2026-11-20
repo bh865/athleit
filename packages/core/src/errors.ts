@@ -83,6 +83,7 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/invalid_timezone/, 'Choose a valid timezone.'],
   [/not_a_participant/, 'You are not part of this conversation.'],
   [/event_cancelled/, 'This event was cancelled.'],
+  [/nudged_recently/, 'Already reminded recently. Try again later.'],
   [/already_cancelled/, 'This event is already cancelled.'],
   [/event_over/, 'This event has already finished.'],
   [/event_not_started/, 'You can enter a result once the game has started.'],

@@ -430,6 +430,7 @@ export type Database = {
           game_format: Json | null
           home_away: string | null
           id: string
+          last_change: Json | null
           location_id: string | null
           location_text: string | null
           notes: string | null
@@ -454,6 +455,7 @@ export type Database = {
           game_format?: Json | null
           home_away?: string | null
           id?: string
+          last_change?: Json | null
           location_id?: string | null
           location_text?: string | null
           notes?: string | null
@@ -478,6 +480,7 @@ export type Database = {
           game_format?: Json | null
           home_away?: string | null
           id?: string
+          last_change?: Json | null
           location_id?: string | null
           location_text?: string | null
           notes?: string | null
@@ -3935,7 +3938,17 @@ export type Database = {
           title: string
           type: string
           virtual_url: string
+          seen_revision: number
+          last_change: Json
         }[]
+      }
+      mark_event_seen: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
+      nudge_rsvp_non_responders: {
+        Args: { p_event_id: string }
+        Returns: number
       }
       get_guardian_contacts: {
         Args: { p_player_id: string }
@@ -4187,6 +4200,7 @@ export type Database = {
           timezone: string
           title: string
           type: string
+          seen_revision: number
         }[]
       }
       household_schedule_range: {
@@ -4219,6 +4233,7 @@ export type Database = {
           timezone: string
           title: string
           type: string
+          seen_revision: number
         }[]
       }
       link_registration_player: {
@@ -4987,6 +5002,7 @@ export type Database = {
           timezone: string
           title: string
           type: string
+          seen_revision: number
         }[]
       }
       team_schedule_range: {
@@ -5023,6 +5039,7 @@ export type Database = {
           timezone: string
           title: string
           type: string
+          seen_revision: number
         }[]
       }
       toggle_reaction: {

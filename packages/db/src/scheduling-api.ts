@@ -105,6 +105,14 @@ export const getNextUp = (client: Client, limit = 5) =>
 export const getEvent = (client: Client, eventId: string) =>
   one<EventDetail>(call(client)('get_event', { p_event_id: eventId }));
 
+/** Records that the caller has opened the event at its current revision (clears the Updated chip). */
+export const markEventSeen = (client: Client, eventId: string) =>
+  scalar<number>(call(client)('mark_event_seen', { p_event_id: eventId }));
+
+/** Staff only. Reminds guardians and 13+ players with no reply; returns how many people were notified. */
+export const nudgeRsvpNonResponders = (client: Client, eventId: string) =>
+  scalar<number>(call(client)('nudge_rsvp_non_responders', { p_event_id: eventId }));
+
 export const getRsvpSummary = (client: Client, eventId: string) =>
   one<RsvpSummary>(call(client)('event_rsvp_summary', { p_event_id: eventId }));
 
