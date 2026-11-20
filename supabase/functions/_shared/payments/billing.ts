@@ -279,6 +279,13 @@ export async function createBillingCheckout(
   if (!ctx.enabled || ctx.state === 'off') throw new Error('billing_disabled');
   if (['active', 'cancel_scheduled', 'comped'].includes(ctx.state))
     throw new Error('already_subscribed');
+  // A subscription Stripe is still billing (including past_due, which Smart Retries is working on) is fixed through the
+  // portal. A second Checkout would charge the card again and the database would refuse to apply it.
+  if (
+    ctx.stripe_subscription_id &&
+    ['active', 'trialing', 'past_due', 'unpaid'].includes(ctx.stripe_status ?? '')
+  )
+    throw new Error('already_subscribed');
   const ver = ctx.price_version;
   if (!ver) throw new Error('billing_unavailable');
 
@@ -326,11 +333,14 @@ export async function createBillingCheckout(
 
   // Expire stale open sessions for this team so only one is ever live.
   const open = await d.stripe.get('/v1/checkout/sessions', { customer, status: 'open', limit: 10 });
+  const expired: string[] = [];
   for (const s of (open.data ?? []) as StripeObject[])
-    if (s.client_reference_id === teamId)
+    if (s.client_reference_id === teamId) {
+      expired.push(String(s.id));
       await d.stripe
         .post(`/v1/checkout/sessions/${s.id}/expire`, {}, `athleit:billing:expire:${s.id}`)
         .catch(() => {});
+    }
 
   const now = d.now?.() ?? new Date();
   const trial = ctx.trial_ends_at
@@ -364,7 +374,8 @@ export async function createBillingCheckout(
       success_url: urls.success,
       cancel_url: urls.cancel,
     },
-    `athleit:billing:checkout:${teamId}:${ver.id}:${bucket(d, 300)}`,
+    // The expired session ids are part of the key: an idempotent replay must never hand back a session we just expired.
+    `athleit:billing:checkout:${teamId}:${ver.id}:${bucket(d, 300)}:${expired.join('+')}`,
   );
   if (typeof session.url !== 'string') throw new Error('stripe_no_session_url');
   return {

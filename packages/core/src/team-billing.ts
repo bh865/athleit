@@ -145,9 +145,9 @@ export function checkoutTrial(
     : { mode: 'trial', trialEnd: new Date(min), extendedToMinimum: true, realEnd: new Date(end) };
 }
 
-/** Teams that can start Checkout: billing on, not already paying. */
+/** Teams that can start Checkout: billing on, not already paying and not in a payment problem (past_due always has a live subscription: fix the card instead). */
 export function canSubscribe(state: BillingState): boolean {
-  return !['off', 'active', 'cancel_scheduled', 'comped'].includes(state);
+  return !['off', 'active', 'cancel_scheduled', 'comped', 'past_due'].includes(state);
 }
 /** Cancel is offered for an active subscription; Resume while cancellation is scheduled. */
 export const canCancel = (state: BillingState) => state === 'active';
@@ -186,6 +186,8 @@ export interface TeamBillingView {
   grace_ends_at?: string | null;
   comp_until?: string | null;
   has_subscription?: boolean;
+  /** Stripe is still billing this subscription: fix the card (portal); a second Checkout would double-charge. */
+  subscription_live?: boolean;
   price_cents?: number;
   price_mismatch?: boolean;
 }

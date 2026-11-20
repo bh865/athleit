@@ -165,20 +165,25 @@ export function BillingPanel({ teamId }: { teamId: string }) {
 
             {admin ? (
               <div className={styles.row}>
-                {canSubscribe(view.state) ? (
+                {canSubscribe(view.state) && !view.subscription_live ? (
                   <Button loading={busy === 'subscribe'} onClick={subscribe}>
-                    {view.state === 'past_due' ? 'Subscribe again' : 'Subscribe'}
+                    Subscribe
                   </Button>
                 ) : null}
                 {view.state === 'past_due' ||
                 view.state === 'active' ||
-                view.state === 'cancel_scheduled' ? (
+                view.state === 'cancel_scheduled' ||
+                (view.state === 'lapsed' && view.subscription_live) ? (
                   <Button
-                    variant={view.state === 'past_due' ? 'primary' : 'secondary'}
+                    variant={
+                      view.state === 'past_due' || view.state === 'lapsed' ? 'primary' : 'secondary'
+                    }
                     loading={busy === 'portal'}
                     onClick={portal}
                   >
-                    {view.state === 'past_due' ? 'Update payment method' : 'Manage payment method'}
+                    {view.state === 'past_due' || view.state === 'lapsed'
+                      ? 'Update payment method'
+                      : 'Manage payment method'}
                   </Button>
                 ) : null}
                 {canResume(view.state) ? (

@@ -290,6 +290,8 @@ begin
     'cancel_at_period_end', b.cancel_at_period_end, 'grace_ends_at', b.grace_ends_at,
     'comp_until', case when b.comped then b.comp_until end,
     'has_subscription', b.stripe_subscription_id is not null,
+    -- A subscription Stripe is still billing (so the answer to a failed card is to fix the card, never to start a second Checkout).
+    'subscription_live', b.stripe_subscription_id is not null and b.stripe_status in ('active', 'trialing', 'past_due', 'unpaid'),
     'price_cents', private.team_price_cents(p_team_id), 'currency', 'usd', 'interval', 'month',
     'price_mismatch', b.price_mismatch);
 end;

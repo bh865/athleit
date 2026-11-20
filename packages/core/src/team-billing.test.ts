@@ -132,7 +132,7 @@ describe('access', () => {
     expect(canSubscribe('trialing')).toBe(true);
     expect(canSubscribe('trial_expired')).toBe(true);
     expect(canSubscribe('lapsed')).toBe(true);
-    expect(canSubscribe('past_due')).toBe(true);
+    expect(canSubscribe('past_due')).toBe(false); // fix the card; a second Checkout would double-charge
     for (const s of ['off', 'active', 'cancel_scheduled', 'comped'] as const)
       expect(canSubscribe(s)).toBe(false);
     expect(canCancel('active')).toBe(true);

@@ -505,6 +505,26 @@ describe('createBillingCheckout', () => {
     expect(requests.map((q) => q.path)).not.toContain('/v1/customers');
   });
 
+  it('never replays an expired session: the expired ids are part of the idempotency key', async () => {
+    const { store } = fakeStore(
+      ctx({
+        stripe_product_id: 'prod_9',
+        stripe_customer_id: 'cus_9',
+        price_version: { id: VER, amount_cents: 1000, currency: 'usd', stripe_price_id: 'price_9' },
+      }),
+    );
+    const keyFor = async (open: any[]) => {
+      const { stripe, requests } = fakeStripe({
+        '/v1/checkout/sessions/': () => ({}),
+        '/v1/checkout/sessions': (p: any) =>
+          p.mode ? { url: 'https://c.test/1' } : { data: open },
+      });
+      await createBillingCheckout(USER, TEAM, flow(store, stripe));
+      return requests.find((q) => q.params?.mode)!.key;
+    };
+    expect(await keyFor([])).not.toBe(await keyFor([{ id: 'cs_old', client_reference_id: TEAM }]));
+  });
+
   it('expires stale open sessions of the team only', async () => {
     const { store } = fakeStore(
       ctx({
@@ -613,6 +633,19 @@ describe('createBillingCheckout', () => {
         flow(fakeStore(ctx({ enabled: false, state: 'off' })).store, stripe),
       ),
     ).rejects.toThrow('billing_disabled');
+    // A subscription Stripe is still billing (even past_due or beyond grace) is fixed in the portal, never re-subscribed.
+    for (const stripe_status of ['past_due', 'unpaid', 'active', 'trialing'])
+      await expect(
+        createBillingCheckout(
+          USER,
+          TEAM,
+          flow(
+            fakeStore(ctx({ state: 'lapsed', stripe_subscription_id: 'sub_1', stripe_status }))
+              .store,
+            stripe,
+          ),
+        ),
+      ).rejects.toThrow('already_subscribed');
     for (const state of ['active', 'cancel_scheduled', 'comped'] as const)
       await expect(
         createBillingCheckout(USER, TEAM, flow(fakeStore(ctx({ state })).store, stripe)),

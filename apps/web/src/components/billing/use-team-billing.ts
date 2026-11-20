@@ -9,6 +9,8 @@ import { useLoad } from '@/lib/use-load';
 /** The team's billing status (what the caller may see) and the server's terms. Both come from the database, never from copy. */
 export function useTeamBilling(teamId: string) {
   const billing = useLoad(async () => {
+    // No team (a club-issued form): nothing to load, never an RPC with an empty id.
+    if (!teamId) return { data: null, error: null } as never;
     const r = await getTeamBilling(getClient(), teamId);
     return r as typeof r & { data: TeamBillingView | null };
   }, [teamId]);
