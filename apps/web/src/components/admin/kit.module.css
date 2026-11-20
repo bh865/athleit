@@ -222,3 +222,19 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.tileGrid,
+.chartGrid {
+  display: grid;
+  gap: var(--space-4);
+}
+.tileGrid {
+  grid-template-columns: repeat(auto-fit, minmax(22ch, 1fr));
+}
+.chartGrid {
+  grid-template-columns: repeat(auto-fit, minmax(48ch, 1fr));
+}
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

@@ -60,6 +60,10 @@ export const Crumbs = ({ items }: { items: { label: string; href?: string }[] })
   </nav>
 );
 
+export const TileGrid = ({ children }: { children: ReactNode }) => <div className={styles.tileGrid}>{children}</div>;
+export const ChartGrid = ({ children }: { children: ReactNode }) => <div className={styles.chartGrid}>{children}</div>;
+export const Cluster = ({ children }: { children: ReactNode }) => <div className={styles.cluster}>{children}</div>;
+
 // Key-value panel ----------------------------------------------------------------------------------------------------
 export function KeyValue({ rows }: { rows: readonly { k: string; v: ReactNode; mono?: boolean }[] }) {
   return (
