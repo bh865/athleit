@@ -46,12 +46,12 @@ test.describe.serial('messaging', () => {
 
   test('the coach starts a group with the parent', async () => {
     await coach.getByRole('link', { name: 'Messages' }).click();
-    await expect(coach.getByText('No messages yet')).toBeVisible();
+    await expect(coach.getByText('No conversations yet')).toBeVisible();
     await coach.goto('/messages/new');
-    await coach.getByRole('radio', { name: 'Group' }).click();
+    await coach.getByRole('button', { name: 'New group' }).click();
     await coach.getByLabel('Group name').fill('Game day');
-    await coach.getByRole('button', { name: /Pat Parent/ }).click();
-    await coach.getByRole('button', { name: 'Start conversation' }).click();
+    await coach.getByRole('checkbox', { name: /Pat Parent/ }).click();
+    await coach.getByRole('button', { name: 'Create group' }).click();
     await expect(coach).toHaveURL(/\/messages\/[0-9a-f-]{36}$/);
     threadUrl = new URL(coach.url()).pathname;
   });
@@ -102,11 +102,11 @@ test.describe.serial('messaging', () => {
 
   test('only staff can post announcements; parents read them', async () => {
     await coach.goto('/messages/new');
-    await coach.getByRole('radio', { name: 'Announcement' }).click();
+    await coach.getByRole('button', { name: 'New announcement' }).click();
     await coach.getByLabel('Announcement title').fill('Season news');
-    await coach.getByRole('button', { name: 'Create announcement' }).click();
-    await coach.getByLabel('Message', { exact: true }).fill('Photos are Saturday');
-    await coach.getByRole('button', { name: 'Send message' }).click();
+    await coach.getByLabel('First message').fill('Photos are Saturday');
+    await coach.getByRole('button', { name: 'Post announcement' }).click();
+    await expect(coach).toHaveURL(/\/messages\/[0-9a-f-]{36}$/);
     const annUrl = new URL(coach.url()).pathname;
 
     await parent.goto(annUrl);
@@ -119,7 +119,7 @@ test.describe.serial('messaging', () => {
 
     // Parents cannot start groups or announcements from the new-message screen.
     await parent.goto('/messages/new');
-    await expect(parent.getByRole('radio', { name: 'Group' })).toHaveCount(0);
+    await expect(parent.getByRole('button', { name: 'New group' })).toHaveCount(0);
   });
 
   test('a parent can report a message and staff can remove it for everyone', async () => {

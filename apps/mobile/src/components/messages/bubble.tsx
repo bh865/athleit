@@ -33,7 +33,13 @@ export const REACTION_LABEL: Record<string, string> = {
   wow: 'Wow',
 };
 
-function AttachmentView({ a }: { a: Attachment }) {
+function AttachmentView({
+  a,
+  onOpenImage,
+}: {
+  a: Attachment;
+  onOpenImage?: (path: string) => void;
+}) {
   const { theme } = useTheme();
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -46,16 +52,21 @@ function AttachmentView({ a }: { a: Attachment }) {
   const name = a.path.split('/').pop() ?? 'file';
   if (a.mime.startsWith('image/')) {
     return url ? (
-      <Image
-        source={{ uri: url }}
-        accessibilityLabel={name}
-        style={{
-          width: componentTokens.bubble.maxWidthMobile - space[8],
-          aspectRatio: 1,
-          borderRadius: radius.sm,
-        }}
-        resizeMode="cover"
-      />
+      <Pressable
+        accessibilityRole="imagebutton"
+        accessibilityLabel={`Photo ${name}. Open`}
+        onPress={() => onOpenImage?.(a.path)}
+      >
+        <Image
+          source={{ uri: url }}
+          style={{
+            width: componentTokens.bubble.maxWidthMobile - space[8],
+            aspectRatio: 1,
+            borderRadius: radius.sm,
+          }}
+          resizeMode="cover"
+        />
+      </Pressable>
     ) : (
       <View
         style={{
@@ -107,6 +118,7 @@ export interface BubbleProps {
   onReact: (emoji: string) => void;
   onRetry: () => void;
   onDiscard: () => void;
+  onOpenImage?: (path: string) => void;
 }
 
 /** Received: surface-alt left. Own: "sent" fill right. Radius 22, 6px tail on the last of a run. */
@@ -208,7 +220,7 @@ export function Bubble(p: BubbleProps) {
               <Text style={{ color: p.own ? c.bubbleOwnInk : c.bubbleOtherInk }}>{m.body}</Text>
             ) : null}
             {p.attachments.map((a) => (
-              <AttachmentView key={a.id} a={a} />
+              <AttachmentView key={a.id} a={a} onOpenImage={p.onOpenImage} />
             ))}
           </>
         )}

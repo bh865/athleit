@@ -1,0 +1,146 @@
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(100%, 24rem);
+  padding: var(--space-4);
+  overflow-y: auto;
+  border-left: var(--size-card-border) solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.head,
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--size-card-border) solid var(--color-line);
+}
+.iconBtn,
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-min-target);
+  min-width: var(--size-min-target);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.action {
+  font-weight: var(--text-body-bold-weight);
+}
+.iconBtn:hover,
+.action:hover {
+  background: var(--color-surface-alt);
+}
+.durations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.durations button {
+  min-height: var(--size-min-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+.search {
+  min-height: var(--size-min-target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  font: inherit;
+}
+.people {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.people li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-min-target);
+}
+.people li > span {
+  flex: 1;
+}
+.muted {
+  color: var(--color-muted);
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--space-12) * 2);
+  height: calc(var(--space-12) * 2);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  text-align: center;
+}
+.tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tileName {
+  display: block;
+  padding: 0 var(--space-1);
+  overflow: hidden;
+  font-size: var(--text-caption-size);
+  text-overflow: ellipsis;
+}
+.add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* At 1440 and wider the info panel is the third pane beside the conversation; below that it
+   opens over the conversation. */
+@media (min-width: 1440px) {
+  .panel {
+    position: static;
+    flex: none;
+    width: 22rem;
+    height: calc(100dvh - var(--space-8));
+    border: var(--size-card-border) solid var(--color-line);
+    border-radius: var(--size-card-radius);
+  }
+}

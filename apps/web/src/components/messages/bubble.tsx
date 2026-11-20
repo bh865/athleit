@@ -83,6 +83,7 @@ export function Bubble(p: BubbleProps) {
   const failed = m.sendState === 'failed';
   return (
     <li
+      id={`msg-${m.id}`}
       className={`${styles.row} ${own ? styles.own : styles.other}`}
       aria-label={messageA11yLabel({ message: m, own }, p.status)}
       data-testid="message"

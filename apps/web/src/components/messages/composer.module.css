@@ -95,3 +95,28 @@
 .error {
   color: var(--color-bad);
 }
+
+.wrap {
+  position: relative;
+}
+.dragging {
+  outline: var(--size-card-border) dashed var(--color-ink);
+  outline-offset: calc(var(--space-1) * -1);
+  border-radius: var(--radius-lg);
+}
+.drop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: var(--text-body-bold-weight);
+}
+.hint {
+  padding: 0 var(--space-4);
+  text-align: right;
+}

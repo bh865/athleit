@@ -105,6 +105,9 @@ export function useThread(threadId: string, myId: string) {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [typing, setTyping] = useState<string[]>([]);
   const [incoming, setIncoming] = useState(0);
+  // Network is down (a send could not reach the server) and the server's rate limit answer.
+  const [offline, setOffline] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
   const namesRef = useRef(names);
   const messagesRef = useRef(messages);
   const sub = useRef<ThreadSubscription | null>(null);
@@ -181,18 +184,25 @@ export function useThread(threadId: string, myId: string) {
         });
         if (res.error) {
           if (isNetworkError(res.error)) {
+            setOffline(true);
             entry.attempts += 1;
             await persist();
             retryTimer.current = setTimeout(() => void flush(), retryDelayMs(entry.attempts));
             return;
           }
           // A rule said no (permissions, rate limit, archived): show Failed with Retry/Discard.
+          setOffline(false);
+          if (/rate_limited/.test(res.error.message)) {
+            setRateLimited(true);
+            setTimeout(() => setRateLimited(false), 20_000);
+          }
           setSendState(entry.clientId, 'failed');
           queue.current.shift();
           failed.current.set(entry.clientId, entry);
           await persist();
           continue;
         }
+        setOffline(false);
         const row = await getMessage(supabase, res.data);
         setMessages((cur) => cur.filter((m) => m.clientId !== entry.clientId));
         if (row.data) absorb([row.data]);
@@ -325,6 +335,31 @@ export function useThread(threadId: string, myId: string) {
     setLoadingOlder(false);
   }, [threadId, absorb, loadingOlder, hasMore]);
 
+  /**
+   * Page back until the given message is loaded (used to open a search result in place). Gives up
+   * after 10 pages, or when the thread has no earlier messages (a message from before the reader
+   * joined is never returned, so it can never be found).
+   */
+  const loadUntil = useCallback(
+    async (messageId: string): Promise<boolean> => {
+      if (messagesRef.current.some((m) => m.id === messageId)) return true;
+      const cursor = messagesRef.current.find((m) => !m.sendState);
+      let before = cursor ? { createdAt: cursor.createdAt, id: cursor.id } : null;
+      for (let i = 0; i < 10 && before; i++) {
+        const r = await getMessagesPage(supabase, threadId, { before, limit: PAGE });
+        if (!r.data) return false;
+        absorb(r.data);
+        setHasMore(r.data.length === PAGE);
+        if (r.data.some((m) => m.id === messageId)) return true;
+        const oldest = r.data[r.data.length - 1];
+        before =
+          r.data.length === PAGE && oldest ? { createdAt: oldest.created_at, id: oldest.id } : null;
+      }
+      return false;
+    },
+    [threadId, absorb],
+  );
+
   /** Optimistic: the bubble appears at once as "Sending" and is queued until delivered. */
   const send = useCallback(
     async (body: string, replyTo: string | null, files: PendingFile[]) => {
@@ -423,6 +458,9 @@ export function useThread(threadId: string, myId: string) {
     incoming,
     load,
     loadOlder,
+    loadUntil,
+    offline,
+    rateLimited,
     send,
     retry,
     discard,

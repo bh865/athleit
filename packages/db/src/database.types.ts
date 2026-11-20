@@ -3303,6 +3303,42 @@ export type Database = {
           },
         ]
       }
+      thread_user_state: {
+        Row: {
+          archived_at: string | null
+          pinned_at: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          profile_id: string
+          thread_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          pinned_at?: string | null
+          profile_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_user_state_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_user_state_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       threads: {
         Row: {
           archived_at: string | null
@@ -3974,6 +4010,17 @@ export type Database = {
           slug: string
         }[]
       }
+      get_compose_people: {
+        Args: { p_team_id: string }
+        Returns: {
+          can_direct: boolean
+          display_name: string
+          is_minor: boolean
+          profile_id: string
+          reason: string
+          role: Database["public"]["Enums"]["team_role"]
+        }[]
+      }
       get_event: {
         Args: { p_event_id: string }
         Returns: {
@@ -4050,6 +4097,35 @@ export type Database = {
           message: string
           request_id: string
           requester_name: string
+        }[]
+      }
+      get_inbox: {
+        Args: { p_before_at?: string; p_before_id?: string; p_limit?: number }
+        Returns: {
+          archived_at: string
+          archived_for_me: boolean
+          last_body: string
+          last_created_at: string
+          last_deleted: boolean
+          last_hidden: boolean
+          last_message_at: string
+          last_message_id: string
+          last_read_count: number
+          last_read_total: number
+          last_sender_id: string
+          last_sender_name: string
+          member_count: number
+          muted_until: string
+          other_name: string
+          other_profile_id: string
+          pinned_at: string
+          sport: string
+          team_id: string
+          team_name: string
+          thread_id: string
+          title: string
+          type: string
+          unread_count: number
         }[]
       }
       get_join_requests: {
@@ -4165,6 +4241,18 @@ export type Database = {
           title: string
           type: string
           unread_count: number
+        }[]
+      }
+      get_thread_media: {
+        Args: { p_thread_id: string }
+        Returns: {
+          created_at: string
+          message_id: string
+          mime_type: string
+          original_name: string
+          sender_name: string
+          size_bytes: number
+          storage_path: string
         }[]
       }
       get_thread_members: {
@@ -4675,6 +4763,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_messages: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          created_at: string
+          message_id: string
+          other_name: string
+          sender_name: string
+          snippet: string
+          team_id: string
+          team_name: string
+          thread_id: string
+          thread_title: string
+          thread_type: string
+        }[]
+      }
       send_installment_reminder: {
         Args: { p_installment_id: string }
         Returns: boolean
@@ -4731,8 +4834,16 @@ export type Database = {
         Args: { p_archived: boolean; p_thread_id: string }
         Returns: undefined
       }
+      set_thread_archived_for_me: {
+        Args: { p_archived: boolean; p_thread_id: string }
+        Returns: undefined
+      }
       set_thread_mute: {
         Args: { p_thread_id: string; p_until: string }
+        Returns: undefined
+      }
+      set_thread_pinned: {
+        Args: { p_pinned: boolean; p_thread_id: string }
         Returns: undefined
       }
       staff_set_rsvp: {

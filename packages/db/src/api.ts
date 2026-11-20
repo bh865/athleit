@@ -484,6 +484,68 @@ export async function getPhotoUrl(client: Client, path: string): Promise<Result<
 export const getThreadList = (client: Client, teamId: string) =>
   run(client.rpc('get_thread_list', { p_team_id: teamId }), []);
 
+/** One inbox across every team the caller is in (pinned first, then newest). Keyset cursor. */
+export const getInbox = (
+  client: Client,
+  opts: { limit?: number; before?: { at: string; id: string } } = {},
+) =>
+  run(
+    client.rpc('get_inbox', {
+      p_limit: opts.limit ?? 50,
+      p_before_at: opts.before?.at as string,
+      p_before_id: opts.before?.id as string,
+    }),
+    [],
+  );
+
+type InboxRowRaw = NonNullable<Awaited<ReturnType<typeof getInbox>>['data']>[number];
+
+/**
+ * Every inbox row, following the keyset cursor until a page comes back empty (capped at 10 pages
+ * of `pageSize`, so a very large inbox cannot loop). The first page also carries the pinned rows.
+ */
+export async function getInboxAll(client: Client, pageSize = 100): Promise<Result<InboxRowRaw[]>> {
+  const seen = new Map<string, InboxRowRaw>();
+  let before: { at: string; id: string } | undefined;
+  for (let page = 0; page < 10; page++) {
+    const res = await getInbox(client, before ? { limit: pageSize, before } : { limit: pageSize });
+    if (res.error) return fail(res.error);
+    const rows = res.data ?? [];
+    let added = 0;
+    for (const r of rows) {
+      if (!seen.has(r.thread_id)) {
+        seen.set(r.thread_id, r);
+        added += 1;
+      }
+    }
+    const unpinned = rows.filter((r) => r.pinned_at === null);
+    const last = unpinned[unpinned.length - 1];
+    if (added === 0 || !last) break;
+    before = { at: last.last_message_at, id: last.thread_id };
+  }
+  return ok([...seen.values()]);
+}
+
+export const searchMessages = (client: Client, query: string, limit = 30) =>
+  run(client.rpc('search_messages', { p_query: query, p_limit: limit }), []);
+
+export const getThreadMedia = (client: Client, threadId: string) =>
+  run(client.rpc('get_thread_media', { p_thread_id: threadId }), []);
+
+export const getComposePeople = (client: Client, teamId: string) =>
+  run(client.rpc('get_compose_people', { p_team_id: teamId }), []);
+
+export const setThreadPinned = (client: Client, threadId: string, pinned: boolean) =>
+  runVoid(client.rpc('set_thread_pinned', { p_thread_id: threadId, p_pinned: pinned }));
+
+/** Thread-wide archive (owner, team admin, or staff for announcements): closes the conversation for posting. */
+export const setThreadArchived = (client: Client, threadId: string, archived: boolean) =>
+  runVoid(client.rpc('set_thread_archived', { p_thread_id: threadId, p_archived: archived }));
+
+/** Per person: archived until the next message. Thread-wide archive is setThreadArchived. */
+export const setThreadArchivedForMe = (client: Client, threadId: string, archived: boolean) =>
+  runVoid(client.rpc('set_thread_archived_for_me', { p_thread_id: threadId, p_archived: archived }));
+
 export const getUnreadTotal = (client: Client) => run(client.rpc('get_unread_total'), 0);
 
 export const createThread = (
@@ -533,6 +595,49 @@ export const getMessagesPage = (
   }
   return run(q, []);
 };
+
+/**
+ * The caller's own per-thread state: join time, role and mute from their participant row, plus
+ * pin and archive from thread_user_state. Both tables are own-row readable for this purpose; a
+ * non-participant (announcement audience) has no participant row.
+ */
+export async function getMyParticipation(
+  client: Client,
+  threadId: string,
+  profileId: string,
+): Promise<
+  Result<{
+    joined_at: string | null;
+    role: string | null;
+    muted_until: string | null;
+    pinned_at: string | null;
+    archived_at: string | null;
+  }>
+> {
+  const [p, u] = await Promise.all([
+    client
+      .from('thread_participants')
+      .select('joined_at, role, muted_until')
+      .eq('thread_id', threadId)
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+    client
+      .from('thread_user_state')
+      .select('pinned_at, archived_at')
+      .eq('thread_id', threadId)
+      .eq('profile_id', profileId)
+      .maybeSingle(),
+  ]);
+  if (p.error) return fail(p.error);
+  if (u.error) return fail(u.error);
+  return ok({
+    joined_at: p.data?.joined_at ?? null,
+    role: p.data?.role ?? null,
+    muted_until: p.data?.muted_until ?? null,
+    pinned_at: u.data?.pinned_at ?? null,
+    archived_at: u.data?.archived_at ?? null,
+  });
+}
 
 export const getMessage = (client: Client, messageId: string) =>
   run(client.from('messages').select(MESSAGE_COLUMNS).eq('id', messageId).single());
