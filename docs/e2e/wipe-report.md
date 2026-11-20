@@ -31,3 +31,8 @@ Non-empty public tables (exact): audit_log 718, notification_preferences 288, st
 - Verification block raises (rolls back) if: any wiped table or auth is non-empty, any kept table's count/checksum changed, migrations/cron/buckets counts changed, or the replication role was not restored.
 
 (AFTER counts, Stripe remainder and user to-dos are added after Steps C-G.)
+
+## AFTER (Steps D-G)
+Dry run rolled back cleanly, then the real run committed. Verified after: auth.users 0, identities 0, every wiped table 0, kept tables unchanged (sport_configs 7, fee_config 1, platform_settings 8, platform_setting_definitions 8), migrations 104, cron jobs 13, buckets 6. Storage objects (14, all in message-attachments) deleted through the Storage API one path at a time (a recursive remove on the bucket root could remove the bucket); 0 remain, 6 buckets intact. Stripe after the dashboard reset: 0 accounts, customers, products, prices; 1 webhook endpoint with its original events (secret unchanged). billing_price_versions restored (1000 cents/month, no stripe_price_id yet). Later, on your instruction, 6 support migrations were pushed: migrations 110, cron jobs 15, platform_settings 16.
+Fresh sign-up and sign-in: confirmed by `account.spec.ts` (7 passed). Advisors: 4 lints, none severe. `supabase test db --linked` not run (needs Docker): rolled-back pgTAP harness used instead.
+**You must:** sign up as blakehayes865@gmail.com and kristin@athleit.com, then re-create the platform owner per docs/admin.md.
