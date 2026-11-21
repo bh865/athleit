@@ -1,0 +1,54 @@
+# covers: /onboarding, /onboarding/coach
+appId: com.athleit.app
+---
+- runFlow: ../_shared/launch.yaml
+- runFlow:
+    file: ../_shared/signup.yaml
+    env:
+      NAME: "Casey Coach"
+      EMAIL: "e2e-${RUN}-coach@example.test"
+- assertVisible: ".*parent or guardian.*"
+- assertVisible: ".*coach or manage a team.*"
+- assertVisible: ".*run a club or league.*"
+- assertVisible: ".*player.*"
+- assertVisible: ".*code or an invite.*"
+- tapOn: ".*coach or manage a team.*"
+- assertVisible: "Create your team"
+# Required fields: Continue without a name is refused.
+- tapOn: "Continue"
+- assertVisible: "Create your team"
+- tapOn:
+    id: field-team-name
+- inputText: "e2e-${RUN} Hawks"
+- tapOn: "Basketball"
+- tapOn: "Soccer"
+- tapOn:
+    id: field-season
+- inputText: "Fall 2026"
+- tapOn:
+    point: 50%,15%
+- tapOn: "Continue"
+- assertVisible: "Invite your families"
+- assertVisible: "TEAM CODE"
+- assertVisible: "Copy"
+- assertVisible: "Share"
+- assertVisible: "Create an invite link"
+- tapOn: "Continue"
+- assertVisible: "Add your first practice or game"
+- assertVisible: ".*New event.*"
+- tapOn: "Do this later"
+- assertVisible: ".*Hawks is ready.*"
+- assertVisible: ".*Invite families.*"
+- assertVisible: ".*Add your schedule.*"
+- assertVisible: ".*Build your roster.*"
+- tapOn: "Go to Home"
+- extendedWaitUntil:
+    visible: ".*(Not now|[Nn]eeds your attention).*"
+    timeout: 20000
+# First visit as an admin: the notification priming sheet offers a choice and can be declined.
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+- assertVisible: "(?i)needs your attention"

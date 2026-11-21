@@ -9,7 +9,8 @@ appId: com.athleit.app
 - tapOn:
     id: field-password
 - inputText: "E2e-Passw0rd!x"
-- hideKeyboard
+- tapOn:
+    point: 50%,15%
 - tapOn:
     text: "Sign in"
     index: 1

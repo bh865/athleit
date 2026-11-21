@@ -20,7 +20,7 @@ appId: com.athleit.app
 - tapOn:
     id: field-password
 - inputText: "E2e-Passw0rd!x"
-- hideKeyboard
+- tapOn: "Create your account"
 - assertVisible: ".*Password strength.*"
 - tapOn: "Create account"
 - extendedWaitUntil:

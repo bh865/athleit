@@ -33,15 +33,18 @@ case "$platform" in
   *) echo "platform must be ios or android"; exit 2 ;;
 esac
 
-if ! curl -sf localhost:8081/status >/dev/null; then
-  (cd apps/mobile && LANG=en_US.UTF-8 CI=1 nohup pnpm exec expo start --dev-client --port 8081 --clear >"$logs/metro.log" 2>&1 &)
-  for _ in $(seq 1 60); do curl -sf localhost:8081/status >/dev/null && break; sleep 2; done
-fi
+# Always start Metro fresh: in this checkout a running Metro kept serving old code after edits (D-030).
+pkill -f "expo start" 2>/dev/null || true; sleep 2
+(cd apps/mobile && LANG=en_US.UTF-8 CI=1 nohup pnpm exec expo start --dev-client --port 8081 --clear >"$logs/metro.log" 2>&1 &)
+for _ in $(seq 1 60); do curl -sf localhost:8081/status >/dev/null && break; sleep 2; done
 
 flows=("$@"); [[ ${#flows[@]} -gt 0 ]] || flows=(apps/mobile/.maestro/flows/*.yaml)
 fail=0
 for f in "${flows[@]}"; do
   echo "== $f ($platform, $run)"
+  # iOS keeps the Supabase session in the Keychain across app data resets, and a signed-in start hides the app from the
+  # dev-client overlay; start every flow signed out.
+  [[ "$platform" == ios ]] && xcrun simctl keychain "$device" reset >/dev/null 2>&1 || true
   maestro --device "$device" test -e RUN="$run" --format junit --output "$logs/$(basename "$f" .yaml).xml" "$f" || fail=1
 done
 echo "reports: $logs"

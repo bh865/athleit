@@ -1,0 +1,15 @@
+# From any signed-in tab screen: sign out through More. (iOS keeps the session in the Keychain across clearState.)
+appId: com.athleit.app
+---
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+- tapOn: "More"
+- scrollUntilVisible:
+    element: "Sign out"
+- tapOn: "Sign out"
+- extendedWaitUntil:
+    visible: "Continue with email"
+    timeout: 20000

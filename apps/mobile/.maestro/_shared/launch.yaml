@@ -21,7 +21,7 @@ appId: com.athleit.app
     commands:
       - tapOn: "Open"
 - extendedWaitUntil:
-    visible: ".*(Continue with email|Runtime version).*"
+    visible: ".*(Continue with email|Runtime version|More).*"
     timeout: 90000
 # Dev-menu intro (first launch of a dev client): iOS has a Continue button, then the sheet's close control.
 - runFlow:
@@ -32,10 +32,9 @@ appId: com.athleit.app
 - runFlow:
     when:
       platform: iOS
-      visible: ".*Runtime version.*"
+      visible: "Close"
     commands:
-      - tapOn:
-          point: 91%,48%
+      - tapOn: "Close"
 - runFlow:
     when:
       platform: Android
@@ -43,3 +42,20 @@ appId: com.athleit.app
     commands:
       - tapOn:
           point: 90%,45%
+# The app itself may still be loading its bundle behind the dev menu: wait for a real screen.
+- extendedWaitUntil:
+    visible: ".*(Continue with email|More|Not now).*"
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 4000
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
+# A session can survive clearState (the iOS Keychain), so sign out when the app starts signed in.
+- runFlow:
+    when:
+      notVisible: "Continue with email"
+      visible: "More"
+    file: signout.yaml

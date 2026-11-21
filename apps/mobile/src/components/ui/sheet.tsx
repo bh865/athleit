@@ -1,6 +1,14 @@
 import { componentTokens, radius, space } from '@athleit/tokens';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Animated, Keyboard, Modal, PanResponder, Pressable, View } from 'react-native';
+import {
+  Animated,
+  Keyboard,
+  Modal,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Glass } from './glass';
@@ -53,13 +61,17 @@ export function Sheet({
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable
-        accessibilityLabel="Close"
-        onPress={onClose}
-        style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: theme.color.scrim }}
-      >
-        <Animated.View style={{ transform: [{ translateY: dy }] }}>
-          <Pressable onPress={Keyboard.dismiss} accessibilityLabel={title}>
+      {/* The backdrop is a sibling of the sheet, not its parent: an accessible parent hides everything inside it from
+          VoiceOver and UI tests on iOS (the sheet's buttons were unreachable). */}
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: theme.color.scrim }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+        />
+        <Animated.View accessibilityLabel={title} style={{ transform: [{ translateY: dy }] }}>
+          <Pressable accessible={false} onPress={Keyboard.dismiss}>
             <Glass
               level={level}
               cornerRadius={radius.xl}
@@ -94,7 +106,7 @@ export function Sheet({
             </Glass>
           </Pressable>
         </Animated.View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

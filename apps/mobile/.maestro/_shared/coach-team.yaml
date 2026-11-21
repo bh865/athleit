@@ -1,0 +1,27 @@
+# From "What brings you here?": coach path, create a team named by TEAM, skip the first event. Ends on Home.
+appId: com.athleit.app
+---
+- tapOn: ".*coach or manage a team.*"
+- assertVisible: "Create your team"
+- tapOn:
+    id: field-team-name
+- inputText: ${TEAM}
+- tapOn:
+    id: field-season
+- inputText: "Fall 2026"
+- tapOn:
+    point: 50%,15%
+- tapOn: "Continue"
+- assertVisible: "Invite your families"
+- tapOn: "Continue"
+- assertVisible: "Add your first practice or game"
+- tapOn: "Do this later"
+- tapOn: "Go to Home"
+- extendedWaitUntil:
+    visible: ".*(Not now|[Nn]eeds your attention).*"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Not now"
+    commands:
+      - tapOn: "Not now"
