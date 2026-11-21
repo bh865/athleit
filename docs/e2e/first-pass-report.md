@@ -50,3 +50,13 @@ Run on Android, as run id `e2e-1795270860` (user `e2e-1795270860-mobile@example.
 - iOS: still blocked. A newer Xcode is the fix; `softwareupdate` offers none and the Xcode install is yours to do.
 
 Cleanup: the test user was removed with `scripts/e2e-cleanup.sh`; support request SUP-001005 (subject starts `e2e-1795270860`) remains on Dev because support data is kept by design. Emulator and Metro are shut down.
+
+### Android, widened pass (2026-11-21)
+Run id `e2e-1795271641`: coach `...-coach@example.test`, parent `...-parent@example.test`. All via `adb input` and screenshots on the Pixel 8 emulator against the Dev project, with the web app on `http://10.0.2.2:3000` for Help.
+
+Passed: welcome; sign-up (coach and parent); sign-in with a wrong password (clear error) then the right one; onboarding paths; create a team (team code shown); schedule: add a practice (appears with RSVP counts); empty Messages; parent adds a child (date picker: month and year chooser works, age shown as 10); parent joins with the team code (Request sent; pending card with Cancel on Home); parent's Schedule and Pay empty states; coach sees the request under People > Requests, Approve moves the parent to Members; coach sends a direct message (shows Delivered; the unsent draft persists across restarts); Account screen; Help hub with articles from the web origin; article opens in a Chrome Custom Tab with the embed layout; contact form validation, submit (SUP-001006), request thread, Mark as solved (with Reopen and "Was this resolved?"); Your requests under airplane mode shows a retryable error and recovers on Try again.
+
+Failed or defective: D-026 (composer hidden behind the keyboard; critical), D-025 (glass surfaces see-through), D-027, D-028, plus D-023 and D-024 from earlier.
+
+Not run on Android: payments and the Stripe payment sheet, registration, push, image attach, deep links and invites, club flows, notifications settings, delete account, dark mode, Maestro (D-022), and a second device size.
+
