@@ -1,0 +1,44 @@
+# covers: /messages, /messages/new, /messages/[threadId]
+appId: com.athleit.app
+---
+- runFlow: ../_shared/launch.yaml
+- runFlow:
+    file: ../_shared/signup.yaml
+    env:
+      NAME: "Casey Coach"
+      EMAIL: "e2e-${RUN}-coach@example.test"
+- runFlow:
+    file: ../_shared/coach-team.yaml
+    env:
+      TEAM: "e2e-${RUN} Hawks"
+- tapOn: "Messages"
+- assertVisible: "Messages"
+- assertVisible: "Search conversations and people"
+- assertVisible: ".*No conversations yet.*"
+- tapOn: "New message"
+- assertVisible: "New announcement"
+- tapOn: "New announcement"
+- assertVisible: "New announcement"
+- assertVisible: "Post announcement"
+# Required fields: posting an empty announcement is refused.
+- tapOn: "Post announcement"
+- assertVisible: "New announcement"
+- tapOn:
+    id: field-announcement-title
+- inputText: "e2e-${RUN} Practice moved"
+- tapOn:
+    id: field-first-message
+- inputText: "Practice moves to 6 PM. Please ignore, this is a test."
+- tapOn: "New announcement"
+- tapOn: "Post announcement"
+- assertVisible: ".*Practice moved.*"
+# Keyboard: the composer must stay above the keyboard (D-026).
+- tapOn:
+    id: message-composer
+- inputText: "Second message from the coach"
+- takeScreenshot: composer-keyboard-${PLATFORM}
+# The send button must be reachable with the keyboard open: a tap on it sends the message.
+- tapOn: "Send message"
+- extendedWaitUntil:
+    visible: ".*Second message from the coach.*"
+    timeout: 15000

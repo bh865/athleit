@@ -229,6 +229,7 @@ export function Composer({
         </Pressable>
         <TextInput
           accessibilityLabel="Message"
+          testID="message-composer"
           placeholder="Message"
           placeholderTextColor={c.muted}
           value={text}

@@ -2,7 +2,6 @@ import { space } from '@athleit/tokens';
 import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   type StyleProp,
   type ViewStyle,
@@ -28,7 +27,7 @@ export function Screen({
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           enabled={Boolean(avoidKeyboard)}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <ScrollView
             keyboardDismissMode={avoidKeyboard ? 'interactive' : 'none'}
