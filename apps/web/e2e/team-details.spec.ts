@@ -46,7 +46,7 @@ test.describe.serial('team details', () => {
   });
 
   test('People opens on Members when nothing is pending and keeps the segment in the URL', async () => {
-    await page.getByRole('link', { name: 'People' }).click();
+    await page.getByTestId('team-tabs').getByRole('link', { name: 'People' }).click();
     await expect(page.getByRole('radio', { name: /^Members/ })).toBeChecked();
     await page.getByRole('radio', { name: 'Invites' }).click();
     await expect(page).toHaveURL(/\/people\?view=invites$/);

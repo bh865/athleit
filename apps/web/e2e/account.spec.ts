@@ -72,10 +72,10 @@ test.describe.serial('account', () => {
     await page.getByRole('button', { name: 'Leave Account Team' }).click();
     await page.getByRole('button', { name: 'Leave team' }).click();
     await expect(page.getByText('You’re the only admin of Account Team.')).toBeVisible();
-    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
     await page.getByRole('button', { name: 'Delete account' }).click();
     await expect(page.getByText('You can’t delete your account yet')).toBeVisible();
-    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
   });
 
   test('security: the last sign-in method cannot be disconnected', async () => {

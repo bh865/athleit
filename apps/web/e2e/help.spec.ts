@@ -72,7 +72,15 @@ test('article text never contains a literal price', async ({ page }) => {
     'why-was-i-charged-a-service-fee',
   ]) {
     await page.goto(`/help/a/${slug}`);
-    await expect(page.locator('article')).not.toContainText(/\$\d/);
+    // Live values (<Live/>) are computed from config and marked data-live; only typed prices are forbidden.
+    const typed = await page
+      .locator('article')
+      .evaluate((el) => {
+        const c = el.cloneNode(true) as HTMLElement;
+        c.querySelectorAll('[data-live]').forEach((n) => n.remove());
+        return c.textContent ?? '';
+      });
+    expect(typed).not.toMatch(/\$\d/);
   }
 });
 

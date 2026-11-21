@@ -25,7 +25,7 @@ function highlight(text: string, q: string): ReactNode {
   if (!terms.length) return text;
   return text
     .split(new RegExp(`(${terms.join('|')})`, 'ig'))
-    .map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : part));
+    .map((part, i) => (i % 2 ? <mark key={i} className={styles.mark}>{part}</mark> : part));
 }
 
 export function SearchBox({

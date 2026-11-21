@@ -48,7 +48,7 @@ test.describe.serial('people, teams and rosters', () => {
     await coach.getByRole('button', { name: 'Create team' }).click();
     await expect(coach.getByRole('heading', { name: 'E2E Hawks' })).toBeVisible();
     teamUrl = new URL(coach.url()).pathname;
-    await coach.getByRole('link', { name: 'Settings' }).click();
+    await coach.getByTestId('team-tabs').getByRole('link', { name: 'Settings' }).click();
     code = (await coach.getByTestId('join-code').textContent())?.trim() ?? '';
     expect(code).toMatch(/^[A-Z0-9]{10}$/);
   });
@@ -115,7 +115,10 @@ test.describe.serial('people, teams and rosters', () => {
     await expect(panel).toContainText('Guardian contacts');
     await expect(panel).toContainText('e2e-');
     await expect(panel.getByRole('link', { name: 'Email' })).toBeVisible();
-    await expect(panel).toContainText('9 years old');
+    const born = new Date('2016-04-02T12:00:00');
+    const now = new Date();
+    const age = now.getFullYear() - born.getFullYear() - (now < new Date(now.getFullYear(), 3, 2) ? 1 : 0);
+    await expect(panel).toContainText(`${age} years old`);
     const axe = await new AxeBuilder({ page: coach }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(axe.violations).toEqual([]);
   });
@@ -224,6 +227,7 @@ test.describe.serial('people, teams and rosters', () => {
   });
 
   test('removing a player only happens through the confirm, with Set inactive as the safe default', async () => {
+    await coach.goto('/roster');
     const list = coach.getByTestId('roster-list');
     await list.getByRole('button', { name: /Ava Adams/ }).click();
     const panel = coach.getByTestId('player-panel');
@@ -234,7 +238,7 @@ test.describe.serial('people, teams and rosters', () => {
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(list).toContainText('Ava Adams'); // nothing was removed
     await panel.getByRole('button', { name: 'Remove from roster' }).click();
-    await coach.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
+    await coach.getByRole('alertdialog').getByRole('button', { name: 'Remove', exact: true }).click();
     await expect(coach.getByTestId('roster-list')).not.toContainText('Ava Adams');
   });
 });

@@ -64,6 +64,14 @@
         {
           "defaultChannel": "messages"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "dynamic"
+          }
+        }
       ]
     ],
     "extra": {

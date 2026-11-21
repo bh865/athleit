@@ -67,5 +67,5 @@ export function Captcha({
         Verification is not set up yet, so registration is unavailable.
       </Text>
     );
-  return <div ref={host} aria-label="Human check" />;
+  return <div ref={host} role="group" aria-label="Human check" />;
 }
