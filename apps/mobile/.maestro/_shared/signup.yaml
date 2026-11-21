@@ -1,0 +1,21 @@
+# From the welcome screen: create an account. Env: NAME, EMAIL (password is always E2e-Passw0rd!x).
+# The password is shown first: on iOS a hidden new-password field opens the Strong Password sheet, which swallows typing.
+appId: com.athleit.app
+---
+- tapOn: "Continue with email"
+- assertVisible: "Create your account"
+- tapOn:
+    id: field-your-name
+- inputText: ${NAME}
+- tapOn:
+    id: field-email
+- inputText: ${EMAIL}
+- tapOn: "Show password"
+- tapOn:
+    id: field-password
+- inputText: "E2e-Passw0rd!x"
+- hideKeyboard
+- tapOn: "Create account"
+- extendedWaitUntil:
+    visible: "What brings you here?"
+    timeout: 30000

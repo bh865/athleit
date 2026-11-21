@@ -1,0 +1,5 @@
+# Maestro workspace for the Athleit mobile app. Run through scripts/mobile-e2e.sh (it starts Metro and passes RUN).
+# Every flow lists the screens it exercises with "# covers: <route>"; scripts/mobile-e2e-coverage.mjs fails when a
+# screen has no flow. Flows run against the hosted Dev project with users named e2e-<RUN>-<role>@example.test.
+flows:
+  - flows/*.yaml

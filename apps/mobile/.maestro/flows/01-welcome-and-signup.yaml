@@ -1,0 +1,28 @@
+# covers: /welcome, /sign-up
+appId: com.athleit.app
+---
+- runFlow: ../_shared/launch.yaml
+- assertVisible: "Your team, your family, one place."
+- assertVisible: "Continue with email"
+- assertVisible: "I have an invite or a code"
+- tapOn: "Continue with email"
+- assertVisible: "Create your account"
+# Validation: an empty submit explains what is missing.
+- tapOn: "Create account"
+- assertVisible: ".*(name|email|password).*"
+- tapOn:
+    id: field-your-name
+- inputText: "Mobile Tester"
+- tapOn:
+    id: field-email
+- inputText: "e2e-${RUN}-signup@example.test"
+- tapOn: "Show password"
+- tapOn:
+    id: field-password
+- inputText: "E2e-Passw0rd!x"
+- hideKeyboard
+- assertVisible: ".*Password strength.*"
+- tapOn: "Create account"
+- extendedWaitUntil:
+    visible: "What brings you here?"
+    timeout: 30000

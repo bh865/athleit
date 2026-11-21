@@ -22,6 +22,10 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   inputRef?: Ref<TextFieldInput>;
 }
 
+/** Stable test id for a field, from its label: "Your name" becomes `field-your-name`. Used by the Maestro flows. */
+export const fieldTestId = (label: string) =>
+  `field-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+
 /** 52 high, radius 18, surface-alt fill; focused = 2px "sent" border. */
 export function TextField({
   label,
@@ -49,6 +53,7 @@ export function TextField({
         <TextInput
           {...input}
           ref={inputRef}
+          testID={input.testID ?? fieldTestId(label)}
           accessibilityLabel={label}
           accessibilityLabelledBy={id}
           accessibilityHint={error ?? hint}

@@ -1,0 +1,15 @@
+# From the welcome screen: sign in. Env: EMAIL (password is always E2e-Passw0rd!x).
+appId: com.athleit.app
+---
+- tapOn: "Sign in"
+- assertVisible: "Sign in"
+- tapOn:
+    id: field-email
+- inputText: ${EMAIL}
+- tapOn:
+    id: field-password
+- inputText: "E2e-Passw0rd!x"
+- hideKeyboard
+- tapOn:
+    text: "Sign in"
+    index: 1

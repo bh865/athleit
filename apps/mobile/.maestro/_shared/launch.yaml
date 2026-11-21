@@ -1,0 +1,45 @@
+# Starts the app from a clean state through the dev client and gets past the dev-menu intro on both platforms.
+appId: com.athleit.app
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- waitForAnimationToEnd
+- openLink: exp+athleit://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+# Android's launcher can swallow the first link while the app is still starting; send it again if the picker shows.
+- runFlow:
+    when:
+      platform: Android
+      visible: ".*Development servers.*"
+    commands:
+      - openLink: exp+athleit://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+# iOS asks before opening the link.
+- runFlow:
+    when:
+      platform: iOS
+      visible: "Open"
+    commands:
+      - tapOn: "Open"
+- extendedWaitUntil:
+    visible: ".*(Continue with email|Runtime version).*"
+    timeout: 90000
+# Dev-menu intro (first launch of a dev client): iOS has a Continue button, then the sheet's close control.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      platform: iOS
+      visible: ".*Runtime version.*"
+    commands:
+      - tapOn:
+          point: 91%,48%
+- runFlow:
+    when:
+      platform: Android
+      visible: ".*Runtime version.*"
+    commands:
+      - tapOn:
+          point: 90%,45%
