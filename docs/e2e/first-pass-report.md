@@ -1,6 +1,6 @@
 # Athleit first end-to-end pass: report
 
-Branch `test/e2e-first-pass` off `origin/buildout` @ 6fbdfe4. Hosted Dev project only; Stripe test mode only. **Read this first: the mobile app could not be built, so nothing mobile was tested.** Payments, billing, registration, messaging realtime and the admin portal deep paths were not exercised beyond what the existing specs cover.
+Branch `test/e2e-first-pass` off `origin/buildout` @ 6fbdfe4. Hosted Dev project only; Stripe test mode only. **Read this first: iOS could not be built (Xcode 26.0, D-019). Android was set up and a first smoke path ran (see the Android section below); no other mobile paths were tested.** Payments, billing, registration, messaging realtime and the admin portal deep paths were not exercised beyond what the existing specs cover.
 
 ## Security note
 No cross-user data exposure found. An outsider and a parent got nothing from a coach's team across 9 team pages, signed-in non-admins got not-found on 4 admin routes, and an outsider read 0 rows from 12 team tables and 8 global tables through the API (`persona-crawl.spec.ts`). One privacy-relevant repo gap (D-004): the migration that moved pin/archive state out of a table readable by other thread members was applied on Dev but missing from the repo; restored, needs your review.
@@ -38,3 +38,15 @@ See the README section "First-pass E2E". Web: `cd apps/web && pnpm build && npx 
 
 ## Beta readiness (honest)
 Not ready to call. Strengths: sign-up/sign-in, team and roster basics, RSVP and live counts, Help site and the authorization model held up under direct probing; no leaks found. Gaps: the branch's production build was broken on arrival; the support center cannot work on Dev until the Edge Functions are deployed; about 14 e2e specs are stale or unstable so the suite is not a reliable gate; mobile is entirely unverified here; and the money paths (pay flow, refunds, split payments, billing) were not run this pass. I would not release a beta on this evidence alone: next steps are an Xcode update to unblock mobile, a rewrite of the drifted specs, then a payments and billing pass in Stripe test mode.
+
+## Android emulator (added 2026-11-21)
+Set up on this Mac with Homebrew (`android-commandlinetools`, `openjdk@17`) and `sdkmanager` (platform-tools, emulator, android-36, build-tools 36.0.0, Google APIs arm64 system image). AVD `athleit_e2e` (Pixel 8, Android 16). `JAVA_HOME=/opt/homebrew/opt/openjdk@17`, `ANDROID_HOME=/opt/homebrew/share/android-commandlinetools`. The dev client built with `expo run:android --no-bundler` (about 5 minutes, BUILD SUCCESSFUL), installed, and connected to Metro through `adb reverse tcp:8081 tcp:8081`. The app points at the hosted Dev project with a Stripe test key.
+
+Run on Android, as run id `e2e-1795270860` (user `e2e-1795270860-mobile@example.test`):
+- Welcome screen, "Continue with email", Create account form with the live password-strength meter: pass.
+- Sign-up against Dev: pass, lands on "What brings you here?" onboarding, then the More tab and Account screens render with the right name and email.
+- Help and support: hub renders; articles unavailable (D-023). Contact support form: submitted with diagnostics on and no image; the deployed `submit-support-request` function answered with reference SUP-001005 and the confirmation screen. A signed-in request queues no email (the email drain only serves signed-out requesters).
+- Not run on Android: View your request thread, image attach, offline states, push, Stripe payment sheet, joining or creating a team, the parent and coach flows, Maestro flows (D-022).
+- iOS: still blocked. A newer Xcode is the fix; `softwareupdate` offers none and the Xcode install is yours to do.
+
+Leftovers from this run on Dev: user `e2e-1795270860-mobile@example.test` and support request SUP-001005.
