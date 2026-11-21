@@ -49,4 +49,4 @@ Run on Android, as run id `e2e-1795270860` (user `e2e-1795270860-mobile@example.
 - Not run on Android: View your request thread, image attach, offline states, push, Stripe payment sheet, joining or creating a team, the parent and coach flows, Maestro flows (D-022).
 - iOS: still blocked. A newer Xcode is the fix; `softwareupdate` offers none and the Xcode install is yours to do.
 
-Leftovers from this run on Dev: user `e2e-1795270860-mobile@example.test` and support request SUP-001005.
+Cleanup: the test user was removed with `scripts/e2e-cleanup.sh`; support request SUP-001005 (subject starts `e2e-1795270860`) remains on Dev because support data is kept by design. Emulator and Metro are shut down.
