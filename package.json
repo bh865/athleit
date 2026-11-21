@@ -38,6 +38,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "supabase"
-    ]
+    ],
+    "patchedDependencies": {
+      "expo-modules-jsi@58.0.23": "patches/expo-modules-jsi@58.0.23.patch"
+    }
   }
 }

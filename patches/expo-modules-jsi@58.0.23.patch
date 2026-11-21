@@ -1,0 +1,21 @@
+diff --git a/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptObject.swift b/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptObject.swift
+index de76b9762d8f3cdd05a68fca7a01e8f1b0af973f..26256b0dc027fee46cb0e6b16e8629458a42814e 100644
+--- a/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptObject.swift
++++ b/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptObject.swift
+@@ -939,11 +939,15 @@ private func withEncodedValue(
+     defer {
+       expo.destroyValues(slot, 1)
+     }
++    // Xcode 26.0 rejects capturing the raw pointer in the isolated closure ("sending 'slot' risks causing
++    // data races"); pass its address, which is Sendable, and rebuild the pointer inside.
++    let slotAddress = UInt(bitPattern: slot)
+     // The runtime can't be deallocated during a call on its JavaScript thread, so it's borrowed without
+     // a retain.
+     try runtime._withUnsafeGuaranteedRef { runtime in
+       try JavaScriptActor.assumeIsolated {
+-        try encode(JavaScriptValue.Slot(slot), runtime)
++        let isolatedSlot = UnsafeMutablePointer<facebook.jsi.Value>(bitPattern: slotAddress)!
++        try encode(JavaScriptValue.Slot(isolatedSlot), runtime)
+       }
+     }
+     body(slot.pointee)
